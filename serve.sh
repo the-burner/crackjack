@@ -67,8 +67,21 @@ port, cert, key, app = int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ctx.load_cert_chain(certfile=cert, keyfile=key)
 
-handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=app)
-httpd = http.server.HTTPServer(("0.0.0.0", port), handler)
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def handle_one_request(self):
+        # A browser may drop a connection mid-reply (canceled prefetch, backgrounded
+        # tab). That is expected, not a server error, so don't spew a traceback.
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, BrokenPipeError, ssl.SSLError):
+            self.close_connection = True
+
+# Threaded so the phone's burst of asset requests is served concurrently instead of
+# serialized; a single-threaded server starves parallel connections and the browser
+# then resets them (errno 54), which surfaces in the app as failed loads.
+handler = functools.partial(Handler, directory=app)
+httpd = http.server.ThreadingHTTPServer(("0.0.0.0", port), handler)
+httpd.daemon_threads = True
 httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
 httpd.serve_forever()
 PY
