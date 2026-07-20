@@ -5,30 +5,53 @@
 The app loads its screens (`frm*.htm`) and data files (`usp*.txt`, `g.txt`) at
 runtime via `XMLHttpRequest`. Because of that, **you cannot just open
 `index.html` from the filesystem** (`file://` blocks those requests). You must
-serve the folder over HTTP.
+serve the folder.
 
-Any static file server works. The simplest, using Python (pre-installed on
-macOS/Linux):
+The offline home-screen app relies on a Service Worker, and browsers only
+register a Service Worker in a **secure context** (HTTPS, or `http://localhost`).
+When the phone connects to the Mac over the LAN it uses the Mac's hostname, not
+`localhost`, so the server **must** speak HTTPS with a certificate the phone
+trusts. `serve.sh` handles this using [`mkcert`](https://github.com/FiloSottile/mkcert).
+
+### One-time setup (on the serving Mac)
 
 ```bash
-./serve.sh          # starts http://localhost:8000 and prints the URL
-# or directly:
-python3 -m http.server 8000
+brew install mkcert nss
+mkcert -install        # creates a locally-trusted root CA on this Mac
 ```
 
-Then open <http://localhost:8000/> in a browser.
+### Running
+
+```bash
+./serve.sh             # serves https://<your-mac>.local:8443/ and prints the URL
+./serve.sh 9000        # optional: use a different port
+```
+
+On first run `serve.sh` generates a certificate for the Mac's `.local` hostname
+into `.certs/` (git-ignored). Then open the printed `https://…` URL in a browser.
 
 ## Installing on an iPhone (offline home-screen app)
 
-iOS only lets a web app go offline after it has been loaded over HTTP once, so
-the Service Worker can install. One-time setup:
+The phone must trust the Mac's local certificate authority once, after which
+the Service Worker can install and the app runs fully offline. One-time setup:
 
-1. On your Mac (same Wi-Fi as the phone), run `./serve.sh` and note the URL.
-2. On the iPhone, open that URL in **Safari** (required for Add to Home Screen);
+1. On the serving Mac (same Wi-Fi as the phone), run `./serve.sh` and note the
+   `https://<your-mac>.local:8443/` URL.
+2. Trust the local CA on the iPhone:
+   - Run `mkcert -CAROOT` on the Mac to find the CA folder, and AirDrop
+     `rootCA.pem` from it to the phone.
+   - iPhone: open the file → **Settings → Profile Downloaded → Install**.
+   - **Settings → General → About → Certificate Trust Settings** → enable full
+     trust for the mkcert CA.
+3. In **Safari** (required for Add to Home Screen), open the `https://…` URL and
    let it sit a few seconds so `sw.js` caches everything.
-3. Share button → **Add to Home Screen**.
-4. Stop the server / enable airplane mode, then tap the icon — it runs fully
+4. Share button → **Add to Home Screen**.
+5. Stop the server / enable airplane mode, then tap the icon — it runs fully
    offline. The Mac server is not needed again.
+
+> The certificate and the installed app are tied to the Mac's `.local`
+> hostname, so the offline app keeps working even if the Mac's IP address
+> changes. If you rename the Mac, delete `.certs/` and repeat the setup.
 
 ## What's here
 
