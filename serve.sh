@@ -3,13 +3,13 @@
 # HTTPS is required so iOS Safari will register the Service Worker (service
 # workers only run in a secure context: HTTPS, or http://localhost).
 #
-# Usage: ./serve.sh --drill [PORT]
-#        ./serve.sh --game  [PORT]
+# Usage: ./serve.sh --drill [PORT]   (default port 8443)
+#        ./serve.sh --game  [PORT]   (default port 8444)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP=""
-PORT="8443"
+PORT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --drill) APP="drill" ;;
@@ -31,6 +31,14 @@ if [ -z "$APP" ]; then
   echo "error: specify which app to serve." >&2
   echo "usage: ./serve.sh --drill|--game [PORT]" >&2
   exit 1
+fi
+
+# Default to a per-app port so both apps can run at once without clashing.
+if [ -z "$PORT" ]; then
+  case "$APP" in
+    drill) PORT="8443" ;;
+    game)  PORT="8444" ;;
+  esac
 fi
 
 if ! command -v mkcert >/dev/null 2>&1; then
