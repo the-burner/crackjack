@@ -1,5 +1,8 @@
 # Blackjack Verité — local mirrors
 
+http://www.qfit.com/apps/bjvd
+http://www.qfit.com/apps/gcbj
+
 Two offline-runnable mirrors of the QFIT Blackjack Verité web apps, each in its
 own subfolder:
 
