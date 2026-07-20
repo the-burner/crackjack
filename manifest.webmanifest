@@ -1,0 +1,16 @@
+{
+  "name": "Blackjack Verité Drills",
+  "short_name": "Verité D",
+  "description": "Blackjack Verité Drills — offline card counting practice (local mirror).",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbe0c0",
+  "theme_color": "#a11b2e",
+  "icons": [
+    { "src": "nsb/images/196.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/android/icon.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "cvd.png", "sizes": "114x114", "type": "image/png" }
+  ]
+}
