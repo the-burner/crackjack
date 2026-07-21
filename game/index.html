@@ -24,6 +24,13 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function (err) {
       console.log('SW registration failed:', err);
     });
+    // Ask the browser to keep our cache instead of evicting it after inactivity.
+    // Without this, iOS purges the PWA's Cache Storage after ~a week, and the
+    // offline app can no longer read its strategy files (usp*.txt) — bricking it
+    // until it is next opened online. Best-effort: skip where the API is absent.
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist();
+    }
   });
 }
 </script>
@@ -1753,7 +1760,7 @@ function yesNoDone2(xx){var savethefunction_rvar="";var i,j;if(xx==2){return sav
 if(localStorage.CDatabase==undefined){}else{CDatabase=JSON.parse(localStorage.CDatabase);}
 window.localStorage.clear();localStorage.CDatabase=JSON.stringify(CDatabase);LoadAll();NSB.MsgBox("Done.");return savethefunction_rvar;}
 cmdHelp35.onclick=function(){var savethefunction_rvar="";FormH=NSBCurrentForm.id;DoHelp();return savethefunction_rvar;}
-cmdProblem.onclick=function(){var savethefunction_rvar="";var tt;tt="If you are having screen related problems, e-mail your device model and the following info to support@qfit.com: ";tt=tt+NSBCurrentForm.id+", ";tt=tt+frmMain.Width+", ";tt=tt+frmMain.Height+", ";tt=tt+SysInfo(2)+", ";tt=tt+SysInfo(3)+", ";tt=tt+SysInfo(108)+", ";tt=tt+SysInfo(109)+", ";tt=tt+SysInfo(5)+", ";tt=tt+www+", ";tt=tt+hhh;_msgbox_confirm(tt);return savethefunction_rvar;}
+cmdProblem.onclick=function(){var savethefunction_rvar="";var tt;tt="If you are having screen related problems, e-mail your device model and the following info to support@qfit.com: ";tt=tt+NSBCurrentForm.id+", ";tt=tt+frmMain.Width+", ";tt=tt+frmMain.Height+", ";tt=tt+SysInfo(2)+", ";tt=tt+SysInfo(3)+", ";tt=tt+SysInfo(108)+", ";tt=tt+SysInfo(109)+", ";tt=tt+SysInfo(5)+", ";tt=tt+www+", ";tt=tt+hhh;if(navigator.storage&&navigator.storage.persisted){navigator.storage.persisted().then(function(p){_msgbox_confirm(tt+", persisted: "+p);}).catch(function(){_msgbox_confirm(tt+", persisted: err");});}else{_msgbox_confirm(tt+", persisted: n/a");}return savethefunction_rvar;}
 cmdGoto1.onclick=function(){var savethefunction_rvar="";ChangeForm(frmOpts0);return savethefunction_rvar;}
 window.addEventListener('load',function(){frmtabhn.style.display='block';topbar24.style.lineHeight='29px';NSB.addProperties(topbar24);boxt4.style.lineHeight='32px';NSB.addProperties(boxt4);boxt5.style.lineHeight='32px';NSB.addProperties(boxt5);boxt0.style.lineHeight='32px';NSB.addProperties(boxt0);boxt6.style.lineHeight='32px';NSB.addProperties(boxt6);Label105.style.lineHeight='30px';NSB.addProperties(Label105);label50.style.lineHeight=21*2-14-2+'px';NSB.addProperties(label50);label51.style.lineHeight=21*2-14-2+'px';NSB.addProperties(label51);label52.style.lineHeight=21*2-14-2+'px';NSB.addProperties(label52);label53.style.lineHeight=21*2-14-2+'px';NSB.addProperties(label53);Act2.style.lineHeight='20px';NSB.addProperties(Act2);Titleb1.style.lineHeight='20px';NSB.addProperties(Titleb1);hand2.style.lineHeight='20px';NSB.addProperties(hand2);txtTable.style.lineHeight='20px';NSB.addProperties(txtTable);G1.GridRefreshWidth=function(){setTimeout(NSB.GridRefreshWidth,10,G1)};NSB.Grid_init('G1');NSB.addProperties(G1,G1_scroller)
 NSB.addDisableProperty(cmdHelp24);NSB.addProperties(cmdHelp24);NSB.addDisableProperty(cmdExit24);NSB.addProperties(cmdExit24);G12.GridRefreshWidth=function(){setTimeout(NSB.GridRefreshWidth,10,G12)};NSB.Grid_init('G12');NSB.addProperties(G12,G12_scroller)
