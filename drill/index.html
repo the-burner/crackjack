@@ -24,6 +24,13 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function (err) {
       console.log('SW registration failed:', err);
     });
+    // Ask the browser to keep our cache instead of evicting it after inactivity.
+    // Without this, iOS purges the PWA's Cache Storage after ~a week, and the
+    // offline app can no longer read its strategy files (usp*.txt) — bricking it
+    // until it is next opened online. Best-effort: skip where the API is absent.
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist();
+    }
   });
 }
 </script>
@@ -1443,7 +1450,7 @@ cmdReset35.onclick=function(){var savethefunction_rvar="";NSB.MsgBox(yesNoDone2,
 function yesNoDone2(xx){var savethefunction_rvar="";var i,j;if(xx==2){return savethefunction_rvar;}
 window.localStorage.clear();LoadAll();MOpts35.setValue(1,optnolog);MOpts35.setValue(2,optsound);NSB.MsgBox("Done.");return savethefunction_rvar;}
 cmdHelp35.onclick=function(){var savethefunction_rvar="";FormH=NSBCurrentForm.id;DoHelp();return savethefunction_rvar;}
-cmdProblem.onclick=function(){var savethefunction_rvar="";var tt;tt="If you are having screen related problems, e-mail your device model and the following info to support@qfit.com: ";tt=tt+frmMain.Width+", ";tt=tt+frmMain.Height+", ";tt=tt+SysInfo(0)+", ";tt=tt+SysInfo(1)+", ";tt=tt+SysInfo(2)+", ";tt=tt+SysInfo(3)+", ";tt=tt+SysInfo(108)+", ";tt=tt+SysInfo(109)+", ";tt=tt+SysInfo(5)+", ";tt=tt+www+", ";tt=tt+hhh;MyMsgBox(tt);return savethefunction_rvar;}
+cmdProblem.onclick=function(){var savethefunction_rvar="";var tt;tt="If you are having screen related problems, e-mail your device model and the following info to support@qfit.com: ";tt=tt+frmMain.Width+", ";tt=tt+frmMain.Height+", ";tt=tt+SysInfo(0)+", ";tt=tt+SysInfo(1)+", ";tt=tt+SysInfo(2)+", ";tt=tt+SysInfo(3)+", ";tt=tt+SysInfo(108)+", ";tt=tt+SysInfo(109)+", ";tt=tt+SysInfo(5)+", ";tt=tt+www+", ";tt=tt+hhh;if(navigator.storage&&navigator.storage.persisted){navigator.storage.persisted().then(function(p){MyMsgBox(tt+", persisted: "+p);}).catch(function(){MyMsgBox(tt+", persisted: err");});}else{MyMsgBox(tt+", persisted: n/a");}return savethefunction_rvar;}
 window.addEventListener('load',function(){frmView.style.display='block';topbar25.style.lineHeight='29px';NSB.addProperties(topbar25);Label108.style.lineHeight='36px';NSB.addProperties(Label108);GSH_ref=new IScroll(GSH_scroller,{mouseWheel:true,scrollbars:true,bounce:true,zoom:false,click:iScrollClick()});GSH.refresh=function(){setTimeout(NSB.refresh,100,GSH_ref)};GSH.GridRefreshWidth=function(){setTimeout(NSB.GridRefreshWidth,10,GSH)};NSB.Grid_init('GSH');NSB.addProperties(GSH,GSH_scroller)
 NSB.addDisableProperty(cmdClear);NSB.addProperties(cmdClear);NSB.addDisableProperty(cmdHelp25);NSB.addProperties(cmdHelp25);NSB.addDisableProperty(cmdExit25);NSB.addProperties(cmdExit25);NSB.Checkbox_jqm_init('optOld','Oldest First');NSB.addProperties(optOld);NSB.addDisableProperty(cmdView2);NSB.addProperties(cmdView2);GSH2_ref=new IScroll(GSH2_scroller,{mouseWheel:true,scrollbars:true,bounce:true,zoom:false,click:iScrollClick()});GSH2.refresh=function(){setTimeout(NSB.refresh,100,GSH2_ref)};GSH2.GridRefreshWidth=function(){setTimeout(NSB.GridRefreshWidth,10,GSH2)};NSB.Grid_init('GSH2');NSB.addProperties(GSH2,GSH2_scroller)
 GSH3_ref=new IScroll(GSH3_scroller,{mouseWheel:true,scrollbars:true,bounce:true,zoom:false,click:iScrollClick()});GSH3.refresh=function(){setTimeout(NSB.refresh,100,GSH3_ref)};GSH3.GridRefreshWidth=function(){setTimeout(NSB.GridRefreshWidth,10,GSH3)};NSB.Grid_init('GSH3');NSB.addProperties(GSH3,GSH3_scroller)
