@@ -24,6 +24,11 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function (err) {
       console.log('SW registration failed:', err);
     });
+    // Ask the browser to keep our cache instead of evicting it after inactivity.
+    // Best-effort: skip where the API is absent.
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist();
+    }
   });
 }
 </script>
