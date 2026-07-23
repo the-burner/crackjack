@@ -1,9 +1,10 @@
 // sw.js — Service Worker for Blackjack Verité Games (local PWA mirror)
 // Precaches every app file so the homescreen web-app runs fully offline
 // after being served over HTTP once. Replaces the app's dead AppCache.
-const CACHE = 'gcbj-v2.0.8';
+const CACHE = 'gcbj-v2.0.9';
 const ASSETS = [
   './',
+  './index.html',
   './manifest.webmanifest',
   './backdcp10.jpg',
   './bjvg120.png',
@@ -374,7 +375,15 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(req).then((hit) => {
       if (hit) return hit;
-      return fetch(req).catch(() => {
+      // Cache miss (partial install, version-bump gap, or storage eviction): fetch
+      // and write a good response back so the file survives the next offline launch.
+      return fetch(req).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      }).catch(() => {
         // Offline and uncached: for a page navigation, fall back to the app shell.
         if (req.mode === 'navigate') return caches.match('./');
         return Response.error();
