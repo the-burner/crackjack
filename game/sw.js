@@ -1,7 +1,7 @@
 // sw.js — Service Worker for Blackjack Verité Games (local PWA mirror)
 // Precaches every app file so the homescreen web-app runs fully offline
 // after being served over HTTP once. Replaces the app's dead AppCache.
-const CACHE = 'gcbj-v2.0.9';
+const CACHE = 'gcbj-v2.0.10';
 const ASSETS = [
   './',
   './index.html',
