@@ -2372,7 +2372,7 @@ Select230.resize((www-Select230.Width)/2,ttt);zz=ttt+Select230.Height+gapv;Label
 function Timer230_Timer(){DoResize230();}
 cmdImp230.onclick=function(){savethefunction_rvar="";if(winpc){cmdImp230.ontouchstart();}
 return savethefunction_rvar;}
-cmdImp230.ontouchstart=function(){savethefunction_rvar="";var TTTT,filename,i,tx;req=Ajax("http://qfit.com/Apps/u"+jjjj2+".php");if(req.status==200||req.status==0){TTTT=req.responseText;if(TTTT==""){MyMsgBox("File could not be imported. Probably an incorrect code. ");return;}
+cmdImp230.ontouchstart=function(){savethefunction_rvar="";var TTTT,filename,i,tx;req=Ajax("/Apps/u"+jjjj2+".php");if(req.status==200||req.status==0){TTTT=req.responseText;if(TTTT==""){MyMsgBox("File could not be imported. Probably an incorrect code. ");return;}
 TTTT=Replace(TTTT,"%20"," ");i=InStr(2,TTTT,"|");namBStratsNum=namBStratsNum+1;localStorage.namBStratsNum=JSON.stringify(namBStratsNum);eval("localStorage.BStrat"+CStr(1000+namBStratsNum)+"=JSON.stringify(TTTT)");eval("localStorage.BStratName"+CStr(1000+namBStratsNum)+"=JSON.stringify(Mid(TTTT,2,i-2))");MyMsgBox(Mid(TTTT,2,i-2)+" imported");bonsys=1000+namBStratsNum;frmOpts3.onshow();Select230.onchange();}else{MyMsgBox("File could not be imported: "+req.status);}
 return savethefunction_rvar;}
 txtImp230.onclick=function(){savethefunction_rvar="";NSBInputBox(ibret123,"Code");return savethefunction_rvar;}

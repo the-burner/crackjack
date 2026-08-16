@@ -61,13 +61,43 @@ echo "Serving ${APP} at https://${HOST}:${PORT}/"
 echo "Press Ctrl+C to stop."
 
 exec python3 - "$PORT" "$CERT" "$KEY" "$APP" <<'PY'
-import http.server, functools, ssl, sys
+import http.server, functools, ssl, sys, urllib.request, urllib.error
 
 port, cert, key, app = int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ctx.load_cert_chain(certfile=cert, keyfile=key)
 
+# The strategy-import feature fetches /Apps/z<code>.php (drill) or /Apps/u<code>.php
+# (game) from a server-side PHP endpoint that lives at qfit.com's site root — it was
+# never part of the mirrored app folder and can't be a static file. Forward those
+# requests to the live site so the browser sees the same same-origin behavior it does
+# on qfit.com (no CORS, no mixed content).
+UPSTREAM = "https://www.qfit.com"
+
 class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path.startswith("/Apps/"):
+            self.proxy_to_qfit()
+        else:
+            super().do_GET()
+
+    def proxy_to_qfit(self):
+        try:
+            with urllib.request.urlopen(UPSTREAM + self.path, timeout=15) as r:
+                body, status = r.read(), r.status
+                ctype = r.headers.get("Content-Type", "text/plain")
+        except urllib.error.HTTPError as e:
+            body, status = e.read(), e.code
+            ctype = e.headers.get("Content-Type", "text/plain")
+        except Exception as e:
+            self.send_error(502, "proxy error: %s" % e)
+            return
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def handle_one_request(self):
         # A browser may drop a connection mid-reply (canceled prefetch, backgrounded
         # tab). That is expected, not a server error, so don't spew a traceback.
