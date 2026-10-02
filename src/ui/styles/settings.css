@@ -1,1 +1,64 @@
-/* settings screens. */
+/* Settings screens. */
+
+/* One centred column of control groups, two side by side when there is room
+   (the legacy screens did the same in landscape). */
+.settings-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 365px);
+  justify-content: center;
+  align-items: start;
+  gap: 12px;
+}
+@media (min-width: 750px) {
+  .settings-cols { grid-template-columns: repeat(2, minmax(0, 365px)); }
+}
+
+.settings-group { display: flex; flex-direction: column; gap: 10px; }
+.settings-note { margin: 0 0 10px; }
+.settings-group .settings-note { margin: 0; }
+
+/* Label on one side of a control, as the legacy value and strategy rows were. */
+.settings-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.settings-row[hidden] { display: none; }
+.settings-row > .label { flex: 1 1 auto; }
+.settings-row > .value-btn { flex: 0 0 110px; min-height: 40px; font-size: 16px; }
+.settings-row > .select { flex: 1 1 auto; }
+.settings-row > .select ~ .label { flex: 0 0 auto; }
+
+/* Peek checkboxes with the peek-probability select beside them. */
+.peeking-modes { display: flex; align-items: flex-start; gap: 10px; }
+.peeking-modes > .checklist { flex: 1 1 auto; }
+.peeking-modes > .select { flex: 0 0 110px; }
+
+/* The Unusual Games explanation, shown in the legacy textarea's white box. */
+.settings-prose {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 2px 12px;
+  border: 1px solid var(--btn-border);
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  font: 13px var(--font);
+  color: var(--btn-text);
+}
+
+/* Options hub: nine rows of navigation buttons in two columns. */
+.settings-hub {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 740px;
+  margin: 0 auto;
+  padding-top: 18px;
+}
+.settings-hub__col { display: grid; grid-template-rows: repeat(9, 38px); gap: 22px 0; }
+.settings-hub__note { grid-row: span 3; align-self: center; margin: 0; }
+.settings-hub__launch { grid-row: span 2; height: 100%; }
+
+@media (max-height: 520px) {
+  .settings-hub { padding-top: 2px; gap: 6px; }
+  .settings-hub__col { grid-template-rows: repeat(9, 28px); gap: 6px 0; }
+  .settings-hub .btn { min-height: 28px; padding-top: 2px; padding-bottom: 2px; }
+  .settings-hub__note { font-size: 12px; }
+}

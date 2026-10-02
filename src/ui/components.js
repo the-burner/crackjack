@@ -40,7 +40,7 @@ export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } =
 export function select(options, value, onChange, { mini = false, name } = {}) {
   const el = h('select', { name, onchange: () => onChange(options[el.selectedIndex].value) },
     options.map(o => h('option', {}, o.label)));
-  const wrap = h('label', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el);
+  const wrap = h('div', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el);
   wrap.setValue = v => { el.selectedIndex = Math.max(0, options.findIndex(o => o.value === v)); };
   wrap.setValue(value);
   wrap.control = el;
