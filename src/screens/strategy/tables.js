@@ -44,7 +44,10 @@ export function strategyTablesScreen(app, params = {}) {
   const columns = strategy.extended ? EXTENDED_COLUMNS : BASE_COLUMNS;
   const extended = strategy.extended;
 
-  let view = TABLE_VIEWS[0];
+  // `view` names the table to show; `highlight` marks one cell, which is how
+  // the game's Error button points at the decision that went wrong.
+  let view = (params.view && TABLE_VIEWS.find(v => v.table === params.view || v.key === params.view)) ?? TABLE_VIEWS[0];
+  const highlight = params.highlight ?? null;
   let showErrors = false;
   let tallies = null;
 
@@ -131,7 +134,9 @@ export function strategyTablesScreen(app, params = {}) {
           selected: !picked || Boolean(picked[row]?.[column]),
           errorCount: errors ? (errors[row]?.[column] ?? 0) : null,
         });
+        const marked = highlight && highlight.row === row && highlight.column === column;
         return h('td', {
+          class: marked ? 'grid__cell--marked' : null,
           dataset: { row: String(row), col: String(column) },
           style: { backgroundColor: cell.background, color: cell.color },
         }, cell.text);

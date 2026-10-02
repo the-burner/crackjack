@@ -159,3 +159,7 @@
 .tc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tc-row > .label { flex: 1; min-width: 0; }
 .tc-row > :not(.label) { flex: 0 0 150px; }
+
+/* The cell the game's Error button points at. */
+.grid__cell--marked { outline: 3px solid #000; outline-offset: -3px; animation: marked-cell 1.4s steps(1, end) infinite; }
+@keyframes marked-cell { 50% { outline-color: #fff; } }

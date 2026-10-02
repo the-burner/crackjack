@@ -299,3 +299,12 @@ test.describe('Casino Database', () => {
     await expect(el.locator('[data-action="last-update"]')).toHaveText('Last Update: Never');
   });
 });
+
+test('opens a named table with one cell marked', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.evaluate(() => window.app.open('strategy.tables', { view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }));
+  const screen = page.locator('[data-screen="strategy.tables"]:not([hidden])');
+  await expect(screen.locator('.topbar__title')).toHaveText('Last Error');
+  await expect(screen.locator('.tables__grid .grid__cell--marked')).toHaveCount(1);
+  await expect(screen.locator('.tables__grid tbody tr').nth(2).locator('td').nth(4)).toHaveClass(/marked/);
+});
