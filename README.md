@@ -24,23 +24,59 @@ the files the browser runs.
 | **Full Table Drills** | Count a whole table of hands at once (landscape). |
 | **Settings** | One set of rules, playing strategy and true-count settings shared by the game and the drills, plus each drill's own options. |
 
-Over 40 counting systems are built in, and you can import your own strategy and
-side-bet definitions by code. The casino database (CBJN) lets you load a real
-casino's rules.
+39 counting systems are built in (plus a hole-carding strategy), and you can
+import your own strategies and side-bet games by code. The casino database
+(CBJN) lets you load a real casino's rules. Importing and the casino database
+need an internet connection and `serve.sh` (see below); everything else works
+offline.
 
-## Running it locally
+## Trying it on a desktop browser
 
-The app is static files, but it must be **served** (not opened as `file://`),
-because it loads modules and data files over HTTP.
+You don't need a phone or any installation to try the app. You need
+[Node.js](https://nodejs.org/) 22 or newer.
 
 ```bash
-./serve.sh          # https://<your-mac>.local:8443/
+node tests/support/static-server.js 4173
+```
+
+Then open <http://127.0.0.1:4173/> in Chrome, Safari or Firefox. Any static
+file server works instead (for example `python3 -m http.server 4173`). The app
+must be **served**; opening `index.html` directly as a `file://` page doesn't
+work, because the browser won't load modules that way.
+
+Tips for desktop testing:
+
+- **Use a phone-sized window.** The app is laid out for phones. In Chrome open
+  DevTools (`Cmd+Option+I`), turn on the device toolbar (`Cmd+Shift+M`) and pick
+  an iPhone. Use its rotate button for landscape, which the Full Table Drills
+  need. A mouse drag works as a swipe on the table and in the Flash drill.
+- **Seeing your edits.** The app installs a service worker that caches every
+  file for offline use, so after editing a file a plain reload may show the old
+  version. In DevTools → Application → Service Workers, tick **Update on
+  reload** (or **Bypass for network**). Running `npm run precache` also makes the
+  next load pick up the changes.
+- **Starting fresh.** Settings, bankroll, statistics and imported strategies
+  are kept in local storage. **Reset Defaults** on the home screen resets the
+  settings only; to wipe everything use DevTools → Application → Storage →
+  **Clear site data**.
+- **Online features.** Strategy import, side-bet game import and the casino
+  database talk to qfit.com. The simple server above doesn't forward those
+  requests; use `./serve.sh` (next section) and open
+  <https://localhost:8443/> if you want to try them.
+
+## Serving it to a phone
+
+`serve.sh` serves the app over HTTPS, which iOS Safari requires before it will
+install a web app, and forwards the strategy-import, side-bet-import and
+casino-database requests to qfit.com.
+
+```bash
+./serve.sh          # https://<your-mac>.local:8443/  (also https://localhost:8443/)
 ./serve.sh 9000     # a different port
 ```
 
-`serve.sh` serves the app over HTTPS, which iOS Safari requires before it will
-install a web app. It uses [`mkcert`](https://github.com/FiloSottile/mkcert) to
-make a certificate your Mac trusts:
+It uses [`mkcert`](https://github.com/FiloSottile/mkcert) to make a certificate
+your Mac trusts:
 
 ```bash
 brew install mkcert nss
@@ -48,13 +84,8 @@ mkcert -install        # once per Mac
 ```
 
 On first run it writes a certificate for your Mac's `.local` hostname into
-`.certs/` (git-ignored). It also forwards the strategy-import and
-casino-database requests to qfit.com, which only work while you are online.
-
-Any static server works for quick local use; for example
-`node tests/support/static-server.js 4173` then open
-<http://127.0.0.1:4173/>. Service workers and installation need HTTPS or
-`localhost`.
+`.certs/` (git-ignored). Only the app's own files are served; the rest of the
+repository (tests, `.git`, the certificates) is not.
 
 ## Installing on an iPhone (offline home-screen app)
 
@@ -89,15 +120,16 @@ data for the site) clears them, and the app starts from the defaults in
 ## Development
 
 ```bash
-npm install            # dev dependencies (Vitest, Playwright)
-npm test               # unit tests
-npm run test:e2e       # browser tests
-npm run precache       # update the service worker's file list after changing files
+npm install                          # dev dependencies (Vitest, Playwright)
+npx playwright install chromium      # once, for the browser tests
+npm test                             # unit tests
+npm run test:e2e                     # browser tests (starts its own server on port 4173)
+npm run precache                     # update the service worker's file list after changing files
 ```
 
 Run `npm run precache` whenever you add, remove or change a file the app serves;
 it refreshes the list and version in `sw.js` so installed copies update
-themselves.
+themselves. The unit tests fail if you forget.
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and
   the conventions it follows.
@@ -105,4 +137,7 @@ themselves.
   rebuild behaves differently from the original apps, and why.
 - `tests/fixtures/` — behavior recorded from the original apps (strategy tables,
   play advice, counts, the drills' answers). The unit tests check the rebuild
-  against it.
+  against it. The original apps themselves were removed from the code base; the
+  git tag `original-apps-reference` marks the last commit that has them.
+- [`CLAUDE.md`](CLAUDE.md) — a short guide for AI coding assistants working in
+  this repository.
