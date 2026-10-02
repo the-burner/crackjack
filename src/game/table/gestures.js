@@ -20,8 +20,8 @@ const DIAGONAL_RATIO = 1.5;
 export function swipeAction({ dx, dy, insurance = false, minDistance = MIN_SWIPE }) {
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
-  // The original compared x against y here, so short vertical swipes were
-  // dropped and long horizontal ones were not; measure the real distance.
+  // Measure the real distance, so a short swipe is dropped whatever its
+  // direction.
   if (Math.hypot(dx, dy) < minDistance) return null;
   if (ax < DIAGONAL_RATIO * ay && ay < DIAGONAL_RATIO * ax) return 'surrender';
   if (ax > ay) return insurance ? 'pass' : dx < 0 ? 'stand' : 'split';

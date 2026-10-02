@@ -1,4 +1,4 @@
-// Common Rules (legacy frmOpts8).
+// Common Rules.
 
 import { TABLE_LIMITS } from '../../settings/schema.js';
 import { group, settingsScreen } from './controls.js';

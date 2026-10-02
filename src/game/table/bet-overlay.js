@@ -1,4 +1,4 @@
-// The betting overlay shown between rounds (the original's frmBets): a dark
+// The betting overlay shown between rounds: a dark
 // panel over the felt with one tile per bet the player's ramp allows, and the
 // side buttons for side bets, the bet editor, shuffling, the bankroll, a Foul
 // claim and the last strategy error.

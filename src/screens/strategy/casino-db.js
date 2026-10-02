@@ -1,4 +1,4 @@
-// Casino Database (legacy frmDB and frmDBDetail): the Current Blackjack News
+// Casino Database: the Current Blackjack News
 // list of casinos, their rules, and a button that loads those rules into the
 // game's settings.
 

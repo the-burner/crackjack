@@ -16,7 +16,7 @@ import {
   describeHand, rowOf, columnOf, ACTION_LABELS, SITUATION_LABELS,
 } from './logic.js';
 
-/** The answer buttons, in the two rows the original used, with their swipe hints. */
+/** The answer buttons, in two rows, with their swipe hints. */
 const ANSWER_BUTTONS = [
   [{ action: ACTION.double, label: 'Double', icon: 'arrow-u' },
     { action: ACTION.split, label: 'Split', icon: 'arrow-r' },

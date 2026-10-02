@@ -1,14 +1,13 @@
 // Rule interactions for the settings screens.
 //
-// Ports the legacy `DoOpt` implication / mutual-exclusion rules, the game-variant
-// bundles applied by `Select230__onchange`, and the pre-launch seat checks from
-// `Button1__onclick`. Everything here is pure: callers pass a `get(key)` reader
-// and receive a patch of settings to apply.
+// Rules that imply or exclude other rules, the rule bundles that come with each
+// game variant, and the seat check run before the table opens. Everything here
+// is pure: callers pass a `get(key)` reader and receive a patch of settings to
+// apply.
 //
 // Enum settings (hard/soft doubles, insurance, surrender, split limit, blackjack
-// payout, 777 bonus, peek mode) already encode the mutual exclusions the legacy
-// code implemented with groups of booleans, so only the cross-setting rules are
-// listed below.
+// payout, 777 bonus, peek mode) already encode their mutual exclusions as a
+// single value, so only the cross-setting rules are listed below.
 
 import { SETTINGS_SCHEMA } from './schema.js';
 
@@ -148,7 +147,7 @@ export function applyRuleChange(get, key, value) {
 /**
  * Selects a side-bet / unusual game and applies its rule bundle. Rules the
  * previous variant forced, and the new one does not, go back to their defaults;
- * unrelated options are left alone (the legacy screen cleared a dozen of them).
+ * unrelated options are left alone.
  * @param {(key: string) => *} get
  * @param {number} gameId
  * @returns {Record<string, *>}
@@ -167,10 +166,9 @@ export function applyGameChange(get, gameId) {
 }
 
 /**
- * Seat check run before the table opens (legacy `Button1__onclick`): at least
- * one seat in play must be free for the player. The original also cut a
- * portrait table to two seats; the table now fits up to four seats in portrait
- * by itself, so the saved seat count is left alone.
+ * Seat check run before the table opens: at least one seat in play must be
+ * free for the player. The table fits up to four seats in portrait by itself,
+ * so the saved seat count is left alone.
  * @param {(key: string) => *} get
  * @returns {{changes: Record<string, *>}}
  */

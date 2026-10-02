@@ -1,4 +1,4 @@
-// Bonuses (legacy frmOpts6): blackjack payouts and oddball bonus payouts.
+// Bonuses: blackjack payouts and oddball bonus payouts.
 
 import { group, settingsScreen } from './controls.js';
 

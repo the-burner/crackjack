@@ -68,7 +68,7 @@ export function tokenize(text) {
   return { name, tokens: body.split('|').slice(2) };
 }
 
-/** Reads tokens sequentially, converting them like the original loader did. */
+/** Reads tokens sequentially, converting each to the type asked for. */
 class TokenReader {
   constructor(tokens) {
     this.tokens = tokens;

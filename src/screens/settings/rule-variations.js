@@ -1,4 +1,4 @@
-// Rule Variations (legacy frmOpts2): the less common rules.
+// Rule Variations: the less common rules.
 
 import { group, settingsScreen } from './controls.js';
 

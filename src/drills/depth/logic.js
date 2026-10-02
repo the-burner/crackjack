@@ -156,7 +156,7 @@ export const TRAY_CAPACITY = {
 
 /**
  * A tray style that can hold `decks` decks: the chosen one when it fits, else
- * the next bigger one (what the original silently switched to).
+ * the next bigger one.
  */
 export function trayStyleFor(style, decks) {
   if (TRAY_CAPACITY[style] >= decks) return style;

@@ -1,4 +1,4 @@
-// Allowed Bets (legacy frmBet and frmBetSelect): the table of bets the player
+// Allowed Bets: the table of bets the player
 // may make, optionally tied to the count so betting errors can be flagged.
 
 import { h, replaceChildren } from '../../ui/dom.js';

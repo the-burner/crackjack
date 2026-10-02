@@ -225,16 +225,19 @@ test.describe('depth drill', () => {
   test('counts a wrong tap as an error', async ({ page }) => {
     await open(page, { 'drills.depth.decks': 6, 'drills.depth.resolution': 'full', 'drills.depth.seconds': 60, 'drills.depth.accuracy': 0 });
     const screen = await launch(page, DRILLS[1]);
-    // Six decks at full resolution offer 1..5; tapping each in turn must hit the
-    // right one, and the ones before it count as errors.
-    for (let column = 1; column < 6; column++) {
-      await tapCell(screen, { row: 0, column, rows: 1, columns: 6 });
-      await page.waitForTimeout(200);
-      if ((await statsText(screen)).includes('Tests: 2')) break;
+    // Six decks at full resolution offer 1..5. Tapping each in turn reaches the
+    // right one, and every tap before it is an error. The answer is random, so
+    // the first tap may happen to be right; keep going until a test has had a
+    // wrong tap (five tests in a row answered first time is a 1-in-3125 chance).
+    for (let test = 1; test <= 5; test++) {
+      for (let column = 1; column < 6; column++) {
+        await tapCell(screen, { row: 0, column, rows: 1, columns: 6 });
+        await page.waitForTimeout(200);
+        if ((await statsText(screen)).includes(`Tests: ${test + 1}`)) break;
+      }
+      if (!(await statsText(screen)).includes('Accuracy: 100%')) break;
     }
-    const stats = await statsText(screen);
-    expect(stats).toContain('Tests: 2');
-    expect(stats).not.toContain('Accuracy: 100%');
+    expect(await statsText(screen)).not.toContain('Accuracy: 100%');
   });
 
   test('restarts and goes back', async ({ page }) => {

@@ -2,22 +2,21 @@
 //
 // `betting.ramp` is `{ minCount, rows: [{chips, hands}, ...] }`. Row 0 applies
 // at `minCount` "or less", the last row at `minCount + rows.length - 1` "or
-// more". The original app spread the same information over three counters
-// (`sscntstart`, `bbscntcheat`, `sscntstop`) plus two 22-entry arrays
-// (`scbt` = chips, `schd` = hands); the conversions below are kept so the
-// recorded reference data can be compared against the new shape.
+// more". The same table can also be held as a packed form: three counters
+// (`offset`, `base`, `top`) plus two fixed-length arrays (`chipCounts`,
+// `handCounts`); the conversions below translate between the two.
 
 /** Chip counts offered on the bet-select screen. */
 export const CHIP_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25, 50, 100, 200];
 /** Numbers of hands offered on the bet-select screen. */
 export const HAND_CHOICES = [1, 2, 3, 4, 5, 6];
-/** Largest total number of chips (chips x hands) the original allowed. */
+/** Largest total number of chips (chips x hands) on one bet. */
 export const MAX_CHIPS = 200;
 /** Allowed number of rows in the table. */
 export const MIN_ROWS = 1;
 export const MAX_ROWS = 18;
-/** Rows the original app's arrays could hold. */
-const LEGACY_ROWS = 22;
+/** Length of the packed form's arrays. */
+const PACKED_ROWS = 22;
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
@@ -60,7 +59,7 @@ export const rowCounts = ramp => normalizeRamp(ramp).rows.map((_, i) => ramp.min
 /**
  * The text of the "Count" column. A single row has no count at all; otherwise
  * the first row reads "<=n" and the last ">=n". With counts hidden every row
- * shows "-", as the original did when betting warnings were off.
+ * shows "-".
  * @param {object} ramp
  * @param {{showCounts?: boolean}} [o]
  */
@@ -110,10 +109,7 @@ export function checkBet({ ramp, count, chipValue, hands, total }) {
   };
 }
 
-/**
- * The original app's encoding of one row as a single number
- * (`bbvals`: chips plus 1000 per extra hand).
- */
+/** One row encoded as a single number: chips plus 1000 per extra hand. */
 export const encodeRow = ({ chips, hands }) => chips + (hands - 1) * 1000;
 
 /** Inverse of encodeRow. */
@@ -122,26 +118,26 @@ export function decodeRow(value) {
 }
 
 /**
- * The original app's three counters and two arrays for a ramp.
- * @returns {{sscntstart: number, bbscntcheat: number, sscntstop: number, scbt: number[], schd: number[]}}
+ * The packed form of a ramp: three counters and two arrays.
+ * @returns {{offset: number, base: number, top: number, chipCounts: number[], handCounts: number[]}}
  */
-export function toLegacyRamp(ramp) {
+export function toPackedRamp(ramp) {
   const { minCount, rows } = normalizeRamp(ramp);
-  const scbt = new Array(LEGACY_ROWS).fill(0);
-  const schd = new Array(LEGACY_ROWS).fill(1);
-  rows.forEach(({ chips, hands }, i) => { scbt[i] = chips; schd[i] = hands; });
-  // Every UI path leaves sscntstart at -1 and puts the count in bbscntcheat.
-  return { sscntstart: -1, bbscntcheat: minCount + 1, sscntstop: minCount + rows.length - 1, scbt, schd };
+  const chipCounts = new Array(PACKED_ROWS).fill(0);
+  const handCounts = new Array(PACKED_ROWS).fill(1);
+  rows.forEach(({ chips, hands }, i) => { chipCounts[i] = chips; handCounts[i] = hands; });
+  // The offset is always -1, so the minimum count is carried by `base`.
+  return { offset: -1, base: minCount + 1, top: minCount + rows.length - 1, chipCounts, handCounts };
 }
 
-/** Reads a ramp out of the original app's counters and arrays. */
-export function fromLegacyRamp({ sscntstart, bbscntcheat, sscntstop, scbt, schd }) {
-  const minCount = sscntstart + bbscntcheat;
-  const count = sscntstop - bbscntcheat + 2;
+/** Reads a ramp out of its packed form. */
+export function fromPackedRamp({ offset, base, top, chipCounts, handCounts }) {
+  const minCount = offset + base;
+  const count = top - base + 2;
   const rows = [];
   for (let i = 0; i < count; i++) {
-    const slot = sscntstart + 1 + i;
-    rows.push({ chips: scbt[slot], hands: schd[slot] });
+    const slot = offset + 1 + i;
+    rows.push({ chips: chipCounts[slot], hands: handCounts[slot] });
   }
   return normalizeRamp({ minCount, rows });
 }

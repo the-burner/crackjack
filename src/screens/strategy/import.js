@@ -1,4 +1,4 @@
-// Import Strategy (legacy frmImport): download a strategy exported by Casino
+// Import Strategy: download a strategy exported by Casino
 // Verite Blackjack on a PC and add it to the strategy list.
 
 import { h } from '../../ui/dom.js';

@@ -2,9 +2,8 @@
 //
 // A definition is one string: a leading `|`, the game name, then a long run of
 // `|`-separated fields in which `(`, `)`, `[`, `]`, `#`, `~` and `@` stand for
-// common field runs. The legacy decoder lived inside `Select230__onchange`; this
-// module is the same algorithm as a pure function. Field order and meanings come
-// from `.reference/specs/game-engine.md` section 12.
+// common field runs. This module expands the shorthand and reads the fields, in
+// order, into a structured game definition.
 
 /** Number of bonus/side-bet rules in every definition. */
 export const RULE_COUNT = 20;
@@ -32,7 +31,7 @@ function fields(definition) {
     .replaceAll('#', '|10')
     .replaceAll('~', '|10')
     .replaceAll('@', '|0');
-  // The legacy reader starts at index 2: field 0 is the text before the leading
+  // Reading starts at index 2: field 0 is the text before the leading
   // `|` (empty) and field 1 is a separator left over from the name.
   return expanded.split('|').slice(2);
 }

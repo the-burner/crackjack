@@ -1,10 +1,9 @@
 // Where everything sits on the table, worked out from the viewport size.
 //
 // Pure geometry: no DOM, no canvas. The renderer and the screen read the
-// returned layout. Proportions follow the original `genlocs`: the seats arc
-// along the bottom of the felt, each hand fans up and to the right, split
-// hands step to the left, the dealer's hand sits above the middle, the discard
-// tray is top left and the shoe top right.
+// returned layout. The seats arc along the bottom of the felt, each hand fans
+// up and to the right, split hands step to the left, the dealer's hand sits
+// above the middle, the discard tray is top left and the shoe top right.
 
 import { cardWidthFor, CARD_ASPECT } from '../../ui/card-sprites.js';
 
@@ -143,7 +142,7 @@ function buildSeat({ seat, x, y, cardWidth, cardHeight, stepUp, stepRight, split
 
 /**
  * Dealer card slots. The hole card takes the leftmost slot so the up card and
- * every card after it stay readable (the original swapped the same two slots).
+ * every card after it stay readable.
  */
 function dealerSlots({ width, cardWidth, cardHeight, portrait, topOfSeats, tray }) {
   const step = Math.max(10, Math.round(cardWidth * DEALER_STEP));

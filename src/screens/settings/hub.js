@@ -1,4 +1,4 @@
-// The settings hub (legacy frmOpts0): navigation to every option screen.
+// The settings hub: navigation to every option screen.
 
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';

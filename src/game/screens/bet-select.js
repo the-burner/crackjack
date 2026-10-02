@@ -1,4 +1,4 @@
-// The detailed bet picker (the original's frmBetSelect, "Allowed Bets"): a row
+// The detailed bet picker ("Allowed Bets"): a row
 // of spot counts and a grid of chip counts, plus a custom amount.
 
 import { h } from '../../ui/dom.js';

@@ -24,7 +24,7 @@ const TABLE_ROWS = {
   softDouble: [9, 8, 7, 6, 5, 4, 3, 2],
 };
 
-/** The order the original scanned the tables in when building a hand list. */
+/** The order the tables are scanned in when building a hand list. */
 const SCAN_ORDER = ['hardStand', 'hardDouble', 'split', 'surrender', 'softStand', 'softDouble'];
 
 /** Table row for a list entry. */
@@ -37,7 +37,7 @@ export const upcardOf = column => (column === 9 ? 1 : column + 2);
 const entry = (kind, upcard, value) => ({ kind, upcard, value });
 
 /**
- * The 127 "Default Hands", weighted by repetition the way the original was.
+ * The 127 "Default Hands", weighted by repetition.
  * Each line is one dealer upcard and the hand values drilled against it.
  */
 const DEFAULT_HANDS = [
@@ -67,7 +67,7 @@ const FIXED_LISTS = { default: DEFAULT_HANDS, illustrious18: ILLUSTRIOUS_18_HAND
 const hasIndex = value => value !== ALWAYS && value !== NEVER;
 
 /**
- * Scans the strategy tables (column by column, as the original did) and keeps
+ * Scans the strategy tables (column by column) and keeps
  * the cells `keep(table, row, column)` accepts.
  */
 function scanTables(situations, keep) {
@@ -114,7 +114,7 @@ export function buildHandList({ hands, situations, strategy, customMask, tallies
 /** Picks the random extra ranks that fill a hand up to its total. */
 function randomRank(maxCards, random) {
   if (maxCards !== 5) return randomInt(10, random);
-  // With five cards the original re-mapped J/Q/K onto 2/3/4, favouring small cards.
+  // With five cards J/Q/K are re-mapped onto 2/3/4, favouring small cards.
   const rank = randomInt(13, random);
   return rank > 10 ? rank - 9 : rank;
 }
@@ -281,7 +281,7 @@ export function countForHand({ countMode, fixedCount, index }, random) {
 /**
  * The strategy-correct action for a hand at the shown count.
  * Only the situations the user enabled are allowed, so turning Splits off makes
- * Stand the right answer for 8,8 — as the original did.
+ * Stand the right answer for 8,8.
  * @returns {{action: number, section: number, row: number, sectionRows: object}}
  */
 export function correctPlay(strategy, hand, { count, situations, doubleAnyCards, splitAlwaysAllowed = false }) {
@@ -315,7 +315,7 @@ const SECTION_TABLES = {
 };
 
 /**
- * Where an error belongs in the strategy tables. The original filed it under
+ * Where an error belongs in the strategy tables: it is filed under
  * the earlier of the two tables involved (the one the player's action would
  * have come from, or the one that decided), which is the more basic decision.
  * @returns {{table: string, row: number, column: number}|null}

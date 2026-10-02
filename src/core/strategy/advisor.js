@@ -312,7 +312,7 @@ function standUnlessCardsOr678(code, ncards, card1, card2, id1, id2) {
   const partOf678 = (card1 === 6 && card2 === 7) || (card1 === 6 && card2 === 8) || (card1 === 7 && card2 === 8);
   if (ncards === 2 && partOf678) {
     if (code === CODE.standUnless4CardsOr678 || code === CODE.standUnless5CardsOr678) action = ACTION.hit;
-    // Legacy check compares ranks (id % 13), not suits.
+    // Deliberately compares ranks (id % 13), not suits.
     if (code === CODE.standUnless5CardsOrSuited678 && id1 % 13 === id2 % 13) action = ACTION.hit;
     if ((code === CODE.standUnless5CardsOrSpaded678 || code === CODE.standUnless6CardsOrSpaded678) && id1 <= 13 && id2 <= 13) action = ACTION.hit;
   }

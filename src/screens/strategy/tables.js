@@ -1,4 +1,4 @@
-// Strategy table viewer (legacy frmtabhn). Shows one of the six playing tables
+// Strategy table viewer. Shows one of the six playing tables
 // of the selected strategy, or its counting parameters, with the legend and the
 // list of specialty plays. In "editMask" mode tapping a cell picks or unpicks
 // it in a 6 x 10 x 10 boolean mask held in a setting.

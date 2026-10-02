@@ -1,4 +1,4 @@
-// Play Variations (legacy frmOpts7): dealer behavior and unusual rules.
+// Play Variations: dealer behavior and unusual rules.
 
 import { group, settingsScreen } from './controls.js';
 

@@ -1,6 +1,4 @@
-// Speed/Mechanics (legacy frmOpts4): the three speed sliders and the
-// operational switches. The legacy error-log options are gone (see
-// docs/CHANGES-FROM-LEGACY.md).
+// Speed/Mechanics: the three speed sliders and the operational switches.
 
 import { group, settingsScreen } from './controls.js';
 

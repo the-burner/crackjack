@@ -1,4 +1,4 @@
-// True Count Calcs (legacy frmTC): how the running count is turned into a true
+// True Count Calcs: how the running count is turned into a true
 // count. The arithmetic itself lives in core/counting.js.
 
 import { h } from '../../ui/dom.js';

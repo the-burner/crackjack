@@ -1,5 +1,5 @@
 // The grid of answer buttons the Depth, Count and Full drills use, drawn on a
-// canvas with the original bevelled look.
+// canvas with a bevelled look.
 //
 // A grid is a list of cells; each cell has a label, a position (row, column)
 // and the answer it stands for. Cells with no label are gaps.
@@ -112,8 +112,8 @@ export function numberGrid({ rows, columns, lowest, format = String, include = (
 
 /**
  * Shifts a window of consecutive values so it contains `answer`.
- * The original moved the window by half its size at a time and kept the new
- * position for later tests.
+ * The window moves by half its size at a time and keeps the new position for
+ * later tests.
  * @returns {number} the new lowest value of the window
  */
 export function windowContaining(answer, lowest, size) {

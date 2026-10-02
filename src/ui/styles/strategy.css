@@ -9,7 +9,7 @@
 /* `display: flex` on a component beats the hidden attribute, so say it again. */
 .btn[hidden], .tables__below[hidden], .tables__legend[hidden], .tc-row[hidden] { display: none; }
 
-/* Grids. The original used NSB.Grid: a slate header and ridged cell borders. */
+/* Grids: a slate header and ridged cell borders. */
 .grid {
   width: 100%;
   border-collapse: collapse;
@@ -93,7 +93,7 @@
 .bet-pad__btn:disabled { opacity: 0.35; cursor: default; }
 
 /* Casino database. The id, Update and date row sit at the bottom of the screen
-   and the result list fills whatever is left, as in the original. */
+   and the result list fills whatever is left. */
 .casino-screen .screen__body { display: flex; overflow: hidden; }
 .casino { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
 .casino__list {

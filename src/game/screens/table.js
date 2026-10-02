@@ -1,4 +1,4 @@
-// The playing table (the original's frmTable).
+// The playing table.
 //
 // The session owns the rules, the shoe, the bankroll and the strategy checks;
 // this screen owns the picture of the table and the pace of play. The engine
@@ -24,7 +24,7 @@ import { dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessag
 
 /** How long a status message stays up. */
 const STATUS_MS = 3500;
-/** The insurance offer passes itself after this long, as the original did. */
+/** The insurance offer passes itself after this long. */
 const INSURANCE_MS = 5000;
 
 const ACTION_LABELS = [
@@ -247,7 +247,7 @@ export function tableScreen(app) {
     passButton.hidden = hidden || !offering;
   }
 
-  /** Every way in refuses while a timeline is playing (legacy race). */
+  /** Every way in refuses while a timeline is playing, so input cannot race it. */
   const accepting = () => !animator.busy && !overlay.visible;
 
   function play(action) {
@@ -258,7 +258,7 @@ export function tableScreen(app) {
 
   /**
    * Asks "Are you sure?" before an obviously bad play and refuses it once. The
-   * next such play goes through, as the original's toggle did.
+   * next such play goes through.
    */
   function queryBadPlay(action) {
     if (!settings.get('mechanics.dealerPointsOutStupidPlays')) return false;
@@ -473,7 +473,7 @@ export function tableScreen(app) {
 
   /**
    * Chips on the table belong to the player: hand them back rather than
-   * abandoning the round (the original kept them).
+   * abandoning the round with them.
    */
   function refundOpenBets() {
     if (session.state === STATE.betting || session.state === STATE.settled) return;
@@ -524,7 +524,7 @@ export function tableScreen(app) {
 
 const round1 = n => Math.round(n * 10) / 10;
 
-/** Chip labels drop the cents when there are none, as the original did. */
+/** Chip labels drop the cents when there are none. */
 const money = amount => `$${amount.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 })}`;
 
 /** The bankroll always shows cents. */

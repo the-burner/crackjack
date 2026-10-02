@@ -1,4 +1,4 @@
-// Peeking (legacy frmOpts9): seeing the dealer's hole card and the strategies
+// Peeking: seeing the dealer's hole card and the strategies
 // used once it has been seen.
 
 import { h } from '../../ui/dom.js';
@@ -36,7 +36,7 @@ export function peekingScreen(app) {
   return { el };
 }
 
-/** A control with its label to the right of it, as on the legacy screen. */
+/** A control with its label to the right of it. */
 function trailingLabel(control, label) {
   return h('div', { class: 'settings-row' }, control, h('span', { class: 'label' }, label));
 }

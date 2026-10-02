@@ -1,19 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
   CHIP_CHOICES, MAX_CHIPS, MAX_ROWS, checkBet, countLabels, decodeRow, encodeRow,
-  formatRow, fromLegacyRamp, maxChipsForHands, normalizeRamp, rowCounts,
-  rowForCount, setRow, setRowCount, toLegacyRamp,
+  formatRow, fromPackedRamp, maxChipsForHands, normalizeRamp, rowCounts,
+  rowForCount, setRow, setRowCount, toPackedRamp,
 } from '../../../src/settings/bet-ramp.js';
 import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
 
 const DEFAULT_RAMP = SETTINGS_SCHEMA['betting.ramp'].default;
-/** The original app's fresh-install values for the three bet-table counters. */
-const LEGACY_DEFAULT = {
-  sscntstart: -1,
-  bbscntcheat: 1,
-  sscntstop: 4,
-  scbt: [1, 2, 5, 10, 15, ...new Array(17).fill(0)],
-  schd: new Array(22).fill(1),
+/** The packed form of the fresh-install bet table. */
+const PACKED_DEFAULT = {
+  offset: -1,
+  base: 1,
+  top: 4,
+  chipCounts: [1, 2, 5, 10, 15, ...new Array(17).fill(0)],
+  handCounts: new Array(22).fill(1),
 };
 
 describe('normalizeRamp', () => {
@@ -21,7 +21,7 @@ describe('normalizeRamp', () => {
     expect(normalizeRamp(DEFAULT_RAMP)).toEqual(DEFAULT_RAMP);
   });
 
-  it('gives an empty row one chip on one hand, as FillBA did', () => {
+  it('gives an empty row one chip on one hand', () => {
     expect(normalizeRamp({ minCount: 0, rows: [{ chips: 0, hands: 0 }] }))
       .toEqual({ minCount: 0, rows: [{ chips: 1, hands: 1 }] });
   });
@@ -121,19 +121,19 @@ describe('checkBet', () => {
   });
 });
 
-describe('legacy encoding', () => {
+describe('packed encoding', () => {
   it('round-trips the fresh-install bet table', () => {
-    expect(fromLegacyRamp(LEGACY_DEFAULT)).toEqual(DEFAULT_RAMP);
-    expect(toLegacyRamp(DEFAULT_RAMP)).toEqual(LEGACY_DEFAULT);
+    expect(fromPackedRamp(PACKED_DEFAULT)).toEqual(DEFAULT_RAMP);
+    expect(toPackedRamp(DEFAULT_RAMP)).toEqual(PACKED_DEFAULT);
   });
 
-  it('puts the minimum count in bbscntcheat', () => {
-    const legacy = toLegacyRamp({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
-    expect(legacy).toMatchObject({ sscntstart: -1, bbscntcheat: 4, sscntstop: 4 });
-    expect(fromLegacyRamp(legacy)).toEqual({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
+  it('puts the minimum count in base', () => {
+    const packed = toPackedRamp({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
+    expect(packed).toMatchObject({ offset: -1, base: 4, top: 4 });
+    expect(fromPackedRamp(packed)).toEqual({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
   });
 
-  it('round-trips ramps through the bbvals cell encoding', () => {
+  it('round-trips ramps through the single-number row encoding', () => {
     for (const hands of [1, 2, 6]) {
       for (const chips of CHIP_CHOICES.filter(c => c * hands <= MAX_CHIPS)) {
         expect(decodeRow(encodeRow({ chips, hands }))).toEqual({ chips, hands });
@@ -141,8 +141,8 @@ describe('legacy encoding', () => {
     }
   });
 
-  it('encodes a multi-hand bet the way DoConv did', () => {
-    // DoConv read "3x10" as 10 + 3 * 1000 - 1000.
+  it('encodes a multi-hand bet as chips plus 1000 per extra hand', () => {
+    // "3x10" is 10 + 3 * 1000 - 1000.
     expect(encodeRow({ chips: 10, hands: 3 })).toBe(10 + 3 * 1000 - 1000);
   });
 

@@ -1,8 +1,8 @@
 // Settings-bound controls.
 //
 // Every control writes through `applyRuleChange`, so a change that implies other
-// rules updates them too, and then re-reads the whole form — the legacy screens
-// did the same by re-rendering their checkbox lists after each tap.
+// rules updates them too, and then re-reads the whole form so every control
+// shows the result.
 
 import { h } from '../../ui/dom.js';
 import { checkList, select, slider, valueButton } from '../../ui/components.js';

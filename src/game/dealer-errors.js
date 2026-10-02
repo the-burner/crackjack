@@ -5,7 +5,7 @@
 // it costs the player, and what a Foul claim or a missed error is worth. The
 // table screen applies the result.
 //
-// Unlike the original, the refund for a caught error and the cost reported for
+// The refund for a caught error and the cost reported for
 // a missed one are the same number: exactly what the player was short.
 
 /** The mistakes a dealer can make. */

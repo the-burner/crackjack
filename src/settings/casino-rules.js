@@ -10,7 +10,7 @@ const FIELDS = [
   'rules', 'minBet', 'maxBet', 'decks', 'tables',
 ];
 
-/** Largest number of search results the original app showed. */
+/** Largest number of search results shown. */
 export const MAX_RESULTS = 50;
 
 /**

@@ -1,7 +1,6 @@
 /* Settings screens. */
 
-/* One centred column of control groups, two side by side when there is room
-   (the legacy screens did the same in landscape). */
+/* One centred column of control groups, two side by side when there is room. */
 .settings-cols {
   display: grid;
   grid-template-columns: minmax(0, 365px);
@@ -17,7 +16,7 @@
 .settings-note { margin: 0 0 10px; }
 .settings-group .settings-note { margin: 0; }
 
-/* Label on one side of a control, as the legacy value and strategy rows were. */
+/* Label on one side of a control, for the value and strategy rows. */
 .settings-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
 .settings-row[hidden] { display: none; }
 .settings-row > .label { flex: 1 1 auto; }
@@ -30,7 +29,7 @@
 .peeking-modes > .checklist { flex: 1 1 auto; }
 .peeking-modes > .select { flex: 0 0 110px; }
 
-/* The Unusual Games explanation, shown in the legacy textarea's white box. */
+/* The Unusual Games explanation, shown in a scrolling white box. */
 .settings-prose {
   max-height: 46vh;
   overflow-y: auto;

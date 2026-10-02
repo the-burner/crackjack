@@ -2,10 +2,10 @@
 //
 // The engine runs to completion and reports what happened; this turns that list
 // into a timeline of steps with a pause and a sound each, and plays it one step
-// at a time. Input is blocked while a timeline is playing (the original let a
-// tap land in the middle of an animation and corrupt the queue).
+// at a time. Input is blocked while a timeline is playing, so a tap cannot land
+// in the middle of an animation and corrupt the queue.
 
-/** Speeds are 1..100; the original turned one into a pause of (101-s)/120 s. */
+/** Speeds are 1..100; speed s is a pause of (101-s)/120 s. */
 export const pauseForSpeed = speed => Math.round(((101 - clampSpeed(speed)) / 120) * 1000);
 
 const clampSpeed = speed => Math.min(100, Math.max(1, Number(speed) || 1));

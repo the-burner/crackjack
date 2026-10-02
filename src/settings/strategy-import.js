@@ -4,7 +4,7 @@
 
 import { parseStrategyFile } from '../core/strategy/strategy-file.js';
 
-/** The download URL for an export code. Site-root relative, as in the original. */
+/** The download URL for an export code, relative to the site root. */
 export const strategyCodeUrl = code => `/Apps/z${encodeURIComponent(String(code).trim().toLowerCase())}.php`;
 
 /** The server escapes spaces in strategy names. */
@@ -12,8 +12,8 @@ export const normalizeImportedText = text => String(text).replaceAll('%20', ' ')
 
 /**
  * True when `text` really is a strategy file: "|<name>|<encoded tables>" that
- * parses into card values and a deck count. The original stored whatever the
- * server returned, so a server error page became an unusable "strategy".
+ * parses into card values and a deck count. Checked so that a server error
+ * page is never stored as an unusable "strategy".
  */
 export function isStrategyFileText(text) {
   if (typeof text !== 'string' || !text.startsWith('|')) return false;

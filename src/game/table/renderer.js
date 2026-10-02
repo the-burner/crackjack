@@ -80,7 +80,7 @@ export function createTableRenderer(canvas) {
   };
 }
 
-/** The felt photograph, stretched over the whole table as the original did. */
+/** The felt photograph, stretched over the whole table. */
 function drawFelt(ctx, layout) {
   ctx.fillStyle = FELT_FALLBACK;
   ctx.fillRect(0, 0, layout.width, layout.height);

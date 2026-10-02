@@ -1,4 +1,4 @@
-// The statistics screen (the original's frmStats): the counts, the bankroll and
+// The statistics screen: the counts, the bankroll and
 // bet history, how accurate the player has been, and the switches that control
 // what the table itself shows.
 
@@ -7,7 +7,7 @@ import { button, checkList } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
 import { confirm } from '../../ui/dialogs.js';
 
-/** The in-table readouts, in the order the original listed them. */
+/** The in-table readouts, in display order. */
 const DISPLAY_OPTIONS = [
   ['display.showBetAccuracy', 'Display Bet Accuracy'],
   ['display.showPlayAccuracy', 'Display Play Accuracy'],
@@ -31,7 +31,7 @@ export function gameStatsScreen(app, { session } = {}) {
     onChange: on => settings.set(key, on),
   })));
 
-  /** A section heading row, shown across both columns as the original was. */
+  /** A section heading row, shown across both columns. */
   const section = name => ({ label: name, value: name, head: true });
   const row = (label, value) => ({ label, value });
 

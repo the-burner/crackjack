@@ -216,7 +216,7 @@ describe('insurance and counts', () => {
 });
 
 describe('High-Low hard hit/stand grid', () => {
-  // The cells shown in .reference/specs/img/game-frmtabhn.png.
+  // The cells the original app showed for this table.
   const table = buildStrategy(STRATEGY_FILES[30], SCREENSHOT).tables.hardStand;
   const v = view('hardStand');
 

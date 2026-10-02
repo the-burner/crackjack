@@ -10,9 +10,9 @@ import { rankOf, suitOf, valueOf, handTotals } from '../../core/cards.js';
 /**
  * Card-pattern codes in `rule.mixMatch[2]`.
  *
- * The codes were derived from the published pay tables of the built-in games
- * (see `.reference/specs/game-engine.md` section 12.3): the order of the rules
- * in each definition matches its documented tiers only with this mapping.
+ * The codes were derived from the published pay tables of the built-in games:
+ * the order of the rules in each definition matches its documented tiers only
+ * with this mapping.
  */
 const PATTERN = {
   none: 0, pair: 1, trips: 2, straight: 3, flush: 4, straightFlush: 5,

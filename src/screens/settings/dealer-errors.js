@@ -1,4 +1,4 @@
-// Dealer Errs/Biases (legacy frmOpts5): deliberate dealer mistakes and a
+// Dealer Errs/Biases: deliberate dealer mistakes and a
 // non-random dealing bias.
 
 import { group, settingsScreen } from './controls.js';

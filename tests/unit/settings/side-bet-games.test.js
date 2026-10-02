@@ -37,7 +37,7 @@ describe('decodeSideBetGame', () => {
     const rules = enabled(game);
     expect(rules).toHaveLength(7);
     expect(rules.map(rule => rule.payTenths)).toEqual([25, 25, 25, 25, 25, 25, 25]);
-    // Player's two cards plus the up card, patterns in the legacy order.
+    // Player's two cards plus the up card, patterns in the order the definition lists them.
     expect(rules.map(rule => rule.mixMatch)).toEqual([
       [3, 1, 5], [3, 1, 2], [3, 1, 7], [3, 1, 3], [3, 1, 4], [3, 1, 1], [3, 1, 6],
     ]);

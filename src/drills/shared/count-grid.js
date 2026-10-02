@@ -4,7 +4,7 @@
 // The grid shows 18 consecutive *answer indices*. For most drills an index is
 // the answer itself; for half-point counting systems one index is half a point,
 // so the labels show halves and the "within 1" tolerance means within half a
-// point — exactly as the original did.
+// point.
 
 import { numberGrid, windowContaining } from './answer-grid.js';
 import { mixedNumber } from './format.js';
@@ -12,7 +12,7 @@ import { mixedNumber } from './format.js';
 const GRID_ROWS = 3;
 const GRID_COLUMNS = 6;
 const GRID_SIZE = GRID_ROWS * GRID_COLUMNS;
-/** Where the window starts: zero sits in the middle row, as it did originally. */
+/** Where the window starts: zero sits in the middle row. */
 export const INITIAL_WINDOW = -8;
 
 /** A grid of the 18 indices starting at `lowest`, lowest at the bottom left. */

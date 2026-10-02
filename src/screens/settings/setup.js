@@ -1,4 +1,4 @@
-// Basic Setup (legacy frmOpts1): seats, shoe, burn cards and bankroll.
+// Basic Setup: seats, shoe, burn cards and bankroll.
 
 import { h } from '../../ui/dom.js';
 import { button, checkList } from '../../ui/components.js';
@@ -37,8 +37,8 @@ export function setupScreen(app) {
   const clampCutCard = () => settings.set('table.cardsBehindCutCard',
     Math.min(settings.get('table.cardsBehindCutCard'), maxCardsBehindCutCard()));
 
-  // The shuffle point and the number of rounds share one row, as in the legacy
-  // screen: which one is shown depends on the shuffle mode.
+  // The shuffle point and the number of rounds share one row: which one is
+  // shown depends on the shuffle mode.
   const cutCardRow = form.number('Shuffle Point/Cards:', 'table.cardsBehindCutCard', {
     prompt: 'Cards after the cut card',
     clamp: value => Math.min(value, maxCardsBehindCutCard()),

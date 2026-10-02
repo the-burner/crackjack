@@ -1,4 +1,4 @@
-// Playing Strategy (legacy frmStrats): which counting system to play, how many
+// Playing Strategy: which counting system to play, how many
 // of its indices to use, the rules the tables are built for, and the two ways
 // to get more tables (import, display).
 

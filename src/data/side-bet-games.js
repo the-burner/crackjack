@@ -1,12 +1,11 @@
-// Built-in side-bet / bonus game definitions, copied verbatim from the legacy
-// `BoncT` table (`.reference/game/fn/frmMain__onshow.js`). The string encoding is
-// described in `.reference/specs/game-engine.md` section 12; `decodeSideBetGame`
-// in `src/settings/side-bet-games.js` turns one into a structured object.
+// Built-in side-bet / bonus game definitions. The string encoding is decoded by
+// settings/side-bet-games.js; `decodeSideBetGame` turns one into a structured
+// object.
 //
 // Ids 2001 (Blackjack Switch) and 2002 (Double Exposure) are rule variants with no
 // side-bet definition, and id 0 is plain blackjack, so none of them appear below.
 
-/** Selectable built-in games, in the order the legacy list showed them. */
+/** Selectable built-in games, in the order the game list shows them. */
 export const BUILTIN_SIDE_BET_GAMES = [
   { id: 0, name: "Standard Blackjack" },
   { id: 1, name: "21 + 3 Blackjack (Regent)" },

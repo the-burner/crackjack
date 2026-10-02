@@ -1,4 +1,4 @@
-// Unusual Games (legacy frmOpts3): the side-bet / bonus game selector and the
+// Unusual Games: the side-bet / bonus game selector and the
 // import of custom games exported from Casino Verite Blackjack.
 
 import { h, replaceChildren } from '../../ui/dom.js';
@@ -12,7 +12,7 @@ import { group, select, settingsScreen } from './controls.js';
 /** Imported game definitions, as `[{id, name, definition}]`. */
 const STORAGE_KEY = 'customSideBetGames';
 
-/** First id used for an imported game, matching the legacy numbering. */
+/** First id used for an imported game, above every built-in game id. */
 const FIRST_CUSTOM_ID = 1001;
 
 const NOTE = [
@@ -45,7 +45,7 @@ export function unusualGamesScreen(app) {
   return { el };
 }
 
-/** Imported games first (as in the legacy list), then the built-in ones. */
+/** Imported games first, then the built-in ones. */
 function gameOptions(app) {
   const custom = app.storage.get(STORAGE_KEY, []);
   return [

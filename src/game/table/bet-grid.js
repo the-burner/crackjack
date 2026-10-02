@@ -5,7 +5,7 @@ import { normalizeRamp } from '../../settings/bet-ramp.js';
 
 export const COLUMNS = 6;
 export const ROWS = 3;
-/** Tile colours, as the original drew them. */
+/** Tile colours. */
 export const TILE = { normal: '#0000c4', single: '#00ff00', previous: '#dc780c', selected: '#ff0000' };
 
 /**

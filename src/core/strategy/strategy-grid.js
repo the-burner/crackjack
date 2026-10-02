@@ -1,11 +1,11 @@
 // Presentation model for the strategy table viewer: which rows and columns a
 // table has, what each cell shows, and which colour it gets. Pure functions so
-// the rendering rules can be unit tested against the original app's DoTab().
+// the rendering rules can be unit tested.
 
 import { NEVER, ALWAYS, NO_ENTRY } from './strategy-file.js';
 import { CODE_DESCRIPTIONS } from './strategy-tables.js';
 
-/** Cell colours, exactly the ones the original app used. */
+/** Cell colours. */
 export const GRID_COLOR = {
   /** The table's own action (hit, double, split, play). */
   action: '#00ff00',
@@ -35,7 +35,7 @@ const LAST_CODE = 1099;
 const CODE_ALIAS = { 1098: 1017 };
 
 /**
- * The seven views of the table picker, in the order the original listed them.
+ * The seven views of the table picker, in the order the picker lists them.
  * `table` is the strategy table name (null for the counts view); `reversed`
  * means 32000 is the *opposite* action (double/split tables).
  */
