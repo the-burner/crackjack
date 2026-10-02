@@ -228,3 +228,20 @@ describe('shoe', () => {
     expect(seen.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('GameSession', () => {
+  it('plays a round, keeps the count, and persists the bankroll', async () => {
+    const { GameSession } = await import('../../../src/game/session.js');
+    const { createServices } = await import('../../../src/app/app.js');
+    const app = createServices({ backend: new MemoryBackend() });
+    app.sound = { play() {} };
+    const session = new GameSession(app);
+    session.startRound({ betPerHand: 10, hands: 1 });
+    while (session.state === 'insurance') session.declineInsurance();
+    while (session.state === 'playerAction') session.act('stand');
+    expect(session.state).toBe('settled');
+    expect(session.counts.runningCount).not.toBeNaN();
+    expect(app.storage.get('bankroll')).toBe(session.bankroll);
+    expect(session.stats.rounds).toBe(1);
+  });
+});

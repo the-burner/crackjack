@@ -8,13 +8,22 @@ import { StrategyLibrary } from '../settings/strategies.js';
 import { Router } from './router.js';
 import { ErrorTallies } from '../services/error-tallies.js';
 
-export function createApp(root, { backend } = {}) {
+/**
+ * The services that do not need a DOM: storage, settings, strategies, sound
+ * and the error tallies. Used by the app and by tests.
+ */
+export function createServices({ backend } = {}) {
   const app = {};
   app.storage = new Storage(backend);
   app.settings = new Settings(SETTINGS_SCHEMA, app.storage);
   app.strategies = new StrategyLibrary(app.storage);
   app.sound = new Sound(app.settings);
   app.errorTallies = new ErrorTallies(app.storage);
+  return app;
+}
+
+export function createApp(root, { backend } = {}) {
+  const app = createServices({ backend });
   app.router = new Router(root, app);
   /** Opens the help page for a screen. */
   app.help = topic => app.router.open('help', { topic });
