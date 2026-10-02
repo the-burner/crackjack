@@ -109,7 +109,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 # Threaded so the phone's burst of asset requests is served concurrently instead of
 # serialized; a single-threaded server starves parallel connections and the browser
 # then resets them (errno 54), which surfaces in the app as failed loads.
-handler = functools.partial(Handler, directory=app)
+handler = functools.partial(Handler, directory="legacy/" + app)
 httpd = http.server.ThreadingHTTPServer(("0.0.0.0", port), handler)
 httpd.daemon_threads = True
 httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)

@@ -5,3 +5,7 @@ bjvd-count.png
 bjvd-offline.png
 bjvd-offline-flash.png
 .certs/
+node_modules/
+.reference/
+test-results/
+playwright-report/
