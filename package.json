@@ -6,7 +6,9 @@
     "serve": "./serve.sh",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "precache": "node tools/update-precache.mjs",
+    "precache:check": "node tools/update-precache.mjs --check"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

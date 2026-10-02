@@ -1,44 +1,16 @@
 #!/usr/bin/env bash
-# Serve one of the bundled apps over HTTPS.
+# Serve the app over HTTPS.
 # HTTPS is required so iOS Safari will register the Service Worker (service
 # workers only run in a secure context: HTTPS, or http://localhost).
 #
-# Usage: ./serve.sh --drill [PORT]   (default port 8443)
-#        ./serve.sh --game  [PORT]   (default port 8444)
+# Usage: ./serve.sh [PORT]   (default port 8443)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP=""
-PORT=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --drill) APP="drill" ;;
-    --game)  APP="game" ;;
-    *)
-      if [[ "$1" =~ ^[0-9]+$ ]]; then
-        PORT="$1"
-      else
-        echo "error: unknown argument '$1'" >&2
-        echo "usage: ./serve.sh --drill|--game [PORT]" >&2
-        exit 1
-      fi
-      ;;
-  esac
-  shift
-done
-
-if [ -z "$APP" ]; then
-  echo "error: specify which app to serve." >&2
-  echo "usage: ./serve.sh --drill|--game [PORT]" >&2
+PORT="${1:-8443}"
+if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
+  echo "usage: ./serve.sh [PORT]" >&2
   exit 1
-fi
-
-# Default to a per-app port so both apps can run at once without clashing.
-if [ -z "$PORT" ]; then
-  case "$APP" in
-    drill) PORT="8443" ;;
-    game)  PORT="8444" ;;
-  esac
 fi
 
 if ! command -v mkcert >/dev/null 2>&1; then
@@ -57,29 +29,35 @@ if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
   mkcert -cert-file "$CERT" -key-file "$KEY" "$HOST" localhost 127.0.0.1
 fi
 
-echo "Serving ${APP} at https://${HOST}:${PORT}/"
+echo "Serving Blackjack Verité at https://${HOST}:${PORT}/"
 echo "Press Ctrl+C to stop."
 
-exec python3 - "$PORT" "$CERT" "$KEY" "$APP" <<'PY'
+exec python3 - "$PORT" "$CERT" "$KEY" <<'PY'
 import http.server, functools, ssl, sys, urllib.request, urllib.error
 
-port, cert, key, app = int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
+port, cert, key = int(sys.argv[1]), sys.argv[2], sys.argv[3]
 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ctx.load_cert_chain(certfile=cert, keyfile=key)
 
-# The strategy-import feature fetches /Apps/z<code>.php (drill) or /Apps/u<code>.php
-# (game) from a server-side PHP endpoint that lives at qfit.com's site root — it was
-# never part of the mirrored app folder and can't be a static file. Forward those
-# requests to the live site so the browser sees the same same-origin behavior it does
-# on qfit.com (no CORS, no mixed content).
+# Strategy import (/Apps/z<code>.php), side-bet game import (/Apps/u<code>.php) and the
+# casino database (/apps/cbjn7.php) are server-side PHP endpoints on qfit.com, not static
+# files. Forward those requests to the live site so the browser sees the same
+# same-origin behavior it does on qfit.com (no CORS, no mixed content).
 UPSTREAM = "https://www.qfit.com"
+
+# Only the app's own files are served (not .git, node_modules, tests, certificates...).
+PUBLIC = ("/", "/index.html", "/manifest.webmanifest", "/sw.js")
+PUBLIC_DIRS = ("/src/", "/assets/")
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path.startswith("/Apps/"):
+        path = self.path.split("?", 1)[0]
+        if path.lower().startswith("/apps/"):
             self.proxy_to_qfit()
-        else:
+        elif path in PUBLIC or path.startswith(PUBLIC_DIRS):
             super().do_GET()
+        else:
+            self.send_error(404)
 
     def proxy_to_qfit(self):
         try:
@@ -109,7 +87,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 # Threaded so the phone's burst of asset requests is served concurrently instead of
 # serialized; a single-threaded server starves parallel connections and the browser
 # then resets them (errno 54), which surfaces in the app as failed loads.
-handler = functools.partial(Handler, directory="legacy/" + app)
+handler = functools.partial(Handler, directory=".")
 httpd = http.server.ThreadingHTTPServer(("0.0.0.0", port), handler)
 httpd.daemon_threads = True
 httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
