@@ -9,9 +9,9 @@
 import { numberGrid, windowContaining } from './answer-grid.js';
 import { mixedNumber } from './format.js';
 
-export const GRID_ROWS = 3;
-export const GRID_COLUMNS = 6;
-export const GRID_SIZE = GRID_ROWS * GRID_COLUMNS;
+const GRID_ROWS = 3;
+const GRID_COLUMNS = 6;
+const GRID_SIZE = GRID_ROWS * GRID_COLUMNS;
 /** Where the window starts: zero sits in the middle row, as it did originally. */
 export const INITIAL_WINDOW = -8;
 

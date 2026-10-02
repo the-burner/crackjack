@@ -112,15 +112,21 @@ export function fullScreen(app) {
     render();
   }
 
-  /** Takes the next card, or null when the shoe is out or the round must stop. */
+  /**
+   * A card source for one round: biases and deals the next card, and remembers
+   * what it did to the running count (which Two Tables needs).
+   */
   function drawer(shoe) {
-    return () => {
+    const values = [];
+    const draw = () => {
       if (shoe.remaining === 0) return null;
       shoe.biasNext(options.bias);
       const { card, countValue } = shoe.dealWithCountValue();
-      shoe.lastCountValue = countValue;
+      values.push(countValue);
       return card;
     };
+    draw.countValues = values;
+    return draw;
   }
 
   function nextRound() {
@@ -189,22 +195,17 @@ export function fullScreen(app) {
     }
     fullyShownUpTo = Math.floor(Math.random() * 2);
     tables = shoes.map((shoe, i) => {
-      const values = [];
       const draw = drawer(shoe);
       const { hands } = dealRound({
         players: options.players,
         handStyle: 'twoToFourCards',
         dealerStopsAt16: true,
-        draw: () => {
-          const card = draw();
-          if (card !== null) values.push(shoe.lastCountValue);
-          return card;
-        },
+        draw,
       });
       // Cards are counted as they are revealed, so each one counts exactly once.
       let next = 0;
-      const countValues = hands.map(hand => hand.cards.map(() => values[next++]));
-      return { hands, countValues, scatter: null, visible: hands.map(h2 => h2.cards.map(() => false)), color: TABLE_COLORS[i] };
+      const countValues = hands.map(hand => hand.cards.map(() => draw.countValues[next++]));
+      return { hands, countValues, scatter: null, visible: hands.map(hand => hand.cards.map(() => false)), color: TABLE_COLORS[i] };
     });
     phase = 0;
     revealPhase();
@@ -215,10 +216,10 @@ export function fullScreen(app) {
     const { table, partial } = TWO_TABLE_PHASES[phase];
     const current = tables[table];
     const wanted = partial ? partialView(current.hands, fullyShownUpTo) : current.visible.map(row => row.map(() => true));
-    current.hands.forEach((hand, h2) => hand.cards.forEach((_, c) => {
-      if (!wanted[h2][c] || current.visible[h2][c]) return;
-      current.visible[h2][c] = true;
-      revealedCounts[table] += current.countValues[h2][c];
+    current.hands.forEach((hand, h) => hand.cards.forEach((_, c) => {
+      if (!wanted[h][c] || current.visible[h][c]) return;
+      current.visible[h][c] = true;
+      revealedCounts[table] += current.countValues[h][c];
     }));
     correctIndex = answerIndex(revealedCounts[table], inHalfSteps);
     render();

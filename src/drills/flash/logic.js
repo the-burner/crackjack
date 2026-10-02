@@ -302,7 +302,7 @@ export function correctPlay(strategy, hand, { count, situations, doubleAnyCards,
 }
 
 /** Section (strategy table) an action belongs to, so an error can be filed. */
-export function sectionForAction(action, soft) {
+function sectionForAction(action, soft) {
   if (action === ACTION.surrender) return SECTION.surrender;
   if (action === ACTION.split) return SECTION.split;
   if (action === ACTION.double) return soft ? SECTION.softDouble : SECTION.hardDouble;

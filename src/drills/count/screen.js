@@ -56,6 +56,8 @@ export function countScreen(app) {
 
   let run = -1;
   let shoe = null;
+  /** Cards still to deal before the next test. */
+  let cardsToDeal = 0;
   let flash = null;
   let tray = null;
   let trayPicture = null;
@@ -92,7 +94,7 @@ export function countScreen(app) {
     tray = null;
     flash = null;
     shoe = new DrillShoe({ decks: options.decks, strategy: options.strategy, trueCountSettings: options.trueCountSettings });
-    shoe.toDeal = cardsUntilTest(options.testEvery, Math.random);
+    cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
     drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: () => finishShoe() }).start();
     if (auto) {
@@ -118,14 +120,14 @@ export function countScreen(app) {
   function dealFlash() {
     if (done || !shoe) return;
     notice = '';
-    if (shoe.toDeal < 1 && testsPossible()) {
+    if (cardsToDeal < 1 && testsPossible()) {
       startTest();
       return;
     }
     let cards = flashSize(options.cardsPerFlash, Math.random);
     // The last card is shown on its own, so the warning is not missed.
     if (options.endWarning === 'oneCardLeft' && shoe.remaining === 2) cards = 1;
-    shoe.toDeal -= cards;
+    cardsToDeal -= cards;
     const ids = [];
     for (let i = 0; i < cards; i++) {
       if (shoe.remaining === 0) {
@@ -215,7 +217,7 @@ export function countScreen(app) {
   function resumeDealing() {
     grid = null;
     tray = null;
-    shoe.toDeal = cardsUntilTest(options.testEvery, Math.random);
+    cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
     dealFlash();
     if (auto && !done) shell.clock.every('deal', dealSpeed(), dealFlash);

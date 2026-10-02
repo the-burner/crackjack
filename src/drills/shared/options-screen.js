@@ -2,10 +2,9 @@
 // drill's settings, the green "Launch the Drill" button, and shortcuts to the
 // two shared settings screens the drills depend on.
 
-import { h, replaceChildren } from '../../ui/dom.js';
+import { h } from '../../ui/dom.js';
 import { button, checkList, select, slider, valueButton, field } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
-import { alert } from '../../ui/dialogs.js';
 
 /**
  * @param {object} app
@@ -179,9 +178,3 @@ export const END_WARNING_OPTIONS = [
   { value: 'oneCardLeft', label: 'End warning: one card left' },
   { value: 'twoCardsLeft', label: 'End warning: two cards left' },
 ];
-
-/** Shows the message and keeps the user on the options screen. */
-export const refuseLaunch = message => alert(message).then(() => false);
-
-/** Replaces a container's children (re-exported so screens need one import). */
-export { replaceChildren };

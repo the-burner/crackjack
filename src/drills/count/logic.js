@@ -35,8 +35,7 @@ export function cardsUntilTest(testEvery, random) {
   return Math.floor(TEST_SPACING[testEvery] * (random() + 0.5));
 }
 
-export const ORIENTATIONS = ['vertical', 'horizontal', 'mixed'];
-export const POSITIONS = ['vertical', 'horizontal', 'diagonal', 'mixed'];
+const POSITIONS = ['vertical', 'horizontal', 'diagonal', 'mixed'];
 
 /** Whether this flash is turned on its side. */
 export const flashRotated = (orientation, random) =>

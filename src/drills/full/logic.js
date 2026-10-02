@@ -8,7 +8,7 @@ const CARD_ASPECT = 150 / 215;
 
 /** The seven hand spots: 0 top right, 1..4 along the bottom arc, 5 top left, 6 the dealer. */
 export const DEALER_SPOT = 6;
-export const SPOTS_PER_PLAYER_COUNT = { 6: [0, 1, 2, 3, 4, 5], 4: [1, 2, 3, 4], 2: [2, 3] };
+const SPOTS_PER_PLAYER_COUNT = { 6: [0, 1, 2, 3, 4, 5], 4: [1, 2, 3, 4], 2: [2, 3] };
 export const SLOTS_PER_SPOT = 4;
 /** Loose cards in the "Scattered Cards" layout. */
 export const SCATTER_CARDS = 15;

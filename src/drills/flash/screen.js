@@ -284,9 +284,8 @@ export function flashScreen(app) {
       app.open('strategy.tables', {
         decks: options.decks,
         title: cell ? SITUATION_LABELS[cell.table] : 'Tables',
-        table: cell?.table,
-        row: cell?.row,
-        column: cell?.column,
+        view: cell?.table,
+        highlight: cell ? { row: cell.row, column: cell.column } : null,
       });
     }
     shell.clock.resume();

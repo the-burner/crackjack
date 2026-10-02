@@ -155,7 +155,11 @@ test.describe('flash drill', () => {
     const screen = await launch(page, DRILLS[0]);
     await screen.locator('[data-action="hit"]').click();
     await page.locator('.dialog').getByRole('button', { name: 'Table' }).click();
-    await expect(page.locator('[data-screen="strategy.tables"]')).toBeVisible();
+    const tables = page.locator('[data-screen="strategy.tables"]');
+    await expect(tables).toBeVisible();
+    // It opens on the table that decided, with the offending cell marked.
+    await expect(tables.getByRole('heading')).toHaveText('Hard H/S');
+    await expect(tables.locator('.tables__grid td.grid__cell--marked')).toHaveCount(1);
     await page.locator('[data-screen="strategy.tables"] [data-action="back"]').click();
     await expect(screen).toBeVisible();
   });

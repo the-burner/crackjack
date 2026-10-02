@@ -347,9 +347,8 @@ Flash drills
   landed on an unrelated cell.
 - A wrong answer in "Warn on error" mode is explained in a dialog ("Action: X;
   Correct: Y", the dealer card and the player's hand, and the table that
-  decides), with a button that opens the strategy table viewer. The legacy
-  opened the table straight away and blinked the tested cell; the viewer does not
-  blink a cell yet.
+  decides), with a button that opens the strategy table viewer on that table with
+  the tested cell marked. The legacy opened the table straight away.
 - The "Reserved" count mode (the experimental Wait-button deviation drill) and
   the "Reserved" checkbox, which only changed that button's caption, are
   dropped, as the behavioral spec recommended.
