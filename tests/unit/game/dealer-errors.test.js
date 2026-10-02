@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEALER_ERROR, ERROR_CHANCE, SUPPORTED_ERRORS, enabledErrors, dealerErrorsOn,
-  pickDealerError, claimFoul, missedMessage,
+  pickDealerError, claimFoul, missedMessage, dealerStandsByMistake,
 } from '../../../src/game/dealer-errors.js';
 
 const settingsWith = on => ({ get: key => on.includes(key) });
@@ -24,10 +24,10 @@ describe('enabled errors', () => {
     expect(enabledErrors(settings)).toEqual([DEALER_ERROR.blackjackMispaid, DEALER_ERROR.chipsOnPush]);
   });
 
-  it('leaves out the errors the engine cannot make', () => {
+  it('includes standing on 16 and unpaid bonuses', () => {
     const settings = settingsWith(['dealerErrors.standOn16', 'dealerErrors.noBonusPayoff']);
-    expect(enabledErrors(settings)).toEqual([]);
-    expect(SUPPORTED_ERRORS).not.toContain(DEALER_ERROR.stoodOn16);
+    expect(enabledErrors(settings)).toEqual([DEALER_ERROR.stoodOn16, DEALER_ERROR.bonusNotPaid]);
+    expect(SUPPORTED_ERRORS).toContain(DEALER_ERROR.stoodOn16);
   });
 
   it('reports whether the Foul button is needed', () => {
@@ -173,5 +173,45 @@ describe('claiming and missing', () => {
 
   it('shows cents when the amount is not whole', () => {
     expect(missedMessage({ label: 'BJ Mispaid', amount: 2.5 })).toContain('$2.50');
+  });
+});
+
+describe('standing on 16 and unpaid bonuses', () => {
+  it('stands on a hard 16 only when that mistake is enabled', () => {
+    const enabled = [DEALER_ERROR.stoodOn16];
+    expect(dealerStandsByMistake({ dealer: { total: 16, soft: false }, enabled, random: () => 0 })).toBe(true);
+    expect(dealerStandsByMistake({ dealer: { total: 16, soft: false }, enabled, random: () => 0.99 })).toBe(false);
+    expect(dealerStandsByMistake({ dealer: { total: 17, soft: false }, enabled, random: () => 0 })).toBe(false);
+    expect(dealerStandsByMistake({ dealer: { total: 16, soft: true }, enabled, random: () => 0 })).toBe(false);
+    expect(dealerStandsByMistake({ dealer: { total: 16, soft: false }, enabled: [], random: () => 0 })).toBe(false);
+  });
+
+  it('charges the hands that lost to a dealer who stood on 16', () => {
+    const hands = [
+      { key: '1-0', bet: 10, insuranceBet: 0, payout: 0, total: 15, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Lose', sideBetWin: 0 },
+      { key: '2-0', bet: 10, insuranceBet: 0, payout: 20, total: 20, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Win', sideBetWin: 0 },
+    ];
+    const error = pickDealerError({
+      hands,
+      dealer: { total: 16, cardCount: 2, busted: false, stoodOnSixteen: true },
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.stoodOn16],
+      random: () => 0,
+    });
+    expect(error.type).toBe(DEALER_ERROR.stoodOn16);
+    expect(error.amount).toBe(10);
+    expect(error.hands.map(h => h.key)).toEqual(['1-0']);
+  });
+
+  it('charges an unpaid winning side bet', () => {
+    const hands = [{ key: '1-0', bet: 10, insuranceBet: 0, payout: 20, total: 20, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Win', sideBetWin: 45 }];
+    const error = pickDealerError({
+      hands,
+      dealer: { total: 18, cardCount: 2, busted: false },
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.bonusNotPaid],
+      random: () => 0,
+    });
+    expect(error.amount).toBe(45);
   });
 });

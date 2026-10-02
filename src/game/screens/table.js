@@ -20,7 +20,7 @@ import { createAnimator, planSteps, pauseForSpeed } from '../table/animator.js';
 import { createBetOverlay } from '../table/bet-overlay.js';
 import { attachSwipes } from '../table/gestures.js';
 import { obviouslyBad, areYouSure } from '../table/bad-plays.js';
-import { dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessage, errorHandFrom } from '../dealer-errors.js';
+import { dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessage, errorHandFrom, dealerStandsByMistake } from '../dealer-errors.js';
 
 /** How long a status message stays up. */
 const STATUS_MS = 3500;
@@ -91,6 +91,8 @@ export function tableScreen(app) {
   let pendingSideBets = {};
   /** A dealer mistake the player has not called yet. */
   let pendingError = null;
+  /** Set when the dealer wrongly stood on a hard 16 this round. */
+  let stoodOnSixteen = false;
   /** True once the dealer has queried a bad play, which lets the next one through. */
   let warnedOfBadPlay = false;
   let statusTimer = null;
@@ -380,15 +382,24 @@ export function tableScreen(app) {
 
   // --- dealer errors --------------------------------------------------------
 
+  // The dealer may wrongly stand on a hard 16; the engine asks before each draw.
+  session.beforeDealerDraw = dealer => {
+    const enabled = enabledErrors(settings);
+    if (!dealerStandsByMistake({ dealer: dealer.totals(), enabled, random: Math.random })) return true;
+    stoodOnSixteen = true;
+    return false;
+  };
+
   /** Lets the dealer make one of the mistakes the player enabled. */
   function injectDealerError(events) {
     const enabled = enabledErrors(settings);
     if (enabled.length === 0 || pendingError) return;
-    const hands = session.game.hands.filter(hand => hand.owner === PLAYER.human).map(errorHandFrom);
+    const hands = session.game.hands.filter(hand => hand.owner === PLAYER.human)
+      .map(hand => errorHandFrom(hand, { sideBetWin: sideBetWinOf(events, hand.key) }));
     const dealer = session.game.dealer;
     const error = pickDealerError({
       hands,
-      dealer: { total: dealer.total, cardCount: dealer.cardCount, busted: dealer.busted() },
+      dealer: { total: dealer.total, cardCount: dealer.cardCount, busted: dealer.busted(), stoodOnSixteen },
       dealerBlackjack: Boolean(session.game.dealerBlackjack),
       enabled,
       random: Math.random,
@@ -408,6 +419,12 @@ export function tableScreen(app) {
     if (end) end.bankroll = session.game.bankroll;
   }
 
+  /** What a hand's side bets paid, read from its settled event. */
+  function sideBetWinOf(events, key) {
+    const settled = events.find(event => event.type === 'settled' && event.hand === key);
+    return (settled?.sideBets ?? []).reduce((sum, bet) => sum + Math.max(0, bet.payout - bet.stake), 0);
+  }
+
   function claimDealerError() {
     const { caught, refund, message, tone } = claimFoul(pendingError);
     if (caught) {
@@ -424,6 +441,7 @@ export function tableScreen(app) {
   }
 
   function reportMissedError() {
+    stoodOnSixteen = false;
     if (!pendingError) return;
     showStatus(` ${missedMessage(pendingError)} `, 'error');
     pendingError = null;

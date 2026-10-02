@@ -56,11 +56,7 @@ export const ERROR_CHANCE = {
   bonusNotPaid: 0.385,
 };
 
-/**
- * Mistakes this table can make. "Dealer stood on 16" needs the dealer to stop
- * drawing and "Bonus not paid" needs side-bet payouts, neither of which the
- * engine can be told to do, so they are left out.
- */
+/** Every mistake this table can make. */
 export const SUPPORTED_ERRORS = [
   DEALER_ERROR.insuranceMispaid,
   DEALER_ERROR.blackjackMispaid,
@@ -68,7 +64,19 @@ export const SUPPORTED_ERRORS = [
   DEALER_ERROR.shouldHaveBusted,
   DEALER_ERROR.winNotPaid,
   DEALER_ERROR.chipsOnPush,
+  DEALER_ERROR.stoodOn16,
+  DEALER_ERROR.bonusNotPaid,
 ];
+
+/**
+ * Whether the dealer stops drawing on this hand by mistake. The caller asks
+ * before each draw; a stand on a hard 16 is the mistake players must catch.
+ */
+export function dealerStandsByMistake({ dealer, enabled, random }) {
+  if (!enabled.includes(DEALER_ERROR.stoodOn16)) return false;
+  if (dealer.total !== 16 || dealer.soft) return false;
+  return random() < ERROR_CHANCE[DEALER_ERROR.stoodOn16];
+}
 
 /** The mistakes the player's options allow, in the order they are considered. */
 export function enabledErrors(settings, { supported = SUPPORTED_ERRORS } = {}) {
@@ -151,6 +159,16 @@ function affectedHands(type, { hands, dealer, dealerBlackjack }) {
     case DEALER_ERROR.chipsOnPush:
       return hands.filter(h => plain(h) && h.result === 'Push')
         .map(h => ({ key: h.key, shortfall: h.bet, result: 'Lose' }));
+    // The dealer stood on a hard 16. The hands that lost to it are the ones the
+    // player was cheated of, since a drawing dealer busts more often than not.
+    case DEALER_ERROR.stoodOn16:
+      if (dealer.stoodOnSixteen !== true) return [];
+      return hands.filter(h => h.payout === 0 && h.total <= 21 && !h.isNatural)
+        .map(h => ({ key: h.key, shortfall: h.bet + (h.doubled ? h.bet : 0), result: 'Lose' }));
+    // A winning side bet was not paid.
+    case DEALER_ERROR.bonusNotPaid:
+      return hands.filter(h => h.sideBetWin > 0)
+        .map(h => ({ key: h.key, shortfall: h.sideBetWin, result: h.result }));
     default:
       return [];
   }
@@ -179,9 +197,10 @@ const round2 = n => Math.round(n * 100) / 100;
  * Reads the fields pickDealerError needs off an engine hand and its settlement.
  * @param {import('./engine/hand.js').Hand} hand
  */
-export function errorHandFrom(hand) {
+export function errorHandFrom(hand, { sideBetWin = 0 } = {}) {
   return {
     key: hand.key,
+    sideBetWin,
     bet: hand.bet,
     insuranceBet: hand.insuranceBet,
     payout: hand.payout,

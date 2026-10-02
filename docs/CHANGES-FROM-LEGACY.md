@@ -292,3 +292,128 @@ Statistics
   mapping every built-in game pays its documented tiers.
 - Insurance is settled on hands that win through a bonus. The original skipped
   it there (a mistyped function call), leaving the insurance stake on the table.
+
+## Drills
+
+Shared by all four drills
+
+- **fix** The Hands / Tests counter is refreshed after it is incremented, so it
+  shows the number of hands or tests given so far. The legacy panels were drawn
+  before the increment, so the count lagged a hand behind until the next
+  one-second tick, and the accuracy was worked out from the newer number.
+- **fix** Progressive Speed also speeds up a run started with Restart. The
+  legacy multiplied the speed only on the automatic start after the countdown,
+  although its help said otherwise.
+- **fix** Timeouts are scored in every drill. In Depth the timer called the
+  Flash drill's handler and threw, so nothing happened and no error was counted;
+  in Count and Full a timeout showed the answer but did not count as an error.
+  All of them now show the answer, buzz and count one error, as the help said.
+- **fix** The ace-adjusted bet, play and insurance counts are rounded with the
+  true-count rounding rule. The legacy left them unrounded, so the answer sat
+  between two cells of the grid and could not be tapped. Divisions are also
+  cleared of floating-point dust before rounding, so a count that is exactly a
+  whole number is not floored to the one below.
+- The error-log screen is gone (see Settings). Errors are still tallied per
+  strategy-table cell, which is what "Hands: Drill Errors" needs; the Flash
+  options screen has a "Clear error history" action in its place, which only the
+  dropped log screen offered.
+- The ten-second countdown overlay, the stats grid and the answer grids are DOM
+  and canvas elements sized for the device pixel ratio, so they are sharp and
+  re-lay-out on rotation without reloading the page. The legacy reloaded the
+  whole page when an Apple device was turned to landscape.
+- An answer grid is drawn on a canvas that is positioned out of the layout flow,
+  so its size never feeds back into the layout that decides how big it should
+  be.
+- Sound follows the single "Sound" switch. The legacy flag meant the opposite of
+  its name (`optsound == true` muted the app).
+
+Flash drills
+
+- **fix** Hands are built from the chosen list every time. On the first drill of
+  a session the legacy mis-typed the Hard hit/stand entries of the Default list
+  (`UBound` of an empty array), dealing them as soft hands and demanding the
+  Soft H/S situation.
+- **fix** Face cards appear in all four suits. The legacy only turned a ten into
+  a jack, queen or king when it had already drawn the spade ten.
+- **fix** A hand only times out in Auto timer mode. The legacy armed the
+  per-hand timer in the count-down and count-up modes too, where the setting is
+  the total time for the drill, so every hand timed out after the whole drill's
+  worth of seconds.
+- **fix** "No tests (quick drill)" does not record errors. The legacy advanced
+  that mode by letting every hand time out, which counted every hand as an error
+  and wrote it into the Drill-Errors tallies.
+- **fix** An index-test error is filed against the hand's own table and row. The
+  legacy picked the last enabled situation flag and a stale row, so the tally
+  landed on an unrelated cell.
+- A wrong answer in "Warn on error" mode is explained in a dialog ("Action: X;
+  Correct: Y", the dealer card and the player's hand, and the table that
+  decides), with a button that opens the strategy table viewer. The legacy
+  opened the table straight away and blinked the tested cell; the viewer does not
+  blink a cell yet.
+- The "Reserved" count mode (the experimental Wait-button deviation drill) and
+  the "Reserved" checkbox, which only changed that button's caption, are
+  dropped, as the behavioral spec recommended.
+- A drag on the card area must move at least 10 px to count as a swipe. In the
+  legacy a plain tap was read as a swipe downwards, i.e. Hit.
+- The hand list the Default option uses holds the same 127 hands with the same
+  weights, but grouped by dealer upcard instead of interleaved with the other
+  situations. The drill picks from it at random, so only its contents matter.
+
+Depth drills
+
+- **fix** One deck at Full resolution is refused at launch (the resolution is
+  changed to Half Deck). There is exactly one depth to ask about, which the
+  legacy then dropped from the grid, leaving it empty.
+- **fix** No two tests in a row share an answer, unless there is only one answer
+  to give - with two decks at full resolution the legacy would keep rejecting
+  the only test it could show.
+- A finished drill reports its accuracy. The legacy cleared the tray and the
+  buttons and said nothing.
+- A tray style that cannot hold the decks in play is reported and corrected
+  before the drill starts, as the legacy did, but the message names the style's
+  capacity.
+- "Count Range" limits the running count the true-count drills draw, which is
+  what the legacy code did; its help described it as a true-count range. A range
+  that holds no running count is refused at launch instead of looping forever.
+- Depths are written as mixed numbers (`1¼`, `½`). The panel of the TC
+  Conversion drill writes a half deck as "½" rather than the legacy's "0½".
+
+Count drills
+
+- **fix** The Ace Bet Count is offered only for a counting system that gives
+  aces no value, and the Ace Play and Ace Insure Counts only for one that counts
+  them; the other combination is refused at launch. The legacy allowed every
+  drill with every system, although its help said otherwise.
+- The "Deal Speed 10ths" default is 20 (two seconds), the value the legacy
+  slider showed. The settings schema had it at 2 (a fifth of a second).
+- The discard-tray card thickness is a Count-drill setting of its own. The
+  legacy applied the Depth drill's value to the Count drill's tray.
+- A flash that is interrupted by the end-of-shoe warning leaves no canvas
+  transform behind (the legacy skipped its `restore()` on that path).
+
+Full table drills
+
+- **fix** The drill runs on a phone in landscape. The legacy refused any screen
+  under 799 x 410, which an iPhone 13 in landscape (844 x 390) fails. In portrait
+  it now shows a "turn the device sideways" message over the drill, with the
+  title bar still usable, instead of a separate cover screen that could only go
+  back to the main menu.
+- **fix** Two Tables counts each card once, as it is revealed. The legacy
+  re-counted every card on show in the third and fourth questions, so the
+  expected running count double-counted the cards from the first two.
+- **fix** Two Tables deals the seats the Players option asks for. The legacy
+  skipped the first seat, so "Six Players" dealt five.
+- **fix** Two Tables ends when either shoe drops to twenty cards. The legacy
+  tested the second shoe for exactly ten cards left, a count it could step past.
+- Two Tables chooses how much of a table to show once per cycle, so the two
+  tables are shown the same way; the legacy re-rolled it for each question. The
+  second table is drawn on blue felt, which the legacy intended but painted over.
+- A round that starts with fewer than three cards left in the shoe is dealt from
+  the first seat like any other. The legacy started such a round at the fourth
+  seat.
+- Scattered cards keep their positions while a round is on screen (they are
+  placed from a per-round seed), so a redraw after a rotation does not move them.
+- The two dealer mistakes the original could make but this rebuild first left
+  out are implemented: standing on a hard 16, and not paying a winning side bet.
+  Standing on 16 charges the dealer with the bets of the hands that lost to that
+  16, since a dealer who draws from 16 busts more often than not.
