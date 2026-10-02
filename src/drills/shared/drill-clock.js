@@ -17,7 +17,7 @@ export class DrillClock {
    * @param {() => void} [o.onAlarm]    Called once when the limit is reached.
    * @param {() => void} [o.onHalt]     Called when a count-down-and-halt run ends.
    */
-  constructor({ mode, limit, now = () => Date.now() / 1000, setTimer = setTimeout, clearTimer = clearTimeout, onTick, onAlarm, onHalt }) {
+  constructor({ mode, limit, now = () => Date.now() / 1000, setTimer = (fn, ms) => setTimeout(fn, ms), clearTimer = id => clearTimeout(id), onTick, onAlarm, onHalt }) {
     this.mode = mode;
     this.limit = limit;
     this.now = now;

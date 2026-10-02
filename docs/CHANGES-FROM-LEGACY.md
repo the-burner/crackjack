@@ -278,3 +278,17 @@ Statistics
   accuracy, and the four in-table display switches. The per-category error
   counts, the side-bet accuracy, "Last Bet", "Round # this shoe" and the
   tray/shoe card breakdowns are not shown.
+
+## Side bets
+
+- Side bets are resolved by the engine and paid. The rule engine
+  (`game/engine/side-bets.js`) evaluates a game's pay table against the hand,
+  pays the first matching tier (or every tier for games that accumulate), and
+  returns the stake for a tier that pays nothing.
+- The card-pattern codes in the game definitions were derived from the
+  published pay tables of the built-in games, not from the earlier reading of
+  the original code: 1 is a pair, 2 three of a kind, 3 a straight, 4 a flush,
+  5 a straight flush, 6 a suited pair and 7 suited three of a kind. With that
+  mapping every built-in game pays its documented tiers.
+- Insurance is settled on hands that win through a bonus. The original skipped
+  it there (a mistyped function call), leaving the insurance stake on the table.

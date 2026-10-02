@@ -182,7 +182,7 @@ test.describe('the table', () => {
   test('shuffles on request and resets the bankroll', async ({ page }) => {
     await openTable(page);
     await overlay(page).locator('[data-action="shuffle"]').click();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('shuffled');
+    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('Shuffled');
 
     await placeBet(page);
     await playRound(page);
@@ -231,14 +231,20 @@ test.describe('the table', () => {
     await expect(overlay(page)).toBeVisible();
   });
 
-  test('picks a side bet amount on the bet picker', async ({ page }) => {
+  test('places a side bet and pays it when it wins', async ({ page }) => {
+    // Lucky Ladies pays when the player's first two cards total 20.
     await openTable(page, { settings: { 'bonuses.game': 8 } });
     await overlay(page).locator('[data-action="side-bet"]').click();
     await expect(page.locator('.bet-select')).toBeVisible();
     await expect(page.locator('.bet-select__chips .btn')).toHaveCount(18);
     await page.locator('.bet-select__chips [data-chips="2"]').click();
-    await expect(page.locator('.dialog__body')).toContainText('not paid out');
-    await page.locator('.dialog__buttons button').click();
+    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('side bet');
+
+    // The stake leaves the bankroll with the main bet.
+    const before = await bankroll(page).textContent();
+    await placeBet(page);
+    expect(await bankroll(page).textContent()).not.toBe(before);
+    await playRound(page);
     await expect(overlay(page)).toBeVisible();
   });
 });

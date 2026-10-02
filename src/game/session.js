@@ -7,6 +7,9 @@ import { rulesFrom } from './engine/rules.js';
 import { Counter } from '../core/counting.js';
 import { checkPlay, checkInsurance, checkBet, expectedBet } from './play-check.js';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../core/counting.js';
+import { decodeSideBetGame } from '../settings/side-bet-games.js';
+import { SIDE_BET_GAME_DEFINITIONS } from '../data/side-bet-games.js';
+import { sideBetSpots } from './engine/side-bets.js';
 
 const BANKROLL_KEY = 'bankroll';
 const STATS_KEY = 'gameStats';
@@ -30,6 +33,7 @@ export class GameSession {
     this.rules = rulesFrom(this.settings);
     this.table = this.tableFrom();
     this.strategy = app.strategies.current(this.settings, this.table.decks);
+    this.sideBetGame = this.loadSideBetGame();
     this.counter = new Counter(this.strategy, this.trueCountSettings());
     this.stats = { ...emptyStats(), ...app.storage.get(STATS_KEY, {}) };
     this.warnings = [];
@@ -45,8 +49,30 @@ export class GameSession {
       bankroll,
       computerPlay: (hand, context) => this.computerAction(hand, context),
       onCardSeen: card => this.counter.addCard(card, this.game.shoe.dealt),
+      sideBetGame: this.sideBetGame,
+      trueCount: () => this.counter.trueCount,
+      beforeDealerDraw: dealer => this.beforeDealerDraw?.(dealer) ?? true,
     });
     this.counter.reset(this.table.decks);
+  }
+
+  /** The decoded side-bet game the player selected, if any. */
+  loadSideBetGame() {
+    const id = this.settings.get('bonuses.game');
+    if (!id) return null;
+    const custom = this.app.storage.get('customSideBetGames', []).find(g => g.id === id);
+    const definition = custom?.definition ?? SIDE_BET_GAME_DEFINITIONS[id];
+    if (!definition) return null;
+    try {
+      return decodeSideBetGame(definition);
+    } catch {
+      return null;
+    }
+  }
+
+  /** The side-bet spots the selected game offers, for the betting screen. */
+  sideBetSpots() {
+    return sideBetSpots(this.sideBetGame);
   }
 
   tableFrom() {
@@ -248,9 +274,20 @@ export class GameSession {
     this.save();
   }
 
-  /** Shuffles before the next round. */
+  /**
+   * Shuffles now and returns the events, so the screen can animate the new shoe
+   * and tray straight away.
+   */
   shuffleNow() {
-    this.game.shoe.needsShuffle = true;
+    this.game.shuffleAndBurn();
+    this.counter.reset(this.table.decks);
+    return this.game.takeEvents();
+  }
+
+  /** Adjusts the bankroll (dealer-error refunds, mid-round returns). */
+  adjustBankroll(delta) {
+    this.game.bankroll += delta;
+    this.save();
   }
 
   save() {

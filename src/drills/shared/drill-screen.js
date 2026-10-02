@@ -6,6 +6,7 @@
 import { h, replaceChildren } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { DrillScore } from './scoring.js';
+import { DrillClock } from './drill-clock.js';
 
 /**
  * @param {object} app
@@ -13,14 +14,17 @@ import { DrillScore } from './scoring.js';
  * @param {string} o.title
  * @param {string} o.help                 Help topic.
  * @param {string} o.countLabel           "Hands" or "Tests".
+ * @param {string} [o.className]          Extra class on the screen element.
  * @param {boolean} [o.pausable]
  * @param {(shell: DrillShell) => void} o.onStart    Begins a fresh run.
  * @param {(shell: DrillShell) => void} [o.onStop]
  * @param {(shell: DrillShell) => void} [o.onLayout] Called when the size changes.
  * @param {(shell: DrillShell) => void} [o.onPause]
  * @param {(shell: DrillShell) => void} [o.onResume]
+ * @param {(score: DrillScore) => string} [o.accuracyText]  Text of the accuracy cell
+ *   (the Flash drill hides the accuracy until the end in some test modes).
  */
-export function drillShell(app, { title, help, countLabel, pausable = false, onStart, onStop, onLayout, onPause, onResume }) {
+export function drillShell(app, { title, help, countLabel, className = '', pausable = false, onStart, onStop, onLayout, onPause, onResume, accuracyText = score => `Accuracy: ${score.accuracy}%` }) {
   const score = new DrillScore();
   const display = h('div', { class: 'drill__display' });
   const message = h('div', { class: 'drill__message' });
@@ -40,7 +44,7 @@ export function drillShell(app, { title, help, countLabel, pausable = false, onS
   replaceChildren(controls, pauseButton, restartButton);
 
   const body = h('div', { class: 'drill__body' }, display, message, stats, controls);
-  const el = h('section', { class: 'screen--felt drill' },
+  const el = h('section', { class: `screen--felt drill${className ? ` ${className}` : ''}` },
     h('header', { class: 'drill__bar' },
       button('Back', { variant: 'nav', onClick: () => app.back() }),
       button('Help', { variant: 'nav', onClick: () => app.help(help) })),
@@ -51,7 +55,12 @@ export function drillShell(app, { title, help, countLabel, pausable = false, onS
     el,
     app,
     score,
+    /** The drill's own area, between the title bar and the stats panel. */
     display,
+    /** The column holding display, stats and controls; drills append their answer area to it. */
+    body,
+    /** The Pause / Restart row; drills may add buttons of their own. */
+    controls,
     message,
     paused: false,
     /** The current run number; used for progressive speed. */
@@ -74,7 +83,7 @@ export function drillShell(app, { title, help, countLabel, pausable = false, onS
     /** Refreshes the stats panel. `clock` is a DrillClock. */
     updateStats(clock) {
       statsCells.count.textContent = `${countLabel}: ${score.tests}`;
-      statsCells.accuracy.textContent = `Accuracy: ${score.accuracy}%`;
+      statsCells.accuracy.textContent = accuracyText(score);
       if (clock) {
         const { seconds, overdue } = clock.display();
         statsCells.seconds.textContent = `Seconds: ${seconds}`;
@@ -146,4 +155,22 @@ export function drillShell(app, { title, help, countLabel, pausable = false, onS
   observer.observe(display);
 
   return shell;
+}
+
+/**
+ * The clock for one run of a drill: ticks the stats panel once a second, beeps
+ * at the alarm time and, in "count down and halt" mode, ends the run.
+ * @param {DrillShell} shell
+ * @param {{mode: string, limit: number, onHalt?: () => void}} o
+ */
+export function drillClockFor(shell, { mode, limit, onHalt }) {
+  const clock = new DrillClock({
+    mode,
+    limit,
+    onTick: () => shell.updateStats(clock),
+    onAlarm: () => shell.app.sound.play('alarm'),
+    onHalt: () => onHalt?.(),
+  });
+  shell.clock = clock;
+  return clock;
 }

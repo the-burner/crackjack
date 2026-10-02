@@ -21,16 +21,17 @@ const TRAY_CAPACITY_DECKS = 8;
 /**
  * Picks the tray photo for `decksInTray`.
  *
- * Styles that only fit 2 or 6 decks fall back to the 8-deck tray when more
- * decks than they can hold would be shown.
+ * Styles that only fit 2 or 6 decks fall back to the 8-deck tray's series when
+ * more decks than they can hold would be shown; the crop stays that of the
+ * chosen style.
  * @returns {{src: string, crop: {width: number, height: number}}|null} null when no photo can show that depth.
  */
 export function trayImage(decksInTray, style) {
   const emptyPercent = (100 / TRAY_CAPACITY_DECKS) * (TRAY_CAPACITY_DECKS - decksInTray);
-  let chosen = TRAY_STYLES[style] ?? TRAY_STYLES[FALLBACK_STYLE];
-  if (emptyPercent <= chosen.minEmptyPercent) chosen = TRAY_STYLES[FALLBACK_STYLE];
+  const chosen = TRAY_STYLES[style] ?? TRAY_STYLES[FALLBACK_STYLE];
+  const series = emptyPercent <= chosen.minEmptyPercent ? TRAY_STYLES[FALLBACK_STYLE] : chosen;
   const quarterDecksInTray = Math.floor((100 - emptyPercent) / (100 / (TRAY_CAPACITY_DECKS * 4)));
-  const number = chosen.base - 2 * quarterDecksInTray;
+  const number = series.base - 2 * quarterDecksInTray;
   if (number < FIRST_IMAGE) return null;
   return { src: `assets/trays/drill/${number}.jpg`, crop: chosen.crop };
 }

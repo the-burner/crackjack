@@ -61,7 +61,7 @@ export function tableScreen(app) {
   const overlay = createBetOverlay({
     onBet: placeBet,
     onSideBet: chooseSideBet,
-    sideBetsAvailable: () => settings.get('bonuses.game') !== 0,
+    sideBetsAvailable: () => session.sideBetSpots().length > 0,
     onNoSideBet: () => overlay.setMessage('No side bet is configured.'),
     onCustomize: () => app.open('settings.betting'),
     onShuffle: shuffleNow,
@@ -87,6 +87,8 @@ export function tableScreen(app) {
   /** The bankroll before the last bet was placed, for the "you won" line. */
   let bankBeforeBet = session.bankroll;
   let previousBetLabel = null;
+  /** Side-bet amounts chosen for the next round, by spot label. */
+  let pendingSideBets = {};
   /** A dealer mistake the player has not called yet. */
   let pendingError = null;
   /** True once the dealer has queried a bad play, which lets the next one through. */
@@ -334,27 +336,37 @@ export function tableScreen(app) {
     overlay.hide();
     state.setBets(seats.map(seat => ({ seat, amount })));
     state.setBankroll(bankBeforeBet - amount * seats.length);
-    queue(session.startRound({ betPerHand: amount, hands }));
+    const sideBets = pendingSideBets;
+    pendingSideBets = {};
+    overlay.setSideBet('');
+    queue(session.startRound({ betPerHand: amount, hands, sideBets }));
   }
 
-  /**
-   * Picks a side-bet amount. The engine does not resolve side bets yet, so the
-   * amount is reported rather than wagered.
-   */
+  /** Picks the amount to put on a side-bet spot for the next round. */
   function chooseSideBet() {
+    const spots = session.sideBetSpots();
+    if (spots.length === 0) {
+      alert('The selected game has no side bet.');
+      return;
+    }
     app.open('game.betSelect', {
       mode: 'sideBet',
       chipValue: settings.get('betting.chipValue'),
       onPick: ({ amount }) => {
-        if (amount > 0) alert('Side bets are not paid out in this build, so none was placed.');
+        const spot = spots[0];
+        if (amount > spot.maxAmount) {
+          alert(`The maximum ${spot.id} bet is ${money(spot.maxAmount)}.`);
+          return;
+        }
+        pendingSideBets = amount > 0 ? { [spot.id]: amount } : {};
+        overlay.setSideBet(amount > 0 ? `${spot.id} side bet ${money(amount)}` : '');
       },
     });
   }
 
   function shuffleNow() {
-    session.shuffleNow();
-    applyNow(session.game.takeEvents());
-    overlay.setMessage('The shoe will be shuffled.');
+    applyNow(session.shuffleNow());
+    overlay.setMessage('Shuffled.');
   }
 
   async function resetBank() {

@@ -14,6 +14,7 @@ import {
   surrenderAllowed, earlySurrenderAllowed, dealerShouldDraw, bustValue,
 } from './rules.js';
 import { settleHand, RESULT } from './settlement.js';
+import { evaluateSideBet, evaluateHandBonus, sideBetSpots } from './side-bets.js';
 
 export const STATE = {
   betting: 'betting',
@@ -38,14 +39,20 @@ export class BlackjackGame {
    * @param {() => number} [o.random]
    * @param {(hand: Hand, context: object) => string} [o.computerPlay]  Decides a computer player's action.
    * @param {(card: number, faceUp: boolean) => void} [o.onCardSeen]    Called for counting.
+   * @param {object} [o.sideBetGame]      Decoded side-bet game (settings/side-bet-games.js).
+   * @param {() => number} [o.trueCount]  Current true count, for count-gated side-bet rules.
+   * @param {(dealer: Hand) => boolean} [o.beforeDealerDraw]  Return false to make the dealer stand (dealer errors).
    */
-  constructor({ rules, table, bankroll, random = defaultRandom, computerPlay = null, onCardSeen = null }) {
+  constructor({ rules, table, bankroll, random = defaultRandom, computerPlay = null, onCardSeen = null, sideBetGame = null, trueCount = () => 0, beforeDealerDraw = null }) {
     this.rules = rules;
     this.table = table;
     this.bankroll = bankroll;
     this.random = random;
     this.computerPlay = computerPlay;
     this.onCardSeen = onCardSeen;
+    this.sideBetGame = sideBetGame;
+    this.trueCount = trueCount;
+    this.beforeDealerDraw = beforeDealerDraw;
     this.shoe = new Shoe({ ...table, random });
     this.state = STATE.betting;
     this.events = [];
@@ -376,7 +383,10 @@ export class BlackjackGame {
       this.dealerBlackjack = true;
       this.emit('message', { text: 'Dealer has Blackjack' });
     } else if (live) {
-      while (dealerShouldDraw(this.rules, this.dealer)) this.dealTo(this.dealer, { faceUp: true });
+      while (dealerShouldDraw(this.rules, this.dealer)) {
+        if (this.beforeDealerDraw && this.beforeDealerDraw(this.dealer) === false) break;
+        this.dealTo(this.dealer, { faceUp: true });
+      }
       if (this.dealer.busted()) this.emit('message', { text: 'Dealer busts' });
     }
     this.finishRound();
@@ -386,14 +396,59 @@ export class BlackjackGame {
   finishRound() {
     for (const hand of this.hands) {
       const { payout, result, net } = settleHand({ rules: this.rules, hand, dealer: this.dealer, dealerBlackjack: this.dealerBlackjack });
+      const side = this.settleSideBets(hand, result);
       hand.result = result;
-      hand.payout = payout;
-      if (hand.owner === PLAYER.human) this.bankroll += payout;
-      this.emit('settled', { hand: hand.key, result, payout, net, seat: hand.seat, owner: hand.owner });
+      hand.payout = payout + side.payout;
+      if (hand.owner === PLAYER.human) this.bankroll += hand.payout;
+      this.emit('settled', { hand: hand.key, result, payout: hand.payout, net: net + side.net, seat: hand.seat, owner: hand.owner, sideBets: side.details });
     }
     this.shoe.endRound();
     this.state = STATE.settled;
     this.emit('roundEnd', { bankroll: this.bankroll, needsShuffle: this.shoe.needsShuffle });
+  }
+
+  /**
+   * Settles a hand's side bets and any bonus the game pays on the main bet.
+   * @returns {{payout: number, net: number, details: object[]}}
+   */
+  settleSideBets(hand, result) {
+    const stakes = Object.entries(hand.sideBets).filter(([, amount]) => amount > 0);
+    const bonusEligible = this.sideBetGame && hand.cardCount > 0;
+    if (stakes.length === 0 && !bonusEligible) return { payout: 0, net: 0, details: [] };
+
+    const context = {
+      playerHandCards: hand.cards,
+      dealerHandCards: this.dealer.cards,
+      won: result === RESULT.win || result === RESULT.blackjack || result === RESULT.bonus,
+      doubled: hand.doubled,
+      split: hand.isSplit,
+      trueCount: this.trueCount(),
+      playerTotal: hand.total,
+      dealerTotal: this.dealer.total,
+      dealerBlackjack: this.dealerBlackjack,
+    };
+    const spots = sideBetSpots(this.sideBetGame);
+    let payout = 0;
+    let staked = 0;
+    const details = [];
+    stakes.forEach(([name, stake], index) => {
+      staked += stake;
+      const spot = spots[index] ?? spots[0];
+      if (!spot) return;
+      const won = evaluateSideBet({ game: this.sideBetGame, ruleIndex: spot.ruleIndex, stake, context });
+      payout += won?.payout ?? 0;
+      details.push({ name, stake, payout: won?.payout ?? 0, multiplier: won?.multiplier ?? -1, label: spot.id });
+    });
+
+    // Some games add a bonus to the main bet rather than to a side bet.
+    if (bonusEligible) {
+      const bonus = evaluateHandBonus({ game: this.sideBetGame, bet: hand.bet, context });
+      if (bonus) {
+        payout += bonus.payout;
+        details.push({ name: 'bonus', stake: 0, payout: bonus.payout, multiplier: bonus.multiplier, label: 'Bonus' });
+      }
+    }
+    return { payout, net: payout - staked, details };
   }
 
   /** Clears the table, ready for the next round's bets. */

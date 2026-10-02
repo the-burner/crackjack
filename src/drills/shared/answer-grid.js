@@ -123,3 +123,16 @@ export function windowContaining(answer, lowest, size) {
   while (answer > low + size - 1) low += step;
   return low;
 }
+
+/**
+ * Draws a grid so it fills its wrapper element.
+ * @param {AnswerGrid} grid
+ * @param {HTMLCanvasElement} canvas
+ * @param {HTMLElement} wrap
+ */
+export function drawGridIn(grid, canvas, wrap, { smallText } = {}) {
+  const width = wrap.clientWidth;
+  const height = wrap.clientHeight;
+  if (width < 2 || height < 2) return;
+  grid.draw(canvas, width, height, { smallText: smallText ?? width < 400 });
+}

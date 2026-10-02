@@ -29,6 +29,10 @@ export function createBetOverlay(handlers) {
   let previousLabel = null;
   let heading = 'Place your bets.';
   let foulOffered = false;
+  /** Label of the side bet chosen for the next round, if any. */
+  let sideBetLabel = '';
+  /** A one-off message shown instead of the heading. */
+  let message = '';
   let geometry = null;
 
   const title = h('div', { class: 'bet-overlay__title' });
@@ -52,6 +56,15 @@ export function createBetOverlay(handlers) {
     handlers.onSideBet();
   }
 
+  /**
+   * The heading to show: a transient message if there is one, otherwise the
+   * standing heading plus the side bet waiting for the next round.
+   */
+  function titleText() {
+    if (message) return message;
+    return sideBetLabel ? `${heading} · ${sideBetLabel}` : heading;
+  }
+
   /** Lays the tiles out for the panel's current width and draws them. */
   function draw() {
     const width = Math.max(140, Math.floor(el.clientWidth || 320));
@@ -66,7 +79,7 @@ export function createBetOverlay(handlers) {
       const highlight = previousLabel !== null && cells[i].label === previousLabel;
       drawBevelButton(ctx, { ...rect, label: cells[i].label, color: highlight ? TILE.previous : TILE.normal, font });
     });
-    title.textContent = heading;
+    title.textContent = titleText();
     foulButton.hidden = !foulOffered;
   }
 
@@ -101,13 +114,22 @@ export function createBetOverlay(handlers) {
       heading = 'Place your bets.';
       if (change > 0) heading += ` You won ${money(change)}`;
       if (change < 0) heading += ` You lost ${money(-change)}`;
+      message = '';
       el.hidden = false;
       draw();
     },
 
     /** Shows a message in place of the heading (a rejected bet, a Foul result). */
     setMessage(text) {
-      title.textContent = text;
+      message = text;
+      title.textContent = titleText();
+    },
+
+    /** Notes the side bet waiting for the next round, so redraws keep showing it. */
+    setSideBet(label) {
+      sideBetLabel = label;
+      message = '';
+      title.textContent = titleText();
     },
 
     hide() {

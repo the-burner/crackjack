@@ -1,7 +1,7 @@
 /* Drill screens: green felt, display area, stats panel and answer grids. */
 
 .drill { background: var(--felt); color: #fff; }
-.drill__bar { display: flex; justify-content: flex-end; gap: 6px; padding: 2px 6px; }
+.drill__bar { position: relative; z-index: 6; display: flex; justify-content: flex-end; gap: 6px; padding: 2px 6px; }
 .drill__bar .btn { height: 36px; min-width: 64px; }
 .drill__body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 0 4px 6px; min-height: 0; }
 .drill__display { flex: 1; position: relative; min-height: 0; }
@@ -32,3 +32,114 @@
 
 /* The drill options screens use the shared settings look plus a launch button. */
 .drill-options .btn--primary { margin-top: 4px; }
+
+/* --- Options screens ------------------------------------------------------ */
+
+.drill-options__group { display: flex; flex-direction: column; gap: 6px; }
+.drill-options__pair { display: flex; gap: 6px; align-items: stretch; }
+.drill-options__pair > :first-child { flex: 1; min-width: 0; }
+.drill-options__pair > .btn { flex: 0 0 auto; min-width: 64px; }
+.drill-options__note:empty { display: none; }
+.drill-options .field--inline > .label { flex: 0 0 72px; }
+.drill-options .slider { flex: 1; }
+
+/* --- Play screens --------------------------------------------------------- */
+
+.drill__cards, .drill__tray { position: absolute; inset: 0; }
+
+/* The line of text above the tray (running count, decks dealt). */
+.drill__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: bold 16px var(--font);
+  color: #fff;
+  pointer-events: none;
+}
+
+/* The yellow count panel sits over the bottom right of the card area. */
+.drill__count {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 20px var(--font);
+  color: #ffff00;
+  pointer-events: none;
+}
+.drill__count[hidden] { display: none; }
+
+/* The canvas is taken out of the flow so its size never feeds back into the
+   layout that decides how big it should be. */
+.drill__answers-wrap { position: relative; width: 100%; min-height: 0; }
+.drill__answers-wrap > .drill__answers { position: absolute; inset: 0; }
+/* The Flash index test has no fixed share of the screen: six columns of three
+   roughly square cells. */
+.drill--flash .drill__answers-wrap { aspect-ratio: 2 / 1; }
+.drill__buttons { display: flex; flex-direction: column; gap: 6px; }
+.drill__buttons[hidden] { display: none; }
+.drill__answer-row { display: flex; gap: 6px; }
+.drill__answer-row .btn { flex: 1; min-height: 56px; }
+.drill__answer-row .btn[hidden] { display: none; }
+.drill__answer-row .btn.is-correct { color: #0000c0; text-decoration: underline; }
+
+/* Drills with an answer grid: half the screen for the display, the rest the grid. */
+.drill--grid .drill__display { flex: 0 0 50%; }
+.drill--grid .drill__answers-wrap { flex: 1 1 0; min-height: 120px; }
+
+/* The card area gets whatever the stats and buttons leave, about two thirds. */
+.drill--flash .drill__display { min-height: 140px; }
+
+/* The Full Table drill: the table on top, stats and grid side by side below. */
+.drill--full .drill__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr min-content min-content min-content;
+  column-gap: 8px;
+  row-gap: 4px;
+}
+.drill--full .drill__display { grid-column: 1 / -1; grid-row: 1; }
+.drill--full .drill__message { grid-column: 1; grid-row: 2; }
+.drill--full .drill__stats { grid-column: 1; grid-row: 3; }
+.drill--full .drill__controls { grid-column: 1; grid-row: 4; align-self: start; }
+.drill--full .drill__answers-wrap { grid-column: 2; grid-row: 2 / -1; }
+
+/* Shown instead of the Full Table drill while the device is upright. */
+.drill__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--felt);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  font: bold 18px var(--font);
+}
+.drill__cover[hidden] { display: none; }
+
+/* Landscape: the drill's own area fills the left half, the controls the right. */
+@media (orientation: landscape) {
+  .drill:not(.drill--full) .drill__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* One spare row so the last control row does not stretch. */
+    grid-template-rows: repeat(5, min-content) 1fr;
+    column-gap: 8px;
+    row-gap: 6px;
+  }
+  .drill:not(.drill--full) .drill__display { grid-column: 1; grid-row: 1 / -1; }
+  .drill:not(.drill--full) .drill__message,
+  .drill:not(.drill--full) .drill__stats,
+  .drill:not(.drill--full) .drill__controls,
+  .drill:not(.drill--full) .drill__buttons,
+  .drill:not(.drill--full) .drill__answers-wrap { grid-column: 2; }
+}

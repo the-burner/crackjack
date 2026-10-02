@@ -68,6 +68,32 @@ export class DrillShoe {
     }
   }
 
+  /**
+   * Deals the next card and also reports how much it moved the running count,
+   * which the Two Tables drill needs to count cards as they are revealed.
+   * @returns {{card: number, countValue: number}|null}
+   */
+  dealWithCountValue() {
+    const before = this.counter.running;
+    const card = this.deal();
+    return card === null ? null : { card, countValue: this.counter.running - before };
+  }
+
+  /**
+   * Biases the next card the way the Count and Full drills do: while more than
+   * half the shoe is left, a card whose count value has the unwanted sign is
+   * pushed back most of the time.
+   * @param {'none'|'negative'|'positive'} bias
+   */
+  biasNext(bias) {
+    if (bias === 'none' || this.remaining * 2 <= this.cards.length) return;
+    const values = this.counter.strategy.countValues;
+    const rank = Math.min(((this.cards[this.dealt] - 1) % 13) + 1, 10);
+    const unwanted = bias === 'negative' ? 1 : -1;
+    const chance = bias === 'negative' ? 0.67 : 0.71;
+    if (Math.sign(values[rank]) === unwanted && this.random() < chance) this.applyBias(bias);
+  }
+
   /** Decks still in the shoe, by the true-count settings. */
   decksRemaining() {
     return this.counter.decksRemaining(this.dealt);
