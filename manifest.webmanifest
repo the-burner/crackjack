@@ -1,0 +1,15 @@
+{
+  "name": "Blackjack Verité",
+  "short_name": "Verité",
+  "description": "Blackjack practice: drills and a full game, fully offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffe0c0",
+  "theme_color": "#a11b2e",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }
+  ]
+}

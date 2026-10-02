@@ -1,0 +1,274 @@
+/* Base layout and components. */
+
+:root {
+  --page-bg: #ffe0c0;
+  --title-bg: #b83038;
+  --nav-bg: #0000ff;
+  --primary-bg: #008000;
+  --felt: #008000;
+  --btn-bg: #f6f6f6;
+  --btn-bg-active: #e8e8e8;
+  --btn-border: #ddd;
+  --btn-text: #333;
+  --check-on: #3388cc;
+  --disc: rgba(0, 0, 0, 0.3);
+  --font: Helvetica, Arial, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--page-bg);
+  font-family: var(--font);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app { height: 100%; }
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  overflow: hidden;
+}
+.screen[hidden] { display: none; }
+
+.screen__body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 6px 16px;
+}
+
+.column { width: 100%; max-width: 365px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.column--wide { max-width: 740px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row > * { flex: 1; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Title bar: centered red title chip with Back on the left and Help on the right. */
+.topbar {
+  display: grid;
+  grid-template-columns: 70px 1fr 70px;
+  align-items: start;
+  gap: 6px;
+  padding: 2px 6px 4px;
+  min-height: 40px;
+}
+.topbar__title {
+  justify-self: center;
+  min-width: 140px;
+  max-width: 100%;
+  padding: 2px 10px;
+  background: var(--title-bg);
+  color: #fff;
+  font: bold 18px var(--font);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar .btn { height: 36px; padding: 0 6px; }
+.topbar__end { justify-self: end; display: flex; gap: 6px; }
+
+/* Buttons. */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--btn-border);
+  border-radius: 0;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font: bold 12.5px var(--font);
+  text-shadow: 0 1px 0 #f3f3f3;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.btn:active { background: var(--btn-bg-active); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn--large { font-size: 16px; min-height: 44px; }
+.btn--nav { background: var(--nav-bg); color: #fff; text-shadow: none; border-color: var(--nav-bg); }
+.btn--nav:active { background: #0000c0; }
+.btn--primary { background: var(--primary-bg); color: #fff; text-shadow: none; border-color: var(--primary-bg); }
+.btn--primary:active { background: #006400; }
+.btn--block { display: flex; width: 100%; }
+
+/* Icon disc after the label (right) or under it (bottom). */
+.btn[class*='icon-']::after {
+  content: '';
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--disc);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px 14px;
+}
+.btn--icon-right { padding-right: 40px; }
+.btn--icon-right::after { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+.btn--icon-bottom { flex-direction: column; gap: 6px; }
+.btn--nav[class*='icon-']::after, .btn--primary[class*='icon-']::after { background-color: rgba(0, 0, 0, 0.3); }
+
+/* Text. */
+.label { font: bold 16px var(--font); color: #000; }
+.label--small { font-size: 14px; }
+.note { font: bold 14px var(--font); color: #000; text-align: center; }
+.note--warning { color: #c00000; }
+.footer-note { font: bold 10px var(--font); text-align: center; padding: 4px 0 6px; }
+
+/* Field rows: label above or left of a control. */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field--inline { flex-direction: row; align-items: center; gap: 8px; }
+.field--inline > .label { flex: 0 0 78px; }
+.field--inline > :not(.label) { flex: 1; }
+
+/* Select styled as a rounded button with an arrow disc. */
+.select {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.select select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--btn-border);
+  border-radius: 5px;
+  background: var(--btn-bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  color: var(--btn-text);
+  font: bold 16px var(--font);
+  text-align: center;
+  text-align-last: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.select--mini select { min-height: 34px; padding: 6px 34px 6px 10px; font-size: 12.5px; }
+.select::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--disc) no-repeat center / 14px 14px;
+  pointer-events: none;
+}
+
+/* Checkbox list: a rounded group of full-width rows. */
+.checklist { border: 1px solid var(--btn-border); border-radius: 4px; overflow: hidden; background: var(--btn-bg); }
+.checklist--horizontal { display: flex; }
+.checklist--horizontal .check { flex: 1; justify-content: center; padding-left: 8px; border-top: 0; border-left: 1px solid var(--btn-border); }
+.checklist--horizontal .check:first-child { border-left: 0; }
+.checklist--horizontal .check input { display: none; }
+.checklist--horizontal .check.is-on { background: var(--check-on); color: #fff; text-shadow: none; }
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--btn-border);
+  color: var(--btn-text);
+  font: bold 12.5px var(--font);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.check:first-child { border-top: 0; }
+.check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 3px;
+  background: var(--disc);
+  opacity: 0.6;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.check input:checked {
+  opacity: 1;
+  background: var(--check-on) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill='%23FFF' d='M2 7l3 3 7-7 1.5 1.5L5 13 .5 8.5z'/%3E%3C/svg%3E") no-repeat center / 12px 12px;
+}
+
+/* Value button: shows a number; tapping prompts for a new one. */
+.value-btn { min-width: 60px; font-size: 14px; }
+
+/* Slider with a number box. */
+.slider { display: flex; flex-direction: column; gap: 4px; }
+.slider__label { font: bold 14px var(--font); text-align: center; }
+.slider__row { display: flex; align-items: center; gap: 12px; }
+.slider__value {
+  flex: 0 0 50px;
+  height: 30px;
+  line-height: 28px;
+  border: 1px solid var(--btn-border);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  font: bold 14px var(--font);
+  text-align: center;
+}
+.slider input[type='range'] { flex: 1; accent-color: #38c; }
+
+/* Dialogs. */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(60px + var(--safe-top));
+  background: rgba(0, 0, 0, 0.55);
+}
+.dialog {
+  width: 282px;
+  max-width: calc(100% - 20px);
+  background: #fff;
+  font-family: Roboto, Helvetica, Verdana, Arial, sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.dialog__title { padding: 20px 16px 16px; border-bottom: 2px solid #007aff; color: #007aff; font-size: 22px; }
+.dialog__body { padding: 16px 24px; color: #4c4c4c; font-size: 18px; word-wrap: break-word; }
+.dialog__input { width: 100%; margin-top: 10px; padding: 4px; border: 1px solid #14234c; font-size: 18px; color: #333; }
+.dialog__buttons { display: flex; border-top: 1px solid #dcdcdc; }
+.dialog__buttons button {
+  flex: 1;
+  height: 52px;
+  border: 0;
+  border-left: 1px solid #dcdcdc;
+  background: #fff;
+  color: #007aff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.dialog__buttons button:first-child { border-left: 0; }
+
+/* Help text. */
+.help { background: #fff; }
+.help .screen__body { font-size: 13px; line-height: 1.4; padding: 8px 12px 24px; }
+
+/* Play screens (drills and the table) use a green felt background. */
+.screen--felt { background: var(--felt); }

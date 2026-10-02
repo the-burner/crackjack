@@ -1,0 +1,5 @@
+/* Screen-specific layout. */
+
+.home__logo { width: 120px; height: 120px; align-self: center; }
+.home__drills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 340px) { .home__drills { grid-template-columns: 1fr; } }
