@@ -101,8 +101,8 @@ themselves.
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and
   the conventions it follows.
-- [`docs/CHANGES-FROM-LEGACY.md`](docs/CHANGES-FROM-LEGACY.md) — every place the
+- [`docs/CHANGES-FROM-ORIGINAL.md`](docs/CHANGES-FROM-ORIGINAL.md) — every place the
   rebuild behaves differently from the original apps, and why.
-- `legacy/drill/`, `legacy/game/` — the original apps, kept for reference and
-  used by the tests that check the rebuild matches them. They are not part of
-  the app that gets served.
+- `tests/fixtures/` — behavior recorded from the original apps (strategy tables,
+  play advice, counts, the drills' answers). The unit tests check the rebuild
+  against it.
