@@ -9,3 +9,4 @@ node_modules/
 .reference/
 test-results/
 playwright-report/
+.tmp/

@@ -6,6 +6,7 @@ const bool = value => ({ type: 'bool', default: value });
 const int = (value, min, max) => ({ type: 'int', default: value, min, max });
 const oneOf = (values, value) => ({ type: 'enum', values, default: value });
 const json = value => ({ type: 'json', default: value });
+const text = value => ({ type: 'string', default: value });
 
 const grid = (rows, cols, value) => Array.from({ length: rows }, () => new Array(cols).fill(value));
 const tableGrids = value => ({
@@ -103,6 +104,10 @@ export const SETTINGS_SCHEMA = {
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
   'betting.ramp': json({ minCount: 0, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }, { chips: 5, hands: 1 }, { chips: 10, hands: 1 }, { chips: 15, hands: 1 }] }),
 
+  // Casino database (game). The downloaded database itself is cached in
+  // storage under "casinoDatabase", not here.
+  'casinoDb.cbjnId': text(''),
+
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': int(0),
   'bonuses.sevens777': oneOf(['none', '2:1', '3:2', 'suited10:1'], 'none'),
@@ -196,8 +201,10 @@ export const SETTINGS_SCHEMA = {
   'drills.count.decks': oneOf(DECKS, 6),
   'drills.count.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
   'drills.count.timerMode': oneOf(TIMER_MODES.slice(0, 3), 'auto'),
-  'drills.count.dealTenths': int(2, 1, 60),
+  /** Tenths of a second between flashes. */
+  'drills.count.dealTenths': int(20, 1, 60),
   'drills.count.testSeconds': int(6, 1, 15),
+  'drills.count.cardThickness': int(100, 100, 110),
   'drills.count.alarmSeconds': int(120, 15, 300),
   'drills.count.progressiveSpeed': bool(false),
   'drills.count.twoCounts': bool(false),

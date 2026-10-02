@@ -1,0 +1,161 @@
+/* Playing strategy, strategy tables, import, true count, betting and the
+   casino database. */
+
+:root {
+  --grid-head-bg: #93a5bb;
+  --grid-border: #9bb3cd;
+}
+
+/* `display: flex` on a component beats the hidden attribute, so say it again. */
+.btn[hidden], .tables__below[hidden], .tables__legend[hidden], .tc-row[hidden] { display: none; }
+
+/* Grids. The original used NSB.Grid: a slate header and ridged cell borders. */
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font: bold 12px var(--font);
+}
+.grid th {
+  padding: 4px 1px;
+  border: 2px ridge var(--grid-border);
+  background: var(--grid-head-bg);
+  color: #fff;
+  text-align: center;
+}
+.grid td {
+  padding: 4px 1px;
+  border: 2px ridge var(--grid-border);
+  color: #000;
+  text-align: center;
+  overflow: hidden;
+}
+.grid__label { background: #f0f0f0; }
+
+/* Strategy table viewer. */
+.tables__head { display: flex; align-items: center; gap: 6px; }
+.tables__name {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 2px inset #ccc;
+  background: #fff;
+  font: 13px var(--font);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tables__head .select { flex: 0 0 48%; }
+
+.tables__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tables__grid--editable td { cursor: pointer; }
+
+.tables__below { display: flex; gap: 6px; align-items: flex-start; }
+.tables__legend { flex: 0 0 112px; display: flex; flex-direction: column; }
+.tables__legend-box {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border: 1px groove #000;
+  font: bold 12px var(--font);
+  text-align: center;
+}
+.tables__specialty { flex: 1; min-width: 0; }
+.tables__specialty td { text-align: left; padding-left: 6px; }
+
+.tables__counts { display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin: 0 auto; }
+.tables__caption { font: bold 14px var(--font); text-align: center; padding-bottom: 2px; }
+.tables__rule { font: bold 13px var(--font); text-align: center; }
+.tables__hint { font: bold 12px var(--font); text-align: center; padding: 2px 0; }
+
+/* Allowed Bets. */
+.bet-table { max-width: 365px; margin: 0 auto; }
+.bet-table td { height: 34px; font-size: 16px; background: transparent; }
+.bet-table th { font-size: 16px; }
+.bet-table tbody tr { cursor: pointer; }
+.bet-table th:first-child, .bet-table td:first-child { width: 35%; }
+
+.bet-pad { display: flex; flex-direction: column; gap: 14px; max-width: 365px; margin: 0 auto; }
+.bet-pad__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.bet-pad__btn {
+  min-height: 52px;
+  border: 2px solid #000;
+  background: #0000c0;
+  color: #fff;
+  font: bold 18px var(--font);
+  cursor: pointer;
+}
+.bet-pad__btn--hands { background: #00ff00; color: #000; }
+.bet-pad__btn.is-on { background: #ff0000; color: #000; }
+.bet-pad__btn:disabled { opacity: 0.35; cursor: default; }
+
+/* Casino database. The id, Update and date row sit at the bottom of the screen
+   and the result list fills whatever is left, as in the original. */
+.casino-screen .screen__body { display: flex; overflow: hidden; }
+.casino { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.casino__list {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--btn-border);
+  background: #fff;
+}
+.casino__hint { padding: 8px; font: 13px var(--font); color: #800000; }
+.casino__item {
+  display: block;
+  width: 100%;
+  padding: 10px 26px 10px 10px;
+  border: 0;
+  border-bottom: 1px solid #ddd;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill='%23888' d='M4 1l7 6-7 6z'/%3E%3C/svg%3E") no-repeat right 8px center / 10px 10px;
+  color: #333;
+  font: 13px var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+.casino__note {
+  max-width: 320px;
+  margin: 10px auto;
+  padding: 10px;
+  border: 1px solid var(--btn-border);
+  background: #fff;
+  font: 16px var(--font);
+  text-align: center;
+}
+.casino__bottom { display: flex; flex-direction: column; gap: 4px; }
+.casino__bottom .row > * { flex: 1; }
+.casino-detail { max-width: 340px; margin: 0 auto; }
+.casino-detail td { text-align: left; padding: 6px; font-weight: normal; font-size: 13px; }
+.casino-detail td:first-child { width: 34%; font-weight: bold; }
+
+/* Import Strategy. */
+.import__text {
+  width: 100%;
+  max-width: 340px;
+  height: 215px;
+  margin: 0 auto;
+  display: block;
+  padding: 8px;
+  border: 1px solid var(--btn-border);
+  background: #fff;
+  color: #333;
+  font: 16px/1.3 var(--font);
+  resize: none;
+}
+.import__code { width: 250px; margin: 0 auto; display: flex; }
+.import__btn { width: 150px; margin: 0 auto; display: flex; }
+
+/* Label plus control rows. The strategy screen has a narrow label column; the
+   true-count and betting screens have long labels and a fixed-width control. */
+.strat-row { display: flex; align-items: center; gap: 8px; }
+.strat-row > .label { flex: 0 0 90px; font-size: 14px; }
+.strat-row__fill { flex: 1; min-width: 0; }
+.strat-row .row > .label { flex: 0 0 auto; text-align: center; }
+
+.tc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tc-row > .label { flex: 1; min-width: 0; }
+.tc-row > :not(.label) { flex: 0 0 150px; }
