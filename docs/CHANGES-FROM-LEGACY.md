@@ -177,3 +177,104 @@ Casino Database (legacy `frmDB`, `frmDBDetail`)
   "click a game" header (the legacy's no-hits branch was unreachable).
 - The database is cached under the `casinoDatabase` storage key as
   `{date, records}` instead of an array whose first element was the date.
+
+## Game table
+
+The table (legacy `frmTable`), its betting overlay (`frmBets`), the bet picker
+(`frmBetSelect`) and the statistics screen (`frmStats`).
+
+Pace of play and input
+
+- **fix** Input is refused while an animation is playing. The legacy engine ran a
+  round to completion and replayed its drawing from a command queue, but enabled
+  the action buttons at logic time; a tap during the replay started a second
+  batch over the one still playing (spec quirk 27). The new table queues the
+  engine's events and only offers the controls the engine reports as legal once
+  the queue is empty. Gestures are ignored the same way.
+- **fix** The bankroll label and the count readouts follow the replay, not the
+  engine. The legacy panels read the final values, so the bankroll jumped to its
+  end-of-round figure while the cards were still being dealt. Stakes now come off
+  as they are placed, payouts arrive hand by hand, and the running/true counts
+  are refreshed when the last card of a timeline is showing.
+- **fix** The mouse "too short" test measures the swipe, not `|x - y|` (quirk 44).
+  A swipe shorter than 30 px is a tap; anything longer is read as a direction.
+- All three speed settings convert to a pause of `(101 - speed) / 120` seconds.
+  The legacy used `/125` for the other-players speed and `/120` for the other two.
+- The insurance offer still passes itself after five seconds, as before.
+
+Leaving the table
+
+- **fix** Leaving in the middle of a round hands the chips back (quirk 41). The
+  legacy abandoned them: they had already been taken out of the saved bankroll.
+- Entering the table does not restart a round in progress, so Stats, the error
+  review and the bet editor can be visited mid-hand and come back to the same
+  hand. The legacy reset the whole session on re-entry unless a flag was set.
+
+Layout
+
+- Both orientations work at any size. Portrait shows at most four seats (keeping
+  the player's own), and the cards shrink so every shown seat fits side by side;
+  the legacy forced portrait down to two seats and refused to play otherwise.
+  There is no "rotate back" cover screen.
+- Cards in a hand always step far enough right to leave each one's rank index
+  showing (at least 26 % of the card width). With the legacy spacing a narrow
+  portrait seat gave a 3 px step, which hid every rank but the last.
+- The canvas is scaled for the device pixel ratio, so the felt and the cards are
+  sharp. The legacy sized every canvas's backing store in CSS pixels.
+- The discard tray and the shoe are cut out of their photographs with a
+  destination-in mask instead of the legacy's `"darker"` plus `"lighter"`
+  compositing trick, and the felt behind them comes from the same background
+  buffer at the same scale, which removes the mismatched rectangle the legacy
+  left around the tray.
+- The whole table is redrawn from the replayed state each frame rather than
+  erasing rectangles out of a saved background, so there are no stale-pixel
+  artifacts and the pointer needs no save-under canvas.
+- Action buttons sit in two stacks at the bottom corners in both orientations.
+  The legacy moved double/split/surrender under the discard tray in portrait.
+- The status band, bankroll, count readout and per-seat chip labels are DOM
+  elements positioned from the computed layout, as in the legacy; everything else
+  is drawn on the canvas.
+
+Betting
+
+- The bet grid is built from `betting.ramp` (chips x `betting.chipValue`), with
+  rows that repeat the row before them collapsed into one tile, the previous bet
+  highlighted orange, and the won/lost amount since the last bet in the heading,
+  all as the legacy `SquishBets`/`makebuttons49c` did.
+- A bet outside the table limits, or one the bankroll cannot cover, is refused
+  with a message in the overlay. The legacy did not check the bankroll.
+- "Side Bet" opens the bet picker (`game.betSelect`) instead of swapping the
+  grid in place. Side bets are **not** placed: the engine does not resolve them
+  yet, so the picker reports that and no money is wagered. The legacy switched
+  the same grid to side-bet amounts.
+- The overlay is a compact panel at the bottom of the felt in both orientations.
+  The legacy stretched it over most of the table in landscape.
+- Stats is reached from the title bar, where it is also available during play,
+  rather than from the overlay.
+
+Dealer errors ("Foul")
+
+- **fix** A caught error refunds exactly what the player was short, and a missed
+  one reports that same amount. The legacy refunded an undivided `fixuptot`,
+  which overpaid by 2-4x for most error types, while the miss report divided it
+  by a per-type factor (quirk 20).
+- Six of the eight error types are implemented: insurance mispaid, blackjack
+  mispaid, a good hand called a bust, a dealer bust called 21, a winning hand
+  paid as a push, and chips taken on a push. Each is applied to the settled round
+  as a payout adjustment, so "Busted a good hand" shows at settlement rather than
+  at the moment the card was dealt.
+- "Dealer stood on 16" and "Bonus not paid" are not implemented: the first needs
+  the dealer to stop drawing mid-hand and the second needs side-bet payouts,
+  neither of which the engine can be asked for. Their options still turn the Foul
+  button on.
+- The error chance per type follows the legacy table (0.07 to 0.525). The
+  "probability scale" slider the legacy pinned at 50 has no UI, as before.
+
+Statistics
+
+- **fix** The bankroll low/high/average figures are sampled after the round's
+  chips have been returned (quirk 37; the sampling lives in the session).
+- The screen lists the counts, the bankroll and bet history, play and bet
+  accuracy, and the four in-table display switches. The per-category error
+  counts, the side-bet accuracy, "Last Bet", "Round # this shoe" and the
+  tray/shoe card breakdowns are not shown.

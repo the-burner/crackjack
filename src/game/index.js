@@ -1,5 +1,12 @@
-// The blackjack game.
+// The blackjack game: the table and the screens reached from it.
+
+import { tableScreen } from './screens/table.js';
+import { betSelectScreen } from './screens/bet-select.js';
+import { gameStatsScreen } from './screens/stats.js';
 
 export function registerGameScreens(router) {
-  return router;
+  return router
+    .register('game.table', tableScreen)
+    .register('game.betSelect', betSelectScreen)
+    .register('game.stats', gameStatsScreen);
 }

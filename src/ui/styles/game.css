@@ -1,1 +1,145 @@
-/* game screens. */
+/* The blackjack table, its betting overlay, the bet picker and the statistics. */
+
+.table { background: #004000; }
+
+/* Title bar: a black strip in portrait, floating over the felt in landscape. */
+.table__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 4px;
+  background: #000;
+}
+.table__bar-end { display: flex; gap: 4px; }
+.table__bar .btn { min-height: 34px; padding: 0 6px; font-size: 12px; }
+.table__bar .btn--icon-right { padding-right: 28px; }
+.table__bar .btn[class*='icon-']::after { width: 18px; height: 18px; right: 4px; background-size: 11px 11px; }
+
+@media (orientation: landscape) {
+  .table__bar { position: absolute; top: 0; left: 0; right: 0; z-index: 9; background: transparent; pointer-events: none; }
+  .table__bar .btn { pointer-events: auto; }
+}
+
+/* The felt: a canvas with the labels and controls laid over it. */
+.table__felt {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+.table__canvas { position: absolute; left: 0; top: 0; }
+
+.table__status,
+.table__bankroll,
+.table__counts,
+.table__chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.table__status {
+  z-index: 8;
+  background: #000;
+  color: #fff;
+  font: bold 15px var(--font);
+}
+.table__status[hidden] { display: none; }
+.table__status--good { background: #00ff00; color: #000; }
+.table__status--error { background: #ff0000; color: #fff; }
+
+.table__bankroll { color: #fff; font: bold 20px var(--font); text-shadow: 0 1px 2px #000; }
+.table__bankroll.is-negative { color: #ff8080; }
+
+.table__counts { color: #ffff00; font: bold 16px var(--font); justify-content: flex-start; }
+
+.table__chip { color: #fff; font: bold 16px var(--font); text-shadow: 0 1px 2px #000; }
+.table__chip.is-result { background: #ffff00; color: #000; text-shadow: none; }
+
+/* Action buttons, in two stacks at the bottom corners. */
+.table__actions {
+  position: absolute;
+  bottom: 4px;
+  z-index: 7;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.table__actions--left { left: 2px; align-items: flex-start; }
+.table__actions--right { right: 2px; align-items: flex-end; }
+.table__actions .btn { width: 140px; min-height: 46px; font-size: 14px; }
+.table__actions .btn[hidden] { display: none; }
+
+@media (max-width: 420px) {
+  .table__actions .btn { width: 118px; min-height: 42px; font-size: 13px; }
+}
+
+/* Betting overlay: a dark panel with the canvas bet grid. */
+.bet-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  z-index: 10;
+  width: min(598px, calc(100% - 8px));
+  transform: translateX(-50%);
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.65);
+}
+.bet-overlay[hidden] { display: none; }
+.bet-overlay__title {
+  color: #ffff00;
+  font: bold 17px var(--font);
+  text-align: center;
+  padding: 2px 0 4px;
+}
+.bet-overlay__grid { display: block; width: 100%; }
+.bet-overlay__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.bet-overlay__buttons .btn { min-height: 40px; padding: 4px 26px 4px 4px; font-size: 12px; }
+.bet-overlay__buttons .btn[class*='icon-']::after { width: 18px; height: 18px; right: 4px; background-size: 11px 11px; }
+.bet-overlay__buttons .btn[hidden] { display: none; }
+
+/* Bet picker: rows of bevelled tiles. */
+.bet-select__hands,
+.bet-select__chips {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.bet-select__chips { margin-top: 10px; }
+.tile {
+  min-height: 56px;
+  border: 2px solid #000;
+  border-top-color: #fff;
+  border-left-color: #fff;
+  font: bold 18px var(--font);
+  text-shadow: none;
+}
+.tile--hands { background: #00ff00; color: #000; }
+.tile--hands.is-on { background: #ff0000; }
+.tile--chips { background: #0000c4; color: #fff; }
+.tile--chips:disabled { opacity: 0.35; }
+
+/* Statistics table. */
+.stats-table { width: 100%; border-collapse: collapse; background: #fff; }
+.stats-table th,
+.stats-table td {
+  border: 1px solid #9bb3cd;
+  padding: 5px 8px;
+  font: 15px var(--font);
+  color: #000;
+  text-align: center;
+  font-weight: normal;
+}
+.stats-table__head th,
+.stats-table__head td { background: #eceff3; font-weight: bold; }
+.game-stats .column { gap: 10px; }
