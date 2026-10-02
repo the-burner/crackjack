@@ -1,7 +1,7 @@
 // sw.js — Service Worker for Blackjack Verité Drills (local PWA mirror)
 // Precaches every app file so the homescreen web-app runs fully offline
 // after being served over HTTP once. Replaces the app's dead AppCache.
-const CACHE = 'bjvd-v1.5.25-5';
+const CACHE = 'bjvd-v1.5.25-6';
 const ASSETS = [
   './',
   './manifest.webmanifest',
