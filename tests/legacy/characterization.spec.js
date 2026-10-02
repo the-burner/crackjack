@@ -25,7 +25,7 @@ for (const app of ['game', 'drill']) {
     test('play advisor', async ({ context, baseURL }) => {
       const page = await openLegacy(context, baseURL, app);
       const configs = cap.ADVISOR_CONFIGS.filter(c => ids.includes(c.system));
-      const actual = await page.evaluate(cap.captureAdvisorInPage, { app, configs, permissions: cap.ADVISOR_PERMISSIONS, counts: cap.ADVISOR_COUNTS });
+      const actual = await page.evaluate(cap.captureAdvisorInPage, { app, configs, permissions: cap.ADVISOR_PERMISSIONS, counts: cap.ADVISOR_COUNTS, probeModes: app === 'drill' ? [0, 2, 3] : [0] });
       expect(actual).toEqual(loadFixture(`advisor.${app}`));
     });
 

@@ -23,7 +23,7 @@ for (const app of ['game', 'drill']) {
   const ids = app === 'game' ? cap.STRATEGY_IDS : cap.DRILL_STRATEGY_IDS;
   save(`strategy-tables.${app}`, await page.evaluate(cap.captureStrategyTablesInPage, { app, configs: cap.strategyConfigs(ids) }));
   const advisorConfigs = cap.ADVISOR_CONFIGS.filter(c => ids.includes(c.system));
-  save(`advisor.${app}`, await page.evaluate(cap.captureAdvisorInPage, { app, configs: advisorConfigs, permissions: cap.ADVISOR_PERMISSIONS, counts: cap.ADVISOR_COUNTS }));
+  save(`advisor.${app}`, await page.evaluate(cap.captureAdvisorInPage, { app, configs: advisorConfigs, permissions: cap.ADVISOR_PERMISSIONS, counts: cap.ADVISOR_COUNTS, probeModes: app === 'drill' ? [0, 2, 3] : [0] }));
   save(`counting.${app}`, await page.evaluate(cap.captureCountingInPage, { app, configs: cap.countingConfigs(ids), cardsPerConfig: 300 }));
   if (page.legacyErrors.length) console.warn(app, 'page errors:', page.legacyErrors);
   await page.close();

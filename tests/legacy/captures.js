@@ -86,9 +86,10 @@ export const ADVISOR_PERMISSIONS = [
 /**
  * Calls the play advisor for every two-card hand x upcard x true count (plus a
  * set of multi-card hands) and returns one compact record string per call:
- * "hitstand,xxdid,xxplayer,DDLess?1:0".
+ * "hitstand,xxdid,xxplayer,DDLess?1:0,CTmp". `probeModes` lists extra `inok`
+ * values to record (the drills probe single strategy sections with 2 and 3).
  */
-export function captureAdvisorInPage({ app, configs, permissions, counts }) {
+export function captureAdvisorInPage({ app, configs, permissions, counts, probeModes = [0] }) {
   const g = window;
   const advise = app === 'game' ? g.suggested_play2 : g.suggested_play;
   const out = [];
@@ -111,12 +112,12 @@ export function captureAdvisorInPage({ app, configs, permissions, counts }) {
     for (let hard = 5; hard <= 21; hard++) hands.push({ hc: hard, sc: hard, c1: 2, c2: Math.min(10, Math.max(2, hard - 4)), n: 3 });
     for (let other = 2; other <= 10; other++) hands.push({ hc: 11 + other, sc: 1 + other, c1: 1, c2: other, n: 3 });
     const results = [];
-    for (const h of hands) for (let up = 1; up <= 10; up++) for (const p of permissions) for (const tc of counts) {
+    for (const inok of probeModes) for (const h of hands) for (let up = 1; up <= 10; up++) for (const p of permissions) for (const tc of counts) {
       g.nextplayercard = h.n; g.wholecount = tc; g.TrueCountReal = tc; g.inscount = tc;
       g.DealerTotal = up === 1 ? 11 : up; g.DealerTotalS = up;
-      g.hitstand = -1; g.DDLess = false; g.xxdid = -1; g.xxplayer = -1;
-      advise(h.hc, h.sc, up, h.c1, h.c2, p.ddok, p.sdok, p.spok, p.suok, 0, tc);
-      results.push(`${g.hitstand},${g.xxdid},${g.xxplayer},${g.DDLess ? 1 : 0}`);
+      g.hitstand = -1; g.DDLess = false; g.xxdid = -1; g.xxplayer = -1; g.CTmp = -1;
+      advise(h.hc, h.sc, up, h.c1, h.c2, p.ddok, p.sdok, p.spok, p.suok, inok, tc);
+      results.push(`${g.hitstand},${g.xxdid},${g.xxplayer},${g.DDLess ? 1 : 0},${Number(g.CTmp)}`);
     }
     const insurance = [];
     for (const tc of counts) {
@@ -124,7 +125,7 @@ export function captureAdvisorInPage({ app, configs, permissions, counts }) {
       advise(12, 12, 1, 2, 10, false, false, false, false, app === 'game' ? true : -1, tc);
       insurance.push(g.hitstand);
     }
-    out.push({ config: c, hands, results, insurance });
+    out.push({ config: c, probeModes, hands, results, insurance });
   }
   return out;
 }
