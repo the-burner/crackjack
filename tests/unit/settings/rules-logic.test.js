@@ -203,25 +203,21 @@ describe('applyGameChange', () => {
 });
 
 describe('prepareLaunch', () => {
-  it('cuts the table to two seats in portrait', () => {
-    const { changes, message } = prepareLaunch(reader({ 'table.seatCount': 6 }), { portrait: true });
-    expect(changes['table.seatCount']).toBe(2);
-    expect(message).toMatch(/two seats/);
-  });
-
-  it('leaves a wide table alone in landscape', () => {
-    expect(prepareLaunch(reader({ 'table.seatCount': 6 }), { portrait: false })).toEqual({ changes: {}, message: null });
+  it('leaves the seat count alone in either orientation', () => {
+    expect(prepareLaunch(reader({ 'table.seatCount': 6 }))).toEqual({ changes: {} });
   });
 
   it('frees the first seat when every seat in play is a computer', () => {
     const current = reader({ 'table.seatCount': 2, 'table.computerSeats': [true, true, true, true, true, true] });
-    expect(prepareLaunch(current, { portrait: true }).changes['table.computerSeats'])
+    expect(prepareLaunch(current).changes['table.computerSeats'])
       .toEqual([false, true, true, true, true, true]);
   });
 
-  it('counts only the seats in play when looking for a human seat', () => {
-    const current = reader({ 'table.seatCount': 6, 'table.computerSeats': [true, true, true, true, true, false] });
-    expect(prepareLaunch(current, { portrait: true }).changes['table.computerSeats'])
+  it('counts only the seats in play when looking for a free seat', () => {
+    const current = reader({ 'table.seatCount': 2, 'table.computerSeats': [true, true, true, true, true, false] });
+    expect(prepareLaunch(current).changes['table.computerSeats'])
       .toEqual([false, true, true, true, true, false]);
+    const six = reader({ 'table.seatCount': 6, 'table.computerSeats': [true, true, true, true, true, false] });
+    expect(prepareLaunch(six)).toEqual({ changes: {} });
   });
 });

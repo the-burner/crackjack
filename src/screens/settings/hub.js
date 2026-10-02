@@ -3,8 +3,7 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
-import { alert } from '../../ui/dialogs.js';
-import { prepareLaunch } from '../../settings/rules-logic.js';
+import { openTable } from '../../game/launch.js';
 
 const NOTE = 'Click on the buttons to reach the various option screens. '
   + 'When options are set to your liking, click Launch Game.';
@@ -41,17 +40,10 @@ export function settingsHubScreen(app) {
       PLAY_SCREENS.map(navButton),
       button('Launch Game', {
         variant: 'primary', icon: 'gear', iconPos: 'bottom', block: true,
-        className: 'settings-hub__launch', 'data-action': 'launch', onClick: () => launchGame(app),
+        className: 'settings-hub__launch', 'data-action': 'launch', onClick: () => openTable(app),
       }),
     ),
   ));
   return { el };
 }
 
-/** Fixes up the seats for the current orientation, then opens the table. */
-async function launchGame(app) {
-  const { changes, message } = prepareLaunch(key => app.settings.get(key), { portrait: innerHeight > innerWidth });
-  app.settings.update(changes);
-  if (message) await alert(message);
-  app.open('game.table');
-}

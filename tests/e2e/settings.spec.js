@@ -158,16 +158,10 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
   await expect(check(play, 'Dealer wins ties')).toBeChecked();
 });
 
-// The table screen itself belongs to the game area, so this only checks the
-// seat fix-up the hub applies before opening it.
-test('Launch Game trims the table to two seats in portrait', async ({ page }) => {
+test('Launch Game keeps the saved seat count and opens the table', async ({ page }) => {
   await openHub(page, { fresh: true });
   await page.locator('[data-screen="settings"] [data-action="launch"]').click();
-  const message = page.locator('.dialog-overlay');
-  await expect(message).toContainText('Too many seats specified for Portrait mode');
-  await message.getByRole('button', { name: 'OK' }).click();
-  await expect(message).toBeHidden();
-
-  const el = await openOption(page, 'Basic Setup', 'settings.setup');
-  await expect(select(el, 'table.seatCount')).toHaveValue('Two Seats');
+  await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.settings') ?? '{}')['table.seatCount']);
+  expect(saved ?? 4).toBe(4);
 });

@@ -167,25 +167,19 @@ export function applyGameChange(get, gameId) {
 }
 
 /**
- * Seat checks run before the table opens (legacy `Button1__onclick`).
- * Portrait fits at most two seats, and at least one seat in play must be free
- * for the user.
+ * Seat check run before the table opens (legacy `Button1__onclick`): at least
+ * one seat in play must be free for the player. The original also cut a
+ * portrait table to two seats; the table now fits up to four seats in portrait
+ * by itself, so the saved seat count is left alone.
  * @param {(key: string) => *} get
- * @param {{portrait: boolean}} viewport
- * @returns {{changes: Record<string, *>, message: string|null}}
+ * @returns {{changes: Record<string, *>}}
  */
-export function prepareLaunch(get, { portrait }) {
+export function prepareLaunch(get) {
   const changes = {};
-  let message = null;
-  let seatCount = get('table.seatCount');
-  if (portrait && seatCount > 2) {
-    seatCount = 2;
-    changes['table.seatCount'] = seatCount;
-    message = 'Too many seats specified for Portrait mode. Changed to two seats.';
-  }
+  const seatCount = get('table.seatCount');
   const computerSeats = get('table.computerSeats');
   if (computerSeats.slice(0, seatCount).every(Boolean)) {
     changes['table.computerSeats'] = computerSeats.map((computer, seat) => (seat === 0 ? false : computer));
   }
-  return { changes, message };
+  return { changes };
 }

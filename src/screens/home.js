@@ -4,6 +4,7 @@ import { h } from '../ui/dom.js';
 import { button } from '../ui/components.js';
 import { standardScreen } from '../ui/screen.js';
 import { confirm, alert } from '../ui/dialogs.js';
+import { openTable } from '../game/launch.js';
 
 export const APP_VERSION = '3.0.0';
 
@@ -13,7 +14,7 @@ export function homeScreen(app) {
   body.append(
     h('div', { class: 'column home' },
       h('img', { class: 'home__logo', src: 'assets/icons/logo.png', alt: '' }),
-      button('Play Blackjack', { variant: 'primary', large: true, icon: 'gear', iconPos: 'bottom', block: true, onClick: go('game.table'), 'data-action': 'play' }),
+      button('Play Blackjack', { variant: 'primary', large: true, icon: 'gear', iconPos: 'bottom', block: true, onClick: () => openTable(app), 'data-action': 'play' }),
       h('div', { class: 'home__drills' },
         button('Flash Drills', { large: true, icon: 'gear', block: true, onClick: go('drills.flash.options') }),
         button('Depth Drills', { large: true, icon: 'gear', block: true, onClick: go('drills.depth.options') }),

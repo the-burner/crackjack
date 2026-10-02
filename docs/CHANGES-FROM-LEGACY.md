@@ -57,9 +57,11 @@ combining the two apps into one.
   nothing.
 - The dealing-bias selector (Dealer Errs/Biases) is kept as a setting. It had no
   effect in the legacy game because its strength variable was always 0.
-- Launch Game no longer refuses to start in landscape on small screens; the new
-  table layout is not fixed to portrait. It still reduces the table to two seats
-  in portrait and frees seat 1 when every seat in play is a computer player.
+- Opening the table (Play Blackjack on the home screen, or Launch Game in
+  Settings) no longer changes the saved seat count. The original cut a portrait
+  table to two seats and saved that; the table now fits up to four seats in
+  portrait on its own. Seat 1 is still freed when every seat in play is a
+  computer player.
 - Unusual Games asks for the import code in a dialog instead of a text box on
   the screen, which is how the rest of the app prompts for values.
 - Imported side-bet games are stored as `{id, name, definition}` under the
