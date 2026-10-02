@@ -6,6 +6,7 @@ import { Settings } from '../settings/store.js';
 import { SETTINGS_SCHEMA } from '../settings/schema.js';
 import { StrategyLibrary } from '../settings/strategies.js';
 import { Router } from './router.js';
+import { ErrorTallies } from '../services/error-tallies.js';
 
 export function createApp(root, { backend } = {}) {
   const app = {};
@@ -13,6 +14,7 @@ export function createApp(root, { backend } = {}) {
   app.settings = new Settings(SETTINGS_SCHEMA, app.storage);
   app.strategies = new StrategyLibrary(app.storage);
   app.sound = new Sound(app.settings);
+  app.errorTallies = new ErrorTallies(app.storage);
   app.router = new Router(root, app);
   /** Opens the help page for a screen. */
   app.help = topic => app.router.open('help', { topic });
