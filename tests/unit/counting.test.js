@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy } from '../../src/core/strategy/strategy-tables.js';
-import { Counter, roundTrueCount, TC_ROUNDING } from '../../src/core/counting.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+import { buildStrategy } from '../../public/src/core/strategy/strategy-tables.js';
+import { Counter, roundTrueCount, TC_ROUNDING } from '../../public/src/core/counting.js';
+import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
 import { loadFixture } from '../support/fixtures.js';
 
 function replay(record) {

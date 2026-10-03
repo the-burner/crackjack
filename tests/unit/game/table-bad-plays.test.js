@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { obviouslyBad, areYouSure } from '../../../src/game/table/bad-plays.js';
-import { ACTION } from '../../../src/game/engine/game.js';
+import { obviouslyBad, areYouSure } from '../../../public/src/game/table/bad-plays.js';
+import { ACTION } from '../../../public/src/game/engine/game.js';
 
 const totals = (total, hardTotal = total) => ({ total, hardTotal });
 

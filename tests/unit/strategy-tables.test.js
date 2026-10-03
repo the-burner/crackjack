@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, INDEX_SETS } from '../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+import { buildStrategy, INDEX_SETS } from '../../public/src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
 import { loadFixture } from '../support/fixtures.js';
 
 const toNumbers = table => table.map(row => row.map(v => (v === null || v === undefined ? v : Number(v))));

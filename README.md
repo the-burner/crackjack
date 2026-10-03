@@ -102,7 +102,7 @@ rename the Mac, delete `.certs/` and repeat the setup.
 Settings live in the browser's local storage under the `bjv.` prefix, so they
 survive reloads and app updates. Deleting the installed app (or clearing Safari's
 data for the site) clears them, and the app starts from the defaults in
-`src/settings/schema.js` — edit that file if you want different defaults.
+`public/src/settings/schema.js` — edit that file if you want different defaults.
 
 ## Development
 
@@ -117,7 +117,7 @@ npm run precache                     # update the service worker's file list aft
 ```
 
 Run `npm run precache` whenever you add, remove or change a file the app serves;
-it refreshes the list and version in `sw.js` so installed copies update
+it refreshes the list and version in `public/sw.js` so installed copies update
 themselves. The unit tests fail if you forget.
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and

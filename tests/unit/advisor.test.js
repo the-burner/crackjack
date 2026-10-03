@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, INDEX_SETS } from '../../src/core/strategy/strategy-tables.js';
-import { advisePlay, adviseInsurance } from '../../src/core/strategy/advisor.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+import { buildStrategy, INDEX_SETS } from '../../public/src/core/strategy/strategy-tables.js';
+import { advisePlay, adviseInsurance } from '../../public/src/core/strategy/advisor.js';
+import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
 import { loadFixture } from '../support/fixtures.js';
 
 const PERMISSIONS = [

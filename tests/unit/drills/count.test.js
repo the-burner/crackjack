@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import {
   FLASH_SIZES, maxFlashSize, flashSize, cardsUntilTest, flashRotated, flashLayout, flashPositions,
   countAnswer, halfSteps, answerIndex, aceDrillSuits, isAceCountDrill,
-} from '../../../src/drills/count/logic.js';
-import { drillCounts, isAceNeutral } from '../../../src/drills/shared/count-answers.js';
-import { DrillShoe } from '../../../src/drills/shared/shoe.js';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../public/src/drills/count/logic.js';
+import { drillCounts, isAceNeutral } from '../../../public/src/drills/shared/count-answers.js';
+import { DrillShoe } from '../../../public/src/drills/shared/shoe.js';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../public/src/drills/shared/count-grid.js';
+import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
+import { seededRandom } from '../../../public/src/core/random.js';
 
 const options = { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' };
 const highLow = buildStrategy(STRATEGY_FILES[30], options);

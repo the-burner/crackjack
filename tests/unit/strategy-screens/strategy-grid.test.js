@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE } from '../../../src/core/strategy/strategy-tables.js';
-import { NEVER, ALWAYS, NO_ENTRY } from '../../../src/core/strategy/strategy-file.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { buildStrategy, CODE } from '../../../public/src/core/strategy/strategy-tables.js';
+import { NEVER, ALWAYS, NO_ENTRY } from '../../../public/src/core/strategy/strategy-file.js';
+import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
 import {
   GRID_COLOR, TABLE_VIEWS, codeDescription, codeSymbol, columnLabels, countsTables,
   gridCell, insuranceRuleText, rowCount, rowLabels, specialCode, specialtyPlays, viewByKey,
-} from '../../../src/core/strategy/strategy-grid.js';
+} from '../../../public/src/core/strategy/strategy-grid.js';
 
 const view = key => viewByKey(key);
 const OPTIONS = {

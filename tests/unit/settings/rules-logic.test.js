@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { applyGameChange, applyRuleChange, gameVariant, prepareLaunch } from '../../../src/settings/rules-logic.js';
+import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
+import { applyGameChange, applyRuleChange, gameVariant, prepareLaunch } from '../../../public/src/settings/rules-logic.js';
 
 /** A reader over the schema defaults with the given overrides. */
 function reader(overrides = {}) {

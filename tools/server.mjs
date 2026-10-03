@@ -7,8 +7,8 @@
 // Phones need HTTPS before Safari will install a web app, so --phone serves
 // HTTPS with a certificate from mkcert (created on first use in .certs/).
 //
-// Only the app's own files are served; the rest of the repository (tests,
-// .git, the certificates) is not. Requests under /apps/ are forwarded to
+// Only the public/ folder is served; the rest of the repository (tests,
+// tools, .git, the certificates) is not. Requests under /apps/ are forwarded to
 // qfit.com: strategy import (/Apps/z<code>.php), side-bet game import
 // (/Apps/u<code>.php) and the casino database (/apps/cbjn7.php) are PHP
 // endpoints there, and forwarding keeps them same-origin for the browser.
@@ -20,12 +20,11 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/** Everything the browser loads lives here. */
+const ROOT = path.join(REPO, 'public');
 const UPSTREAM = 'https://www.qfit.com';
 const PROXY_TIMEOUT_MS = 15000;
-
-const PUBLIC_FILES = new Set(['/', '/index.html', '/manifest.webmanifest', '/sw.js']);
-const PUBLIC_DIRS = ['/src/', '/assets/'];
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -33,8 +32,6 @@ const TYPES = {
   '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif',
   '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.pdf': 'application/pdf',
 };
-
-const isPublic = urlPath => PUBLIC_FILES.has(urlPath) || PUBLIC_DIRS.some(dir => urlPath.startsWith(dir));
 
 /** Serves one of the app's files, or 404. */
 function serveFile(urlPath, res) {
@@ -73,7 +70,6 @@ function handler(req, res) {
   }
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
   if (urlPath.toLowerCase().startsWith('/apps/')) return proxy(req, res);
-  if (!isPublic(urlPath)) return send(res, 404, 'Not found');
   return serveFile(urlPath, res);
 }
 
@@ -103,7 +99,7 @@ function localHostName() {
 
 /** The mkcert certificate for this Mac, created on first use. */
 function certificateFor(hostName) {
-  const dir = path.join(ROOT, '.certs');
+  const dir = path.join(REPO, '.certs');
   const cert = path.join(dir, `${hostName}.pem`);
   const key = path.join(dir, `${hostName}-key.pem`);
   if (!fs.existsSync(cert) || !fs.existsSync(key)) {

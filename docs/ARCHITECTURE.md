@@ -1,46 +1,50 @@
 # Architecture
 
 Blackjack Verité is a static, offline-first web app written as plain ES
-modules. There is no build step: `index.html` loads `src/main.js`, and every
-file under `src/` is served as-is.
+modules. There is no build step: everything the browser loads is in `public/`,
+served as-is — `public/index.html` loads `public/src/main.js`. Everything outside
+`public/` (tests, tools, docs) is for development only.
 
 ## Layout
 
 ```
-index.html, manifest.webmanifest, sw.js   app shell, install manifest, offline cache
-assets/          images and sounds (cards, table, trays, shoe, sounds, icons)
-src/
-  main.js        entry point: creates the app, registers screens, opens Home
-  app/           createApp() / createServices() and the screen router
-  core/          pure logic shared by everything, no DOM
-    cards.js       card ids, ranks, suits, hand totals
-    counting.js    running count, true count, side counts, decks remaining
-    random.js      seeded and default random sources, shuffling
-    strategy/      strategy-file parsing, table building, play and insurance
-                   advice, and the cell formatting the table viewer draws
-  settings/      the settings schema and store, the strategy catalog, and the
-                 pure rules behind the settings screens (rule interactions,
-                 bet ramp, casino rules, side-bet game decoding, strategy import)
-  services/      namespaced localStorage, sound effects, strategy-error tallies
-  ui/            DOM helpers, components, dialogs, the standard screen layout,
-                 card sprites, and the stylesheets
-  screens/       Home and Help, the settings screens (settings/) and the
-                 strategy, true count, betting and casino screens (strategy/)
-  drills/        the four drills; shared/ holds what they have in common
-    <drill>/       logic.js (pure), options.js and screen.js
-  game/
-    engine/        the round as a pure state machine: hands, shoe, rules,
-                   settlement, side bets
-    session.js     the engine plus the count, bankroll, statistics and
-                   strategy checking, persisted across visits
-    play-check.js  is this play or bet what the strategy calls for?
-    dealer-errors.js  the deliberate dealer mistakes and Foul claims
-    table/         drawing and animating the table, the betting overlay,
-                   gestures
-    screens/       the table, the bet picker and the statistics screen
-  data/          bundled data: strategy files, side-bet games, help text
+public/          the app: the only folder the server serves
+  index.html     the page; loads src/main.js
+  manifest.webmanifest  install manifest (name, icons, colours)
+  sw.js          service worker: offline cache (must sit at the site root)
+  assets/        images and sounds (cards, table, trays, shoe, sounds, icons)
+  src/
+    main.js        entry point: creates the app, registers screens, opens Home
+    app/           createApp() / createServices() and the screen router
+    core/          pure logic shared by everything, no DOM
+      cards.js       card ids, ranks, suits, hand totals
+      counting.js    running count, true count, side counts, decks remaining
+      random.js      seeded and default random sources, shuffling
+      strategy/      strategy-file parsing, table building, play and insurance
+                     advice, and the cell formatting the table viewer draws
+    settings/      the settings schema and store, the strategy catalog, and the
+                   pure rules behind the settings screens (rule interactions,
+                   bet ramp, casino rules, side-bet game decoding, strategy import)
+    services/      namespaced localStorage, sound effects, strategy-error tallies
+    ui/            DOM helpers, components, dialogs, the standard screen layout,
+                   card sprites, and the stylesheets
+    screens/       Home and Help, the settings screens (settings/) and the
+                   strategy, true count, betting and casino screens (strategy/)
+    drills/        the four drills; shared/ holds what they have in common
+      <drill>/       logic.js (pure), options.js and screen.js
+    game/
+      engine/        the round as a pure state machine: hands, shoe, rules,
+                     settlement, side bets
+      session.js     the engine plus the count, bankroll, statistics and
+                     strategy checking, persisted across visits
+      play-check.js  is this play or bet what the strategy calls for?
+      dealer-errors.js  the deliberate dealer mistakes and Foul claims
+      table/         drawing and animating the table, the betting overlay,
+                     gestures
+      screens/       the table, the bet picker and the statistics screen
+    data/          bundled data: strategy files, side-bet games, help text
 tests/
-  unit/          Vitest tests for src/
+  unit/          Vitest tests for public/src/
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
   support/       the fixture loader
@@ -83,7 +87,7 @@ animation is done.
 - **Randomness** is injected: functions take a `random` function returning
   [0, 1), so tests can pass `seededRandom(seed)`.
 - **Card ids** are 1..52 (`suit * 13 + rank`, rank 1..13, suits spades, clubs,
-  hearts, diamonds — the row order of `assets/cards/cards.png`).
+  hearts, diamonds — the row order of `public/assets/cards/cards.png`).
 - **Canvas drawing** scales the backing store by `devicePixelRatio`
   (`setupCanvas()` in `ui/card-sprites.js`).
 - **Help** text for a screen lives in `data/help.js` under the screen's name.
@@ -103,6 +107,6 @@ animation is done.
 
 ## Offline
 
-`sw.js` precaches every file the app serves. Its file list and version are
+`public/sw.js` precaches every file in `public/`. Its file list and version are
 generated: run `npm run precache` after adding, removing or changing a file.
 `npm run precache:check` fails if the list is out of date.

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateSideBet, sideBetSpots, ruleMatches, allowedAtCount } from '../../../src/game/engine/side-bets.js';
-import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
-import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../src/data/side-bet-games.js';
-import { cardId } from '../../../src/core/cards.js';
+import { evaluateSideBet, sideBetSpots, ruleMatches, allowedAtCount } from '../../../public/src/game/engine/side-bets.js';
+import { decodeSideBetGame } from '../../../public/src/settings/side-bet-games.js';
+import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../public/src/data/side-bet-games.js';
+import { cardId } from '../../../public/src/core/cards.js';
 
 const SPADES = 0, CLUBS = 1, HEARTS = 2, DIAMONDS = 3;
 const c = (rank, suit = SPADES) => cardId(rank, suit);

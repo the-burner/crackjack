@@ -5,8 +5,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SERVED = ['index.html', 'manifest.webmanifest', 'src', 'assets'];
+/** The folder the app is served from; everything in it is precached except sw.js itself. */
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const SERVED = fs.readdirSync(ROOT).filter(name => !name.startsWith('.') && name !== 'sw.js').sort();
 
 function walk(rel) {
   const abs = path.join(ROOT, rel);

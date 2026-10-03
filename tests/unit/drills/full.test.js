@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   tableSlots, scatterSlots, dealRound, handComplete, fullAnswer, partialView, spotsFor,
   isAceCountDrill, DEALER_SPOT, SCATTER_CARDS, SLOTS_PER_SPOT, TWO_TABLE_PHASES,
-} from '../../../src/drills/full/logic.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../public/src/drills/full/logic.js';
+import { cardId } from '../../../public/src/core/cards.js';
+import { seededRandom } from '../../../public/src/core/random.js';
 
 /** A card of the given blackjack value, in spades. */
 const card = value => cardId(value, 0);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isStrategyFileText, normalizeImportedText, strategyCodeUrl } from '../../../src/settings/strategy-import.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { isStrategyFileText, normalizeImportedText, strategyCodeUrl } from '../../../public/src/settings/strategy-import.js';
+import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
 
 describe('strategyCodeUrl', () => {
   it('builds the site-relative download URL', () => {

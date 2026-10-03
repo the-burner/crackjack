@@ -3,17 +3,17 @@
 
 import { describe, it, expect } from 'vitest';
 import { loadFixture } from '../../support/fixtures.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '../../../src/core/counting.js';
-import { emptyTallies } from '../../../src/services/error-tallies.js';
+import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
+import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '../../../public/src/core/counting.js';
+import { emptyTallies } from '../../../public/src/services/error-tallies.js';
 import {
   buildHandList, handIndex, correctPlay, errorCell, rowOf, columnOf, SITUATIONS,
-} from '../../../src/drills/flash/logic.js';
-import { depthGrid, trueCountFor } from '../../../src/drills/depth/logic.js';
-import { trayImage, TRAY_STYLES } from '../../../src/drills/shared/discard-tray.js';
-import { drillCounts } from '../../../src/drills/shared/count-answers.js';
-import { DrillShoe } from '../../../src/drills/shared/shoe.js';
+} from '../../../public/src/drills/flash/logic.js';
+import { depthGrid, trueCountFor } from '../../../public/src/drills/depth/logic.js';
+import { trayImage, TRAY_STYLES } from '../../../public/src/drills/shared/discard-tray.js';
+import { drillCounts } from '../../../public/src/drills/shared/count-answers.js';
+import { DrillShoe } from '../../../public/src/drills/shared/shoe.js';
 
 const strategyFor = c => buildStrategy(STRATEGY_FILES[c.system], {
   decks: c.decks, hitSoft17: Boolean(c.h17), doubleAfterSplit: Boolean(c.das), noHoleCard: false, indexSet: 'all',

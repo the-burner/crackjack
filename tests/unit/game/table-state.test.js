@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createTableState } from '../../../src/game/table/table-state.js';
+import { createTableState } from '../../../public/src/game/table/table-state.js';
 
 const card = (hand, value, faceUp = true) => ({ type: 'card', hand, card: value, faceUp, cardIndex: 0 });
 

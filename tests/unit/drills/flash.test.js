@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   buildHandList, dealHand, fillHand, handIndex, countForHand, correctPlay, errorCell,
   describeHand, describeEntry, errorCellsAsHands, rowOf, columnOf, upcardOf, SITUATIONS,
-} from '../../../src/drills/flash/logic.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { ACTION, SECTION } from '../../../src/core/strategy/advisor.js';
-import { seededRandom } from '../../../src/core/random.js';
-import { emptyTallies } from '../../../src/services/error-tallies.js';
+} from '../../../public/src/drills/flash/logic.js';
+import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
+import { ACTION, SECTION } from '../../../public/src/core/strategy/advisor.js';
+import { seededRandom } from '../../../public/src/core/random.js';
+import { emptyTallies } from '../../../public/src/services/error-tallies.js';
 
 const ALL_SITUATIONS = Object.fromEntries(SITUATIONS.map(k => [k, true]));
 const options = extra => ({ decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all', ...extra });

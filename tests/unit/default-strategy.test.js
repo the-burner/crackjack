@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
-import { BUILTIN_STRATEGIES } from '../../src/settings/strategies.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
-import { buildStrategy } from '../../src/core/strategy/strategy-tables.js';
+import { SETTINGS_SCHEMA } from '../../public/src/settings/schema.js';
+import { BUILTIN_STRATEGIES } from '../../public/src/settings/strategies.js';
+import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
+import { buildStrategy } from '../../public/src/core/strategy/strategy-tables.js';
 
 describe('the default strategy', () => {
   const id = SETTINGS_SCHEMA['strategy.system'].default;

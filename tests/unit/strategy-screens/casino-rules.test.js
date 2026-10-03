@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   casinoDetailRows, casinoRuleSettings, parseCasinoDatabase, parseCasinoRecord,
   searchCasinoDatabase, summarizeCasinoRecord,
-} from '../../../src/settings/casino-rules.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+} from '../../../public/src/settings/casino-rules.js';
+import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
 
 // Real records from the live CBJN download (1 October 2026).
 const ALIANTE_2D = 'Aliante (Boyd)^U.S.^Nevada^Aliante (Boyd), 7300 Aliante Pkwy.^7^40^Las Vegas^h17,ds,nm,sc,pv^15^1000^2^9';

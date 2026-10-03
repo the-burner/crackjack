@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DEALER_ERROR, ERROR_CHANCE, SUPPORTED_ERRORS, enabledErrors, dealerErrorsOn,
   pickDealerError, claimFoul, missedMessage, dealerStandsByMistake,
-} from '../../../src/game/dealer-errors.js';
+} from '../../../public/src/game/dealer-errors.js';
 
 const settingsWith = on => ({ get: key => on.includes(key) });
 
