@@ -74,13 +74,15 @@ test.describe('Playing Strategy', () => {
     await answerDialog(page);
     await answerDialog(page);
     expect(await page.evaluate(() => window.app.strategies.custom().length)).toBe(0);
-    expect(await setting(page, 'strategy.system')).toBe(30);
+    // Deleting falls back to the default strategy.
+    expect(await setting(page, 'strategy.system')).toBe(100);
   });
 });
 
 test.describe('Strategy tables', () => {
   test('shows the selected strategy and switches between the views', async ({ page }) => {
     await openHub(page);
+    await page.evaluate(() => window.app.settings.set('strategy.system', 30));
     const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
@@ -182,7 +184,7 @@ test('True Count Calcs writes every control', async ({ page }) => {
   await el.locator('select').nth(2).selectOption('Floor');
   await el.locator('select').nth(3).selectOption('Cards dealt');
   await el.getByRole('checkbox', { name: 'Ace side count' }).check();
-  await el.getByRole('button', { name: '0' }).click();
+  await el.getByRole('button', { name: '13' }).click();
   await answerDialog(page, '3');
 
   expect(await setting(page, 'trueCount.resolution')).toBe('quarter');
@@ -196,19 +198,21 @@ test.describe('Allowed Bets', () => {
   test('shows the count column only when betting errors are flagged', async ({ page }) => {
     await openHub(page);
     const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
-    await expect(el.locator('.bet-table tbody td').first()).toHaveText('-');
-
-    await el.getByRole('checkbox', { name: 'Warning on Betting Error' }).check();
+    // Warning on betting errors is on by default.
     await expect(el.locator('.bet-table tbody td').first()).toHaveText('<=0');
     await expect(el.getByText('Minimum bet count:')).toBeVisible();
+
+    await el.getByRole('checkbox', { name: 'Warning on Betting Error' }).uncheck();
+    await expect(el.locator('.bet-table tbody td').first()).toHaveText('-');
   });
 
   test('resizes the table and edits a row', async ({ page }) => {
     await openHub(page);
     const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
-    await expect(el.locator('.bet-table tbody tr')).toHaveCount(5);
+    // The default ramp has six bets: 1, 2, 4, 6, 12 and 16 chips.
+    await expect(el.locator('.bet-table tbody tr')).toHaveCount(6);
 
-    await el.getByRole('button', { name: '5', exact: true }).click();
+    await el.getByRole('button', { name: '6', exact: true }).click();
     await answerDialog(page, '3');
     await expect(el.locator('.bet-table tbody tr')).toHaveCount(3);
 

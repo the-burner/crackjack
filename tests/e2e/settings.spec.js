@@ -113,7 +113,8 @@ test('the hub reaches every option screen', async ({ page }) => {
   for (const button of ['Playing Strategies', 'Betting Strategies', 'True Count Calcs', 'Casino Database']) {
     await expect(hub.getByRole('button', { name: button, exact: true })).toBeVisible();
   }
-  await expect(hub.locator('[data-action="launch"]')).toBeVisible();
+  // The game is launched from the home screen only.
+  await expect(hub.locator('[data-action="launch"]')).toHaveCount(0);
 });
 
 for (const testCase of CASES) {
@@ -158,10 +159,43 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
   await expect(check(play, 'Dealer wins ties')).toBeChecked();
 });
 
-test('Launch Game keeps the saved seat count and opens the table', async ({ page }) => {
+test('Play Blackjack keeps the saved seat count and opens the table', async ({ page }) => {
   await openHub(page, { fresh: true });
-  await page.locator('[data-screen="settings"] [data-action="launch"]').click();
+  await page.evaluate(() => window.app.router.home());
+  await page.locator('[data-screen="home"] [data-action="play"]').click();
   await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.settings') ?? '{}')['table.seatCount']);
   expect(saved ?? 4).toBe(4);
+});
+
+test('a slider value can be typed into its number box', async ({ page }) => {
+  await openHub(page, { fresh: true });
+  const el = await openOption(page, 'Speed/Mechanics', 'settings.mechanics');
+  const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
+  const range = el.locator('.slider').filter({ hasText: 'Dealer Speed' }).locator('input[type="range"]');
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('bjv.settings'))['mechanics.dealerSpeed']);
+
+  await box.fill('72');
+  await box.press('Enter');
+  await expect(range).toHaveValue('72');
+  expect(await saved()).toBe(72);
+
+  // Out-of-range values are kept within the slider's range.
+  await box.fill('500');
+  await box.press('Enter');
+  await expect(box).toHaveValue('100');
+  expect(await saved()).toBe(100);
+
+  // A blank entry is put back to the current value.
+  await box.fill('');
+  await box.press('Enter');
+  await expect(box).toHaveValue('100');
+
+  // The box is vertically centred: its text box and the input share a midline.
+  const metrics = await box.evaluate(input => {
+    const style = getComputedStyle(input);
+    return { height: input.getBoundingClientRect().height, lineHeight: style.lineHeight, paddingTop: style.paddingTop };
+  });
+  expect(metrics.height).toBe(30);
+  expect(metrics.paddingTop).toBe('0px');
 });

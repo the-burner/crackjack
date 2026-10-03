@@ -7,15 +7,37 @@ import { test, expect } from '@playwright/test';
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
 
-/** Starts with a clean installation and the fastest animation speeds. */
-async function openTable(page, { settings = {}, size = PORTRAIT } = {}) {
+/**
+ * Starts with a clean installation, the fastest animation speeds, and the
+ * table the assertions below are written for ($1,000 bankroll, $5 chips, two
+ * human seats, no bet-error warnings), whatever the shipped defaults are.
+ */
+async function openTable(page, { settings = {}, size = PORTRAIT, seed = 7 } = {}) {
   await page.setViewportSize(size);
+  // Deal the same cards on every run, so a test never meets an unplanned
+  // blackjack or insurance offer.
+  await page.addInitScript(start => {
+    let a = start;
+    Math.random = () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }, seed);
   await page.addInitScript(overrides => {
     localStorage.clear();
     localStorage.setItem('bjv.settings', JSON.stringify({
       'mechanics.dealerSpeed': 99,
       'mechanics.otherPlayerSpeed': 99,
       'mechanics.payoffSpeed': 99,
+      'table.startingBankroll': 1000,
+      'table.seatCount': 4,
+      'table.computerSeats': [false, false, true, true, true, true],
+      'betting.chipValue': 5,
+      'betting.warnOnError': false,
+      'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+      'rules.surrender': 'none',
       ...overrides,
     }));
   }, settings);
@@ -199,13 +221,27 @@ test.describe('the table', () => {
 
   test('hands the chips back when the player leaves in the middle of a round', async ({ page }) => {
     await openTable(page);
-    await placeBet(page);
-    await expect(action(page, 'stand')).toBeVisible();
-    await expect(bankroll(page)).toHaveText('$995.00');
+    // A dealt blackjack settles at once with no decision to make, so deal
+    // until the player has a hand in progress.
+    let inProgress = false;
+    for (let round = 0; round < 10 && !inProgress; round++) {
+      await placeBet(page);
+      for (let wait = 0; wait < 100; wait++) {
+        if (await action(page, 'stand').isVisible()) { inProgress = true; break; }
+        const pass = page.locator('[data-action="pass"]');
+        if (await pass.isVisible()) await pass.click();
+        if (await overlay(page).isVisible()) break;
+        await page.waitForTimeout(100);
+      }
+    }
+    expect(inProgress).toBe(true);
+    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.bankroll') ?? '1000'));
+    const money = n => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    await expect(bankroll(page)).toHaveText(money(before - 5));
     await page.locator('.table__bar [data-action="back"]').click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.bankroll')));
-    expect(saved).toBe(1000);
+    expect(saved).toBe(before);
   });
 
   test('plays with the action buttons hidden, using swipes', async ({ page }) => {

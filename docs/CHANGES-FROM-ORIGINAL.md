@@ -18,6 +18,19 @@ are deliberate changes, with the reason given.
   between all its drills (decks, timer mode, progressive speed, tray style,
   tests per drill, two counts, card thickness) are now stored per drill.
 - **merge** Sound is one "Sound on" switch, off by default.
+- Several fresh-install defaults were changed to suit this app's owner (all in
+  `src/settings/schema.js`): Flash drills deal two-card hands with a random
+  count and every hand selected for Custom; Depth drills ask for decks left;
+  Count drills test about every 36 cards, exactly, with one or two cards per
+  flash; Full table drills grade exactly; the table has four seats with a computer player on seat 1 and the player on
+  the others; it shuffles with 65 cards
+  behind the cut card, starts with a $30,000 bankroll, offers late surrender
+  and shows burn cards; betting warns on bet errors with $25 chips and a
+  six-row ramp (1, 2, 4, 6, 12, 16 chips); true counts use half-deck
+  resolution, truncation and an allowed estimation error of 13 cards.
+- The default playing strategy is "Ethans High-Low Strategy", a High-Low
+  variant with custom indices (qfit.com strategy code 1028328893). It is built
+  in as strategy 100 and listed first; the originals defaulted to High-Low.
 - The error logs and the error-log viewer were removed. Errors are still tallied
   per strategy-table cell, which the Flash drill's "Drill Errors" hands and the
   table viewer's error shading use. The Flash options have a "Clear error
@@ -34,6 +47,10 @@ are deliberate changes, with the reason given.
   rather than only when you left Common Rules.
 - **fix** The second Bonuses list works on phones. It was shown there but did
   nothing.
+- The game is started only from Play Blackjack on the home screen; the
+  Settings screen has no Launch Game button. The drills' option screens no
+  longer link to Playing Strategy and True Count Calcs: those are shared
+  settings, set from Settings.
 - Opening the table never changes the saved seat count. The original cut a
   portrait table to two seats and saved that; the table now fits up to four
   seats in portrait by itself. Seat 1 is still freed when every seat in play is

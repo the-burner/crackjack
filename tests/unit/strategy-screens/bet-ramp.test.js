@@ -6,8 +6,9 @@ import {
 } from '../../../src/settings/bet-ramp.js';
 import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
 
-const DEFAULT_RAMP = SETTINGS_SCHEMA['betting.ramp'].default;
-/** The packed form of the fresh-install bet table. */
+/** A sample five-row ramp (the original apps' fresh-install bet table). */
+const DEFAULT_RAMP = { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) };
+/** The packed form of the sample ramp. */
 const PACKED_DEFAULT = {
   offset: -1,
   base: 1,
@@ -122,7 +123,12 @@ describe('checkBet', () => {
 });
 
 describe('packed encoding', () => {
-  it('round-trips the fresh-install bet table', () => {
+  it('round-trips the shipped default ramp', () => {
+    const shipped = SETTINGS_SCHEMA['betting.ramp'].default;
+    expect(fromPackedRamp(toPackedRamp(shipped))).toEqual(shipped);
+  });
+
+  it('round-trips the sample ramp', () => {
     expect(fromPackedRamp(PACKED_DEFAULT)).toEqual(DEFAULT_RAMP);
     expect(toPackedRamp(DEFAULT_RAMP)).toEqual(PACKED_DEFAULT);
   });

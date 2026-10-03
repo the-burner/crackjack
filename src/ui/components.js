@@ -84,14 +84,40 @@ export function valueButton(value, onChange, { prompt = 'Value', min = -Infinity
   return el;
 }
 
-/** A labelled range slider with a number box. */
+/**
+ * A labelled range slider with a number box. The number can be typed in as well
+ * as dragged; a typed value is rounded to the step and kept within [min, max].
+ */
 export function slider(label, value, onChange, { min, max, step = 1 }) {
-  const box = h('div', { class: 'slider__value' }, String(value));
-  const input = h('input', { type: 'range', min, max, step, value });
-  input.addEventListener('input', () => { box.textContent = input.value; });
-  input.addEventListener('change', () => onChange(Number(input.value)));
-  const el = h('div', { class: 'slider' }, label ? h('div', { class: 'slider__label' }, label) : null, h('div', { class: 'slider__row' }, box, input));
-  el.setValue = v => { input.value = v; box.textContent = String(v); };
+  const range = h('input', { type: 'range', min, max, step, value });
+  const box = h('input', {
+    type: 'number', class: 'slider__value', min, max, step, value,
+    inputmode: 'numeric', 'aria-label': label || 'Value',
+  });
+  const clamp = n => {
+    const stepped = Math.round((n - min) / step) * step + min;
+    return Math.min(max, Math.max(min, stepped));
+  };
+  const commit = n => {
+    range.value = n;
+    box.value = n;
+    onChange(n);
+  };
+  range.addEventListener('input', () => { box.value = range.value; });
+  range.addEventListener('change', () => commit(Number(range.value)));
+  // Typing updates the slider once the value is complete (Enter or leaving the box).
+  box.addEventListener('change', () => {
+    const typed = Number(box.value);
+    if (box.value.trim() === '' || !Number.isFinite(typed)) {
+      box.value = range.value;
+      return;
+    }
+    commit(clamp(typed));
+  });
+  box.addEventListener('keydown', event => { if (event.key === 'Enter') box.blur(); });
+  box.addEventListener('focus', () => box.select());
+  const el = h('div', { class: 'slider' }, label ? h('div', { class: 'slider__label' }, label) : null, h('div', { class: 'slider__row' }, box, range));
+  el.setValue = v => { range.value = v; box.value = v; };
   return el;
 }
 

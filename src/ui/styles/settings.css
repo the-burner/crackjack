@@ -51,13 +51,12 @@
   margin: 0 auto;
   padding-top: 18px;
 }
-.settings-hub__col { display: grid; grid-template-rows: repeat(9, 38px); gap: 22px 0; }
+.settings-hub__col { display: grid; grid-template-rows: repeat(8, 38px); gap: 22px 0; }
 .settings-hub__note { grid-row: span 3; align-self: center; margin: 0; }
-.settings-hub__launch { grid-row: span 2; height: 100%; }
 
 @media (max-height: 520px) {
   .settings-hub { padding-top: 2px; gap: 6px; }
-  .settings-hub__col { grid-template-rows: repeat(9, 28px); gap: 6px 0; }
+  .settings-hub__col { grid-template-rows: repeat(8, 28px); gap: 6px 0; }
   .settings-hub .btn { min-height: 28px; padding-top: 2px; padding-bottom: 2px; }
   .settings-hub__note { font-size: 12px; }
 }

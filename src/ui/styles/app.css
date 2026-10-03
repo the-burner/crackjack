@@ -220,17 +220,24 @@ html, body {
 .slider__label { font: bold 14px var(--font); text-align: center; }
 .slider__row { display: flex; align-items: center; gap: 12px; }
 .slider__value {
-  flex: 0 0 50px;
+  flex: 0 0 56px;
+  width: 56px;
   height: 30px;
-  line-height: 28px;
+  padding: 0 4px;
   border: 1px solid var(--btn-border);
   border-radius: 4px;
   background: #fff;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: #000;
   font: bold 14px var(--font);
   text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
-.slider input[type='range'] { flex: 1; accent-color: #38c; }
+.slider__value::-webkit-inner-spin-button,
+.slider__value::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
+.slider__value:focus { outline: 2px solid #38c; outline-offset: 0; }
+.slider input[type='range'] { flex: 1; min-width: 0; accent-color: #38c; }
 
 /* Dialogs. */
 .dialog-overlay {

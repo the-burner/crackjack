@@ -33,7 +33,7 @@ export const SETTINGS_SCHEMA = {
   'rules.hardDoubles': oneOf(['none', '10-11', '9-11', '8-11', 'any'], 'any'),
   'rules.softDoubles': oneOf(['none', 'a8a9', 'any'], 'any'),
   'rules.insurance': oneOf(['none', 'normal', 'blackjackOnly'], 'normal'),
-  'rules.surrender': oneOf(['none', 'late', 'early', 'earlyVsTen', 'macao'], 'none'),
+  'rules.surrender': oneOf(['none', 'late', 'early', 'earlyVsTen', 'macao'], 'late'),
   // Rule variations.
   'rules.doubleOnThreeCards': bool(false),
   'rules.doubleAnyNumberOfCards': bool(false),
@@ -65,22 +65,23 @@ export const SETTINGS_SCHEMA = {
   // Table setup (game).
   'table.decks': oneOf(DECKS, 6),
   'table.shuffleMode': oneOf(['cutCard', 'rounds'], 'cutCard'),
-  'table.cardsBehindCutCard': int(78, 1, 415),
+  'table.cardsBehindCutCard': int(65, 1, 415),
   'table.roundsPerShoe': int(6, 1, 80),
   'table.burnCards': int(1, 0, 5),
-  'table.startingBankroll': int(1000, 100, 1000000),
+  'table.startingBankroll': int(30000, 100, 1000000),
   'table.seatCount': oneOf([1, 2, 4, 6], 4),
   /** Seats 1..6: true = computer player. */
-  'table.computerSeats': json([false, false, true, true, true, true]),
+  'table.computerSeats': json([true, false, false, false, false, false]),
   'table.limits': oneOf(TABLE_LIMITS.map((_, i) => i), 7),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
-  'table.showBurnCards': bool(false),
+  'table.showBurnCards': bool(true),
   'table.playersComeAndGo': bool(false),
   'table.refreshBankrollOnStart': bool(false),
 
   // Playing strategy (shared).
-  'strategy.system': int(30),
+  /** Ethans High-Low Strategy (built in from qfit.com strategy code 1028328893). */
+  'strategy.system': int(100),
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
@@ -90,19 +91,19 @@ export const SETTINGS_SCHEMA = {
   'strategy.warnOnError': bool(true),
 
   // True count calculation (shared).
-  'trueCount.resolution': oneOf(['full', 'half', 'quarter', 'exact'], 'full'),
+  'trueCount.resolution': oneOf(['full', 'half', 'quarter', 'exact'], 'half'),
   'trueCount.lastDeckResolution': oneOf(['half', 'quarter', 'exact'], 'half'),
-  'trueCount.rounding': oneOf(['round', 'truncate', 'floor'], 'round'),
+  'trueCount.rounding': oneOf(['round', 'truncate', 'floor'], 'truncate'),
   'trueCount.remainingCards': oneOf(['dealt', 'shown', 'inTray'], 'inTray'),
-  'trueCount.allowedErrorCards': int(0, 0, 13),
+  'trueCount.allowedErrorCards': int(13, 0, 13),
   'trueCount.aceSideCount': bool(false),
   'trueCount.tenSideCount': bool(false),
 
   // Betting (game).
-  'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 5),
-  'betting.warnOnError': bool(false),
+  'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
+  'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
-  'betting.ramp': json({ minCount: 0, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }, { chips: 5, hands: 1 }, { chips: 10, hands: 1 }, { chips: 15, hands: 1 }] }),
+  'betting.ramp': json({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }),
 
   // Casino database (game). The downloaded database itself is cached in
   // storage under "casinoDatabase", not here.
@@ -161,11 +162,11 @@ export const SETTINGS_SCHEMA = {
 
   // Flash drills.
   'drills.flash.hands': oneOf(['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom'], 'default'),
-  'drills.flash.customHands': json(tableGrids(false)),
+  'drills.flash.customHands': json(tableGrids(true)),
   'drills.flash.situations': json({ hardStand: true, softStand: true, hardDouble: true, softDouble: true, split: true, surrender: true }),
-  'drills.flash.countMode': oneOf(['zero', 'random', 'fixed', 'indexTest'], 'zero'),
+  'drills.flash.countMode': oneOf(['zero', 'random', 'fixed', 'indexTest'], 'random'),
   'drills.flash.fixedCount': int(0, -99, 99),
-  'drills.flash.maxCards': oneOf([2, 3, 4, 5], 5),
+  'drills.flash.maxCards': oneOf([2, 3, 4, 5], 2),
   'drills.flash.testMode': oneOf(['warn', 'errorsAtEnd', 'none'], 'warn'),
   'drills.flash.timerMode': oneOf(TIMER_MODES, 'auto'),
   'drills.flash.handsPerDrill': int(50, 10, 1000),
@@ -175,7 +176,7 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.progressiveSpeed': bool(false),
 
   // Depth (discard tray) drills.
-  'drills.depth.drill': oneOf(['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'], 'halfDecksLeft'),
+  'drills.depth.drill': oneOf(['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'], 'decksLeft'),
   'drills.depth.accuracy': oneOf(ACCURACY, 0),
   'drills.depth.resolution': oneOf(['full', 'half', 'quarter'], 'half'),
   'drills.depth.decks': oneOf(DECKS, 6),
@@ -191,11 +192,11 @@ export const SETTINGS_SCHEMA = {
 
   // Count drills.
   'drills.count.drill': oneOf(['runningCount', 'trueCount', 'acesLeft', 'acesDealt', 'aceBetCount', 'acePlayCount', 'aceInsureCount', 'tenSideCount'], 'runningCount'),
-  'drills.count.testEvery': oneOf(['everyCard', 'about8', 'about16', 'about36', 'never'], 'about8'),
-  'drills.count.accuracy': oneOf(ACCURACY, 1),
+  'drills.count.testEvery': oneOf(['everyCard', 'about8', 'about16', 'about36', 'never'], 'about36'),
+  'drills.count.accuracy': oneOf(ACCURACY, 0),
   'drills.count.orientation': oneOf(['vertical', 'horizontal', 'mixed'], 'vertical'),
   'drills.count.positions': oneOf(['vertical', 'horizontal', 'diagonal', 'mixed'], 'diagonal'),
-  'drills.count.cardsPerFlash': oneOf(['1', '2', '3', '4', '1-2', '1-3', '1-4'], '2'),
+  'drills.count.cardsPerFlash': oneOf(['1', '2', '3', '4', '1-2', '1-3', '1-4'], '1-2'),
   'drills.count.bias': oneOf(['none', 'negative', 'positive'], 'none'),
   'drills.count.endWarning': oneOf(['none', 'oneCardLeft', 'twoCardsLeft'], 'none'),
   'drills.count.decks': oneOf(DECKS, 6),
@@ -211,7 +212,7 @@ export const SETTINGS_SCHEMA = {
 
   // Full table drills.
   'drills.full.drill': oneOf(['runningCount', 'acesLeft', 'acesDealt', 'tenSideCount', 'twoTables'], 'runningCount'),
-  'drills.full.accuracy': oneOf(ACCURACY, 1),
+  'drills.full.accuracy': oneOf(ACCURACY, 0),
   'drills.full.players': oneOf([2, 4, 6], 6),
   'drills.full.handStyle': oneOf(['twoToFourCards', 'firstTwoCards', 'scattered'], 'firstTwoCards'),
   'drills.full.bias': oneOf(['none', 'negative', 'positive'], 'none'),

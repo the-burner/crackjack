@@ -83,8 +83,9 @@ test('the home screen opens every drill options screen', async ({ page }) => {
     await expect(screen).toBeVisible();
     await expect(screen.getByRole('heading')).toHaveText(drill.title);
     await expect(screen.getByRole('button', { name: 'Launch the Drill' })).toBeVisible();
-    await expect(screen.getByRole('button', { name: 'Playing Strategy' })).toBeVisible();
-    await expect(screen.getByRole('button', { name: 'True Count Calcs' })).toBeVisible();
+    // Strategy and true count are shared settings, set only from Settings.
+    await expect(screen.getByRole('button', { name: 'Playing Strategy' })).toHaveCount(0);
+    await expect(screen.getByRole('button', { name: 'True Count Calcs' })).toHaveCount(0);
     await screen.locator('[data-action="back"]').click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
   }

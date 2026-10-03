@@ -1,4 +1,4 @@
-// Opening the table: shared by the home screen and the settings hub.
+// Opening the table from the home screen.
 
 import { prepareLaunch } from '../settings/rules-logic.js';
 

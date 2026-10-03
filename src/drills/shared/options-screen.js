@@ -1,6 +1,7 @@
 // The options screen every drill has: a column of controls bound to the
-// drill's settings, the green "Launch the Drill" button, and shortcuts to the
-// two shared settings screens the drills depend on.
+// drill's settings and the green "Launch the Drill" button. The playing
+// strategy and true count settings the drills use are set from Settings on the
+// home screen.
 
 import { h } from '../../ui/dom.js';
 import { button, checkList, select, slider, valueButton, field } from '../../ui/components.js';
@@ -25,19 +26,15 @@ export function drillOptionsScreen(app, { title, help, drill, onLaunch }) {
   const unsubscribe = app.settings.subscribe(() => form.refresh());
 
   const launch = button('Launch the Drill', { variant: 'primary', icon: 'gear', iconPos: 'bottom', block: true, onClick: onLaunch, 'data-action': 'launch' });
-  const shortcuts = h('div', { class: 'grid-2' },
-    button('Playing Strategy', { icon: 'arrow-r', onClick: () => app.open('settings.strategy') }),
-    button('True Count Calcs', { icon: 'arrow-r', onClick: () => app.open('settings.trueCount') }),
-  );
 
   return {
     el,
     body,
     column,
     form,
-    /** Adds the controls, then the launch button and the shortcuts. */
+    /** Adds the controls, then the launch button. */
     append(...children) {
-      column.append(...children.filter(Boolean), launch, shortcuts);
+      column.append(...children.filter(Boolean), launch);
     },
     onShow() {
       form.refresh();
