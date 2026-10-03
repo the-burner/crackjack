@@ -43,8 +43,9 @@ tests/
   unit/          Vitest tests for src/
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
-  support/       the static test server and fixture loader
-tools/           maintenance scripts (the service worker's precache list)
+  support/       the fixture loader
+tools/           the app's web server (server.mjs) and the service worker's
+                 precache list generator
 docs/            this document and the differences from the original apps
 ```
 

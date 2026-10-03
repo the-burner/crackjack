@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = 'c7e56491d78d';
+const VERSION = 'fb67991a87f7';
 const FILES = [
   './',
   './index.html',

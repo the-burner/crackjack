@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "./serve.sh",
+    "start": "node tools/server.mjs",
+    "serve": "node tools/server.mjs --phone",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

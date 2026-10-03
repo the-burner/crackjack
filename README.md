@@ -16,8 +16,7 @@ A comprehensive card counting training suite
 39 counting systems are built in (plus a hole-carding strategy), and you can
 import your own strategies and side-bet games by code. The casino database
 (CBJN) lets you load a real casino's rules. Importing and the casino database
-need an internet connection and `serve.sh` (see below); everything else works
-offline.
+need an internet connection; everything else works offline.
 
 ## Trying it on a desktop browser
 
@@ -25,13 +24,14 @@ You don't need a phone or any installation to try the app. You need
 [Node.js](https://nodejs.org/) 22 or newer.
 
 ```bash
-node tests/support/static-server.js 4173
+npm start                            # or: node tools/server.mjs
+npm start -- --port 9000             # a different port
 ```
 
-Then open <http://127.0.0.1:4173/> in Chrome, Safari or Firefox. Any static
-file server works instead (for example `python3 -m http.server 4173`). The app
-must be **served**; opening `index.html` directly as a `file://` page doesn't
-work, because the browser won't load modules that way.
+Then open <http://127.0.0.1:4173/> in Chrome, Safari or Firefox. The app must
+be **served**; opening `index.html` directly as a `file://` page doesn't work,
+because the browser won't load modules that way. The server reads files from
+disk on every request, so there's no need to restart it after editing.
 
 Tips for desktop testing:
 
@@ -49,19 +49,17 @@ Tips for desktop testing:
   settings only; to wipe everything use DevTools → Application → Storage →
   **Clear site data**.
 - **Online features.** Strategy import, side-bet game import and the casino
-  database talk to qfit.com. The simple server above doesn't forward those
-  requests; use `./serve.sh` (next section) and open
-  <https://localhost:8443/> if you want to try them.
+  database talk to qfit.com; the server forwards those requests, so they work
+  locally too while you're online.
 
 ## Serving it to a phone
 
-`serve.sh` serves the app over HTTPS, which iOS Safari requires before it will
-install a web app, and forwards the strategy-import, side-bet-import and
-casino-database requests to qfit.com.
+iOS Safari only installs a web app served over HTTPS, so the server has a
+phone mode that serves HTTPS to your local network:
 
 ```bash
-./serve.sh          # https://<your-mac>.local:8443/  (also https://localhost:8443/)
-./serve.sh 9000     # a different port
+npm run serve                        # https://<your-mac>.local:8443/  (also https://localhost:8443/)
+npm run serve -- --port 9000         # a different port
 ```
 
 It uses [`mkcert`](https://github.com/FiloSottile/mkcert) to make a certificate
@@ -81,7 +79,7 @@ repository (tests, `.git`, the certificates) is not.
 The phone has to trust your Mac's certificate authority once; after that the app
 installs and runs with no server at all.
 
-1. On the Mac (same Wi-Fi as the phone) run `./serve.sh` and note the
+1. On the Mac (same Wi-Fi as the phone) run `npm run serve` and note the
    `https://<your-mac>.local:8443/` URL.
 2. Trust the local certificate authority on the iPhone:
    - Run `mkcert -CAROOT` on the Mac and AirDrop `rootCA.pem` from that folder
@@ -110,6 +108,8 @@ data for the site) clears them, and the app starts from the defaults in
 
 ```bash
 npm install                          # dev dependencies (Vitest, Playwright)
+npm start                            # local server: http://127.0.0.1:4173/
+npm run serve                        # phone server: https://<your-mac>.local:8443/
 npx playwright install chromium      # once, for the browser tests
 npm test                             # unit tests
 npm run test:e2e                     # browser tests (starts its own server on port 4173)

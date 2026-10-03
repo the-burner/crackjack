@@ -11,8 +11,9 @@ npm test                 # Vitest unit tests (fast; run after any logic change)
 npm run test:e2e         # Playwright browser tests (iPhone 13 profile, port 4173)
 npm run precache         # regenerate sw.js file list — REQUIRED after adding/removing/changing any served file
 npm run precache:check   # fails if sw.js is stale (also enforced by tests/unit/precache.test.js)
-./serve.sh [PORT]        # HTTPS server for phones (needs mkcert); default 8443
-node tests/support/static-server.js 4173   # plain HTTP server for local dev
+npm start                # local server: http://127.0.0.1:4173/ (tools/server.mjs)
+npm run serve            # HTTPS server for phones (needs mkcert): https://<mac>.local:8443/
+                         # add `-- --port N` to either for another port
 ```
 
 Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
@@ -45,5 +46,5 @@ Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
 - `tests/fixtures/*.json.gz` is behavior recorded from the original apps; it **cannot be regenerated** (the originals were removed — recoverable from git tag `original-apps-reference`). If a fixture test fails, the code changed behavior: either fix the code or, if the change is intentional, document it in `docs/CHANGES-FROM-ORIGINAL.md` and adjust the test deliberately.
 - Any behavior change versus the original apps must be recorded in `docs/CHANGES-FROM-ORIGINAL.md`.
 - Forgetting `npm run precache` means installed (offline) copies won't update, and the unit suite fails.
-- Strategy import, side-bet import and the casino database call qfit.com through same-origin `/apps/*` paths; only `serve.sh` proxies them.
+- Strategy import, side-bet import and the casino database call qfit.com through same-origin `/apps/*` paths, which `tools/server.mjs` forwards. The server only serves `index.html`, `manifest.webmanifest`, `sw.js`, `src/` and `assets/`; a new top-level served file must be added to its allowlist (and to `tools/update-precache.mjs`).
 - Don't reintroduce code-generator-style names (`frm*`, numeric option arrays, globals) — the codebase intentionally has none.
