@@ -27,7 +27,7 @@ export function homeScreen(app) {
         button('Screen Info', { icon: 'info', onClick: () => screenInfo() }),
       ),
     ),
-    h('div', { class: 'footer-note' }, `Blackjack Verité ${APP_VERSION} · Copyright 2025 QFIT, all rights reserved`),
+    h('div', { class: 'footer-note' }, `Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`),
   );
   return { el };
 }
@@ -45,5 +45,5 @@ function screenInfo() {
     `Pixel ratio: ${devicePixelRatio}`,
     navigator.userAgent,
   ];
-  return alert(`If you are having screen related problems, e-mail your device model and the following info to support@qfit.com:\n${info.join('\n')}`);
+  return alert(`${info.join('\n')}`);
 }

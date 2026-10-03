@@ -29,7 +29,7 @@ if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
   mkcert -cert-file "$CERT" -key-file "$KEY" "$HOST" localhost 127.0.0.1
 fi
 
-echo "Serving Blackjack Verité at https://${HOST}:${PORT}/"
+echo "Serving Crackjack at https://${HOST}:${PORT}/"
 echo "Press Ctrl+C to stop."
 
 exec python3 - "$PORT" "$CERT" "$KEY" <<'PY'

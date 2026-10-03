@@ -1,17 +1,6 @@
-# Blackjack Verité
+# Crackjack
 
-One offline blackjack practice app: four card-counting drills and a full game
-with betting, sharing a single set of settings.
-
-It is a rebuild of two QFIT web apps — [Blackjack Verité
-Drills](http://www.qfit.com/apps/bjvd) and [Blackjack Verité
-Games](http://www.qfit.com/apps/gcbj) — merged into one app written as plain
-HTML, CSS and JavaScript modules. There is no build step: the files you edit are
-the files the browser runs.
-
-> **Ownership:** the original apps and their assets are `Copyright 2025 QFIT`.
-> This repository is a personal rebuild for offline use; all rights to the
-> original code, data and artwork remain with QFIT.
+A comprehensive card counting training suite
 
 ## What's in it
 
@@ -133,8 +122,6 @@ themselves. The unit tests fail if you forget.
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and
   the conventions it follows.
-- [`docs/CHANGES-FROM-ORIGINAL.md`](docs/CHANGES-FROM-ORIGINAL.md) — every place the
-  rebuild behaves differently from the original apps, and why.
 - `tests/fixtures/` — behavior recorded from the original apps (strategy tables,
   play advice, counts, the drills' answers). The unit tests check the rebuild
   against it. The original apps themselves were removed from the code base; the

@@ -80,7 +80,6 @@ export const SETTINGS_SCHEMA = {
   'table.refreshBankrollOnStart': bool(false),
 
   // Playing strategy (shared).
-  /** Ethans High-Low Strategy (built in from qfit.com strategy code 1028328893). */
   'strategy.system': int(100),
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),

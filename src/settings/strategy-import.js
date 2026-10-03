@@ -1,7 +1,3 @@
-// Importing a playing strategy exported by Casino Verite Blackjack on a PC.
-// The user types the code the PC program showed; the app downloads
-// /Apps/z<code>.php from qfit.com and stores the strategy file it returns.
-
 import { parseStrategyFile } from '../core/strategy/strategy-file.js';
 
 /** The download URL for an export code, relative to the site root. */
