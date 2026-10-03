@@ -1,4 +1,4 @@
-// Strategy catalog (built-in and imported) and construction of the current
+// Strategy catalog and construction of the current
 // strategy from settings.
 
 import { STRATEGY_FILES } from '../data/strategy-files.js';
@@ -21,44 +21,18 @@ export const BUILTIN_STRATEGIES = [
 /** The built-in hole-carding strategy offered on the Peeking screen. */
 export const HOLE_CARD_STRATEGY = { id: 99, name: 'Hole-Carding' };
 
-/** First id used for imported strategies. */
-export const FIRST_CUSTOM_ID = 1001;
-
-const STORAGE_KEY = 'customStrategies';
-
-/** Imported strategies, persisted as [{id, name, text}]. */
+/** The built-in strategies, by id. */
 export class StrategyLibrary {
-  constructor(storage) {
-    this.storage = storage;
+  constructor() {
     this.cache = new Map();
   }
 
-  custom() {
-    return this.storage.get(STORAGE_KEY, []);
-  }
-
-  /** Strategies selectable on the Playing Strategy screen: imported first, then built-in. */
+  /** Strategies selectable on the Playing Strategy screen. */
   list() {
-    return [...this.custom().map(({ id, name }) => ({ id, name })), ...BUILTIN_STRATEGIES];
-  }
-
-  /** Adds an imported strategy file and returns its id. */
-  add(text) {
-    const custom = this.custom();
-    const id = custom.reduce((max, s) => Math.max(max, s.id), FIRST_CUSTOM_ID - 1) + 1;
-    const name = text.slice(1, text.indexOf('|', 1)).trim();
-    custom.push({ id, name, text });
-    this.storage.set(STORAGE_KEY, custom);
-    return id;
-  }
-
-  remove(id) {
-    this.storage.set(STORAGE_KEY, this.custom().filter(s => s.id !== id));
-    this.cache.clear();
+    return BUILTIN_STRATEGIES;
   }
 
   text(id) {
-    if (id >= FIRST_CUSTOM_ID) return this.custom().find(s => s.id === id)?.text ?? null;
     return STRATEGY_FILES[id] ?? null;
   }
 

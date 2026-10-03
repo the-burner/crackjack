@@ -20,10 +20,7 @@ const PERCENTS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(value => ({ value
 
 export function peekingScreen(app) {
   const { el, columns, form } = settingsScreen(app, { title: 'Peeking', help: 'settings.peeking', note: NOTE });
-  const strategies = [
-    ...app.strategies.custom().map(({ id, name }) => ({ value: id, label: name })),
-    { value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.name },
-  ];
+  const strategies = [{ value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.name }];
   columns.append(
     group(
       h('div', { class: 'peeking-modes' }, form.checks(CHECKS), form.select('peeking.percent', PERCENTS, { mini: true })),

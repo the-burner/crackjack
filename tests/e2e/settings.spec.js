@@ -98,6 +98,12 @@ const CASES = [
       await expect(select(el, 'peeking.percent')).toHaveValue('50%');
     },
   },
+  {
+    button: 'Appearance & Customization',
+    screen: 'settings.appearance',
+    async change(el) { await select(el, 'display.theme').selectOption({ label: 'Dark' }); },
+    async verify(el) { await expect(select(el, 'display.theme')).toHaveValue('Dark'); },
+  },
 ];
 
 test('the hub reaches every option screen', async ({ page }) => {
@@ -110,7 +116,7 @@ test('the hub reaches every option screen', async ({ page }) => {
   // The hub also links to the screens the strategy area owns; those screens are
   // covered by their own tests, so only check that the links are there.
   const hub = page.locator('[data-screen="settings"]');
-  for (const button of ['Playing Strategies', 'Betting Strategies', 'True Count Calcs', 'Casino Database']) {
+  for (const button of ['Playing Strategies', 'Betting Strategies', 'True Count Calcs']) {
     await expect(hub.getByRole('button', { name: button, exact: true })).toBeVisible();
   }
   // The game is launched from the home screen only.

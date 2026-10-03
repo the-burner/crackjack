@@ -1,5 +1,5 @@
 {
-  "name": "blackjack-verite",
+  "name": "crackjack",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "precache": "node tools/update-precache.mjs",
-    "precache:check": "node tools/update-precache.mjs --check"
+    "precache:check": "node tools/update-precache.mjs --check",
+    "add-strategy": "node tools/bundle-import.mjs strategy",
+    "add-side-bet": "node tools/bundle-import.mjs side-bet"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

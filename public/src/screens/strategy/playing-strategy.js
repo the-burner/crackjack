@@ -1,12 +1,10 @@
 // Playing Strategy: which counting system to play, how many
-// of its indices to use, the rules the tables are built for, and the two ways
-// to get more tables (import, display).
+// of its indices to use, the rules the tables are built for, and the table
+// display.
 
-import { h, replaceChildren } from '../../ui/dom.js';
+import { h } from '../../ui/dom.js';
 import { button, select, checkList, valueButton } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
-import { confirm, alert } from '../../ui/dialogs.js';
-import { FIRST_CUSTOM_ID } from '../../settings/strategies.js';
 import { INDEX_SETS } from '../../core/strategy/strategy-tables.js';
 
 const INDEX_SET_LABELS = {
@@ -30,13 +28,8 @@ export function playingStrategyScreen(app) {
   const { settings, strategies } = app;
   const { el, body } = standardScreen(app, { title: 'Strategies', help: 'settings.strategy' });
 
-  // `select` keeps a reference to this array, so it is updated in place when a
-  // strategy is imported or deleted.
-  const systemOptions = [];
-  const systemSelect = select(systemOptions, settings.get('strategy.system'), id => {
-    settings.set('strategy.system', id);
-    refreshDelete();
-  });
+  const systemOptions = strategies.list().map(({ id, name }) => ({ value: id, label: name }));
+  const systemSelect = select(systemOptions, settings.get('strategy.system'), id => settings.set('strategy.system', id));
   const indexSelect = select(
     INDEX_SETS.map(value => ({ value, label: INDEX_SET_LABELS[value] })),
     settings.get('strategy.indexSet'),
@@ -54,7 +47,6 @@ export function playingStrategyScreen(app) {
     onChange: on => settings.set('strategy.adjustInitialCount', on),
   }]);
   const ircValue = valueButton(settings.get('strategy.initialCount'), v => settings.set('strategy.initialCount', v), { prompt: 'Adjust IRC', min: -999, max: 999 });
-  const deleteButton = button('Delete Imported Strategy', { icon: 'delete', block: true, onClick: () => removeImported() });
 
   body.append(h('div', { class: 'column' },
     h('div', { class: 'strat-row' }, h('span', { class: 'label' }, 'Strategy:'), h('div', { class: 'strat-row__fill' }, systemSelect)),
@@ -67,39 +59,13 @@ export function playingStrategyScreen(app) {
       h('div', { class: 'strat-row__fill row' }, rangeMin, h('span', { class: 'label' }, 'to'), rangeMax)),
     h('div', { class: 'strat-row' }, h('span', { class: 'label' }, 'Rules:'), h('div', { class: 'strat-row__fill' }, rules)),
     h('div', { class: 'row' }, ircCheck, ircValue),
-    h('div', { class: 'grid-2' },
-      button('Import Strategy', { icon: 'plus', iconPos: 'bottom', onClick: () => app.open('strategy.import') }),
-      button('Display Tables', { icon: 'grid', iconPos: 'bottom', onClick: () => app.open('strategy.tables', { mode: 'view' }), 'data-action': 'display-tables' })),
-    deleteButton,
+    button('Display Tables', { icon: 'grid', iconPos: 'bottom', onClick: () => app.open('strategy.tables', { mode: 'view' }), 'data-action': 'display-tables' }),
   ));
-
-  function refreshSystems() {
-    systemOptions.length = 0;
-    systemOptions.push(...strategies.list().map(({ id, name }) => ({ value: id, label: name })));
-    replaceChildren(systemSelect.control, systemOptions.map(o => h('option', {}, o.label)));
-    systemSelect.setValue(settings.get('strategy.system'));
-  }
-
-  function refreshDelete() {
-    deleteButton.hidden = settings.get('strategy.system') < FIRST_CUSTOM_ID;
-  }
-
-  async function removeImported() {
-    const id = settings.get('strategy.system');
-    const name = strategies.custom().find(s => s.id === id)?.name ?? '';
-    if (!(await confirm(`Delete the imported strategy "${name}"?`))) return;
-    strategies.remove(id);
-    settings.reset(['strategy.system']);
-    refreshSystems();
-    refreshDelete();
-    await alert(`${name} deleted`);
-  }
 
   return {
     el,
     onShow() {
-      refreshSystems();
-      refreshDelete();
+      systemSelect.setValue(settings.get('strategy.system'));
       indexSelect.setValue(settings.get('strategy.indexSet'));
       rangeMin.setValue(settings.get('strategy.indexRangeMin'));
       rangeMax.setValue(settings.get('strategy.indexRangeMax'));

@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = '602ca2293e26';
+const VERSION = '939927ac608b';
 const FILES = [
   './',
   './assets/cards/card-back.png',
@@ -515,6 +515,7 @@ const FILES = [
   './src/screens/help.js',
   './src/screens/home.js',
   './src/screens/index.js',
+  './src/screens/settings/appearance.js',
   './src/screens/settings/bonuses.js',
   './src/screens/settings/common-rules.js',
   './src/screens/settings/controls.js',
@@ -528,8 +529,6 @@ const FILES = [
   './src/screens/settings/setup.js',
   './src/screens/settings/unusual-games.js',
   './src/screens/strategy/betting.js',
-  './src/screens/strategy/casino-db.js',
-  './src/screens/strategy/import.js',
   './src/screens/strategy/index.js',
   './src/screens/strategy/playing-strategy.js',
   './src/screens/strategy/tables.js',
@@ -538,13 +537,11 @@ const FILES = [
   './src/services/sound.js',
   './src/services/storage.js',
   './src/settings/bet-ramp.js',
-  './src/settings/casino-rules.js',
   './src/settings/rules-logic.js',
   './src/settings/schema.js',
   './src/settings/side-bet-games.js',
   './src/settings/store.js',
   './src/settings/strategies.js',
-  './src/settings/strategy-import.js',
   './src/ui/card-sprites.js',
   './src/ui/components.js',
   './src/ui/dialogs.js',
@@ -582,8 +579,7 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  // Strategy import and the casino database are online services; never cache them.
-  if (url.origin !== location.origin || /^\/apps\//i.test(url.pathname)) return;
+  if (url.origin !== location.origin) return;
   event.respondWith(
     caches.match(request, { ignoreSearch: true }).then(hit => {
       if (hit) return hit;

@@ -60,8 +60,7 @@ export class GameSession {
   loadSideBetGame() {
     const id = this.settings.get('bonuses.game');
     if (!id) return null;
-    const custom = this.app.storage.get('customSideBetGames', []).find(g => g.id === id);
-    const definition = custom?.definition ?? SIDE_BET_GAME_DEFINITIONS[id];
+    const definition = SIDE_BET_GAME_DEFINITIONS[id];
     if (!definition) return null;
     try {
       return decodeSideBetGame(definition);

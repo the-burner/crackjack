@@ -1,5 +1,5 @@
-// Playing strategy, strategy tables, import, true count, betting and the
-// casino database, driven through the UI.
+// Playing strategy, strategy tables, true count and betting, driven through
+// the UI.
 import { test, expect } from '@playwright/test';
 
 test.use({ serviceWorkers: 'block' });
@@ -52,30 +52,6 @@ test.describe('Playing Strategy', () => {
     await el.getByRole('button', { name: '-99' }).click();
     await answerDialog(page, '-4');
     expect(await setting(page, 'strategy.indexRangeMin')).toBe(-4);
-  });
-
-  test('offers to delete an imported strategy, and only then', async ({ page }) => {
-    await openHub(page);
-    const el = await openScreen(page, 'Playing Strategies', 'settings.strategy');
-    const deleteButton = el.getByRole('button', { name: 'Delete Imported Strategy' });
-    await expect(deleteButton).toBeHidden();
-
-    // Add an imported strategy the way the import screen does.
-    await page.evaluate(() => {
-      const text = window.app.strategies.text(30).replace('Basic High-Low', 'My Strategy');
-      window.app.settings.set('strategy.system', window.app.strategies.add(text));
-    });
-    await el.getByRole('button', { name: 'Back' }).click();
-    await openScreen(page, 'Playing Strategies', 'settings.strategy');
-    await expect(el.locator('select').first()).toHaveValue('My Strategy');
-    await expect(deleteButton).toBeVisible();
-
-    await deleteButton.click();
-    await answerDialog(page);
-    await answerDialog(page);
-    expect(await page.evaluate(() => window.app.strategies.custom().length)).toBe(0);
-    // Deleting falls back to the default strategy.
-    expect(await setting(page, 'strategy.system')).toBe(100);
   });
 });
 
@@ -135,44 +111,6 @@ test.describe('Strategy tables', () => {
     await expect(el.locator('.tables__grid td[data-row="1"][data-col="8"]')).toHaveText('1');
     await expect(el.locator('.tables__grid td[data-row="1"][data-col="7"]')).toHaveText('');
     await expect(el.locator('.tables__legend')).toBeHidden();
-  });
-});
-
-test.describe('Import Strategy', () => {
-  test('stores a downloaded strategy and selects it', async ({ page }) => {
-    await openHub(page);
-    const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
-    await strategy.getByRole('button', { name: 'Import Strategy' }).click();
-    const el = page.locator('[data-screen="strategy.import"]');
-    await expect(el).toBeVisible();
-
-    const file = await page.evaluate(() => window.app.strategies.text(32).replace('Halves', 'Imported Halves'));
-    await page.route('**/Apps/z777.php', route => route.fulfill({ body: file.replace('Imported Halves', 'Imported%20Halves') }));
-
-    await el.locator('[data-action="code"]').click();
-    await answerDialog(page, '777');
-    await expect(el.locator('[data-action="code"]')).toHaveText('777');
-    await el.locator('[data-action="import"]').click();
-    await answerDialog(page);
-
-    await expect(strategy).toBeVisible();
-    await expect(strategy.locator('select').first()).toHaveValue('Imported Halves');
-    expect(await setting(page, 'strategy.system')).toBe(1001);
-  });
-
-  test('reports a bad code', async ({ page }) => {
-    await openHub(page);
-    const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
-    await strategy.getByRole('button', { name: 'Import Strategy' }).click();
-    const el = page.locator('[data-screen="strategy.import"]');
-
-    await page.route('**/Apps/z1.php', route => route.fulfill({ status: 500, body: 'error' }));
-    await el.locator('[data-action="code"]').click();
-    await answerDialog(page, '1');
-    await el.locator('[data-action="import"]').click();
-    await expect(page.locator('.dialog__body')).toHaveText('File could not be read: 500');
-    await answerDialog(page);
-    expect(await page.evaluate(() => window.app.strategies.custom().length)).toBe(0);
   });
 });
 
@@ -248,59 +186,6 @@ test.describe('Allowed Bets', () => {
     const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
     await el.locator('select').selectOption('$25');
     expect(await setting(page, 'betting.chipValue')).toBe(25);
-  });
-});
-
-const CBJN_ID = '8997783';
-const RECORDS = [
-  'Aliante (Boyd)^U.S.^Nevada^Aliante (Boyd), 7300 Aliante Pkwy.^7^40^Las Vegas^h17,ds,nm,sc,pv^15^1000^2^9',
-  'Aria (MGM)^U.S.^Nevada^Aria (MGM), 3730 S. Las Vegas Blvd.^15^26^Las Vegas^s17,ds,ls,rsa,pv^500^10000^6^4',
-];
-const CBJN_BODY = `              ${CBJN_ID}~10/1/2026|\r\n              ${RECORDS.join('|\r\n              ')}|   `;
-
-test.describe('Casino Database', () => {
-  test('updates, searches and loads a casino\'s rules', async ({ page }) => {
-    await openHub(page);
-    await page.route('**/apps/cbjn7.php**', route => route.fulfill({ body: CBJN_BODY }));
-    const el = await openScreen(page, 'Casino Database', 'settings.casinoDb');
-    await expect(el.locator('.casino__note')).toBeVisible();
-    await expect(el.locator('[data-action="last-update"]')).toHaveText('Last Update: Never');
-
-    await el.locator('[data-action="cbjn-id"]').click();
-    await answerDialog(page, CBJN_ID);
-    await el.locator('[data-action="update"]').click();
-    await answerDialog(page);
-    await expect(el.locator('[data-action="last-update"]')).toHaveText('Last Update: 10/1/2026');
-    await expect(el.locator('.casino__note')).toBeHidden();
-
-    await el.locator('[data-action="search"]').click();
-    await answerDialog(page, 'aria');
-    await expect(el.locator('.casino__item')).toHaveCount(1);
-
-    await el.locator('.casino__item').click();
-    const detail = page.locator('[data-screen="settings.casinoDetail"]');
-    await expect(detail).toBeVisible();
-    await expect(detail.locator('tr').first()).toContainText('Aria (MGM)');
-
-    await detail.locator('[data-action="load-rules"]').click();
-    await answerDialog(page);
-    expect(await setting(page, 'table.decks')).toBe(6);
-    expect(await setting(page, 'table.cardsBehindCutCard')).toBe(78);
-    expect(await setting(page, 'rules.dealerHitsSoft17')).toBe(false);
-    expect(await setting(page, 'rules.surrender')).toBe('late');
-    expect(await setting(page, 'rules.resplitAces')).toBe(true);
-  });
-
-  test('rejects a CBJN id the database does not match', async ({ page }) => {
-    await openHub(page);
-    await page.route('**/apps/cbjn7.php**', route => route.fulfill({ body: CBJN_BODY }));
-    const el = await openScreen(page, 'Casino Database', 'settings.casinoDb');
-    await el.locator('[data-action="cbjn-id"]').click();
-    await answerDialog(page, '1234');
-    await el.locator('[data-action="update"]').click();
-    await expect(page.locator('.dialog__body')).toHaveText('Incorrect CBJN id.');
-    await answerDialog(page);
-    await expect(el.locator('[data-action="last-update"]')).toHaveText('Last Update: Never');
   });
 });
 

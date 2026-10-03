@@ -24,12 +24,12 @@ public/          the app: the only folder the server serves
                      advice, and the cell formatting the table viewer draws
     settings/      the settings schema and store, the strategy catalog, and the
                    pure rules behind the settings screens (rule interactions,
-                   bet ramp, casino rules, side-bet game decoding, strategy import)
+                   bet ramp, side-bet game decoding)
     services/      namespaced localStorage, sound effects, strategy-error tallies
     ui/            DOM helpers, components, dialogs, the standard screen layout,
                    card sprites, and the stylesheets
     screens/       Home and Help, the settings screens (settings/) and the
-                   strategy, true count, betting and casino screens (strategy/)
+                   strategy, true count and betting screens (strategy/)
     drills/        the four drills; shared/ holds what they have in common
       <drill>/       logic.js (pure), options.js and screen.js
     game/
@@ -48,9 +48,10 @@ tests/
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
   support/       the fixture loader
-tools/           the app's web server (server.mjs) and the service worker's
-                 precache list generator
-docs/            this document and the differences from the original apps
+tools/           the app's web server (server.mjs), the service worker's
+                 precache list generator, and bundle-import.mjs, which bundles
+                 strategies and side-bet games exported from Casino Verite
+docs/            this document
 ```
 
 ## How the pieces fit
@@ -82,7 +83,7 @@ animation is done.
   `ui/components.js` (button, select, checkList, valueButton, slider, field).
 - **Settings** are declared once in `settings/schema.js` (dotted keys, typed,
   with defaults) and read and written through `app.settings`. State that is not
-  a preference (bankroll, statistics, imported strategies) is stored through
+  a preference (bankroll, statistics) is stored through
   `app.storage` under its own key. All keys are prefixed `bjv.`.
 - **Randomness** is injected: functions take a `random` function returning
   [0, 1), so tests can pass `seededRandom(seed)`.
@@ -101,7 +102,7 @@ animation is done.
   index limit, about a million play-advice decisions, dealt shoes with their
   running and true counts, the strategy table viewer's cells, the drills' hand
   lists, answer grids and tray photos. They pin the rebuild's behavior to the
-  original's wherever `docs/CHANGES-FROM-ORIGINAL.md` does not say otherwise.
+  original's.
 - `npm run test:e2e` drives the running app in a mobile browser: every screen,
   playing rounds at the table, and running each drill.
 

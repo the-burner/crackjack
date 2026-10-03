@@ -16,7 +16,7 @@ export function createServices({ backend } = {}) {
   const app = {};
   app.storage = new Storage(backend);
   app.settings = new Settings(SETTINGS_SCHEMA, app.storage);
-  app.strategies = new StrategyLibrary(app.storage);
+  app.strategies = new StrategyLibrary();
   app.sound = new Sound(app.settings);
   app.errorTallies = new ErrorTallies(app.storage);
   return app;

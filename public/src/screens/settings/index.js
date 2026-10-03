@@ -10,6 +10,7 @@ import { playVariationsScreen } from './play-variations.js';
 import { unusualGamesScreen } from './unusual-games.js';
 import { dealerErrorsScreen } from './dealer-errors.js';
 import { peekingScreen } from './peeking.js';
+import { appearanceScreen } from './appearance.js';
 
 export function registerSettingsScreens(router) {
   return router
@@ -22,5 +23,6 @@ export function registerSettingsScreens(router) {
     .register('settings.playVariations', playVariationsScreen)
     .register('settings.unusualGames', unusualGamesScreen)
     .register('settings.dealerErrors', dealerErrorsScreen)
-    .register('settings.peeking', peekingScreen);
+    .register('settings.peeking', peekingScreen)
+    .register('settings.appearance', appearanceScreen);
 }

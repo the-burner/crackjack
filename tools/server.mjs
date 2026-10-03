@@ -8,10 +8,7 @@
 // HTTPS with a certificate from mkcert (created on first use in .certs/).
 //
 // Only the public/ folder is served; the rest of the repository (tests,
-// tools, .git, the certificates) is not. Requests under /apps/ are forwarded to
-// qfit.com: strategy import (/Apps/z<code>.php), side-bet game import
-// (/Apps/u<code>.php) and the casino database (/apps/cbjn7.php) are PHP
-// endpoints there, and forwarding keeps them same-origin for the browser.
+// tools, .git, the certificates) is not.
 
 import http from 'node:http';
 import https from 'node:https';
@@ -23,8 +20,6 @@ import { fileURLToPath } from 'node:url';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /** Everything the browser loads lives here. */
 const ROOT = path.join(REPO, 'public');
-const UPSTREAM = 'https://www.qfit.com';
-const PROXY_TIMEOUT_MS = 15000;
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -44,18 +39,6 @@ function serveFile(urlPath, res) {
   });
 }
 
-/** Forwards a request to qfit.com and relays the answer. */
-async function proxy(req, res) {
-  try {
-    const upstream = await fetch(UPSTREAM + req.url, { signal: AbortSignal.timeout(PROXY_TIMEOUT_MS) });
-    const body = Buffer.from(await upstream.arrayBuffer());
-    res.writeHead(upstream.status, { 'Content-Type': upstream.headers.get('content-type') ?? 'text/plain' });
-    res.end(body);
-  } catch (err) {
-    send(res, 502, `Could not reach qfit.com: ${err.message}`);
-  }
-}
-
 function send(res, status, text) {
   res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end(text);
@@ -69,7 +52,6 @@ function handler(req, res) {
     return send(res, 400, 'Bad request');
   }
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
-  if (urlPath.toLowerCase().startsWith('/apps/')) return proxy(req, res);
   return serveFile(urlPath, res);
 }
 

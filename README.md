@@ -13,10 +13,8 @@ A comprehensive card counting training suite
 | **Full Table Drills** | Count a whole table of hands at once (landscape). |
 | **Settings** | One set of rules, playing strategy and true-count settings shared by the game and the drills, plus each drill's own options. |
 
-39 counting systems are built in (plus a hole-carding strategy), and you can
-import your own strategies and side-bet games by code. The casino database
-(CBJN) lets you load a real casino's rules. Importing and the casino database
-need an internet connection; everything else works offline.
+39 counting systems are built in (plus a hole-carding strategy). Everything
+works offline.
 
 ## Trying it on a desktop browser
 
@@ -44,13 +42,10 @@ Tips for desktop testing:
   version. In DevTools → Application → Service Workers, tick **Update on
   reload** (or **Bypass for network**). Running `npm run precache` also makes the
   next load pick up the changes.
-- **Starting fresh.** Settings, bankroll, statistics and imported strategies
-  are kept in local storage. **Reset Defaults** on the home screen resets the
+- **Starting fresh.** Settings, bankroll and statistics are kept in local
+  storage. **Reset Defaults** on the home screen resets the
   settings only; to wipe everything use DevTools → Application → Storage →
   **Clear site data**.
-- **Online features.** Strategy import, side-bet game import and the casino
-  database talk to qfit.com; the server forwards those requests, so they work
-  locally too while you're online.
 
 ## Serving it to a phone
 
@@ -114,6 +109,8 @@ npx playwright install chromium      # once, for the browser tests
 npm test                             # unit tests
 npm run test:e2e                     # browser tests (starts its own server on port 4173)
 npm run precache                     # update the service worker's file list after changing files
+npm run add-strategy -- <code>       # bundle a strategy exported from Casino Verite (optional --name "...")
+npm run add-side-bet -- <code>       # bundle a side-bet game exported from Casino Verite (optional --name "...")
 ```
 
 Run `npm run precache` whenever you add, remove or change a file the app serves;

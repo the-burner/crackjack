@@ -19,12 +19,12 @@ const RULE_SCREENS = [
   ['Dealer Errs/Biases', 'settings.dealerErrors'],
 ];
 
-/** Right column: the screens shared with the drills, the casino database and peeking. */
+/** Right column: the screens shared with the drills, appearance and peeking. */
 const PLAY_SCREENS = [
   ['Playing Strategies', 'settings.strategy'],
   ['Betting Strategies', 'settings.betting'],
   ['True Count Calcs', 'settings.trueCount'],
-  ['Casino Database', 'settings.casinoDb'],
+  ['Appearance & Customization', 'settings.appearance'],
   ['Peeking', 'settings.peeking'],
 ];
 

@@ -6,7 +6,6 @@ const bool = value => ({ type: 'bool', default: value });
 const int = (value, min, max) => ({ type: 'int', default: value, min, max });
 const oneOf = (values, value) => ({ type: 'enum', values, default: value });
 const json = value => ({ type: 'json', default: value });
-const text = value => ({ type: 'string', default: value });
 
 const grid = (rows, cols, value) => Array.from({ length: rows }, () => new Array(cols).fill(value));
 const tableGrids = value => ({
@@ -104,10 +103,6 @@ export const SETTINGS_SCHEMA = {
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
   'betting.ramp': json({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }),
 
-  // Casino database (game). The downloaded database itself is cached in
-  // storage under "casinoDatabase", not here.
-  'casinoDb.cbjnId': text(''),
-
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': int(0),
   'bonuses.sevens777': oneOf(['none', '2:1', '3:2', 'suited10:1'], 'none'),
@@ -149,6 +144,7 @@ export const SETTINGS_SCHEMA = {
   'mechanics.dealerPointsOutStupidPlays': bool(true),
 
   // Display and sound.
+  'display.theme': oneOf(['classic', 'light', 'dark'], 'classic'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
   'display.hideActionButtons': bool(false),
