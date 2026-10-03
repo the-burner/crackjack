@@ -144,7 +144,7 @@ export const SETTINGS_SCHEMA = {
   'mechanics.dealerPointsOutStupidPlays': bool(true),
 
   // Display and sound.
-  'display.theme': oneOf(['classic', 'light', 'dark'], 'classic'),
+  'display.theme': oneOf(['classic', 'latte', 'mocha'], 'mocha'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
   'display.hideActionButtons': bool(false),

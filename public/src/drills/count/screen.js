@@ -3,6 +3,7 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { setupCanvas, drawCard, loadCardImages } from '../../ui/card-sprites.js';
+import { cssVar } from '../../ui/theme.js';
 import { drillShell, drillClockFor } from '../shared/drill-screen.js';
 import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.js';
 import { drillStrategy } from '../shared/drill-settings.js';
@@ -238,12 +239,12 @@ export function countScreen(app) {
     const height = shell.display.clientHeight;
     if (width > 2 && height > 2) {
       const ctx = setupCanvas(canvas, width, height);
-      ctx.fillStyle = '#008000';
+      ctx.fillStyle = cssVar('--felt', '#008000');
       ctx.fillRect(0, 0, width, height);
       if (tray && trayPicture?.complete) drawTray(ctx, trayPicture, { x: 0, y: 0, width, height }, tray.crop, options.thickness);
       else if (flash) drawFlash(ctx, width, height);
       if (notice) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = cssVar('--felt-text', '#ffffff');
         ctx.font = `bold ${notice === 'Done.' ? 32 : 20}px Helvetica, Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';

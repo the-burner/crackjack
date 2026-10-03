@@ -5,14 +5,17 @@
 // and the answer it stands for. Cells with no label are gaps.
 
 import { setupCanvas } from '../../ui/card-sprites.js';
+import { cssVar } from '../../ui/theme.js';
 
 /** Cell states and their colors. */
 const COLORS = {
-  idle: { fill: '#0000c4', text: '#ffffff' },
-  correct: { fill: '#00ff00', text: '#000000' },
-  close: { fill: '#ffff00', text: '#000000' },
-  wrong: { fill: '#ff0000', text: '#000000' },
+  idle: { fill: ['--tile-bg', '#0000c4'], text: ['--tile-text', '#ffffff'] },
+  correct: { fill: ['--tile-good', '#00ff00'], text: ['--tile-mark-text', '#000000'] },
+  close: { fill: ['--tile-close', '#ffff00'], text: ['--tile-mark-text', '#000000'] },
+  wrong: { fill: ['--tile-bad', '#ff0000'], text: ['--tile-mark-text', '#000000'] },
 };
+
+const resolve = ([name, fallback]) => cssVar(name, fallback);
 
 export class AnswerGrid {
   /**
@@ -57,29 +60,31 @@ export class AnswerGrid {
     ctx.font = `bold ${smallText ? 18 : 26}px Helvetica, Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    const colors = Object.fromEntries(Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]));
+    const bevel = { outline: cssVar('--tile-outline', '#000000'), light: cssVar('--tile-light', '#ffffff'), shade: cssVar('--tile-shade', '#808080') };
     for (const cell of this.cells) {
       if (cell.label === '') continue;
       drawBevelledButton(ctx, cell.column * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
-        cell.label, COLORS[this.states.get(cell) ?? 'idle']);
+        cell.label, colors[this.states.get(cell) ?? 'idle'], bevel);
     }
     return ctx;
   }
 }
 
 /** One answer button: a 3-D bevel around a filled rectangle with centred text. */
-function drawBevelledButton(ctx, x, y, width, height, label, { fill, text }) {
-  ctx.fillStyle = '#000000';
+function drawBevelledButton(ctx, x, y, width, height, label, { fill, text }, { outline, light, shade }) {
+  ctx.fillStyle = outline;
   ctx.fillRect(x, y, width, height);
   ctx.fillStyle = fill;
   ctx.fillRect(x + 2, y + 2, width - 4, height - 4);
-  ctx.strokeStyle = '#ffffff';
+  ctx.strokeStyle = light;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(x + 1.5, y + height - 1.5);
   ctx.lineTo(x + 1.5, y + 1.5);
   ctx.lineTo(x + width - 1.5, y + 1.5);
   ctx.stroke();
-  ctx.strokeStyle = '#808080';
+  ctx.strokeStyle = shade;
   ctx.beginPath();
   ctx.moveTo(x + width - 1.5, y + 1.5);
   ctx.lineTo(x + width - 1.5, y + height - 1.5);

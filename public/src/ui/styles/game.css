@@ -1,6 +1,17 @@
 /* The blackjack table, its betting overlay, the bet picker and the statistics. */
 
-.table { background: #004000; }
+:root {
+  --table-bg: #004000;
+  --table-bar-bg: #000;
+  --table-text: #fff;
+  --table-accent: #ffff00;
+  --status-error-text: #fff;
+  --bankroll-negative: #ff8080;
+  --text-shadow: #000;
+  --bet-overlay-bg: rgba(0, 0, 0, 0.65);
+}
+
+.table { background: var(--table-bg); }
 
 /* Title bar: a black strip in portrait, floating over the felt in landscape. */
 .table__bar {
@@ -8,7 +19,7 @@
   justify-content: space-between;
   gap: 4px;
   padding: 2px 4px;
-  background: #000;
+  background: var(--table-bar-bg);
 }
 .table__bar-end { display: flex; gap: 4px; }
 .table__bar .btn { min-height: 34px; padding: 0 6px; font-size: 12px; }
@@ -45,21 +56,21 @@
 
 .table__status {
   z-index: 8;
-  background: #000;
-  color: #fff;
+  background: var(--table-bar-bg);
+  color: var(--felt-text);
   font: bold 15px var(--font);
 }
 .table__status[hidden] { display: none; }
-.table__status--good { background: #00ff00; color: #000; }
-.table__status--error { background: #ff0000; color: #fff; }
+.table__status--good { background: var(--tile-good); color: var(--tile-mark-text); }
+.table__status--error { background: var(--tile-bad); color: var(--status-error-text); }
 
-.table__bankroll { color: #fff; font: bold 20px var(--font); text-shadow: 0 1px 2px #000; }
-.table__bankroll.is-negative { color: #ff8080; }
+.table__bankroll { color: var(--table-text); font: bold 20px var(--font); text-shadow: 0 1px 2px var(--text-shadow); }
+.table__bankroll.is-negative { color: var(--bankroll-negative); }
 
-.table__counts { color: #ffff00; font: bold 16px var(--font); justify-content: flex-start; }
+.table__counts { color: var(--table-accent); font: bold 16px var(--font); justify-content: flex-start; }
 
-.table__chip { color: #fff; font: bold 16px var(--font); text-shadow: 0 1px 2px #000; }
-.table__chip.is-result { background: #ffff00; color: #000; text-shadow: none; }
+.table__chip { color: var(--table-text); font: bold 16px var(--font); text-shadow: 0 1px 2px var(--text-shadow); }
+.table__chip.is-result { background: var(--table-accent); color: var(--tile-mark-text); text-shadow: none; }
 
 /* Action buttons, in two stacks at the bottom corners. */
 .table__actions {
@@ -88,11 +99,11 @@
   width: min(598px, calc(100% - 8px));
   transform: translateX(-50%);
   padding: 4px;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--bet-overlay-bg);
 }
 .bet-overlay[hidden] { display: none; }
 .bet-overlay__title {
-  color: #ffff00;
+  color: var(--felt-accent);
   font: bold 17px var(--font);
   text-align: center;
   padding: 2px 0 4px;
@@ -118,28 +129,28 @@
 .bet-select__chips { margin-top: 10px; }
 .tile {
   min-height: 56px;
-  border: 2px solid #000;
-  border-top-color: #fff;
-  border-left-color: #fff;
+  border: 2px solid var(--tile-outline);
+  border-top-color: var(--tile-light);
+  border-left-color: var(--tile-light);
   font: bold 18px var(--font);
   text-shadow: none;
 }
-.tile--hands { background: #00ff00; color: #000; }
-.tile--hands.is-on { background: #ff0000; }
-.tile--chips { background: #0000c4; color: #fff; }
+.tile--hands { background: var(--tile-good); color: var(--tile-mark-text); }
+.tile--hands.is-on { background: var(--tile-bad); }
+.tile--chips { background: var(--tile-bg); color: var(--tile-text); }
 .tile--chips:disabled { opacity: 0.35; }
 
 /* Statistics table. */
-.stats-table { width: 100%; border-collapse: collapse; background: #fff; }
+.stats-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); }
 .stats-table th,
 .stats-table td {
-  border: 1px solid #9bb3cd;
+  border: 1px solid var(--panel-border);
   padding: 5px 8px;
   font: 15px var(--font);
-  color: #000;
+  color: var(--panel-text);
   text-align: center;
   font-weight: normal;
 }
 .stats-table__head th,
-.stats-table__head td { background: #eceff3; font-weight: bold; }
+.stats-table__head td { background: var(--panel-head-bg); font-weight: bold; }
 .game-stats .column { gap: 10px; }

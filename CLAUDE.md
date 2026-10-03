@@ -42,7 +42,8 @@ Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
 - Randomness is injected (`random` param); tests use `seededRandom(seed)` from `public/src/core/random.js`.
 - Card ids are 1..52 (`suit * 13 + rank`; suits spades, clubs, hearts, diamonds).
 - Canvas drawing must go through `setupCanvas()` (devicePixelRatio aware).
-- Reuse `ui/components.js` (button, select, checkList, valueButton, slider, field) and keep the original visual style (peach page, red title chip, blue Back/Help).
+- Reuse `ui/components.js` (button, select, checkList, valueButton, slider, field).
+- Never hard-code a colour. Use a CSS custom property: Classic values (the original look) go in `:root` (`app.css`, `strategy.css`, `game.css`), and Latte/Mocha map it to the Catppuccin palette in `ui/styles/themes.css`. Canvas code reads them with `cssVar(name, classicFallback)` from `ui/theme.js`. Mocha is the default theme (`display.theme`).
 - Style: 2-space indent, single quotes, semicolons, named exports, small modules.
 
 ## Gotchas

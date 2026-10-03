@@ -101,8 +101,11 @@ const CASES = [
   {
     button: 'Appearance & Customization',
     screen: 'settings.appearance',
-    async change(el) { await select(el, 'display.theme').selectOption({ label: 'Dark' }); },
-    async verify(el) { await expect(select(el, 'display.theme')).toHaveValue('Dark'); },
+    async change(el) { await select(el, 'display.theme').selectOption({ label: 'Catppuccin Latte' }); },
+    async verify(el) {
+      await expect(select(el, 'display.theme')).toHaveValue('Catppuccin Latte');
+      await expect(el.page().locator('html')).toHaveAttribute('data-theme', 'latte');
+    },
   },
 ];
 

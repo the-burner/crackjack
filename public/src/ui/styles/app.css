@@ -1,17 +1,60 @@
 /* Base layout and components. */
 
 :root {
+  --chrome: #a11b2e;
   --page-bg: #ffe0c0;
+  --text: #000;
+  --warning: #c00000;
   --title-bg: #b83038;
+  --title-text: #fff;
   --nav-bg: #0000ff;
+  --nav-bg-active: #0000c0;
+  --nav-text: #fff;
   --primary-bg: #008000;
-  --felt: #008000;
+  --primary-bg-active: #006400;
+  --primary-text: #fff;
   --btn-bg: #f6f6f6;
   --btn-bg-active: #e8e8e8;
   --btn-border: #ddd;
   --btn-text: #333;
+  --btn-text-shadow: #f3f3f3;
   --check-on: #3388cc;
+  --check-on-text: #fff;
   --disc: rgba(0, 0, 0, 0.3);
+  --disc-on-color: rgba(0, 0, 0, 0.3);
+  --shadow: rgba(0, 0, 0, 0.15);
+  --input-bg: #fff;
+  --input-text: #000;
+  --input-shadow: rgba(0, 0, 0, 0.2);
+  --focus: #38c;
+  --overlay: rgba(0, 0, 0, 0.55);
+  --dialog-bg: #fff;
+  --dialog-shadow: rgba(0, 0, 0, 0.4);
+  --dialog-accent: #007aff;
+  --dialog-text: #4c4c4c;
+  --dialog-input-border: #14234c;
+  --dialog-input-text: #333;
+  --dialog-divider: #dcdcdc;
+  --help-bg: #fff;
+  --prose-bg: #fff;
+  --felt: #008000;
+  --felt-alt: #000080;
+  --felt-text: #fff;
+  --felt-accent: #ffff00;
+  --panel-bg: #fff;
+  --panel-head-bg: #eceff3;
+  --panel-text: #000;
+  --panel-border: #9bb3cd;
+  --tile-bg: #0000c4;
+  --tile-text: #fff;
+  --tile-good: #00ff00;
+  --tile-close: #ffff00;
+  --tile-bad: #ff0000;
+  --tile-previous: #dc780c;
+  --tile-mark-text: #000;
+  --tile-outline: #000;
+  --tile-light: #fff;
+  --tile-shade: #808080;
   --font: Helvetica, Arial, sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -71,7 +114,7 @@ html, body {
   max-width: 100%;
   padding: 2px 10px;
   background: var(--title-bg);
-  color: #fff;
+  color: var(--title-text);
   font: bold 18px var(--font);
   text-align: center;
   white-space: nowrap;
@@ -95,7 +138,7 @@ html, body {
   background: var(--btn-bg);
   color: var(--btn-text);
   font: bold 12.5px var(--font);
-  text-shadow: 0 1px 0 #f3f3f3;
+  text-shadow: 0 1px 0 var(--btn-text-shadow);
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
@@ -104,10 +147,10 @@ html, body {
 .btn:active { background: var(--btn-bg-active); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn--large { font-size: 16px; min-height: 44px; }
-.btn--nav { background: var(--nav-bg); color: #fff; text-shadow: none; border-color: var(--nav-bg); }
-.btn--nav:active { background: #0000c0; }
-.btn--primary { background: var(--primary-bg); color: #fff; text-shadow: none; border-color: var(--primary-bg); }
-.btn--primary:active { background: #006400; }
+.btn--nav { background: var(--nav-bg); color: var(--nav-text); text-shadow: none; border-color: var(--nav-bg); }
+.btn--nav:active { background: var(--nav-bg-active); }
+.btn--primary { background: var(--primary-bg); color: var(--primary-text); text-shadow: none; border-color: var(--primary-bg); }
+.btn--primary:active { background: var(--primary-bg-active); }
 .btn--block { display: flex; width: 100%; }
 
 /* Icon disc after the label (right) or under it (bottom). */
@@ -125,13 +168,13 @@ html, body {
 .btn--icon-right { padding-right: 40px; }
 .btn--icon-right::after { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
 .btn--icon-bottom { flex-direction: column; gap: 6px; }
-.btn--nav[class*='icon-']::after, .btn--primary[class*='icon-']::after { background-color: rgba(0, 0, 0, 0.3); }
+.btn--nav[class*='icon-']::after, .btn--primary[class*='icon-']::after { background-color: var(--disc-on-color); }
 
 /* Text. */
-.label { font: bold 16px var(--font); color: #000; }
+.label { font: bold 16px var(--font); color: var(--text); }
 .label--small { font-size: 14px; }
-.note { font: bold 14px var(--font); color: #000; text-align: center; }
-.note--warning { color: #c00000; }
+.note { font: bold 14px var(--font); color: var(--text); text-align: center; }
+.note--warning { color: var(--warning); }
 .footer-note { font: bold 10px var(--font); text-align: center; padding: 4px 0 6px; }
 
 /* Field rows: label above or left of a control. */
@@ -153,7 +196,7 @@ html, body {
   border: 1px solid var(--btn-border);
   border-radius: 5px;
   background: var(--btn-bg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px var(--shadow);
   color: var(--btn-text);
   font: bold 16px var(--font);
   text-align: center;
@@ -181,7 +224,7 @@ html, body {
 .checklist--horizontal .check { flex: 1; justify-content: center; padding-left: 8px; border-top: 0; border-left: 1px solid var(--btn-border); }
 .checklist--horizontal .check:first-child { border-left: 0; }
 .checklist--horizontal .check input { display: none; }
-.checklist--horizontal .check.is-on { background: var(--check-on); color: #fff; text-shadow: none; }
+.checklist--horizontal .check.is-on { background: var(--check-on); color: var(--check-on-text); text-shadow: none; }
 .check {
   display: flex;
   align-items: center;
@@ -226,9 +269,9 @@ html, body {
   padding: 0 4px;
   border: 1px solid var(--btn-border);
   border-radius: 4px;
-  background: #fff;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-  color: #000;
+  background: var(--input-bg);
+  box-shadow: inset 0 1px 3px var(--input-shadow);
+  color: var(--input-text);
   font: bold 14px var(--font);
   text-align: center;
   -moz-appearance: textfield;
@@ -236,8 +279,8 @@ html, body {
 }
 .slider__value::-webkit-inner-spin-button,
 .slider__value::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
-.slider__value:focus { outline: 2px solid #38c; outline-offset: 0; }
-.slider input[type='range'] { flex: 1; min-width: 0; accent-color: #38c; }
+.slider__value:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+.slider input[type='range'] { flex: 1; min-width: 0; accent-color: var(--focus); }
 
 /* Dialogs. */
 .dialog-overlay {
@@ -248,33 +291,33 @@ html, body {
   align-items: flex-start;
   justify-content: center;
   padding-top: calc(60px + var(--safe-top));
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--overlay);
 }
 .dialog {
   width: 282px;
   max-width: calc(100% - 20px);
-  background: #fff;
+  background: var(--dialog-bg);
   font-family: Roboto, Helvetica, Verdana, Arial, sans-serif;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px var(--dialog-shadow);
 }
-.dialog__title { padding: 20px 16px 16px; border-bottom: 2px solid #007aff; color: #007aff; font-size: 22px; }
-.dialog__body { padding: 16px 24px; color: #4c4c4c; font-size: 18px; word-wrap: break-word; }
-.dialog__input { width: 100%; margin-top: 10px; padding: 4px; border: 1px solid #14234c; font-size: 18px; color: #333; }
-.dialog__buttons { display: flex; border-top: 1px solid #dcdcdc; }
+.dialog__title { padding: 20px 16px 16px; border-bottom: 2px solid var(--dialog-accent); color: var(--dialog-accent); font-size: 22px; }
+.dialog__body { padding: 16px 24px; color: var(--dialog-text); font-size: 18px; word-wrap: break-word; }
+.dialog__input { width: 100%; margin-top: 10px; padding: 4px; border: 1px solid var(--dialog-input-border); font-size: 18px; color: var(--dialog-input-text); }
+.dialog__buttons { display: flex; border-top: 1px solid var(--dialog-divider); }
 .dialog__buttons button {
   flex: 1;
   height: 52px;
   border: 0;
-  border-left: 1px solid #dcdcdc;
-  background: #fff;
-  color: #007aff;
+  border-left: 1px solid var(--dialog-divider);
+  background: var(--dialog-bg);
+  color: var(--dialog-accent);
   font-size: 14px;
   cursor: pointer;
 }
 .dialog__buttons button:first-child { border-left: 0; }
 
 /* Help text. */
-.help { background: #fff; }
+.help { background: var(--help-bg); }
 .help .screen__body { font-size: 13px; line-height: 1.4; padding: 8px 12px 24px; }
 
 /* Play screens (drills and the table) use a green felt background. */

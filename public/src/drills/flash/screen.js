@@ -4,6 +4,7 @@ import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { confirm } from '../../ui/dialogs.js';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '../../ui/card-sprites.js';
+import { cssVar } from '../../ui/theme.js';
 import { valueName } from '../../core/cards.js';
 import { ACTION } from '../../core/strategy/advisor.js';
 import { drillShell, drillClockFor } from '../shared/drill-screen.js';
@@ -328,11 +329,11 @@ export function flashScreen(app) {
     const height = shell.display.clientHeight;
     if (width < 2 || height < 2) return;
     const ctx = setupCanvas(canvas, width, height);
-    ctx.fillStyle = '#008000';
+    ctx.fillStyle = cssVar('--felt', '#008000');
     ctx.fillRect(0, 0, width, height);
     if (hand) drawCards(ctx, width, height);
     if (finished) {
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = cssVar('--felt-text', '#ffffff');
       ctx.font = '40px Helvetica, Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

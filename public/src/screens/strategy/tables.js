@@ -21,6 +21,19 @@ const EXTENDED_COLUMNS = 23;
 const LEGEND_COLORS = [GRID_COLOR.action, GRID_COLOR.opposite, GRID_COLOR.index, GRID_COLOR.below];
 const LEGEND_TEXT_COLORS = ['#000', '#fff', '#000', '#fff'];
 
+/** The chart's colours as theme custom properties (errors share the opposite's red). */
+const CHART_VARS = {
+  [GRID_COLOR.action]: '--chart-action',
+  [GRID_COLOR.opposite]: '--chart-opposite',
+  [GRID_COLOR.index]: '--chart-index',
+  [GRID_COLOR.below]: '--chart-below',
+  [GRID_COLOR.unselected]: '--chart-unselected',
+  [GRID_COLOR.noErrors]: '--chart-no-errors',
+  '#000': '--chart-text',
+  '#fff': '--chart-text-alt',
+};
+const themed = color => (CHART_VARS[color] ? `var(${CHART_VARS[color]})` : color);
+
 /**
  * @param {object} app
  * @param {object} params
@@ -138,7 +151,7 @@ export function strategyTablesScreen(app, params = {}) {
         return h('td', {
           class: marked ? 'grid__cell--marked' : null,
           dataset: { row: String(row), col: String(column) },
-          style: { backgroundColor: cell.background, color: cell.color },
+          style: { backgroundColor: themed(cell.background), color: themed(cell.color) },
         }, cell.text);
       })));
     return h('table', { class: `grid tables__grid${editingMask ? ' tables__grid--editable' : ''}` },
@@ -149,7 +162,7 @@ export function strategyTablesScreen(app, params = {}) {
   function legendBoxes() {
     return view.legend.map((label, i) => (label === null ? null : h('div', {
       class: 'tables__legend-box',
-      style: { backgroundColor: LEGEND_COLORS[i], color: LEGEND_TEXT_COLORS[i] },
+      style: { backgroundColor: themed(LEGEND_COLORS[i]), color: themed(LEGEND_TEXT_COLORS[i]) },
     }, label)));
   }
 

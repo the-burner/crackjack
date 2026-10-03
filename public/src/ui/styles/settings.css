@@ -36,8 +36,8 @@
   padding: 2px 12px;
   border: 1px solid var(--btn-border);
   border-radius: 5px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background: var(--prose-bg);
+  box-shadow: 0 1px 3px var(--shadow);
   font: 13px var(--font);
   color: var(--btn-text);
 }

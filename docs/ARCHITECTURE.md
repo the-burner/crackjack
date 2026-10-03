@@ -27,7 +27,8 @@ public/          the app: the only folder the server serves
                    bet ramp, side-bet game decoding)
     services/      namespaced localStorage, sound effects, strategy-error tallies
     ui/            DOM helpers, components, dialogs, the standard screen layout,
-                   card sprites, and the stylesheets
+                   card sprites, the stylesheets, and the colour themes
+                   (theme.js; Classic in :root, Catppuccin in themes.css)
     screens/       Home and Help, the settings screens (settings/) and the
                    strategy, true count and betting screens (strategy/)
     drills/        the four drills; shared/ holds what they have in common

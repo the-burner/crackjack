@@ -3,6 +3,7 @@
 import { h } from '../../ui/dom.js';
 import { seededRandom } from '../../core/random.js';
 import { setupCanvas, drawCard, loadCardImages } from '../../ui/card-sprites.js';
+import { cssVar } from '../../ui/theme.js';
 import { drillShell, drillClockFor } from '../shared/drill-screen.js';
 import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.js';
 import { drillStrategy } from '../shared/drill-settings.js';
@@ -23,7 +24,7 @@ const WARNING_TEXT = { oneCardLeft: 'One card left', twoCardsLeft: 'Two cards le
 const WARNING_REMAINING = { oneCardLeft: 1, twoCardsLeft: 2 };
 /** The cards are taken away just before the test time runs out. */
 const HIDE_CARDS_FRACTION = 0.95;
-const TABLE_COLORS = ['#008000', '#000080'];
+const TABLE_COLORS = [['--felt', '#008000'], ['--felt-alt', '#000080']];
 
 const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
 
@@ -326,11 +327,11 @@ export function fullScreen(app) {
       const table = tables.find(t => t) ?? null;
       const shown = twoTables ? tables[TWO_TABLE_PHASES[phase].table] : table;
       const ctx = setupCanvas(canvas, width, height);
-      ctx.fillStyle = shown?.color ?? TABLE_COLORS[0];
+      ctx.fillStyle = cssVar(...(shown?.color ?? TABLE_COLORS[0]));
       ctx.fillRect(0, 0, width, height);
       if (shown && !cardsHidden) drawTable(ctx, shown, width, height);
       if (notice) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = cssVar('--felt-text', '#ffffff');
         ctx.font = 'bold 32px Helvetica, Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';

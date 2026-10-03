@@ -2,7 +2,22 @@
 
 :root {
   --grid-head-bg: #93a5bb;
+  --grid-head-text: #fff;
   --grid-border: #9bb3cd;
+  --grid-text: #000;
+  --grid-label-bg: #f0f0f0;
+  --inset-border: #ccc;
+  --grid-mark: #000;
+  --grid-mark-alt: #fff;
+  --chart-action: #00ff00;
+  --chart-opposite: #ff0000;
+  --chart-index: #00ffff;
+  --chart-below: #0000ff;
+  --chart-unselected: #c0c0c0;
+  --chart-no-errors: #404040;
+  --chart-text: #000;
+  --chart-text-alt: #fff;
+  --bet-pad-bg: #0000c0;
 }
 
 /* `display: flex` on a component beats the hidden attribute, so say it again. */
@@ -19,17 +34,17 @@
   padding: 4px 1px;
   border: 2px ridge var(--grid-border);
   background: var(--grid-head-bg);
-  color: #fff;
+  color: var(--grid-head-text);
   text-align: center;
 }
 .grid td {
   padding: 4px 1px;
   border: 2px ridge var(--grid-border);
-  color: #000;
+  color: var(--grid-text);
   text-align: center;
   overflow: hidden;
 }
-.grid__label { background: #f0f0f0; }
+.grid__label { background: var(--grid-label-bg); }
 
 /* Strategy table viewer. */
 .tables__head { display: flex; align-items: center; gap: 6px; }
@@ -37,8 +52,8 @@
   flex: 1;
   min-width: 0;
   padding: 5px 8px;
-  border: 2px inset #ccc;
-  background: #fff;
+  border: 2px inset var(--inset-border);
+  background: var(--input-bg);
   font: 13px var(--font);
   text-align: center;
   white-space: nowrap;
@@ -58,7 +73,7 @@
   align-items: center;
   justify-content: center;
   padding: 2px 4px;
-  border: 1px groove #000;
+  border: 1px groove var(--grid-mark);
   font: bold 12px var(--font);
   text-align: center;
 }
@@ -81,14 +96,14 @@
 .bet-pad__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
 .bet-pad__btn {
   min-height: 52px;
-  border: 2px solid #000;
-  background: #0000c0;
-  color: #fff;
+  border: 2px solid var(--tile-outline);
+  background: var(--bet-pad-bg);
+  color: var(--tile-text);
   font: bold 18px var(--font);
   cursor: pointer;
 }
-.bet-pad__btn--hands { background: #00ff00; color: #000; }
-.bet-pad__btn.is-on { background: #ff0000; color: #000; }
+.bet-pad__btn--hands { background: var(--tile-good); color: var(--tile-mark-text); }
+.bet-pad__btn.is-on { background: var(--tile-bad); color: var(--tile-mark-text); }
 .bet-pad__btn:disabled { opacity: 0.35; cursor: default; }
 
 /* Label plus control rows. The strategy screen has a narrow label column; the
@@ -103,5 +118,5 @@
 .tc-row > :not(.label) { flex: 0 0 150px; }
 
 /* The cell the game's Error button points at. */
-.grid__cell--marked { outline: 3px solid #000; outline-offset: -3px; animation: marked-cell 1.4s steps(1, end) infinite; }
-@keyframes marked-cell { 50% { outline-color: #fff; } }
+.grid__cell--marked { outline: 3px solid var(--grid-mark); outline-offset: -3px; animation: marked-cell 1.4s steps(1, end) infinite; }
+@keyframes marked-cell { 50% { outline-color: var(--grid-mark-alt); } }

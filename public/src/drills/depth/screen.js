@@ -2,6 +2,7 @@
 
 import { h } from '../../ui/dom.js';
 import { setupCanvas } from '../../ui/card-sprites.js';
+import { cssVar } from '../../ui/theme.js';
 import { drillShell, drillClockFor } from '../shared/drill-screen.js';
 import { progressiveSpeed } from '../shared/drill-clock.js';
 import { drillStrategy } from '../shared/drill-settings.js';
@@ -159,7 +160,7 @@ export function depthScreen(app) {
     const height = shell.display.clientHeight;
     if (width > 2 && height > 2) {
       const ctx = setupCanvas(tray, width, height);
-      ctx.fillStyle = '#008000';
+      ctx.fillStyle = cssVar('--felt', '#008000');
       ctx.fillRect(0, 0, width, height);
       if (test && image?.complete) {
         const top = panel.clientHeight;

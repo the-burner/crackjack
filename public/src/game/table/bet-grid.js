@@ -2,11 +2,12 @@
 // the player's ramp allows, plus the drawing and hit-testing it needs.
 
 import { normalizeRamp } from '../../settings/bet-ramp.js';
+import { cssVar } from '../../ui/theme.js';
 
 export const COLUMNS = 6;
 export const ROWS = 3;
-/** Tile colours. */
-export const TILE = { normal: '#0000c4', single: '#00ff00', previous: '#dc780c', selected: '#ff0000' };
+/** Tile colours: custom property and Classic fallback. */
+export const TILE = { normal: ['--tile-bg', '#0000c4'], single: ['--tile-good', '#00ff00'], previous: ['--tile-previous', '#dc780c'], selected: ['--tile-bad', '#ff0000'] };
 
 /**
  * The bets the ramp offers, one per tile. Rows that repeat the row before them
@@ -70,18 +71,18 @@ export function cellIndexAt({ x, y }, geometry) {
  * centred label.
  */
 export function drawBevelButton(ctx, { x, y, width, height, label, color, font }) {
-  ctx.fillStyle = '#000000';
+  ctx.fillStyle = cssVar('--tile-outline', '#000000');
   ctx.fillRect(x, y, width, height);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = cssVar('--tile-light', '#ffffff');
   ctx.fillRect(x + 1, y + 1, width - 2, 2);
   ctx.fillRect(x + 1, y + 1, 2, height - 2);
-  ctx.fillStyle = '#808080';
+  ctx.fillStyle = cssVar('--tile-shade', '#808080');
   ctx.fillRect(x + 1, y + height - 3, width - 2, 2);
   ctx.fillRect(x + width - 3, y + 1, 2, height - 2);
-  ctx.fillStyle = color;
+  ctx.fillStyle = cssVar(...color);
   ctx.fillRect(x + 3, y + 3, width - 6, height - 6);
   if (!label) return;
-  ctx.fillStyle = color === TILE.normal ? '#ffffff' : '#000000';
+  ctx.fillStyle = color === TILE.normal ? cssVar('--tile-text', '#ffffff') : cssVar('--tile-mark-text', '#000000');
   ctx.font = font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
