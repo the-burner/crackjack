@@ -53,7 +53,7 @@ export function countScreen(app) {
   const canvas = h('canvas', { class: 'drill__cards' });
   const gridCanvas = h('canvas', { class: 'drill__answers' });
   const gridWrap = h('div', { class: 'drill__answers-wrap' }, gridCanvas);
-  const nextButton = button('Next', { icon: 'forward', onClick: () => dealFlash() });
+  const nextButton = button('Next', { icon: 'forward', hidden: true, onClick: () => { if (!shell.paused) dealFlash(); } });
 
   let run = -1;
   let shoe = null;
@@ -70,15 +70,20 @@ export function countScreen(app) {
   let notice = '';
   let done = false;
   let started = false;
+  /** A correct answer came in while paused: deal again on resume. */
+  let resumePending = false;
 
   const shell = drillShell(app, {
     title: 'Count Drills',
     help: 'drills.count',
     countLabel: 'Tests',
     className: 'drill--count drill--grid',
+    pausable: true,
     onStart: start,
     onStop: stop,
     onLayout: draw,
+    onPause: pause,
+    onResume: resume,
   });
   shell.setDisplay(canvas);
   shell.controls.append(nextButton);
@@ -88,6 +93,7 @@ export function countScreen(app) {
 
   function start() {
     run += 1;
+    resumePending = false;
     done = false;
     notice = '';
     gridWindow = INITIAL_WINDOW;
@@ -187,7 +193,7 @@ export function countScreen(app) {
   }
 
   function tap(event) {
-    if (!grid || done) return;
+    if (!grid || done || shell.paused) return;
     const box = gridCanvas.getBoundingClientRect();
     const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -216,12 +222,37 @@ export function countScreen(app) {
   }
 
   function resumeDealing() {
+    if (shell.paused) {
+      resumePending = true;
+      return;
+    }
     grid = null;
     tray = null;
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
     dealFlash();
     if (auto && !done) shell.clock.every('deal', dealSpeed(), dealFlash);
+  }
+
+  /** Stops dealing and the test clock, and covers the cards. */
+  function pause() {
+    shell.clock?.pause();
+    draw();
+  }
+
+  function resume() {
+    shell.clock?.resume();
+    if (done) return;
+    if (resumePending) {
+      resumePending = false;
+      resumeDealing();
+    } else if (grid) {
+      // A test still waiting for its answer gets its full time again.
+      if (!shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
+    } else if (auto) {
+      shell.clock.every('deal', dealSpeed(), dealFlash);
+    }
+    draw();
   }
 
   function finishShoe() {
@@ -241,9 +272,12 @@ export function countScreen(app) {
       const ctx = setupCanvas(canvas, width, height);
       ctx.fillStyle = cssVar('--felt', '#008000');
       ctx.fillRect(0, 0, width, height);
-      if (tray && trayPicture?.complete) drawTray(ctx, trayPicture, { x: 0, y: 0, width, height }, tray.crop, options.thickness);
-      else if (flash) drawFlash(ctx, width, height);
-      if (notice) {
+      // While paused the felt stays empty, so nothing can be studied.
+      if (!shell.paused) {
+        if (tray && trayPicture?.complete) drawTray(ctx, trayPicture, { x: 0, y: 0, width, height }, tray.crop, options.thickness);
+        else if (flash) drawFlash(ctx, width, height);
+      }
+      if (notice && !shell.paused) {
         ctx.fillStyle = cssVar('--felt-text', '#ffffff');
         ctx.font = `bold ${notice === 'Done.' ? 32 : 20}px Helvetica, Arial, sans-serif`;
         ctx.textAlign = 'center';
@@ -251,8 +285,8 @@ export function countScreen(app) {
         ctx.fillText(notice, width / 2, height / 2);
       }
     }
-    gridWrap.hidden = !grid;
-    if (grid) drawGridIn(grid, gridCanvas, gridWrap);
+    gridWrap.hidden = !grid || shell.paused;
+    if (grid && !shell.paused) drawGridIn(grid, gridCanvas, gridWrap);
   }
 
   function drawFlash(ctx, width, height) {

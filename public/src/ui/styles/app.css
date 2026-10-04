@@ -72,6 +72,9 @@
 
 * { box-sizing: border-box; }
 
+/* `hidden` always hides, even on elements styled with display: flex or grid. */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -141,7 +144,8 @@ html, body {
   font: 400 17px var(--font);
 }
 .topbar .btn--nav:active { background: transparent; opacity: 0.5; }
-.btn--nav[data-action='back'] { padding-left: 2px; gap: 2px; }
+/* The chevron's ink lines up with the page's 16px content edge. */
+.btn--nav[data-action='back'] { padding-left: 7px; gap: 2px; }
 .topbar .btn--nav[data-action='back']::before,
 .drill__bar .btn--nav[data-action='back']::before,
 .table__bar .btn--nav[data-action='back']::before {
@@ -411,18 +415,92 @@ html, body {
 .dialog__buttons button:active { background: var(--separator); }
 @keyframes fade-in { from { opacity: 0; } }
 
+/* Duration picker: hour / minute / second wheels (ui/time-wheel.js), centred on screen. */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--safe-top) 20px var(--safe-bottom);
+  background: var(--overlay);
+  animation: fade-in 0.18s ease-out;
+  transition: opacity 0.18s;
+}
+.sheet-overlay.is-leaving { opacity: 0; }
+.sheet {
+  width: 100%;
+  max-width: 360px;
+  overflow: hidden;
+  padding-bottom: 8px;
+  border-radius: 14px;
+  background: var(--dialog-bg);
+  box-shadow: 0 10px 40px var(--dialog-shadow);
+  animation: dialog-in 0.18s ease-out;
+}
+.sheet__bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--dialog-divider); }
+.sheet__title { color: var(--text); font: 600 17px var(--font); }
+.sheet__action { justify-self: start; min-height: 40px; padding: 0 8px; border: 0; background: transparent; color: var(--dialog-accent); font: 400 17px var(--font); cursor: pointer; }
+.sheet__action--done { justify-self: end; font-weight: 600; }
+.sheet__action:active { opacity: 0.5; }
+
+/* Five rows show; the middle one is the value, marked by a band. */
+.wheels { position: relative; display: flex; justify-content: center; gap: 8px; padding: 12px 16px; }
+.wheels::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: calc(12px + 72px);
+  height: 36px;
+  border-radius: var(--radius-s);
+  background: var(--separator);
+  pointer-events: none;
+}
+.wheel__column { position: relative; display: flex; align-items: center; }
+.wheel {
+  width: 64px;
+  height: 180px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  perspective: 600px;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  outline: none;
+}
+.wheel::-webkit-scrollbar { display: none; }
+.wheel:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); border-radius: var(--radius-s); }
+.wheel__list { padding: 72px 0; }
+.wheel__item {
+  height: 36px;
+  padding-right: 6px;
+  color: var(--text);
+  font: 400 22px/36px var(--font);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.wheel__unit { width: 36px; color: var(--text); font: 600 15px var(--font); }
+
 /* Toast. */
 .toast {
   position: fixed;
   left: 50%;
   bottom: calc(24px + var(--safe-bottom));
   z-index: 4000;
-  max-width: calc(100% - 40px);
+  width: max-content;
+  max-width: calc(100vw - 40px);
   padding: 10px 18px;
   border-radius: 999px;
   background: var(--text);
   color: var(--page-bg);
   font: 500 14px var(--font);
+  text-align: center;
   box-shadow: 0 6px 24px var(--dialog-shadow);
   transform: translateX(-50%);
   animation: toast-in 0.2s ease-out;

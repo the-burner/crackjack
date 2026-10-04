@@ -7,6 +7,7 @@ import { h, replaceChildren } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { DrillScore } from './scoring.js';
 import { DrillClock } from './drill-clock.js';
+import { clockTime } from './format.js';
 
 /**
  * @param {object} app
@@ -31,13 +32,14 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
   const statsCells = {
     count: h('td', {}, `${countLabel}: 0`),
     accuracy: h('td', {}, 'Accuracy: 0%'),
-    seconds: h('td', {}, 'Seconds: 0'),
+    seconds: h('td', {}, `Time: ${clockTime(0)}`),
     rate: h('td', {}, `${countLabel}/Min: 0`),
   };
   const stats = h('table', { class: 'drill__stats' },
     h('tbody', {}, h('tr', {}, statsCells.count, statsCells.accuracy), h('tr', {}, statsCells.seconds, statsCells.rate)));
   const controls = h('div', { class: 'drill__controls' });
-  const countdown = h('div', { class: 'drill__countdown' });
+  // Shown over the drill's own area, not the whole screen.
+  const countdown = h('div', { class: 'drill__countdown', hidden: true });
 
   const pauseButton = pausable ? button('Pause', { icon: 'star', onClick: () => shell.togglePause() }) : null;
   const restartButton = button('Restart', { icon: 'refresh', onClick: () => shell.restart() });
@@ -48,7 +50,8 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
     h('header', { class: 'drill__bar' },
       button('Back', { variant: 'nav', onClick: () => app.back(), 'data-action': 'back' }),
       button('Help', { variant: 'nav', onClick: () => app.help(help, title) })),
-    body, countdown);
+    body);
+  display.append(countdown);
 
   /** @typedef {object} DrillShell */
   const shell = {
@@ -68,7 +71,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
 
     /** Replaces the display area's contents. */
     setDisplay(...children) {
-      replaceChildren(display, ...children);
+      replaceChildren(display, ...children, countdown);
     },
 
     /** Shows a message under the display area (cleared by `clearMessage`). */
@@ -86,14 +89,15 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
       statsCells.accuracy.textContent = accuracyText(score);
       if (clock) {
         const { seconds, overdue } = clock.display();
-        statsCells.seconds.textContent = `Seconds: ${seconds}`;
+        statsCells.seconds.textContent = `Time: ${clockTime(seconds)}`;
         statsCells.seconds.classList.toggle('is-overdue', overdue);
         statsCells.rate.textContent = `${countLabel}/Min: ${clock.rate(score.tests)}`;
       }
     },
 
-    /** Runs the opening "2, 1" countdown, then starts the drill. */
-    begin() {
+    /** Shows a "2, 1" countdown, then calls `then`. */
+    countdown(then) {
+      clearTimeout(shell.countdownTimer);
       let remaining = 2;
       countdown.textContent = String(remaining);
       countdown.hidden = false;
@@ -105,12 +109,20 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
           return;
         }
         countdown.hidden = true;
-        shell.start();
+        then();
       };
       shell.countdownTimer = setTimeout(tick, 1000);
     },
 
+    /** Runs the opening countdown, then starts the drill. */
+    begin() {
+      shell.countdown(() => shell.start());
+    },
+
     start() {
+      clearTimeout(shell.countdownTimer);
+      countdown.hidden = true;
+      if (pauseButton) pauseButton.disabled = false;
       score.reset();
       shell.paused = false;
       if (pauseButton) pauseButton.textContent = 'Pause';
@@ -131,16 +143,24 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
       if (text) shell.setMessage(text);
     },
 
+    /** Pauses, or resumes after a countdown (the drill stays paused until it ends). */
     togglePause() {
       if (shell.paused) {
-        shell.paused = false;
-        if (pauseButton) pauseButton.textContent = 'Pause';
-        onResume?.(shell);
-      } else {
-        shell.paused = true;
-        if (pauseButton) pauseButton.textContent = 'Continue';
-        onPause?.(shell);
+        if (pauseButton) pauseButton.disabled = true;
+        shell.countdown(() => {
+          shell.paused = false;
+          if (pauseButton) {
+            pauseButton.textContent = 'Pause';
+            pauseButton.disabled = false;
+          }
+          onResume?.(shell);
+          shell.updateStats(shell.clock);
+        });
+        return;
       }
+      shell.paused = true;
+      if (pauseButton) pauseButton.textContent = 'Continue';
+      onPause?.(shell);
       shell.updateStats(shell.clock);
     },
 

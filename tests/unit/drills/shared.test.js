@@ -3,7 +3,7 @@ import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../public/src/dr
 import { DrillScore, gradeAnswer, ACCURACY } from '../../../public/src/drills/shared/scoring.js';
 import { trayImage, maxDecksInTray } from '../../../public/src/drills/shared/discard-tray.js';
 import { numberGrid, windowContaining } from '../../../public/src/drills/shared/answer-grid.js';
-import { mixedNumber } from '../../../public/src/drills/shared/format.js';
+import { clockTime, mixedNumber } from '../../../public/src/drills/shared/format.js';
 import { DrillShoe } from '../../../public/src/drills/shared/shoe.js';
 import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
@@ -143,6 +143,16 @@ describe('answer grids', () => {
     expect(windowContaining(20, 0, 18)).toBe(9);
     expect(windowContaining(-1, 0, 18)).toBe(-9);
     expect(windowContaining(-20, 0, 18)).toBe(-27);
+  });
+});
+
+describe('clockTime', () => {
+  it('writes seconds as hours, minutes and seconds', () => {
+    expect([0, 5, 65, 3599, 3600, 3725, 36000].map(clockTime)).toEqual(['00:00:00', '00:00:05', '00:01:05', '00:59:59', '01:00:00', '01:02:05', '10:00:00']);
+  });
+
+  it('marks time past a count-down limit as negative', () => {
+    expect(clockTime(-5)).toBe('-00:00:05');
   });
 });
 

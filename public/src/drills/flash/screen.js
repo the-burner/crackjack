@@ -46,6 +46,7 @@ export function flashScreen(app) {
     decks: s.get('drills.flash.decks'),
     spanish: s.get('drills.flash.spanishDecks'),
     seconds: s.get('drills.flash.seconds'),
+    drillSeconds: s.get('drills.flash.drillSeconds'),
     progressive: s.get('drills.flash.progressiveSpeed'),
     doubleAnyCards: s.get('rules.doubleAnyNumberOfCards'),
   };
@@ -99,7 +100,7 @@ export function flashScreen(app) {
   shell.body.append(indexTest ? gridWrap : answers);
   showButtons();
 
-  /** Seconds per hand (or the alarm time), 10% faster on each run. */
+  /** Seconds per hand (Rounds mode); with Progressive Speed, 10% less on each Restart. */
   const speed = () => progressiveSpeed(options.seconds, run, options.progressive);
 
   function start() {
@@ -120,7 +121,7 @@ export function flashScreen(app) {
     }
     drillClockFor(shell, {
       mode: options.timerMode,
-      limit: speed(),
+      limit: options.drillSeconds,
       onHalt: () => finish(),
     }).start();
     nextHand();
@@ -253,9 +254,9 @@ export function flashScreen(app) {
     shell.updateStats(shell.clock);
   }
 
-  /** Moves on, or ends the drill when the round count is reached. */
+  /** Moves on, or ends the drill when the round count is reached (Rounds mode only). */
   function advance() {
-    if (shell.score.tests >= options.handsPerDrill) finish();
+    if (options.timerMode === TIMER_MODE.auto && shell.score.tests >= options.handsPerDrill) finish();
     else nextHand();
   }
 

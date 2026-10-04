@@ -44,9 +44,9 @@ const POSITION_OPTIONS = [
 ];
 
 const MODE_OPTIONS = [
-  { value: 'auto', label: 'Mode: Auto' },
-  { value: 'countDown', label: 'Mode: Count Down' },
-  { value: 'countUp', label: 'Mode: Count Up' },
+  { value: 'auto', label: 'Timer Mode: Auto' },
+  { value: 'countDown', label: 'Timer Mode: Count Down' },
+  { value: 'countUp', label: 'Timer Mode: Count Up' },
 ];
 
 export function countOptionsScreen(app) {
@@ -57,8 +57,9 @@ export function countOptionsScreen(app) {
   const { form } = screen;
   const auto = () => form.get('timerMode') === 'auto';
 
-  const dealSpeed = row('Deal Sp. 10ths:', form.slider('', 'dealTenths'));
-  const alarm = row('Alarm (secs):', form.slider('', 'alarmSeconds'));
+  // Auto deals at the deal speed; the manual modes time the whole drill instead.
+  const dealSpeed = form.duration('Deal speed', 'dealTenths', { tenths: true });
+  const alarm = form.duration('Alarm time', 'alarmSeconds');
 
   screen.append(
     group(
@@ -74,11 +75,13 @@ export function countOptionsScreen(app) {
       form.select('endWarning', END_WARNING_OPTIONS),
       form.select('bias', BIAS_OPTIONS),
       form.select('trayStyle', TRAY_OPTIONS),
-      form.select('timerMode', MODE_OPTIONS),
     ),
-    dealSpeed,
-    alarm,
-    row('Test Speed:', form.slider('', 'testSeconds')),
+    group(
+      form.select('timerMode', MODE_OPTIONS),
+      dealSpeed,
+      alarm,
+      form.duration('Time per test', 'testSeconds'),
+    ),
     row('Thickness:', form.slider('', 'cardThickness')),
     form.checks([
       { label: 'Progressive Speed', key: 'progressiveSpeed' },

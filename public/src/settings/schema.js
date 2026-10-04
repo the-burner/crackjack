@@ -163,11 +163,14 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.fixedCount': int(0, -99, 99),
   'drills.flash.maxCards': oneOf([2, 3, 4, 5], 2),
   'drills.flash.testMode': oneOf(['warn', 'errorsAtEnd', 'none'], 'warn'),
-  'drills.flash.timerMode': oneOf(TIMER_MODES, 'auto'),
+  'drills.flash.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
   'drills.flash.handsPerDrill': int(50, 10, 1000),
   'drills.flash.decks': oneOf(DECKS, 6),
   'drills.flash.spanishDecks': bool(false),
+  /** Auto timer mode: seconds to answer each hand. */
   'drills.flash.seconds': int(10, 1, 60),
+  /** The count-down and count-up timer modes: seconds for the whole drill. */
+  'drills.flash.drillSeconds': int(180, 10, 1799),
   'drills.flash.progressiveSpeed': bool(false),
 
   // Depth (discard tray) drills.
@@ -178,7 +181,7 @@ export const SETTINGS_SCHEMA = {
   'drills.depth.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
   'drills.depth.timerMode': oneOf(TIMER_MODES, 'auto'),
   'drills.depth.testsPerDrill': int(50, 10, 200),
-  'drills.depth.seconds': int(2, 1, 60),
+  'drills.depth.seconds': int(10, 1, 60),
   'drills.depth.cardThickness': int(100, 100, 110),
   'drills.depth.countRangeMin': int(-10, -99, 99),
   'drills.depth.countRangeMax': int(15, -99, 99),
@@ -198,10 +201,10 @@ export const SETTINGS_SCHEMA = {
   'drills.count.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
   'drills.count.timerMode': oneOf(TIMER_MODES.slice(0, 3), 'auto'),
   /** Tenths of a second between flashes. */
-  'drills.count.dealTenths': int(20, 1, 60),
-  'drills.count.testSeconds': int(6, 1, 15),
+  'drills.count.dealTenths': int(8, 1, 59),
+  'drills.count.testSeconds': int(10, 1, 15),
   'drills.count.cardThickness': int(100, 100, 110),
-  'drills.count.alarmSeconds': int(120, 15, 300),
+  'drills.count.alarmSeconds': int(180, 15, 299),
   'drills.count.progressiveSpeed': bool(false),
   'drills.count.twoCounts': bool(false),
 
@@ -215,8 +218,8 @@ export const SETTINGS_SCHEMA = {
   'drills.full.decks': oneOf(DECKS, 6),
   'drills.full.timerMode': oneOf(TIMER_MODES.slice(0, 3), 'auto'),
   'drills.full.flashSpeed': int(10, 1, 30),
-  'drills.full.testSeconds': int(15, 1, 40),
-  'drills.full.alarmSeconds': int(120, 15, 300),
+  'drills.full.testSeconds': int(10, 1, 40),
+  'drills.full.alarmSeconds': int(180, 15, 300),
   'drills.full.progressiveSpeed': bool(false),
   'drills.full.twoCounts': bool(false),
 };

@@ -103,6 +103,7 @@ test.describe('flash drill', () => {
       'drills.flash.countMode': 'fixed',
       'drills.flash.fixedCount': 0,
       'drills.flash.maxCards': 2,
+      'drills.flash.timerMode': 'auto',
       'drills.flash.seconds': 60,
       'drills.flash.handsPerDrill': 3,
       'strategy.system': 30,
@@ -261,7 +262,58 @@ test.describe('depth drill', () => {
   });
 });
 
+test('sets the Flash drill time with the duration wheels', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Flash Drills' }).click();
+  const options = page.locator('[data-screen="drills.flash.options"]');
+  const row = options.getByRole('button', { name: 'Drill time' });
+  await expect(row).toHaveText('00:03:00');
+  await row.click();
+
+  const sheet = page.getByRole('dialog', { name: 'Drill time' });
+  await expect(sheet).toBeVisible();
+  const minutes = sheet.getByRole('spinbutton', { name: 'Minutes' });
+  await expect(minutes).toHaveAttribute('aria-valuenow', '3');
+  await minutes.press('ArrowDown');
+  await minutes.press('ArrowDown');
+  await sheet.getByRole('spinbutton', { name: 'Seconds' }).press('ArrowDown');
+  await sheet.getByRole('button', { name: 'Done' }).click();
+  await expect(sheet).toBeHidden();
+  await expect(row).toHaveText('00:05:01');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['drills.flash.drillSeconds'])).toBe(301);
+
+  // Cancel leaves the setting alone.
+  await row.click();
+  await page.getByRole('dialog', { name: 'Drill time' }).getByRole('button', { name: 'Cancel' }).click();
+  await expect(row).toHaveText('00:05:01');
+});
+
 test.describe('count drill', () => {
+  test('pauses with the cards covered, and counts down before continuing', async ({ page }) => {
+    await open(page, { 'drills.count.testEvery': 'never' });
+    const screen = await launch(page, DRILLS[2]);
+    const cards = screen.locator('canvas.drill__cards');
+    await expect.poll(() => whitePixels(cards)).toBeGreaterThan(0);
+    expect(await statsText(screen)).toContain('Time: 00:00:0');
+
+    await screen.getByRole('button', { name: 'Pause' }).click();
+    await expect(screen.getByRole('button', { name: 'Continue' })).toBeVisible();
+    expect(await whitePixels(cards)).toBe(0);
+
+    await screen.getByRole('button', { name: 'Continue' }).click();
+    // The countdown sits over the card area, not the buttons.
+    const countdown = screen.locator('.drill__countdown');
+    await expect(countdown).toBeVisible();
+    const [area, number] = await Promise.all([screen.locator('.drill__display').boundingBox(), countdown.boundingBox()]);
+    expect(number.y + number.height).toBeLessThanOrEqual(area.y + area.height + 1);
+    await expect(countdown).toBeHidden({ timeout: 5000 });
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+    await expect.poll(() => whitePixels(cards)).toBeGreaterThan(0);
+
+    await screen.getByRole('button', { name: 'Restart' }).click();
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeVisible();
+  });
+
   test('deals flashes, asks for the count and grades the answer', async ({ page }) => {
     await open(page, {
       'drills.count.testEvery': 'everyCard',
@@ -283,7 +335,7 @@ test.describe('count drill', () => {
   });
 
   test('lets the player deal by hand in the count-down modes', async ({ page }) => {
-    await open(page, { 'drills.count.timerMode': 'countDown', 'drills.count.alarmSeconds': 300, 'drills.count.testEvery': 'never' });
+    await open(page, { 'drills.count.timerMode': 'countDown', 'drills.count.alarmSeconds': 299, 'drills.count.testEvery': 'never' });
     const screen = await launch(page, DRILLS[2]);
     const next = screen.getByRole('button', { name: 'Next' });
     const cards = screen.locator('canvas.drill__cards');
@@ -345,10 +397,14 @@ test('the drills record errors that the Flash options screen can clear', async (
 
   const options = page.locator('[data-screen="drills.flash.options"]');
   await options.locator('select[name="drills.flash.hands"]').selectOption({ label: 'Hands: Drill Errors' });
-  await expect(options.locator('.drill-options__note')).toContainText('Hard H/S 16 v T');
+  await expect(page.locator('.toast')).toContainText('Hard H/S 16 v T');
 
   await options.getByRole('button', { name: 'Clear error history' }).click();
   await page.locator('.dialog').getByRole('button', { name: 'Yes' }).click();
   await expect(page.locator('.toast')).toHaveText('Error history cleared');
-  await expect(options.locator('.drill-options__note')).toContainText('No errors have been recorded');
+
+  // Choosing the list again reports that it is empty.
+  await options.locator('select[name="drills.flash.hands"]').selectOption({ label: 'Hands: Default Hands' });
+  await options.locator('select[name="drills.flash.hands"]').selectOption({ label: 'Hands: Drill Errors' });
+  await expect(page.locator('.toast')).toHaveText('No errors have been recorded yet.');
 });

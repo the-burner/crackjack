@@ -6,6 +6,8 @@
 import { h } from '../../ui/dom.js';
 import { button, checkList, select, slider, valueButton, field } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
+import { pickDuration, tenthsColumns } from '../../ui/time-wheel.js';
+import { clockTime } from './format.js';
 
 /**
  * @param {object} app
@@ -125,6 +127,25 @@ function optionsForm(app, prefix) {
       });
       controls.push(() => el.setValue(get(key)));
       return el;
+    },
+
+    /**
+     * A row showing a duration setting as hh:mm:ss (or, with `tenths`, a value
+     * in tenths of a second as "0.8 s"); tapping it opens the wheels.
+     */
+    duration(label, key, { tenths = false } = {}) {
+      const { min, max } = app.settings.schema[full(key)];
+      const show = n => (tenths ? `${(n / 10).toFixed(1)} s` : clockTime(n));
+      const value = button(show(get(key)), {
+        className: 'value-btn',
+        'aria-label': label,
+        onClick: async () => {
+          const picked = await pickDuration({ title: label, value: get(key), min, max, columns: tenths ? tenthsColumns(max) : undefined });
+          if (picked !== null) set(key, picked);
+        },
+      });
+      controls.push(() => { value.textContent = show(get(key)); });
+      return h('div', { class: 'settings-row' }, h('span', { class: 'label' }, label), value);
     },
 
     /** A labelled slider bound to a setting. */
