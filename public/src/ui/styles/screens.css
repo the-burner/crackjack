@@ -1,7 +1,8 @@
 /* Screen-specific layout. */
 
 .home { gap: 24px; padding-top: 8px; }
-.home__name { margin: 8px 0 0; color: var(--title-bg); font: 800 40px/1.1 var(--font); letter-spacing: -0.02em; text-align: center; }
+.home__name { width: 270px; margin: 8px auto 0; line-height: 0; }
+.home__name svg { width: 100%; height: auto; }
 .home__drills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .home__drill {
   display: flex;

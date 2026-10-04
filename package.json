@@ -11,7 +11,8 @@
     "precache": "node tools/update-precache.mjs",
     "precache:check": "node tools/update-precache.mjs --check",
     "add-strategy": "node tools/bundle-import.mjs strategy",
-    "add-side-bet": "node tools/bundle-import.mjs side-bet"
+    "add-side-bet": "node tools/bundle-import.mjs side-bet",
+    "logo": "node tools/logo.mjs && node tools/update-precache.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

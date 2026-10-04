@@ -111,6 +111,7 @@ npm run test:e2e                     # browser tests (starts its own server on p
 npm run precache                     # update the service worker's file list after changing files
 npm run add-strategy -- <code>       # bundle a strategy exported from Casino Verite (optional --name "...")
 npm run add-side-bet -- <code>       # bundle a side-bet game exported from Casino Verite (optional --name "...")
+npm run logo                         # redraw the app icon and wordmark (tools/logo.mjs)
 ```
 
 Run `npm run precache` whenever you add, remove or change a file the app serves;

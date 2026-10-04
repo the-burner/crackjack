@@ -16,6 +16,7 @@ npm run serve            # HTTPS server for phones (needs mkcert): https://<mac>
                          # add `-- --port N` to either for another port
 npm run add-strategy -- <code> [--name "..."]   # download a Casino Verite strategy export from qfit.com and bundle it
 npm run add-side-bet -- <code> [--name "..."]   # same for a side-bet game
+npm run logo             # redraw the CJ icon (SVG + PNGs) and the in-app wordmark from tools/logo.mjs
 ```
 
 Run a single test: `npx vitest run tests/unit/game/engine.test.js` or

@@ -58,6 +58,8 @@
   --toggle-off: rgba(0, 0, 0, 0.16);
   --toggle-knob: #fff;
   --accent: var(--nav-bg);
+  --logo-crack: #8839ef;
+  --logo-jack: #fe640b;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --radius: 12px;
   --radius-s: 8px;

@@ -6,6 +6,7 @@ import { standardScreen } from '../ui/screen.js';
 import { confirm, alert } from '../ui/dialogs.js';
 import { toast } from '../ui/toast.js';
 import { openTable } from '../game/launch.js';
+import { WORDMARK_SVG } from '../ui/wordmark.js';
 
 export const APP_VERSION = '3.0.0';
 
@@ -16,7 +17,7 @@ export function homeScreen(app) {
     h('span', { class: 'home__drill-name' }, name), h('span', { class: 'home__drill-detail' }, detail));
   body.append(
     h('div', { class: 'column home' },
-      h('h1', { class: 'home__name' }, 'Crackjack'),
+      h('h1', { class: 'home__name', html: WORDMARK_SVG }),
       button('Play Blackjack', { variant: 'primary', large: true, icon: 'arrow-r', block: true, onClick: () => openTable(app), 'data-action': 'play' }),
       h('div', { class: 'section' },
         h('h2', { class: 'section__title' }, 'Drills'),

@@ -139,7 +139,7 @@
   --toggle-off: var(--surface2);
   --toggle-knob: var(--ctp-text);
 }
-[data-theme='latte'], [data-theme='mocha'] { --text-secondary: var(--subtext0); }
+[data-theme='latte'], [data-theme='mocha'] { --text-secondary: var(--subtext0); --logo-crack: var(--mauve); --logo-jack: var(--peach); }
 
 /* Classic relies on browser defaults for these. */
 [data-theme='latte'] .help, [data-theme='mocha'] .help { color: var(--text); }
