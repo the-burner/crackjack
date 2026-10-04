@@ -1,4 +1,4 @@
-// The canvas grid of bet buttons: a 6 x 3 block of bevelled tiles, one per bet
+// The canvas grid of bet buttons: a 6 x 3 block of tiles, one per bet
 // the player's ramp allows, plus the drawing and hit-testing it needs.
 
 import { normalizeRamp } from '../../settings/bet-ramp.js';
@@ -65,22 +65,13 @@ export function cellIndexAt({ x, y }, geometry) {
   return index < geometry.rects.length ? index : -1;
 }
 
-/**
- * Draws one Win95-style bevelled tile: black outline, white highlight on the
- * top and left, grey shadow on the bottom and right, a coloured face and a
- * centred label.
- */
-export function drawBevelButton(ctx, { x, y, width, height, label, color, font }) {
-  ctx.fillStyle = cssVar('--tile-outline', '#000000');
-  ctx.fillRect(x, y, width, height);
-  ctx.fillStyle = cssVar('--tile-light', '#ffffff');
-  ctx.fillRect(x + 1, y + 1, width - 2, 2);
-  ctx.fillRect(x + 1, y + 1, 2, height - 2);
-  ctx.fillStyle = cssVar('--tile-shade', '#808080');
-  ctx.fillRect(x + 1, y + height - 3, width - 2, 2);
-  ctx.fillRect(x + width - 3, y + 1, 2, height - 2);
+/** Draws one bet tile: a rounded, coloured face with a centred label. */
+export function drawTile(ctx, { x, y, width, height, label, color, font }) {
+  const gap = 2;
   ctx.fillStyle = cssVar(...color);
-  ctx.fillRect(x + 3, y + 3, width - 6, height - 6);
+  ctx.beginPath();
+  ctx.roundRect(x + gap, y + gap, width - 2 * gap, height - 2 * gap, 8);
+  ctx.fill();
   if (!label) return;
   ctx.fillStyle = color === TILE.normal ? cssVar('--tile-text', '#ffffff') : cssVar('--tile-mark-text', '#000000');
   ctx.font = font;

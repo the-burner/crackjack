@@ -28,7 +28,8 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font: bold 12px var(--font);
+  font: 600 12px var(--font);
+  font-variant-numeric: tabular-nums;
 }
 .grid th {
   padding: 4px 1px;
@@ -81,9 +82,9 @@
 .tables__specialty td { text-align: left; padding-left: 6px; }
 
 .tables__counts { display: flex; flex-direction: column; gap: 10px; max-width: 500px; margin: 0 auto; }
-.tables__caption { font: bold 14px var(--font); text-align: center; padding-bottom: 2px; }
-.tables__rule { font: bold 13px var(--font); text-align: center; }
-.tables__hint { font: bold 12px var(--font); text-align: center; padding: 2px 0; }
+.tables__caption { font: 600 13px var(--font); text-align: center; padding-bottom: 2px; }
+.tables__rule { font: 400 13px var(--font); color: var(--text-secondary); text-align: center; }
+.tables__hint { font: 400 12px var(--font); color: var(--text-secondary); text-align: center; padding: 2px 0; }
 
 /* Allowed Bets. */
 .bet-table { max-width: 365px; margin: 0 auto; }
@@ -96,10 +97,11 @@
 .bet-pad__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
 .bet-pad__btn {
   min-height: 52px;
-  border: 2px solid var(--tile-outline);
+  border: 0;
+  border-radius: var(--radius-s);
   background: var(--bet-pad-bg);
   color: var(--tile-text);
-  font: bold 18px var(--font);
+  font: 600 18px var(--font);
   cursor: pointer;
 }
 .bet-pad__btn--hands { background: var(--tile-good); color: var(--tile-mark-text); }

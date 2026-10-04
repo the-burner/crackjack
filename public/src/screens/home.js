@@ -4,27 +4,32 @@ import { h } from '../ui/dom.js';
 import { button } from '../ui/components.js';
 import { standardScreen } from '../ui/screen.js';
 import { confirm, alert } from '../ui/dialogs.js';
+import { toast } from '../ui/toast.js';
 import { openTable } from '../game/launch.js';
 
 export const APP_VERSION = '3.0.0';
 
 export function homeScreen(app) {
-  const { el, body } = standardScreen(app, { title: 'Home Screen', help: 'home', back: false });
+  const { el, body } = standardScreen(app, { title: '', help: 'home', back: false });
   const go = name => () => app.open(name);
+  const drill = (name, detail, screen) => h('button', { type: 'button', class: 'home__drill', onclick: go(screen) },
+    h('span', { class: 'home__drill-name' }, name), h('span', { class: 'home__drill-detail' }, detail));
   body.append(
     h('div', { class: 'column home' },
-      h('img', { class: 'home__logo', src: 'assets/icons/logo.png', alt: '' }),
-      button('Play Blackjack', { variant: 'primary', large: true, icon: 'arrow-r', iconPos: 'bottom', block: true, onClick: () => openTable(app), 'data-action': 'play' }),
-      h('div', { class: 'home__drills' },
-        button('Flash Drills', { large: true, icon: 'arrow-r', block: true, onClick: go('drills.flash.options') }),
-        button('Depth Drills', { large: true, icon: 'arrow-r', block: true, onClick: go('drills.depth.options') }),
-        button('Count Drills', { large: true, icon: 'arrow-r', block: true, onClick: go('drills.count.options') }),
-        button('Full Table Drills', { large: true, icon: 'arrow-r', block: true, onClick: go('drills.full.options') }),
-      ),
-      button('Settings', { large: true, icon: 'gear', block: true, onClick: go('settings'), 'data-action': 'settings' }),
-      h('div', { class: 'grid-2' },
-        button('Reset Defaults', { icon: 'back', onClick: () => resetDefaults(app) }),
-        button('Screen Info', { icon: 'info', onClick: () => screenInfo() }),
+      h('h1', { class: 'home__name' }, 'Crackjack'),
+      button('Play Blackjack', { variant: 'primary', large: true, icon: 'arrow-r', block: true, onClick: () => openTable(app), 'data-action': 'play' }),
+      h('div', { class: 'section' },
+        h('h2', { class: 'section__title' }, 'Drills'),
+        h('div', { class: 'home__drills' },
+          drill('Flash Drills', 'Strategy and index plays', 'drills.flash.options'),
+          drill('Depth Drills', 'Estimate decks played', 'drills.depth.options'),
+          drill('Count Drills', 'Running and true count', 'drills.count.options'),
+          drill('Full Table Drills', 'Count a whole table', 'drills.full.options'),
+        )),
+      h('div', { class: 'settings-group' },
+        button('Settings', { icon: 'arrow-r', block: true, className: 'list-row', onClick: go('settings'), 'data-action': 'settings' }),
+        button('Reset Defaults', { block: true, className: 'list-row', onClick: () => resetDefaults(app) }),
+        button('Screen Info', { block: true, className: 'list-row', onClick: () => screenInfo() }),
       ),
     ),
     h('div', { class: 'footer-note' }, `Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`),
@@ -35,7 +40,7 @@ export function homeScreen(app) {
 async function resetDefaults(app) {
   if (!(await confirm('Are you sure that you want to reset all options to their defaults?'))) return;
   app.settings.reset();
-  await alert('Done.');
+  toast('Settings reset to defaults');
 }
 
 function screenInfo() {

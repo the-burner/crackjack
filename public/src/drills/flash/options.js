@@ -3,6 +3,7 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { alert, confirm } from '../../ui/dialogs.js';
+import { toast } from '../../ui/toast.js';
 import { drillOptionsScreen, group, row, withButton, TIMER_MODE_OPTIONS } from '../shared/options-screen.js';
 import { drillStrategy } from '../shared/drill-settings.js';
 import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic.js';
@@ -105,7 +106,7 @@ async function clearErrors(app, after) {
   if (!(await confirm('Delete the record of all drill errors?'))) return;
   app.errorTallies.clear();
   after();
-  await alert('Done.');
+  toast('Error history cleared');
 }
 
 /** Checks the options and opens the drill. */

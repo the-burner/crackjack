@@ -18,9 +18,6 @@
   --overlay: rgba(76, 79, 105, 0.45);
   --dialog-shadow: rgba(76, 79, 105, 0.3);
   --bet-overlay-bg: rgba(220, 224, 232, 0.92);
-  --tile-shade: var(--overlay1);
-  --tile-outline: var(--subtext0);
-  --tile-light: var(--base);
   /* Over the felt photograph, which stays dark in every theme. */
   --table-text: var(--base);
   --table-accent: var(--yellow);
@@ -46,9 +43,6 @@
   --overlay: rgba(17, 17, 27, 0.7);
   --dialog-shadow: rgba(0, 0, 0, 0.6);
   --bet-overlay-bg: rgba(17, 17, 27, 0.85);
-  --tile-shade: var(--crust);
-  --tile-outline: var(--crust);
-  --tile-light: var(--overlay1);
   --table-text: var(--ctp-text);
   --table-accent: var(--yellow);
   --felt-accent: var(--yellow);
@@ -63,8 +57,8 @@
   --warning: var(--red);
   --title-bg: var(--red);
   --title-text: var(--on-accent);
-  --nav-bg: var(--blue);
-  --nav-bg-active: var(--lavender);
+  --nav-bg: var(--mauve);
+  --nav-bg-active: var(--pink);
   --nav-text: var(--on-accent);
   --primary-bg: var(--green);
   --primary-bg-active: var(--teal);
@@ -74,13 +68,13 @@
   --btn-border: var(--surface1);
   --btn-text: var(--ctp-text);
   --btn-text-shadow: transparent;
-  --check-on: var(--blue);
+  --check-on: var(--mauve);
   --check-on-text: var(--on-accent);
   --input-bg: var(--mantle);
   --input-text: var(--ctp-text);
-  --focus: var(--lavender);
+  --focus: var(--mauve);
   --dialog-bg: var(--surface0);
-  --dialog-accent: var(--blue);
+  --dialog-accent: var(--mauve);
   --dialog-text: var(--subtext1);
   --dialog-input-border: var(--overlay0);
   --dialog-input-text: var(--ctp-text);
@@ -94,7 +88,7 @@
   --panel-head-bg: var(--surface1);
   --panel-text: var(--ctp-text);
   --panel-border: var(--surface2);
-  --tile-bg: var(--blue);
+  --tile-bg: var(--mauve);
   --tile-text: var(--on-accent);
   --tile-good: var(--green);
   --tile-close: var(--yellow);
@@ -121,14 +115,33 @@
   --chart-no-errors: var(--surface0);
   --chart-text: var(--on-accent);
   --chart-text-alt: var(--on-accent);
-  --bet-pad-bg: var(--blue);
+  --bet-pad-bg: var(--mauve);
   color: var(--text);
 }
 
-[data-theme='latte'] { color-scheme: light; }
-[data-theme='mocha'] { color-scheme: dark; }
+[data-theme='latte'] {
+  color-scheme: light;
+  --page-bg: var(--crust);
+  --help-bg: var(--crust);
+  --group-bg: var(--base);
+  --btn-bg: var(--base);
+  --btn-bg-active: var(--surface0);
+  --separator: var(--surface0);
+  --toggle-off: var(--surface1);
+  --toggle-knob: #fff;
+  --dialog-bg: var(--base);
+  --table-bar-bg: var(--ctp-text);
+}
+[data-theme='mocha'] {
+  color-scheme: dark;
+  --group-bg: var(--surface0);
+  --separator: var(--surface1);
+  --toggle-off: var(--surface2);
+  --toggle-knob: var(--ctp-text);
+}
+[data-theme='latte'], [data-theme='mocha'] { --text-secondary: var(--subtext0); }
 
 /* Classic relies on browser defaults for these. */
 [data-theme='latte'] .help, [data-theme='mocha'] .help { color: var(--text); }
-[data-theme='latte'] .help a, [data-theme='mocha'] .help a { color: var(--blue); }
+[data-theme='latte'] .help a, [data-theme='mocha'] .help a { color: var(--mauve); }
 [data-theme='latte'] .dialog__input, [data-theme='mocha'] .dialog__input { background: var(--input-bg); }

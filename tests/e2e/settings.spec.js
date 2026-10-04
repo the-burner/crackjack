@@ -205,6 +205,6 @@ test('a slider value can be typed into its number box', async ({ page }) => {
     const style = getComputedStyle(input);
     return { height: input.getBoundingClientRect().height, lineHeight: style.lineHeight, paddingTop: style.paddingTop };
   });
-  expect(metrics.height).toBe(30);
+  expect(metrics.height).toBe(32);
   expect(metrics.paddingTop).toBe('0px');
 });

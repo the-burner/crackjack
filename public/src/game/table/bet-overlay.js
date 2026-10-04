@@ -5,7 +5,8 @@
 
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
-import { betCells, gridGeometry, cellIndexAt, drawBevelButton, TILE, COLUMNS, ROWS } from './bet-grid.js';
+import { cssVar } from '../../ui/theme.js';
+import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, COLUMNS, ROWS } from './bet-grid.js';
 import { setupCanvas } from '../../ui/card-sprites.js';
 
 const MIN_TILE_HEIGHT = 38;
@@ -74,10 +75,10 @@ export function createBetOverlay(handlers) {
     const height = geometry.rows * tileHeight + 1;
     const ctx = setupCanvas(canvas, width, height);
     ctx.clearRect(0, 0, width, height);
-    const font = `bold ${width < 420 ? 14 : 20}px sans-serif`;
+    const font = `600 ${width < 420 ? 15 : 20}px ${cssVar('--font', 'sans-serif')}`;
     geometry.rects.forEach((rect, i) => {
       const highlight = previousLabel !== null && cells[i].label === previousLabel;
-      drawBevelButton(ctx, { ...rect, label: cells[i].label, color: highlight ? TILE.previous : TILE.normal, font });
+      drawTile(ctx, { ...rect, label: cells[i].label, color: highlight ? TILE.previous : TILE.normal, font });
     });
     title.textContent = titleText();
     foulButton.hidden = !foulOffered;

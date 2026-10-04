@@ -349,6 +349,6 @@ test('the drills record errors that the Flash options screen can clear', async (
 
   await options.getByRole('button', { name: 'Clear error history' }).click();
   await page.locator('.dialog').getByRole('button', { name: 'Yes' }).click();
-  await page.locator('.dialog').getByRole('button', { name: 'OK' }).click();
+  await expect(page.locator('.toast')).toHaveText('Error history cleared');
   await expect(options.locator('.drill-options__note')).toContainText('No errors have been recorded');
 });

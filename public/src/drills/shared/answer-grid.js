@@ -1,5 +1,5 @@
 // The grid of answer buttons the Depth, Count and Full drills use, drawn on a
-// canvas with a bevelled look.
+// canvas as rounded tiles.
 //
 // A grid is a list of cells; each cell has a label, a position (row, column)
 // and the answer it stands for. Cells with no label are gaps.
@@ -57,39 +57,26 @@ export class AnswerGrid {
     const cellWidth = width / this.columns;
     const cellHeight = height / this.rows;
     ctx.clearRect(0, 0, width, height);
-    ctx.font = `bold ${smallText ? 18 : 26}px Helvetica, Arial, sans-serif`;
+    ctx.font = `600 ${smallText ? 18 : 24}px ${cssVar('--font', 'Helvetica, Arial, sans-serif')}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const colors = Object.fromEntries(Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]));
-    const bevel = { outline: cssVar('--tile-outline', '#000000'), light: cssVar('--tile-light', '#ffffff'), shade: cssVar('--tile-shade', '#808080') };
     for (const cell of this.cells) {
       if (cell.label === '') continue;
-      drawBevelledButton(ctx, cell.column * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
-        cell.label, colors[this.states.get(cell) ?? 'idle'], bevel);
+      drawTile(ctx, cell.column * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
+        cell.label, colors[this.states.get(cell) ?? 'idle']);
     }
     return ctx;
   }
 }
 
-/** One answer button: a 3-D bevel around a filled rectangle with centred text. */
-function drawBevelledButton(ctx, x, y, width, height, label, { fill, text }, { outline, light, shade }) {
-  ctx.fillStyle = outline;
-  ctx.fillRect(x, y, width, height);
+/** One answer button: a rounded tile with centred text. */
+function drawTile(ctx, x, y, width, height, label, { fill, text }) {
+  const gap = 2;
   ctx.fillStyle = fill;
-  ctx.fillRect(x + 2, y + 2, width - 4, height - 4);
-  ctx.strokeStyle = light;
-  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(x + 1.5, y + height - 1.5);
-  ctx.lineTo(x + 1.5, y + 1.5);
-  ctx.lineTo(x + width - 1.5, y + 1.5);
-  ctx.stroke();
-  ctx.strokeStyle = shade;
-  ctx.beginPath();
-  ctx.moveTo(x + width - 1.5, y + 1.5);
-  ctx.lineTo(x + width - 1.5, y + height - 1.5);
-  ctx.lineTo(x + 1.5, y + height - 1.5);
-  ctx.stroke();
+  ctx.roundRect(x + gap, y + gap, width - 2 * gap, height - 2 * gap, 8);
+  ctx.fill();
   ctx.fillStyle = text;
   ctx.fillText(label, x + width / 2, y + height / 2);
 }

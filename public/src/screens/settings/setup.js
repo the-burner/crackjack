@@ -2,7 +2,7 @@
 
 import { h } from '../../ui/dom.js';
 import { button, checkList } from '../../ui/components.js';
-import { alert } from '../../ui/dialogs.js';
+import { toast } from '../../ui/toast.js';
 import { DECKS } from '../../settings/schema.js';
 import { group, settingsScreen } from './controls.js';
 
@@ -53,7 +53,7 @@ export function setupScreen(app) {
   columns.append(
     group(
       form.select('table.seatCount', SEAT_COUNTS),
-      h('p', { class: 'note settings-note' }, 'Below, blue seats are computer players. Click to change.'),
+      h('p', { class: 'note settings-note' }, 'Below, highlighted seats are computer players. Click to change.'),
       seatPicker(app),
     ),
     group(
@@ -90,7 +90,7 @@ function seatPicker(app) {
   return checkList(items, { horizontal: true });
 }
 
-async function refreshBankroll(app) {
+function refreshBankroll(app) {
   app.storage.set(BANKROLL_KEY, app.settings.get('table.startingBankroll'));
-  await alert('Done.');
+  toast('Bankroll refreshed');
 }

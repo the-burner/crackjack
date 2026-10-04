@@ -22,9 +22,10 @@
   background: var(--table-bar-bg);
 }
 .table__bar-end { display: flex; gap: 4px; }
-.table__bar .btn { min-height: 34px; padding: 0 6px; font-size: 12px; }
-.table__bar .btn--icon-right { padding-right: 28px; }
-.table__bar .btn[class*='icon-']::after { width: 18px; height: 18px; right: 4px; background-size: 11px 11px; }
+.table__bar .btn--nav { min-height: 36px; padding: 0 8px; background: transparent; color: var(--table-text); font: 400 15px var(--font); }
+.table__bar .btn--nav:active { background: transparent; opacity: 0.5; }
+.table__bar .btn--icon-right { padding-right: 26px; }
+.table__bar .btn--icon-right::after { width: 14px; height: 14px; right: 6px; }
 
 @media (orientation: landscape) {
   .table__bar { position: absolute; top: 0; left: 0; right: 0; z-index: 9; background: transparent; pointer-events: none; }
@@ -57,8 +58,8 @@
 .table__status {
   z-index: 8;
   background: var(--table-bar-bg);
-  color: var(--felt-text);
-  font: bold 15px var(--font);
+  color: var(--table-text);
+  font: 600 15px var(--font);
 }
 .table__status[hidden] { display: none; }
 .table__status--good { background: var(--tile-good); color: var(--tile-mark-text); }
@@ -98,7 +99,8 @@
   z-index: 10;
   width: min(598px, calc(100% - 8px));
   transform: translateX(-50%);
-  padding: 4px;
+  padding: 6px;
+  border-radius: var(--radius);
   background: var(--bet-overlay-bg);
 }
 .bet-overlay[hidden] { display: none; }
@@ -115,11 +117,11 @@
   gap: 4px;
   margin-top: 6px;
 }
-.bet-overlay__buttons .btn { min-height: 40px; padding: 4px 26px 4px 4px; font-size: 12px; }
-.bet-overlay__buttons .btn[class*='icon-']::after { width: 18px; height: 18px; right: 4px; background-size: 11px 11px; }
+.bet-overlay__buttons .btn { min-height: 40px; padding: 4px 26px 4px 6px; font-size: 13px; }
+.bet-overlay__buttons .btn--icon-right::after { width: 14px; height: 14px; right: 8px; }
 .bet-overlay__buttons .btn[hidden] { display: none; }
 
-/* Bet picker: rows of bevelled tiles. */
+/* Bet picker: rows of rounded tiles. */
 .bet-select__hands,
 .bet-select__chips {
   display: grid;
@@ -129,11 +131,9 @@
 .bet-select__chips { margin-top: 10px; }
 .tile {
   min-height: 56px;
-  border: 2px solid var(--tile-outline);
-  border-top-color: var(--tile-light);
-  border-left-color: var(--tile-light);
-  font: bold 18px var(--font);
-  text-shadow: none;
+  border: 0;
+  border-radius: var(--radius-s);
+  font: 600 18px var(--font);
 }
 .tile--hands { background: var(--tile-good); color: var(--tile-mark-text); }
 .tile--hands.is-on { background: var(--tile-bad); }

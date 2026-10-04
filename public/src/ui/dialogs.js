@@ -2,7 +2,7 @@
 
 import { h } from './dom.js';
 
-const APP_TITLE = 'Blackjack Verite';
+const APP_TITLE = 'Crackjack';
 
 function open({ title = APP_TITLE, message, input = null, buttons }) {
   return new Promise(resolve => {
