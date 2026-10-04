@@ -77,7 +77,7 @@ export function tableScreen(app) {
     h('div', { class: 'table__bar-end' },
       button('Stats', { variant: 'nav', icon: 'grid', onClick: openStats, 'data-action': 'stats' }),
       button('Error', { variant: 'nav', icon: 'info', onClick: openLastError, 'data-action': 'error' }),
-      button('Help', { variant: 'nav', onClick: () => app.help('game.table'), 'data-action': 'help' })));
+      button('Help', { variant: 'nav', onClick: () => app.help('game.table', 'Blackjack'), 'data-action': 'help' })));
   const el = h('section', { class: 'table' }, bar, felt);
 
   // --- play state -----------------------------------------------------------

@@ -26,7 +26,7 @@ export function createApp(root, { backend } = {}) {
   const app = createServices({ backend });
   app.router = new Router(root, app);
   /** Opens the help page for a screen. */
-  app.help = topic => app.router.open('help', { topic });
+  app.help = (topic, title) => app.router.open('help', { topic, title });
   app.open = (name, params) => app.router.open(name, params);
   app.back = () => app.router.back();
   return app;

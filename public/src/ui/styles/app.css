@@ -302,6 +302,39 @@ html, body {
 .checklist--horizontal .check input { display: none; }
 .checklist--horizontal .check.is-on { background: var(--check-on); color: var(--check-on-text); font-weight: 600; }
 
+/* Chips: separate toggle buttons in a grid of three. */
+.checklist--chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; overflow: visible; border-radius: 0; background: transparent; }
+.checklist--chips .check {
+  justify-content: center;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font: 500 14px var(--font);
+  transition: background-color 0.15s, color 0.15s;
+}
+.checklist--chips .check > span { flex: none; }
+.checklist--chips .check input { display: none; }
+.checklist--chips .check.is-on { background: var(--check-on); color: var(--check-on-text); font-weight: 600; }
+
+/* Bet tiles (Allowed Bets and the game's bet picker): grey spot tiles with the
+   chosen one green, and accent-coloured chip tiles. */
+.tile {
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  font: 600 18px var(--font);
+  cursor: pointer;
+}
+.tile--hands { background: var(--btn-bg); color: var(--btn-text); }
+.tile--hands.is-on { background: var(--tile-good); color: var(--tile-mark-text); }
+.tile--chips { background: var(--tile-bg); color: var(--tile-text); }
+.tile:active { transform: scale(0.97); }
+.tile:disabled { opacity: 0.35; cursor: default; transform: none; }
+
 /* Value button: shows a number; tapping prompts for a new one. */
 .value-btn { min-width: 64px; font-size: 15px; font-variant-numeric: tabular-nums; }
 

@@ -82,13 +82,13 @@ export function betSelectScreen(app, { row = 0 } = {}) {
 
   const handButtons = HAND_CHOICES.map(n => h('button', {
     type: 'button',
-    class: 'bet-pad__btn bet-pad__btn--hands',
+    class: 'tile tile--hands',
     dataset: { hands: String(n) },
     onclick: () => { hands = n; refresh(); },
   }, n === 1 ? '1' : `${n}x`));
   const chipButtons = CHIP_CHOICES.map(n => h('button', {
     type: 'button',
-    class: 'bet-pad__btn',
+    class: 'tile tile--chips',
     dataset: { chips: String(n) },
     onclick: () => choose(n),
   }, String(n)));
@@ -96,7 +96,7 @@ export function betSelectScreen(app, { row = 0 } = {}) {
   body.append(h('div', { class: 'bet-pad' },
     h('div', { class: 'note' }, 'In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the number of spots at the top first. You can also enter a custom bet at the bottom.'),
     h('div', { class: 'bet-pad__row' }, handButtons),
-    h('div', {}, chunk(chipButtons, HAND_CHOICES.length).map(cells => h('div', { class: 'bet-pad__row' }, cells))),
+    h('div', { class: 'bet-pad__chips' }, chunk(chipButtons, HAND_CHOICES.length).map(cells => h('div', { class: 'bet-pad__row' }, cells))),
     button('Custom Bet', { block: true, onClick: () => customBet(), 'data-action': 'custom-bet' }),
   ));
 

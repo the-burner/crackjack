@@ -17,7 +17,6 @@
   --chart-no-errors: #404040;
   --chart-text: #000;
   --chart-text-alt: #fff;
-  --bet-pad-bg: #0000c0;
 }
 
 /* `display: flex` on a component beats the hidden attribute, so say it again. */
@@ -93,20 +92,9 @@
 .bet-table tbody tr { cursor: pointer; }
 .bet-table th:first-child, .bet-table td:first-child { width: 35%; }
 
-.bet-pad { display: flex; flex-direction: column; gap: 14px; max-width: 365px; margin: 0 auto; }
-.bet-pad__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
-.bet-pad__btn {
-  min-height: 52px;
-  border: 0;
-  border-radius: var(--radius-s);
-  background: var(--bet-pad-bg);
-  color: var(--tile-text);
-  font: 600 18px var(--font);
-  cursor: pointer;
-}
-.bet-pad__btn--hands { background: var(--tile-good); color: var(--tile-mark-text); }
-.bet-pad__btn.is-on { background: var(--tile-bad); color: var(--tile-mark-text); }
-.bet-pad__btn:disabled { opacity: 0.35; cursor: default; }
+.bet-pad { display: flex; flex-direction: column; gap: 16px; max-width: 365px; margin: 0 auto; }
+.bet-pad__row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.bet-pad__chips { display: flex; flex-direction: column; gap: 6px; }
 
 /* Label plus control rows. The strategy screen has a narrow label column; the
    true-count and betting screens have long labels and a fixed-width control. */

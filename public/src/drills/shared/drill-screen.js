@@ -47,7 +47,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
   const el = h('section', { class: `screen--felt drill${className ? ` ${className}` : ''}` },
     h('header', { class: 'drill__bar' },
       button('Back', { variant: 'nav', onClick: () => app.back(), 'data-action': 'back' }),
-      button('Help', { variant: 'nav', onClick: () => app.help(help) })),
+      button('Help', { variant: 'nav', onClick: () => app.help(help, title) })),
     body, countdown);
 
   /** @typedef {object} DrillShell */

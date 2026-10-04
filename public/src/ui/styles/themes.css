@@ -115,7 +115,6 @@
   --chart-no-errors: var(--surface0);
   --chart-text: var(--on-accent);
   --chart-text-alt: var(--on-accent);
-  --bet-pad-bg: var(--mauve);
   color: var(--text);
 }
 

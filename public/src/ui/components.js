@@ -48,10 +48,11 @@ export function select(options, value, onChange, { mini = false, name } = {}) {
 }
 
 /**
- * A group of checkboxes.
+ * A group of checkboxes: toggle rows, a segmented control (`horizontal`), or a
+ * grid of separate toggle chips (`chips`, three per row).
  * @param {{label: string, checked: boolean, onChange: (checked: boolean) => void, disabled?: boolean}[]} items
  */
-export function checkList(items, { horizontal = false } = {}) {
+export function checkList(items, { horizontal = false, chips = false } = {}) {
   const rows = items.map(item => {
     const input = h('input', { type: 'checkbox', checked: Boolean(item.checked), disabled: item.disabled });
     const row = h('label', { class: `check${item.checked ? ' is-on' : ''}` }, input, h('span', {}, item.label));
@@ -62,7 +63,7 @@ export function checkList(items, { horizontal = false } = {}) {
     row.setChecked = c => { input.checked = c; row.classList.toggle('is-on', c); };
     return row;
   });
-  const el = h('div', { class: `checklist${horizontal ? ' checklist--horizontal' : ''}` }, rows);
+  const el = h('div', { class: `checklist${horizontal ? ' checklist--horizontal' : ''}${chips ? ' checklist--chips' : ''}` }, rows);
   /** Re-reads every item's state from `getChecked(index)`. */
   el.refresh = getChecked => rows.forEach((r, i) => r.setChecked(Boolean(getChecked(i))));
   return el;

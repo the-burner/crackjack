@@ -121,24 +121,13 @@
 .bet-overlay__buttons .btn--icon-right::after { width: 14px; height: 14px; right: 8px; }
 .bet-overlay__buttons .btn[hidden] { display: none; }
 
-/* Bet picker: rows of rounded tiles. */
+/* Bet picker: the spots row over the chip rows. */
 .bet-select__hands,
 .bet-select__chips {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
-.bet-select__chips { margin-top: 10px; }
-.tile {
-  min-height: 56px;
-  border: 0;
-  border-radius: var(--radius-s);
-  font: 600 18px var(--font);
-}
-.tile--hands { background: var(--tile-good); color: var(--tile-mark-text); }
-.tile--hands.is-on { background: var(--tile-bad); }
-.tile--chips { background: var(--tile-bg); color: var(--tile-text); }
-.tile--chips:disabled { opacity: 0.35; }
 
 /* Statistics table. */
 .stats-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); }
