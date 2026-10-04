@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
-  addSideBetGame, addStrategy, isSideBetDefinition, isStrategyFileText, normalizeDownload, sideBetUrl, strategyUrl,
+  EXPORT_HOST, addSideBetGame, addStrategy, isSideBetDefinition, isStrategyFileText, normalizeDownload, sideBetUrl, strategyUrl,
 } from '../../tools/bundle-import.mjs';
 import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
 import { SIDE_BET_GAME_DEFINITIONS } from '../../public/src/data/side-bet-games.js';
@@ -13,11 +13,11 @@ const load = src => import(`data:text/javascript,${encodeURIComponent(src)}`);
 
 describe('download URLs', () => {
   it('trims and lowercases a strategy code, as the original did', () => {
-    expect(strategyUrl('  12AB ')).toBe('https://www.qfit.com/Apps/z12ab.php');
+    expect(strategyUrl('  12AB ')).toBe(`${EXPORT_HOST}/Apps/z12ab.php`);
   });
 
   it('trims a side-bet code', () => {
-    expect(sideBetUrl(' 45 ')).toBe('https://www.qfit.com/Apps/u45.php');
+    expect(sideBetUrl(' 45 ')).toBe(`${EXPORT_HOST}/Apps/u45.php`);
   });
 });
 

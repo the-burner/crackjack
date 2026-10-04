@@ -173,7 +173,7 @@ test('Play Blackjack keeps the saved seat count and opens the table', async ({ p
   await page.evaluate(() => window.app.router.home());
   await page.locator('[data-screen="home"] [data-action="play"]').click();
   await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.settings') ?? '{}')['table.seatCount']);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings') ?? '{}')['table.seatCount']);
   expect(saved ?? 4).toBe(4);
 });
 
@@ -182,7 +182,7 @@ test('a slider value can be typed into its number box', async ({ page }) => {
   const el = await openOption(page, 'Speed/Mechanics', 'settings.mechanics');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
   const range = el.locator('.slider').filter({ hasText: 'Dealer Speed' }).locator('input[type="range"]');
-  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('bjv.settings'))['mechanics.dealerSpeed']);
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['mechanics.dealerSpeed']);
 
   await box.fill('72');
   await box.press('Enter');

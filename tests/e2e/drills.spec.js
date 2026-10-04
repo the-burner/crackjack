@@ -14,7 +14,7 @@ const emptyMask = () => Object.fromEntries(
 async function open(page, settings = {}) {
   await page.addInitScript(values => {
     localStorage.clear();
-    localStorage.setItem('bjv.settings', JSON.stringify(values));
+    localStorage.setItem('cj.settings', JSON.stringify(values));
   }, settings);
   await page.goto('/index.html');
   await expect(page.locator('[data-screen="home"]')).toBeVisible();

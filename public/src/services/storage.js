@@ -1,6 +1,6 @@
 // Namespaced JSON storage on top of localStorage.
 
-const PREFIX = 'bjv.';
+const PREFIX = 'cj.';
 
 export class Storage {
   /** @param {globalThis.Storage} [backend] */

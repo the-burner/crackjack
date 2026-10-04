@@ -1,4 +1,4 @@
-// Downloads a Casino Verite export from qfit.com and bundles it into the app.
+// Downloads a strategy or side-bet game by its export code and bundles it into the app.
 //
 //   node tools/bundle-import.mjs strategy <code> [--name "Display name"]
 //   node tools/bundle-import.mjs side-bet <code> [--name "Display name"]
@@ -15,10 +15,12 @@ const STRATEGY_FILES = 'public/src/data/strategy-files.js';
 const STRATEGY_CATALOG = 'public/src/settings/strategies.js';
 const SIDE_BET_GAMES = 'public/src/data/side-bet-games.js';
 
-export const strategyUrl = code => `https://www.qfit.com/Apps/z${encodeURIComponent(String(code).trim().toLowerCase())}.php`;
-export const sideBetUrl = code => `https://www.qfit.com/Apps/u${encodeURIComponent(String(code).trim())}.php`;
+/** Where exports are downloaded from. */
+export const EXPORT_HOST = 'https://www.qfit.com';
+export const strategyUrl = code => `${EXPORT_HOST}/Apps/z${encodeURIComponent(String(code).trim().toLowerCase())}.php`;
+export const sideBetUrl = code => `${EXPORT_HOST}/Apps/u${encodeURIComponent(String(code).trim())}.php`;
 
-/** qfit.com escapes spaces in names. */
+/** The export host escapes spaces in names. */
 export const normalizeDownload = text => String(text).replaceAll('%20', ' ');
 
 /** True when `text` parses as a strategy file (not, say, a server error page). */

@@ -1,6 +1,6 @@
 # Architecture
 
-Blackjack Verité is a static, offline-first web app written as plain ES
+Crackjack is a static, offline-first web app written as plain ES
 modules. There is no build step: everything the browser loads is in `public/`,
 served as-is — `public/index.html` loads `public/src/main.js`. Everything outside
 `public/` (tests, tools, docs) is for development only.
@@ -51,7 +51,7 @@ tests/
   support/       the fixture loader
 tools/           the app's web server (server.mjs), the service worker's
                  precache list generator, and bundle-import.mjs, which bundles
-                 strategies and side-bet games exported from Casino Verite
+                 strategies and side-bet games from their export codes
 docs/            this document
 ```
 
@@ -85,7 +85,7 @@ animation is done.
 - **Settings** are declared once in `settings/schema.js` (dotted keys, typed,
   with defaults) and read and written through `app.settings`. State that is not
   a preference (bankroll, statistics) is stored through
-  `app.storage` under its own key. All keys are prefixed `bjv.`.
+  `app.storage` under its own key. All keys are prefixed `cj.`.
 - **Randomness** is injected: functions take a `random` function returning
   [0, 1), so tests can pass `seededRandom(seed)`.
 - **Card ids** are 1..52 (`suit * 13 + rank`, rank 1..13, suits spades, clubs,

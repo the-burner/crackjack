@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = '0c9793ed7941';
+const VERSION = 'faa4e758ab44';
 const FILES = [
   './',
   './assets/cards/card-back.png',
@@ -563,7 +563,7 @@ const FILES = [
 ];
 // </precache>
 
-const CACHE = `bjv-${VERSION}`;
+const CACHE = `cj-${VERSION}`;
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -576,7 +576,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith('bjv-') && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });

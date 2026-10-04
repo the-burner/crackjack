@@ -27,7 +27,7 @@ async function openTable(page, { settings = {}, size = PORTRAIT, seed = 7 } = {}
   }, seed);
   await page.addInitScript(overrides => {
     localStorage.clear();
-    localStorage.setItem('bjv.settings', JSON.stringify({
+    localStorage.setItem('cj.settings', JSON.stringify({
       'mechanics.dealerSpeed': 99,
       'mechanics.otherPlayerSpeed': 99,
       'mechanics.payoffSpeed': 99,
@@ -235,12 +235,12 @@ test.describe('the table', () => {
       }
     }
     expect(inProgress).toBe(true);
-    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.bankroll') ?? '1000'));
+    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.bankroll') ?? '1000'));
     const money = n => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     await expect(bankroll(page)).toHaveText(money(before - 5));
     await page.locator('.table__bar [data-action="back"]').click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('bjv.bankroll')));
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.bankroll')));
     expect(saved).toBe(before);
   });
 

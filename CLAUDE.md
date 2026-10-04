@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-Blackjack Verité: one offline blackjack practice web app (four drills + a full
-game) rebuilt from two QFIT apps. Plain HTML/CSS/ES modules, **no build step** —
+Crackjack: one offline blackjack practice web app (four drills + a full
+game) rebuilt from two earlier apps. Plain HTML/CSS/ES modules, **no build step** —
 everything in `public/` is served as-is; nothing outside it reaches the browser.
 
 ## Commands
@@ -14,7 +14,7 @@ npm run precache:check   # fails if sw.js is stale (also enforced by tests/unit/
 npm start                # local server: http://127.0.0.1:4173/ (tools/server.mjs)
 npm run serve            # HTTPS server for phones (needs mkcert): https://<mac>.local:8443/
                          # add `-- --port N` to either for another port
-npm run add-strategy -- <code> [--name "..."]   # download a Casino Verite strategy export from qfit.com and bundle it
+npm run add-strategy -- <code> [--name "..."]   # download a strategy by its export code and bundle it
 npm run add-side-bet -- <code> [--name "..."]   # same for a side-bet game
 npm run logo             # redraw the CJ icon (SVG + PNGs) and the in-app wordmark from tools/logo.mjs
 ```
@@ -39,7 +39,7 @@ Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
 
 - Keep logic DOM-free and unit tested; screens only render and wire input. New logic goes in a pure module, not a screen.
 - Screens are factories `(app, params) => ({ el, onShow?, onHide?, destroy?, onBack? })`, registered by name in the area's `index.js`, opened with `app.open(name, params)`.
-- Settings: add to `public/src/settings/schema.js` (dotted keys, typed, with default) and use `app.settings.get/set`. Non-preference state (bankroll, stats) goes through `app.storage` (keys prefixed `bjv.`). Changing a default changes what fresh installs get.
+- Settings: add to `public/src/settings/schema.js` (dotted keys, typed, with default) and use `app.settings.get/set`. Non-preference state (bankroll, stats) goes through `app.storage` (keys prefixed `cj.`). Changing a default changes what fresh installs get.
 - Randomness is injected (`random` param); tests use `seededRandom(seed)` from `public/src/core/random.js`.
 - Card ids are 1..52 (`suit * 13 + rank`; suits spades, clubs, hearts, diamonds).
 - Canvas drawing must go through `setupCanvas()` (devicePixelRatio aware).

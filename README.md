@@ -94,7 +94,7 @@ rename the Mac, delete `.certs/` and repeat the setup.
 
 ### Keeping settings across reinstalls
 
-Settings live in the browser's local storage under the `bjv.` prefix, so they
+Settings live in the browser's local storage under the `cj.` prefix, so they
 survive reloads and app updates. Deleting the installed app (or clearing Safari's
 data for the site) clears them, and the app starts from the defaults in
 `public/src/settings/schema.js` — edit that file if you want different defaults.
@@ -109,8 +109,8 @@ npx playwright install chromium      # once, for the browser tests
 npm test                             # unit tests
 npm run test:e2e                     # browser tests (starts its own server on port 4173)
 npm run precache                     # update the service worker's file list after changing files
-npm run add-strategy -- <code>       # bundle a strategy exported from Casino Verite (optional --name "...")
-npm run add-side-bet -- <code>       # bundle a side-bet game exported from Casino Verite (optional --name "...")
+npm run add-strategy -- <code>       # bundle a strategy by its export code (optional --name "...")
+npm run add-side-bet -- <code>       # bundle a side-bet game by its export code (optional --name "...")
 npm run logo                         # redraw the app icon and wordmark (tools/logo.mjs)
 ```
 

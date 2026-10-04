@@ -6,7 +6,7 @@ import { buildStrategy } from '../core/strategy/strategy-tables.js';
 
 /** Built-in strategies in display order. The first is the default (see settings/schema.js). */
 export const BUILTIN_STRATEGIES = [
-  [100, 'Ethans High-Low Strategy'],
+  [100, "Crackjack's High-Low Strategy"],
   [5, 'Basic Strategy'], [30, 'High-Low'], [31, 'Complete High-Low'], [32, 'Halves'],
   [73, 'KO Rookie'], [74, 'KO Preferred'], [75, 'KO Full 1-2 Decks'], [76, 'KO Full 6 Decks'], [77, 'KO Full 8 Decks'],
   [6, 'Basic Omega II'], [7, 'Advanced Omega II'], [80, 'Red7, 1&2 Deck'], [81, 'Red7, Shoes'],
