@@ -81,7 +81,7 @@ test('the home screen opens every drill options screen', async ({ page }) => {
     await page.getByRole('button', { name: drill.button }).click();
     const screen = page.locator(`[data-screen="${drill.options}"]`);
     await expect(screen).toBeVisible();
-    await expect(screen.getByRole('heading')).toHaveText(drill.title);
+    await expect(screen.locator('.topbar__title')).toHaveText(drill.title);
     await expect(screen.getByRole('button', { name: 'Launch the Drill' })).toBeVisible();
     // Strategy and true count are shared settings, set only from Settings.
     await expect(screen.getByRole('button', { name: 'Playing Strategy' })).toHaveCount(0);

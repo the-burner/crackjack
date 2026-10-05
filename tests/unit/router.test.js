@@ -12,7 +12,11 @@ function fakeHistory() {
   return {
     entries,
     pushState(state) { entries.push(state); },
-    back() { entries.pop(); queueMicrotask(() => listener?.()); },
+    back() { this.go(-1); },
+    go(delta) {
+      for (let i = 0; i < -delta && entries.length > 1; i++) entries.pop();
+      queueMicrotask(() => listener?.());
+    },
     window: { addEventListener: (type, fn) => { if (type === 'popstate') listener = fn; } },
   };
 }
@@ -40,13 +44,50 @@ describe('Router', () => {
     expect(a.el.removed).toBe(true);
   });
 
-  it('keeps exactly one history guard however deep the stack goes', () => {
+  it('keeps one history guard per screen above the bottom', () => {
     const { router, history } = setup();
     router.open('home');
     expect(history.entries.length).toBe(1);
     router.open('a');
     router.open('b');
     router.open('c');
+    // One guard each for a, b and c, so a back gesture can never reach past the app.
+    expect(history.entries.length).toBe(4);
+  });
+
+  it('gives a guard back for every screen closed inside the app', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    router.open('a');
+    router.open('b');
+    expect(history.entries.length).toBe(3);
+
+    router.back();
+    await Promise.resolve();
+    // The guard went back with the screen, and the popstate it caused was ignored.
+    expect(history.entries.length).toBe(2);
+    expect(router.current.name).toBe('a');
+
+    router.home();
+    await Promise.resolve();
+    expect(history.entries.length).toBe(1);
+    expect(router.current.name).toBe('home');
+  });
+
+  it('never runs out of guards, however often screens are opened and closed', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    for (let i = 0; i < 5; i++) {
+      router.open('a');
+      router.open('b');
+      history.back();
+      await Promise.resolve();
+      router.back();
+      await Promise.resolve();
+    }
+    expect(router.current.name).toBe('home');
+    expect(history.entries.length).toBe(1);
+    router.open('a');
     expect(history.entries.length).toBe(2);
   });
 
@@ -58,8 +99,23 @@ describe('Router', () => {
     history.back();
     await Promise.resolve();
     expect(router.current.name).toBe('a');
-    // Re-armed for the next back press.
+    // One guard left, for the screen still open above home.
     expect(history.entries.length).toBe(2);
+  });
+
+  it('goes back one screen per back press from a deep stack', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    router.open('a');
+    router.open('b');
+    router.open('c');
+    for (const name of ['b', 'a', 'home']) {
+      history.back();
+      await Promise.resolve();
+      expect(router.current.name).toBe(name);
+    }
+    // Home is showing with no guards left; the next press leaves the app.
+    expect(history.entries.length).toBe(1);
   });
 
   it('survives going home and opening screens in quick succession', async () => {
@@ -69,11 +125,23 @@ describe('Router', () => {
       router.open('a');
       router.open('b');
       router.home();
+      await Promise.resolve();
     }
-    await Promise.resolve();
     router.open('c');
     expect(router.current.name).toBe('c');
     expect(history.entries.length).toBe(2);
+  });
+
+  it('detaches a screen even when it fails to tear itself down', () => {
+    const { router } = setup();
+    router.open('home');
+    const el = element();
+    router.register('broken', () => ({ el, destroy() { throw new Error('boom'); } }));
+    router.open('broken');
+    expect(() => router.back()).toThrow('boom');
+    // The element is gone, so it cannot sit over the screen below catching taps.
+    expect(el.removed).toBe(true);
+    expect(router.current.name).toBe('home');
   });
 
   it('lets a screen keep itself open on back', () => {

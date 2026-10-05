@@ -52,9 +52,6 @@
 /* --- Options screens ------------------------------------------------------ */
 
 .drill-options__group { display: flex; flex-direction: column; gap: 6px; }
-/* A label over its card, lined up with the text inside the card. */
-.drill-options__section { display: flex; flex-direction: column; gap: 6px; }
-.drill-options__heading { margin: 0 14px; text-align: left; }
 .drill-options__pair { display: flex; align-items: stretch; }
 .drill-options__pair > :first-child { flex: 1; min-width: 0; }
 /* The button beside a dropdown: split off by a divider and tinted so it reads as tappable. */

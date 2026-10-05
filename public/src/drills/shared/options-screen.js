@@ -53,9 +53,9 @@ export const group = (...children) => h('div', { class: 'drill-options__group' }
 /** A label on the left and a control on the right. */
 export const row = (label, control) => field(label, control, { inline: true });
 
-/** A label over one or more cards, keeping them together. */
-export const section = (title, ...children) => h('div', { class: 'drill-options__section' },
-  h('div', { class: 'note drill-options__heading' }, title), ...children.filter(Boolean));
+/** A label over one or more cards, keeping them together (as on the settings screens). */
+export const section = (title, ...children) => h('div', { class: 'section' },
+  h('h2', { class: 'section__title' }, title), ...children.filter(Boolean));
 
 /** A select and a small button side by side. */
 export const withButton = (main, extra) => h('div', { class: 'drill-options__pair' }, main, extra);
