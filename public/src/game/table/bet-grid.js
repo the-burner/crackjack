@@ -6,6 +6,8 @@ import { cssVar } from '../../ui/theme.js';
 
 export const COLUMNS = 6;
 export const ROWS = 3;
+/** Space between a tile and its cell edge, so neighbouring tiles sit 2 x TILE_GAP apart. */
+export const TILE_GAP = 2;
 /** Tile colours: custom property and Classic fallback. */
 export const TILE = { normal: ['--tile-bg', '#0000c4'], single: ['--tile-good', '#00ff00'], previous: ['--tile-previous', '#dc780c'], selected: ['--tile-bad', '#ff0000'] };
 
@@ -67,7 +69,7 @@ export function cellIndexAt({ x, y }, geometry) {
 
 /** Draws one bet tile: a rounded, coloured face with a centred label. */
 export function drawTile(ctx, { x, y, width, height, label, color, font }) {
-  const gap = 2;
+  const gap = TILE_GAP;
   ctx.fillStyle = cssVar(...color);
   ctx.beginPath();
   ctx.roundRect(x + gap, y + gap, width - 2 * gap, height - 2 * gap, 8);

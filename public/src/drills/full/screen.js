@@ -23,7 +23,6 @@ const END_WARNING_SECONDS = 3;
 const WARNING_TEXT = { oneCardLeft: 'One card left', twoCardsLeft: 'Two cards left' };
 const WARNING_REMAINING = { oneCardLeft: 1, twoCardsLeft: 2 };
 /** The cards are taken away just before the test time runs out. */
-const HIDE_CARDS_FRACTION = 0.95;
 const TABLE_COLORS = [['--felt', '#008000'], ['--felt-alt', '#000080']];
 
 const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
@@ -46,7 +45,8 @@ export function fullScreen(app) {
     twoCounts: s.get('drills.full.twoCounts'),
     ...drillStrategy(app, s.get('drills.full.decks')),
   };
-  const auto = options.timerMode === TIMER_MODE.auto;
+  /** Auto times each test (and warns near the end of the shoe); Count Down & Halt times the whole drill. */
+  const timedTests = options.timerMode === TIMER_MODE.auto;
   const twoTables = options.drill === 'twoTables';
   const inHalfSteps = halfSteps(options.drill === 'twoTables' ? 'runningCount' : options.drill, options.strategy);
 
@@ -72,24 +72,31 @@ export function fullScreen(app) {
   let done = false;
   let started = false;
   let pausedByCover = false;
+  /** An answer was finished while paused: move on when play resumes. */
+  let advancePending = false;
 
   const shell = drillShell(app, {
     title: 'Full Table Drills',
     help: 'drills.full',
     countLabel: 'Tests',
     className: 'drill--full',
+    pausable: true,
     onStart: start,
     onStop: stop,
     onLayout: layout,
+    onPause: pause,
+    onResume: resume,
   });
   shell.setDisplay(canvas);
   shell.body.append(gridWrap);
   shell.el.append(cover);
 
+  /** How long the cards stay up; with Progressive Speed, 10% less on each Restart. */
   const flashSeconds = () => progressiveSpeed(options.flashSpeed, run, options.progressive);
 
   function start() {
     run += 1;
+    advancePending = false;
     done = false;
     notice = '';
     cardsHidden = false;
@@ -139,7 +146,7 @@ export function fullScreen(app) {
       return;
     }
     const shoe = shoes[0];
-    const stopAt = auto ? WARNING_REMAINING[options.endWarning] : undefined;
+    const stopAt = timedTests ? WARNING_REMAINING[options.endWarning] : undefined;
     let warned = false;
     const draw = drawer(shoe);
     const { hands, stopped } = dealRound({
@@ -214,6 +221,7 @@ export function fullScreen(app) {
 
   /** Reveals this phase's cards, counting the newly shown ones. */
   function revealPhase() {
+    cardsHidden = false;
     const { table, partial } = TWO_TABLE_PHASES[phase];
     const current = tables[table];
     const wanted = partial ? partialView(current.hands, fullyShownUpTo) : current.visible.map(row => row.map(() => true));
@@ -243,10 +251,8 @@ export function fullScreen(app) {
     shell.score.beginTest();
     render();
     shell.updateStats(shell.clock);
-    if (auto) {
-      shell.clock.after('hide', options.testSeconds * HIDE_CARDS_FRACTION, () => { cardsHidden = true; render(); });
-      shell.clock.after('test', options.testSeconds, timeout);
-    }
+    shell.clock.after('hide', flashSeconds(), () => { cardsHidden = true; render(); });
+    if (timedTests) shell.clock.after('test', options.testSeconds, timeout);
   }
 
   function timeout() {
@@ -258,7 +264,7 @@ export function fullScreen(app) {
   }
 
   function tap(event) {
-    if (!grid || done) return;
+    if (!grid || done || shell.paused) return;
     const box = gridCanvas.getBoundingClientRect();
     const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -288,6 +294,10 @@ export function fullScreen(app) {
   }
 
   function advance() {
+    if (shell.paused || pausedByCover) {
+      advancePending = true;
+      return;
+    }
     grid = null;
     if (!twoTables) {
       nextRound();
@@ -314,9 +324,39 @@ export function fullScreen(app) {
       pausedByCover = true;
     } else if (!portrait && pausedByCover) {
       pausedByCover = false;
-      shell.clock.resume();
+      if (!shell.paused) {
+        shell.clock.resume();
+        rearm();
+      }
     }
     render();
+  }
+
+  /** Stops the clock and covers the table. */
+  function pause() {
+    shell.clock?.pause();
+    render();
+  }
+
+  function resume() {
+    if (pausedByCover) return;
+    shell.clock?.resume();
+    rearm();
+    render();
+  }
+
+  /** Pausing cancels the drill's timers; restarts the ones the current state needs. */
+  function rearm() {
+    if (done || !shell.clock) return;
+    if (advancePending) {
+      advancePending = false;
+      advance();
+    } else if (grid) {
+      if (!cardsHidden) shell.clock.after('hide', flashSeconds(), () => { cardsHidden = true; render(); });
+      if (timedTests && !shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
+    } else if (notice) {
+      shell.clock.after('deal', END_WARNING_SECONDS, nextRound);
+    }
   }
 
   /** Redraws the table and the answer grid. */
@@ -329,8 +369,9 @@ export function fullScreen(app) {
       const ctx = setupCanvas(canvas, width, height);
       ctx.fillStyle = cssVar(...(shown?.color ?? TABLE_COLORS[0]));
       ctx.fillRect(0, 0, width, height);
-      if (shown && !cardsHidden) drawTable(ctx, shown, width, height);
-      if (notice) {
+      // While paused the table stays empty, so nothing can be studied.
+      if (shown && !cardsHidden && !shell.paused) drawTable(ctx, shown, width, height);
+      if (notice && !shell.paused) {
         ctx.fillStyle = cssVar('--felt-text', '#ffffff');
         ctx.font = 'bold 32px Helvetica, Arial, sans-serif';
         ctx.textAlign = 'center';
@@ -338,8 +379,8 @@ export function fullScreen(app) {
         ctx.fillText(notice, width / 2, height / 2);
       }
     }
-    gridWrap.hidden = !grid;
-    if (grid) drawGridIn(grid, gridCanvas, gridWrap);
+    gridWrap.hidden = !grid || shell.paused;
+    if (grid && !shell.paused) drawGridIn(grid, gridCanvas, gridWrap);
   }
 
   function drawTable(ctx, table, width, height) {

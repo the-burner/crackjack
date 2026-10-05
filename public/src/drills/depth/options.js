@@ -3,13 +3,19 @@
 import { h } from '../../ui/dom.js';
 import { alert } from '../../ui/dialogs.js';
 import {
-  drillOptionsScreen, group, row, withButton,
-  DECK_OPTIONS, TIMER_MODE_OPTIONS, ACCURACY_OPTIONS, TRAY_OPTIONS,
+  drillOptionsScreen, group, row, section, withButton,
+  DECK_OPTIONS, COUNT_DOWN_HALT_OPTION, ACCURACY_OPTIONS, TRAY_OPTIONS,
 } from '../shared/options-screen.js';
 import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic.js';
 
 const DRILL_OPTIONS = ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks']
   .map(value => ({ value, label: `Drill: ${DRILL_LABELS[value]}` }));
+
+/** Rounds: a set number of tests, each timed. Count Down & Halt: until the drill time runs out. */
+const DEPTH_TIMER_OPTIONS = [
+  { value: 'auto', label: 'Timer Mode: Rounds' },
+  COUNT_DOWN_HALT_OPTION,
+];
 
 const RESOLUTION_OPTIONS = [
   { value: 'full', label: 'Resolution: Full Deck' },
@@ -23,28 +29,54 @@ export function depthOptionsScreen(app) {
     onLaunch: () => launch(app),
   });
   const { form } = screen;
+  const valueRow = (label, control) => h('div', { class: 'settings-row' }, h('span', { class: 'label' }, label), control);
+
+  // One card for the drill-specific settings: the count range feeds the TC
+  // Conversion drills, "in tray" the others.
+  const minCount = valueRow('Minimum count', form.number('Minimum Count', 'countRangeMin', { prompt: 'Minimum Count' }));
+  const maxCount = valueRow('Maximum count', form.number('Maximum Count', 'countRangeMax', { prompt: 'Maximum Count' }));
+  const inTray = form.checks([{ label: 'Decks or Aces in Tray', key: 'askCardsInTray' }]);
+
+  // Rounds times each test; Count Down & Halt times the whole drill.
+  const roundsButton = form.number('Rounds', 'testsPerDrill', { prompt: 'Rounds' });
+  const perTestRow = form.duration('Time per test', 'seconds');
+  const progressiveRow = form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]);
+  const drillTimeRow = form.duration('Drill time', 'drillSeconds');
+
+  // Its label follows what the card holds for the chosen drill.
+  const drillCard = section('Answers', group(minCount, maxCount, inTray));
+  const drillCardLabel = drillCard.firstChild;
 
   screen.append(
-    group(
+    section('Drill', group(
       form.select('drill', DRILL_OPTIONS),
       form.select('accuracy', ACCURACY_OPTIONS),
       form.select('resolution', RESOLUTION_OPTIONS),
       form.select('decks', DECK_OPTIONS),
       form.select('trayStyle', TRAY_OPTIONS),
-      withButton(form.select('timerMode', TIMER_MODE_OPTIONS), form.number('Rounds', 'testsPerDrill', { prompt: 'Rounds' })),
-    ),
-    row('Seconds:', form.slider('', 'seconds')),
-    row('Thickness:', form.slider('', 'cardThickness')),
-    h('div', { class: 'row drill-options__range' },
-      h('span', { class: 'label' }, 'Count Range:'),
-      form.number('Minimum Count', 'countRangeMin', { prompt: 'Minimum Count' }),
-      h('span', { class: 'label' }, 'to'),
-      form.number('Maximum Count', 'countRangeMax', { prompt: 'Maximum Count' })),
-    form.checks([
-      { label: 'Progressive Speed', key: 'progressiveSpeed' },
-      { label: 'Decks or Aces in Tray', key: 'askCardsInTray' },
-    ]),
+      row('Thickness:', form.slider('', 'cardThickness')),
+    )),
+    drillCard,
+    section('Timer', group(
+      withButton(form.select('timerMode', DEPTH_TIMER_OPTIONS), roundsButton),
+      perTestRow,
+      progressiveRow,
+      drillTimeRow,
+    )),
   );
+
+  form.watch(() => {
+    const rounds = form.get('timerMode') === 'auto';
+    const trueCount = isTrueCountDrill(form.get('drill'));
+    roundsButton.hidden = !rounds;
+    perTestRow.hidden = !rounds;
+    progressiveRow.hidden = !rounds;
+    drillTimeRow.hidden = rounds;
+    minCount.hidden = !trueCount;
+    maxCount.hidden = !trueCount;
+    inTray.hidden = trueCount;
+    drillCardLabel.textContent = trueCount ? 'Count Range' : 'Answers';
+  });
 
   return { el: screen.el, onShow: screen.onShow, destroy: screen.destroy };
 }

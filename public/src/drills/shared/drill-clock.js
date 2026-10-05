@@ -33,25 +33,30 @@ export class DrillClock {
   }
 
   start() {
+    this.stoppedElapsed = null;
     this.startedAt = this.now();
     this.alarmed = false;
     this.paused = false;
     this.scheduleTick();
   }
 
-  /** Seconds since the run started (0 before it starts). */
+  /** Seconds since the run started (0 before it starts; frozen once it stops). */
   get elapsed() {
-    return this.startedAt === null ? 0 : Math.max(0, this.now() - this.startedAt);
+    if (this.startedAt === null) return this.stoppedElapsed ?? 0;
+    return Math.max(0, (this.paused ? this.pausedAt : this.now()) - this.startedAt);
   }
 
-  /** Whole seconds to show in the "Seconds" cell, and whether it is overdue. */
+  /**
+   * Whole seconds for the Time cell, and whether time is up. A count-down never
+   * goes below zero: it rounds up (so it reads the full limit at the start and
+   * 0 exactly when time runs out) and stays at 0, marked overdue, from then on.
+   */
   display() {
-    const elapsed = Math.floor(this.elapsed);
     if (this.mode === TIMER_MODE.countDown || this.mode === TIMER_MODE.countDownHalt) {
-      const left = Math.floor(this.limit - this.elapsed);
-      return { seconds: left, overdue: left < 0 };
+      const left = this.limit - this.elapsed;
+      return { seconds: Math.max(0, Math.ceil(left)), overdue: left <= 0 };
     }
-    return { seconds: elapsed, overdue: false };
+    return { seconds: Math.floor(this.elapsed), overdue: false };
   }
 
   /** Hands (or tests) per minute, to one decimal place. */
@@ -119,8 +124,10 @@ export class DrillClock {
     this.scheduleTick();
   }
 
+  /** Stops the clock; the time it reached stays on display. */
   stop() {
     [...this.timers.keys()].forEach(name => this.cancel(name));
+    if (this.startedAt !== null) this.stoppedElapsed = this.elapsed;
     this.startedAt = null;
   }
 }

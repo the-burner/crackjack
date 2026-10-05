@@ -110,13 +110,16 @@
   text-align: center;
   padding: 2px 0 4px;
 }
-.bet-overlay__grid { display: block; width: 100%; }
+.bet-overlay__grid { display: block; margin: 0 -2px; }
+/* Three buttons a row; a shorter last row is centred. */
 .bet-overlay__buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
+.bet-overlay__buttons .btn { flex: 0 0 calc((100% - 8px) / 3); }
 .bet-overlay__buttons .btn { min-height: 40px; padding: 4px 26px 4px 6px; font-size: 13px; }
 .bet-overlay__buttons .btn--icon-right::after { width: 14px; height: 14px; right: 8px; }
 .bet-overlay__buttons .btn[hidden] { display: none; }

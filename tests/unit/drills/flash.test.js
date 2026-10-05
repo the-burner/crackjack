@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildHandList, dealHand, fillHand, handIndex, countForHand, correctPlay, errorCell,
-  describeHand, describeEntry, errorCellsAsHands, rowOf, columnOf, upcardOf, SITUATIONS,
+  describeHand, describeEntry, errorCellsAsHands, errorSummary, percent, rowOf, columnOf, upcardOf, SITUATIONS,
 } from '../../../public/src/drills/flash/logic.js';
 import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
@@ -250,5 +250,26 @@ describe('descriptions', () => {
   it('turns tallied cells into hand-list entries', () => {
     expect(errorCellsAsHands([{ table: 'hardStand', row: 1, column: 8, count: 4 }]))
       .toEqual([{ kind: 'hardStand', upcard: 10, value: 16, count: 4 }]);
+  });
+
+  it('sums errors by hand and by situation, with the share of each', () => {
+    const summary = errorSummary([
+      { table: 'hardStand', row: 1, column: 8, count: 6 },
+      { table: 'hardStand', row: 2, column: 8, count: 2 },
+      { table: 'split', row: 6, column: 9, count: 2 },
+    ]);
+    expect(summary.total).toBe(10);
+    expect(summary.hands.map(x => [describeEntry(x.entry), x.count, x.share])).toEqual([
+      ['Hard H/S 16 v T', 6, 0.6], ['Hard H/S 15 v T', 2, 0.2], [describeEntry(summary.hands[2].entry), 2, 0.2],
+    ]);
+    expect(summary.situations.map(x => [x.label, x.count, x.share])).toEqual([['Hard H/S', 8, 0.8], ['Split', 2, 0.2]]);
+  });
+
+  it('is empty when nothing has been recorded', () => {
+    expect(errorSummary([])).toEqual({ total: 0, hands: [], situations: [] });
+  });
+
+  it('writes shares as whole percentages', () => {
+    expect([0, 0.004, 0.2, 0.666, 1].map(percent)).toEqual(['0%', '<1%', '20%', '67%', '100%']);
   });
 });

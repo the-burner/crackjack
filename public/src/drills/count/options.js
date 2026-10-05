@@ -2,7 +2,7 @@
 
 import { alert } from '../../ui/dialogs.js';
 import {
-  drillOptionsScreen, group, row,
+  drillOptionsScreen, group, row, section, COUNT_DOWN_HALT_OPTION,
   DECK_OPTIONS, ACCURACY_OPTIONS, TRAY_OPTIONS, BIAS_OPTIONS, END_WARNING_OPTIONS,
 } from '../shared/options-screen.js';
 import { drillStrategy } from '../shared/drill-settings.js';
@@ -43,10 +43,10 @@ const POSITION_OPTIONS = [
   { value: 'mixed', label: 'Positions: Mixed' },
 ];
 
+/** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
 const MODE_OPTIONS = [
-  { value: 'auto', label: 'Timer Mode: Auto' },
-  { value: 'countDown', label: 'Timer Mode: Count Down' },
-  { value: 'countUp', label: 'Timer Mode: Count Up' },
+  { value: 'auto', label: 'Timer Mode: Shoe' },
+  COUNT_DOWN_HALT_OPTION,
 ];
 
 export function countOptionsScreen(app) {
@@ -55,45 +55,63 @@ export function countOptionsScreen(app) {
     onLaunch: () => launch(app),
   });
   const { form } = screen;
-  const auto = () => form.get('timerMode') === 'auto';
 
-  // Auto deals at the deal speed; the manual modes time the whole drill instead.
+  // Settings that only matter in some set-ups; see the watch below.
+  const positions = form.select('positions', POSITION_OPTIONS);
+  const accuracy = form.select('accuracy', ACCURACY_OPTIONS);
+  const trayStyle = form.select('trayStyle', TRAY_OPTIONS);
+  const thickness = row('Thickness:', form.slider('', 'cardThickness'));
+  const perTest = form.duration('Time per test', 'testSeconds');
+  const drillTime = form.duration('Drill time', 'alarmSeconds');
+  const dealByHand = form.checks([{ label: 'Deal by hand', key: 'dealByHand' }]);
   const dealSpeed = form.duration('Deal speed', 'dealTenths', { tenths: true });
-  const alarm = form.duration('Alarm time', 'alarmSeconds');
+  const progressive = form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]);
+  const twoCounts = form.checks([{ label: 'Two Counts', key: 'twoCounts' }]);
 
   screen.append(
-    group(
+    section('Drill', group(
       form.select('drill', DRILL_OPTIONS),
       form.select('testEvery', TEST_OPTIONS),
-      form.select('accuracy', ACCURACY_OPTIONS),
+      accuracy,
+      twoCounts,
       form.select('cardsPerFlash', CARDS_OPTIONS),
       form.select('decks', DECK_OPTIONS),
-    ),
-    group(
+    )),
+    section('Dealing', group(
       form.select('orientation', ORIENTATION_OPTIONS),
-      form.select('positions', POSITION_OPTIONS),
+      positions,
       form.select('endWarning', END_WARNING_OPTIONS),
       form.select('bias', BIAS_OPTIONS),
-      form.select('trayStyle', TRAY_OPTIONS),
-    ),
-    group(
+      trayStyle,
+      thickness,
+    )),
+    section('Timer', group(
       form.select('timerMode', MODE_OPTIONS),
+      perTest,
+      drillTime,
+      dealByHand,
       dealSpeed,
-      alarm,
-      form.duration('Time per test', 'testSeconds'),
-    ),
-    row('Thickness:', form.slider('', 'cardThickness')),
-    form.checks([
-      { label: 'Progressive Speed', key: 'progressiveSpeed' },
-      { label: 'Two Counts', key: 'twoCounts' },
-    ]),
+      progressive,
+    )),
   );
 
-  // The deal speed only applies when the drill paces itself; the alarm only
-  // applies when it does not.
   form.watch(() => {
-    dealSpeed.hidden = !auto();
-    alarm.hidden = auto();
+    const autoMode = form.get('timerMode') === 'auto';
+    const byHand = form.get('dealByHand');
+    const tests = form.get('testEvery') !== 'never';
+    // Shoe mode times each test; Count Down & Halt times the whole drill.
+    perTest.hidden = !autoMode || !tests;
+    drillTime.hidden = autoMode;
+    // The deal speed, and speeding it up, only apply when the cards deal themselves.
+    dealSpeed.hidden = byHand;
+    progressive.hidden = byHand;
+    // Without tests there is no answer to grade or tray to show.
+    accuracy.hidden = !tests;
+    trayStyle.hidden = !tests;
+    thickness.hidden = !tests;
+    twoCounts.hidden = !tests;
+    // Positions arrange several cards; a single card has none.
+    positions.hidden = form.get('cardsPerFlash') === '1';
   });
 
   return { el: screen.el, onShow: screen.onShow, destroy: screen.destroy };

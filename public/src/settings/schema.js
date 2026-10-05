@@ -14,7 +14,6 @@ const tableGrids = value => ({
 });
 
 export const DECKS = [1, 2, 3, 4, 5, 6, 7, 8];
-export const TIMER_MODES = ['auto', 'countDown', 'countUp', 'countDownHalt'];
 export const ACCURACY = [0, 1, 2];
 export const TRAY_STYLES = ['eightDeckFront', 'sixDeckFront', 'doubleDeckFront', 'sixDeckRear', 'doubleDeckRear'];
 export const TABLE_LIMITS = [
@@ -179,9 +178,12 @@ export const SETTINGS_SCHEMA = {
   'drills.depth.resolution': oneOf(['full', 'half', 'quarter'], 'half'),
   'drills.depth.decks': oneOf(DECKS, 6),
   'drills.depth.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
-  'drills.depth.timerMode': oneOf(TIMER_MODES, 'auto'),
+  'drills.depth.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
   'drills.depth.testsPerDrill': int(50, 10, 200),
+  /** Rounds mode: seconds to answer each test. */
   'drills.depth.seconds': int(10, 1, 60),
+  /** Count Down & Halt: seconds for the whole drill. */
+  'drills.depth.drillSeconds': int(180, 10, 1799),
   'drills.depth.cardThickness': int(100, 100, 110),
   'drills.depth.countRangeMin': int(-10, -99, 99),
   'drills.depth.countRangeMax': int(15, -99, 99),
@@ -199,12 +201,15 @@ export const SETTINGS_SCHEMA = {
   'drills.count.endWarning': oneOf(['none', 'oneCardLeft', 'twoCardsLeft'], 'none'),
   'drills.count.decks': oneOf(DECKS, 6),
   'drills.count.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
-  'drills.count.timerMode': oneOf(TIMER_MODES.slice(0, 3), 'auto'),
+  'drills.count.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
+  /** Deal each group of cards with Next instead of at the deal speed. */
+  'drills.count.dealByHand': bool(false),
   /** Tenths of a second between flashes. */
   'drills.count.dealTenths': int(8, 1, 59),
   'drills.count.testSeconds': int(10, 1, 15),
   'drills.count.cardThickness': int(100, 100, 110),
-  'drills.count.alarmSeconds': int(180, 15, 299),
+  /** Count Down & Halt: seconds for the whole drill. */
+  'drills.count.alarmSeconds': int(180, 10, 1799),
   'drills.count.progressiveSpeed': bool(false),
   'drills.count.twoCounts': bool(false),
 
@@ -216,10 +221,12 @@ export const SETTINGS_SCHEMA = {
   'drills.full.bias': oneOf(['none', 'negative', 'positive'], 'none'),
   'drills.full.endWarning': oneOf(['none', 'oneCardLeft', 'twoCardsLeft'], 'none'),
   'drills.full.decks': oneOf(DECKS, 6),
-  'drills.full.timerMode': oneOf(TIMER_MODES.slice(0, 3), 'auto'),
+  'drills.full.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
+  /** Seconds the cards stay on the table before they are hidden. */
   'drills.full.flashSpeed': int(10, 1, 30),
   'drills.full.testSeconds': int(10, 1, 40),
-  'drills.full.alarmSeconds': int(180, 15, 300),
+  /** Count Down & Halt: seconds for the whole drill. */
+  'drills.full.alarmSeconds': int(180, 10, 1799),
   'drills.full.progressiveSpeed': bool(false),
   'drills.full.twoCounts': bool(false),
 };

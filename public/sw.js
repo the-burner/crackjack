@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = 'c3a9fa25a0e4';
+const VERSION = '01bdd4aaf636';
 const FILES = [
   './',
   './assets/cards/card-back.png',
@@ -472,6 +472,7 @@ const FILES = [
   './src/drills/depth/logic.js',
   './src/drills/depth/options.js',
   './src/drills/depth/screen.js',
+  './src/drills/flash/errors.js',
   './src/drills/flash/logic.js',
   './src/drills/flash/options.js',
   './src/drills/flash/screen.js',

@@ -38,6 +38,7 @@ export function countScreen(app) {
     decks: s.get('drills.count.decks'),
     trayStyle: s.get('drills.count.trayStyle'),
     timerMode: s.get('drills.count.timerMode'),
+    dealByHand: s.get('drills.count.dealByHand'),
     dealSeconds: s.get('drills.count.dealTenths') / 10,
     testSeconds: s.get('drills.count.testSeconds'),
     alarmSeconds: s.get('drills.count.alarmSeconds'),
@@ -46,7 +47,10 @@ export function countScreen(app) {
     twoCounts: s.get('drills.count.twoCounts'),
     ...drillStrategy(app, s.get('drills.count.decks')),
   };
-  const auto = options.timerMode === TIMER_MODE.auto;
+  /** Cards come at the deal speed unless the player deals them with Next. */
+  const auto = !options.dealByHand;
+  /** Auto mode times each test; Count Down & Halt times the whole drill. */
+  const timedTests = options.timerMode === TIMER_MODE.auto;
   const maxCards = maxFlashSize(options.cardsPerFlash);
   const inHalfSteps = halfSteps(options.drill, options.strategy);
 
@@ -181,7 +185,7 @@ export function countScreen(app) {
     nextButton.hidden = true;
     draw();
     shell.updateStats(shell.clock);
-    shell.clock.after('test', options.testSeconds, timeout);
+    if (timedTests) shell.clock.after('test', options.testSeconds, timeout);
   }
 
   function timeout() {
@@ -248,7 +252,7 @@ export function countScreen(app) {
       resumeDealing();
     } else if (grid) {
       // A test still waiting for its answer gets its full time again.
-      if (!shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
+      if (timedTests && !shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
     } else if (auto) {
       shell.clock.every('deal', dealSpeed(), dealFlash);
     }

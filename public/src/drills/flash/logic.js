@@ -357,6 +357,32 @@ export function errorCellsAsHands(cells) {
     .map(c => ({ ...entry(c.table, upcardOf(c.column), TABLE_ROWS[c.table][c.row]), count: c.count }));
 }
 
+/**
+ * Statistics for the Error History screen, from error-tally cells: each hand's
+ * and each situation's share of all recorded errors, most-missed first.
+ * @returns {{total: number, hands: {entry: object, count: number, share: number}[],
+ *   situations: {kind: string, label: string, count: number, share: number}[]}}
+ */
+export function errorSummary(cells) {
+  const entries = errorCellsAsHands(cells);
+  const total = entries.reduce((sum, e) => sum + e.count, 0);
+  const share = count => (total ? count / total : 0);
+  const hands = entries
+    .map(e => ({ entry: e, count: e.count, share: share(e.count) }))
+    .sort((a, b) => b.count - a.count);
+  const situations = SITUATIONS
+    .map(kind => {
+      const count = entries.filter(e => e.kind === kind).reduce((sum, e) => sum + e.count, 0);
+      return { kind, label: SITUATION_LABELS[kind], count, share: share(count) };
+    })
+    .filter(s => s.count > 0)
+    .sort((a, b) => b.count - a.count);
+  return { total, hands, situations };
+}
+
+/** A share as a whole percentage: 0.4 -> "40%", tiny shares -> "<1%". */
+export const percent = share => (share > 0 && share < 0.005 ? '<1%' : `${Math.round(share * 100)}%`);
+
 /** "Hard 16 v 10" for a hand-list entry. */
 export function describeEntry(e) {
   const hand = e.kind === 'split' ? `Pair of ${valueName(e.value)}s`

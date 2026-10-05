@@ -4,7 +4,7 @@ import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { alert, confirm } from '../../ui/dialogs.js';
 import { toast } from '../../ui/toast.js';
-import { drillOptionsScreen, group, withButton, TIMER_MODE_OPTIONS } from '../shared/options-screen.js';
+import { drillOptionsScreen, group, section, withButton, COUNT_DOWN_HALT_OPTION } from '../shared/options-screen.js';
 import { drillStrategy } from '../shared/drill-settings.js';
 import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic.js';
 
@@ -49,7 +49,7 @@ const SITUATION_ITEMS = SITUATIONS.map(flag => ({ flag, label: SITUATION_LABELS[
 /** Flash plays a set number of rounds, each hand timed, or plays until the drill time runs out. */
 const FLASH_TIMER_OPTIONS = [
   { value: 'auto', label: 'Timer Mode: Rounds' },
-  TIMER_MODE_OPTIONS.find(o => o.value === 'countDownHalt'),
+  COUNT_DOWN_HALT_OPTION,
 ];
 
 export function flashOptionsScreen(app) {
@@ -90,22 +90,24 @@ export function flashOptionsScreen(app) {
   });
 
   screen.append(
-    group(
+    section('Drill', group(
       form.select('maxCards', CARDS_OPTIONS),
       deckSelect,
       withButton(form.select('hands', HANDS_OPTIONS), selectButton),
       withButton(form.select('countMode', COUNT_OPTIONS), countButton),
       form.select('testMode', TEST_MODE_OPTIONS),
-    ),
-    h('div', { class: 'note' }, 'Situations'),
-    form.flags('situations', SITUATION_ITEMS, { chips: true }),
-    group(
+    )),
+    section('Situations', form.flags('situations', SITUATION_ITEMS, { chips: true })),
+    section('Timer', group(
       withButton(form.select('timerMode', FLASH_TIMER_OPTIONS), roundsButton),
       perHandRow,
       progressiveRow,
       drillTimeRow,
-    ),
-    button('Clear error history', { icon: 'back', onClick: () => clearErrors(app) }),
+    )),
+    section('Error History', group(
+      button('Error history', { icon: 'arrow-r', block: true, className: 'list-row', onClick: () => app.open('drills.flash.errors'), 'data-action': 'error-history' }),
+      button('Clear error history', { icon: 'back', onClick: () => clearErrors(app) }),
+    )),
   );
 
   /** Shows Select for the Custom list; choosing Drill Errors shows a summary toast. */

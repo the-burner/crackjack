@@ -1,8 +1,7 @@
 // Full Table Drills: Options.
 
-import { alert } from '../../ui/dialogs.js';
 import {
-  drillOptionsScreen, group, row,
+  drillOptionsScreen, group, section, COUNT_DOWN_HALT_OPTION,
   DECK_OPTIONS, ACCURACY_OPTIONS, BIAS_OPTIONS, END_WARNING_OPTIONS,
 } from '../shared/options-screen.js';
 import { FULL_DRILL_LABELS } from './logic.js';
@@ -22,58 +21,57 @@ const PLAYERS_OPTIONS = [
   { value: 6, label: 'Six Players' },
 ];
 
+/** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
 const MODE_OPTIONS = [
-  { value: 'auto', label: 'Mode: Auto' },
-  { value: 'countDown', label: 'Mode: Count Down' },
-  { value: 'countUp', label: 'Mode: Count Up' },
+  { value: 'auto', label: 'Timer Mode: Shoe' },
+  COUNT_DOWN_HALT_OPTION,
 ];
 
 export function fullOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
     title: 'Full Table Options', help: 'drills.full.options', drill: 'drills.full',
-    onLaunch: () => launch(app),
+    onLaunch: () => app.open('drills.full'),
   });
   const { form } = screen;
-  const auto = () => form.get('timerMode') === 'auto';
 
-  const flashSpeed = row('Flash Speed:', form.slider('', 'flashSpeed'));
-  const alarm = row('Alarm Time:', form.slider('', 'alarmSeconds'));
+  // Settings that only matter in some set-ups; see the watch below.
+  const handStyle = form.select('handStyle', HANDS_OPTIONS);
+  const endWarning = form.select('endWarning', END_WARNING_OPTIONS);
+  const twoCounts = form.checks([{ label: 'Two Counts', key: 'twoCounts' }]);
+  const perTest = form.duration('Time per test', 'testSeconds');
+  const drillTime = form.duration('Drill time', 'alarmSeconds');
 
   screen.append(
-    group(
+    section('Drill', group(
       form.select('drill', DRILL_OPTIONS),
       form.select('accuracy', ACCURACY_OPTIONS),
-      form.select('handStyle', HANDS_OPTIONS),
+      twoCounts,
+      handStyle,
       form.select('players', PLAYERS_OPTIONS),
       form.select('decks', DECK_OPTIONS),
       form.select('bias', BIAS_OPTIONS),
-      form.select('endWarning', END_WARNING_OPTIONS),
+      endWarning,
+    )),
+    section('Timer', group(
       form.select('timerMode', MODE_OPTIONS),
-    ),
-    flashSpeed,
-    alarm,
-    row('Test Speed:', form.slider('', 'testSeconds')),
-    form.checks([
-      { label: 'Progressive Speed', key: 'progressiveSpeed' },
-      { label: 'Two Counts', key: 'twoCounts' },
-    ]),
+      perTest,
+      drillTime,
+      form.duration('Flash speed', 'flashSpeed'),
+      form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]),
+    )),
   );
 
-  // The flash speed only applies when the drill paces itself; the alarm only
-  // applies when it does not.
   form.watch(() => {
-    flashSpeed.hidden = !auto();
-    alarm.hidden = auto();
+    const autoMode = form.get('timerMode') === 'auto';
+    const twoTables = form.get('drill') === 'twoTables';
+    // Shoe mode times each test and warns near the end of the shoe; Count Down & Halt times the whole drill.
+    perTest.hidden = !autoMode;
+    drillTime.hidden = autoMode;
+    // Two Tables always deals complete hands, asks only running counts and never warns.
+    handStyle.hidden = twoTables;
+    twoCounts.hidden = twoTables;
+    endWarning.hidden = twoTables || !autoMode;
   });
 
   return { el: screen.el, onShow: screen.onShow, destroy: screen.destroy };
-}
-
-async function launch(app) {
-  const s = app.settings;
-  if (s.get('drills.full.drill') === 'twoTables' && s.get('drills.full.handStyle') === 'scattered') {
-    await alert('Scattered Cards is not supported with Drill: Two Tables.');
-    return;
-  }
-  app.open('drills.full');
 }

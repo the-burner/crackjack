@@ -6,7 +6,7 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { cssVar } from '../../ui/theme.js';
-import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, COLUMNS, ROWS } from './bet-grid.js';
+import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, TILE_GAP, COLUMNS, ROWS } from './bet-grid.js';
 import { setupCanvas } from '../../ui/card-sprites.js';
 
 const MIN_TILE_HEIGHT = 38;
@@ -66,15 +66,25 @@ export function createBetOverlay(handlers) {
     return sideBetLabel ? `${heading} · ${sideBetLabel}` : heading;
   }
 
-  /** Lays the tiles out for the panel's current width and draws them. */
+  /** Pixels the tiles are shifted right so the grid is centred. */
+  let offsetX = 0;
+
+  /** Lays the tiles out for the panel's inner width and draws them. */
   function draw() {
-    const width = Math.max(140, Math.floor(el.clientWidth || 320));
+    // The tiles are inset by TILE_GAP inside their cells, so the canvas reaches
+    // that far into the panel's padding (see .bet-overlay__grid) and the tile
+    // edges line up with the buttons below.
+    const style = getComputedStyle(el);
+    const inner = (el.clientWidth || 320) - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const width = Math.max(140, Math.floor(inner) + 2 * TILE_GAP);
     const tileWidth = Math.floor((width - 1) / COLUMNS);
     const tileHeight = Math.min(MAX_TILE_HEIGHT, Math.max(MIN_TILE_HEIGHT, Math.round(tileWidth * 0.85)));
     geometry = gridGeometry({ width, height: tileHeight * ROWS, count: cells.length });
     const height = geometry.rows * tileHeight + 1;
     const ctx = setupCanvas(canvas, width, height);
     ctx.clearRect(0, 0, width, height);
+    offsetX = Math.floor((width - 1 - tileWidth * COLUMNS) / 2);
+    ctx.translate(offsetX, 0);
     const font = `600 ${width < 420 ? 15 : 20}px ${cssVar('--font', 'sans-serif')}`;
     geometry.rects.forEach((rect, i) => {
       const highlight = previousLabel !== null && cells[i].label === previousLabel;
@@ -86,7 +96,7 @@ export function createBetOverlay(handlers) {
 
   canvas.addEventListener('click', event => {
     const box = canvas.getBoundingClientRect();
-    const index = cellIndexAt({ x: event.clientX - box.left, y: event.clientY - box.top }, geometry);
+    const index = cellIndexAt({ x: event.clientX - box.left - offsetX, y: event.clientY - box.top }, geometry);
     if (index < 0 || index >= cells.length) return;
     handlers.onBet(cells[index]);
   });

@@ -131,10 +131,16 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
       shell.updateStats(shell.clock);
     },
 
+    /** Ends the current run and starts a new one after the same countdown as Launch. */
     restart() {
       onStop?.(shell);
       shell.run = 0;
-      shell.start();
+      shell.paused = false;
+      if (pauseButton) {
+        pauseButton.textContent = 'Pause';
+        pauseButton.disabled = true;
+      }
+      shell.countdown(() => shell.start());
     },
 
     /** Ends the run and shows a closing message. */

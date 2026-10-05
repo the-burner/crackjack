@@ -4,7 +4,7 @@ import { h } from '../../ui/dom.js';
 import { setupCanvas } from '../../ui/card-sprites.js';
 import { cssVar } from '../../ui/theme.js';
 import { drillShell, drillClockFor } from '../shared/drill-screen.js';
-import { progressiveSpeed } from '../shared/drill-clock.js';
+import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.js';
 import { drillStrategy } from '../shared/drill-settings.js';
 import { drawGridIn } from '../shared/answer-grid.js';
 import { gradeAnswer } from '../shared/scoring.js';
@@ -26,6 +26,7 @@ export function depthScreen(app) {
     timerMode: s.get('drills.depth.timerMode'),
     testsPerDrill: s.get('drills.depth.testsPerDrill'),
     seconds: s.get('drills.depth.seconds'),
+    drillSeconds: s.get('drills.depth.drillSeconds'),
     thickness: s.get('drills.depth.cardThickness'),
     countRange: { min: s.get('drills.depth.countRangeMin'), max: s.get('drills.depth.countRangeMax') },
     askInTray: s.get('drills.depth.askCardsInTray'),
@@ -60,13 +61,15 @@ export function depthScreen(app) {
   shell.setDisplay(tray, panel);
   shell.body.append(gridWrap);
 
+  const rounds = options.timerMode === TIMER_MODE.auto;
+  /** Seconds per test (Rounds mode); with Progressive Speed, 10% less on each Restart. */
   const speed = () => progressiveSpeed(options.seconds, run, options.progressive);
 
   function start() {
     run += 1;
     previousAnswer = null;
     grid = depthGrid(options);
-    drillClockFor(shell, { mode: options.timerMode, limit: speed(), onHalt: finish }).start();
+    drillClockFor(shell, { mode: options.timerMode, limit: options.drillSeconds, onHalt: finish }).start();
     nextTest();
   }
 
@@ -97,7 +100,8 @@ export function depthScreen(app) {
     shell.clearMessage();
     draw();
     shell.updateStats(shell.clock);
-    shell.clock.after('test', speed(), timeout);
+    // Only Rounds mode times each test; Count Down & Halt times the whole drill.
+    if (rounds) shell.clock.after('test', speed(), timeout);
   }
 
   /** A timeout shows the answer and counts as an error; the player taps it to go on. */
@@ -134,7 +138,7 @@ export function depthScreen(app) {
   }
 
   function advance() {
-    if (shell.score.tests >= options.testsPerDrill) finish();
+    if (rounds && shell.score.tests >= options.testsPerDrill) finish();
     else nextTest();
   }
 

@@ -42,12 +42,14 @@
 .settings-group > .checklist--horizontal + *,
 .drill-options__group > .checklist--horizontal + * { border-top: 1px solid var(--separator); }
 .settings-group > .slider,
-.drill-options__group > .slider,
-.drill-options__group .field--inline > .slider { padding: 10px 14px; }
+.drill-options__group > .slider { padding: 10px 14px; }
+/* A labelled slider row (e.g. Thickness) is a normal-height list row. */
+.drill-options__group > .field--inline { min-height: var(--control-h); padding: 0 14px; }
+.drill-options__group > .field--inline > .label { font: 400 15px var(--font); }
 .settings-group > .note,
 .drill-options__group > .note { padding: 10px 14px; text-align: left; }
 .settings-group > .field,
-.drill-options__group > .field { padding: 10px 14px 4px; }
+.drill-options__group > .field:not(.field--inline) { padding: 10px 14px 4px; }
 .settings-group > .field .select select,
 .drill-options__group > .field .select select { padding-left: 0; }
 .settings-note { margin: 0 4px 14px; text-align: left; }
@@ -90,6 +92,21 @@
 .section { display: flex; flex-direction: column; }
 .section__title { margin: 0 14px 6px; color: var(--text-secondary); font: 600 13px var(--font); letter-spacing: 0.02em; text-transform: uppercase; }
 .section__footer { margin: 6px 14px 0; color: var(--text-secondary); font: 13px/1.4 var(--font); }
+
+/* Statistic rows (Error History): label, "count · share", and a bar showing the share. */
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 14px;
+}
+.stat-row__label { font: 400 15px var(--font); color: var(--text); }
+.stat-row__value { font: 500 15px var(--font); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.stat-row__bar { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 2px; background: var(--separator); }
+.stat-row__bar > span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.stat-summary { padding-right: 14px; }
+.stat-summary__value { font: 500 15px var(--font); color: var(--text-secondary); text-align: right; }
 
 /* A navigation row: plain text on the left, a chevron on the right. */
 .btn.list-row { justify-content: flex-start; color: var(--text); font-weight: 400; }

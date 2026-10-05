@@ -15,12 +15,11 @@ export function mixedNumber(value) {
   return whole === 0 ? `${sign}${symbol}` : `${sign}${Math.abs(whole)}${symbol}`;
 }
 
-/** Formats whole seconds as hours:minutes:seconds, e.g. 65 -> "00:01:05", -5 -> "-00:00:05". */
+/** Formats whole seconds as hours:minutes:seconds, e.g. 65 -> "00:01:05". Never negative. */
 export function clockTime(seconds) {
-  const total = Math.abs(Math.trunc(seconds));
+  const total = Math.max(0, Math.trunc(seconds));
   const pad = n => String(n).padStart(2, '0');
-  const text = `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
-  return seconds < 0 ? `-${text}` : text;
+  return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
 }
 
 /** Formats a signed count for display: "+3", "0", "-2". */

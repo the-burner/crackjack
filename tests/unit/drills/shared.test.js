@@ -40,10 +40,30 @@ describe('DrillClock', () => {
     clock.advance(4);
     expect(clock.display()).toEqual({ seconds: 6, overdue: false });
     clock.advance(7);
-    expect(clock.display().overdue).toBe(true);
+    // Past the limit the count-down stays at zero rather than going negative.
+    expect(clock.display()).toEqual({ seconds: 0, overdue: true });
     expect(clock.alarms).toBe(1);
     clock.advance(5);
     expect(clock.alarms).toBe(1);
+  });
+
+  it('reads the full limit at the start, rounds up, and is red at exactly zero', () => {
+    const clock = fakeClock();
+    clock.start();
+    expect(clock.display()).toEqual({ seconds: 10, overdue: false });
+    clock.advance(9.4);
+    expect(clock.display()).toEqual({ seconds: 1, overdue: false });
+    clock.advance(0.6);
+    expect(clock.display()).toEqual({ seconds: 0, overdue: true });
+  });
+
+  it('keeps showing the time it stopped at', () => {
+    const clock = fakeClock();
+    clock.start();
+    clock.advance(10.003);
+    clock.stop();
+    clock.advance(5);
+    expect(clock.display()).toEqual({ seconds: 0, overdue: true });
   });
 
   it('excludes paused time from the elapsed total', () => {
@@ -151,8 +171,8 @@ describe('clockTime', () => {
     expect([0, 5, 65, 3599, 3600, 3725, 36000].map(clockTime)).toEqual(['00:00:00', '00:00:05', '00:01:05', '00:59:59', '01:00:00', '01:02:05', '10:00:00']);
   });
 
-  it('marks time past a count-down limit as negative', () => {
-    expect(clockTime(-5)).toBe('-00:00:05');
+  it('never shows a negative time', () => {
+    expect(clockTime(-5)).toBe('00:00:00');
   });
 });
 

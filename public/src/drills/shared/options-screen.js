@@ -53,6 +53,10 @@ export const group = (...children) => h('div', { class: 'drill-options__group' }
 /** A label on the left and a control on the right. */
 export const row = (label, control) => field(label, control, { inline: true });
 
+/** A label over one or more cards, keeping them together. */
+export const section = (title, ...children) => h('div', { class: 'drill-options__section' },
+  h('div', { class: 'note drill-options__heading' }, title), ...children.filter(Boolean));
+
 /** A select and a small button side by side. */
 export const withButton = (main, extra) => h('div', { class: 'drill-options__pair' }, main, extra);
 
@@ -164,12 +168,8 @@ export const DECK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8].map(value => ({
   value, label: `${['Single', 'Double', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][value - 1]} Deck${value > 1 ? 's' : ''}`,
 }));
 
-export const TIMER_MODE_OPTIONS = [
-  { value: 'auto', label: 'Timer Mode: Auto' },
-  { value: 'countDown', label: 'Timer Mode: Count Down' },
-  { value: 'countUp', label: 'Timer Mode: Count Up' },
-  { value: 'countDownHalt', label: 'Timer Mode: Count Down & Halt' },
-];
+/** The timer mode every drill offers besides its own timed mode: stop when the drill time runs out. */
+export const COUNT_DOWN_HALT_OPTION = { value: 'countDownHalt', label: 'Timer Mode: Count Down & Halt' };
 
 export const ACCURACY_OPTIONS = [
   { value: 0, label: 'Accuracy: Exact' },
