@@ -1,8 +1,9 @@
 /* Drill screens: green felt, display area, stats panel and answer grids. */
 
 .drill { background: var(--felt); color: var(--felt-text); }
-.drill__bar { position: relative; z-index: 6; display: flex; justify-content: space-between; gap: 6px; padding: 2px 8px; }
-.drill__bar .btn--nav { min-height: 40px; padding: 0 8px; background: transparent; color: var(--felt-text); font: 400 17px var(--font); }
+/* Same height and button positions as the standard title bar, so Back and Help stay put on launch. */
+.drill__bar { position: relative; z-index: 6; display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 48px; padding: 2px 8px; }
+.drill__bar .btn--nav { min-height: 40px; padding: 0 8px; background: transparent; color: var(--bar-text); font: 400 17px var(--font); }
 .drill__bar .btn--nav:active { background: transparent; opacity: 0.5; }
 .drill__body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 0 4px 6px; min-height: 0; }
 .drill__display { flex: 1; position: relative; min-height: 0; }
@@ -10,8 +11,10 @@
 .drill__message { font: 600 16px var(--font); text-align: center; min-height: 20px; color: var(--felt-accent); }
 
 /* Stats: a compact two-by-two block of figures. */
+/* Two fixed halves, so the divider stays in the middle whatever the figures say. */
 .drill__stats {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   overflow: hidden;
@@ -19,7 +22,7 @@
   background: var(--panel-bg);
   color: var(--panel-text);
 }
-.drill__stats td { padding: 5px 10px; font: 500 13px var(--font); font-variant-numeric: tabular-nums; text-align: center; }
+.drill__stats td { width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 10px; font: 500 13px var(--font); font-variant-numeric: tabular-nums; text-align: center; }
 .drill__stats tr + tr td { border-top: 1px solid var(--panel-border); }
 .drill__stats td + td { border-left: 1px solid var(--panel-border); }
 .drill__stats td.is-overdue { color: var(--warning); font-weight: 700; }

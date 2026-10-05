@@ -40,6 +40,8 @@
   --felt: #008000;
   --felt-alt: #000080;
   --felt-text: #fff;
+  /* Back / Help over the felt; Classic's blue accent is unreadable on its green felt. */
+  --bar-text: var(--felt-text);
   --felt-accent: #ffff00;
   --panel-bg: #fff;
   --panel-head-bg: #eceff3;

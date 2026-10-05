@@ -81,9 +81,11 @@
   --dialog-divider: var(--surface1);
   --help-bg: var(--base);
   --prose-bg: var(--mantle);
-  --felt: var(--mantle);
+  /* The drills sit on the same background as the settings screens. */
+  --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
+  --bar-text: var(--accent);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
   --panel-text: var(--ctp-text);

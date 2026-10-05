@@ -168,7 +168,13 @@ test.describe('flash drill', () => {
 
   test('pauses, restarts and goes back', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.handsPerDrill': 50, 'drills.flash.testMode': 'errorsAtEnd' });
-    const screen = await launch(page, DRILLS[0]);
+    // Pause is unavailable during the opening countdown, as it is after Restart.
+    await page.getByRole('button', { name: DRILLS[0].button }).click();
+    await page.locator('[data-screen="drills.flash.options"] [data-action="launch"]').click();
+    await expect(page.locator('[data-screen="drills.flash"]').getByRole('button', { name: 'Pause' })).toBeDisabled();
+    const screen = page.locator('[data-screen="drills.flash"]');
+    await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
     await screen.locator('[data-action="stand"]').click();
     expect(await statsText(screen)).toContain('Hands: 2');
 

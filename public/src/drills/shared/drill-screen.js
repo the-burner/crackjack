@@ -114,8 +114,9 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
       shell.countdownTimer = setTimeout(tick, 1000);
     },
 
-    /** Runs the opening countdown, then starts the drill. */
+    /** Runs the opening countdown, then starts the drill. Pause waits for the start, as on Restart. */
     begin() {
+      if (pauseButton) pauseButton.disabled = true;
       shell.countdown(() => shell.start());
     },
 
