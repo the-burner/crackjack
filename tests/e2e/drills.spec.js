@@ -52,11 +52,11 @@ const whitePixels = canvas => canvas.evaluate(el => {
 });
 
 /** Taps the cell at (row, column) of an answer grid. */
-async function tapCell(screen, { row, column, rows, columns }) {
+async function tapCell(screen, { row, column, rows, columns, offset = 0 }) {
   const canvas = screen.locator('canvas.drill__answers');
   const box = await canvas.boundingBox();
   await canvas.click({
-    position: { x: (box.width / columns) * (column + 0.5), y: (box.height / rows) * (row + 0.5) },
+    position: { x: (box.width / columns) * (column + offset + 0.5), y: (box.height / rows) * (row + 0.5) },
   });
 }
 
@@ -273,8 +273,8 @@ test.describe('depth drill', () => {
     const screen = await launch(page, DRILLS[1]);
     expect(await statsText(screen)).toContain('Tests: 1');
 
-    // Two decks at full resolution offer one answer: "1".
-    await tapCell(screen, { row: 0, column: 1, rows: 1, columns: 2 });
+    // Two decks at full resolution offer one answer: "1", offset half a column.
+    await tapCell(screen, { row: 0, column: 1, rows: 1, columns: 2, offset: -0.5 });
     await expect(screen.locator('.drill__stats')).toContainText('Tests: 2');
     expect(await statsText(screen)).toContain('Accuracy: 100%');
   });
@@ -288,7 +288,7 @@ test.describe('depth drill', () => {
     // wrong tap (five tests in a row answered first time is a 1-in-3125 chance).
     for (let test = 1; test <= 5; test++) {
       for (let column = 1; column < 6; column++) {
-        await tapCell(screen, { row: 0, column, rows: 1, columns: 6 });
+        await tapCell(screen, { row: 0, column, rows: 1, columns: 6, offset: -0.5 });
         await page.waitForTimeout(200);
         if ((await statsText(screen)).includes(`Tests: ${test + 1}`)) break;
       }
@@ -342,6 +342,25 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await row.click();
   await page.getByRole('dialog', { name: 'Drill time' }).getByRole('button', { name: 'Cancel' }).click();
   await expect(row).toHaveText('00:05:01');
+});
+
+test('a drill stops while another screen covers it, and counts down on return', async ({ page }) => {
+  await open(page, { 'drills.count.testEvery': 'never' });
+  const screen = await launch(page, DRILLS[2]);
+  const time = () => screen.locator('.drill__stats td').nth(2).innerText();
+  const before = await time();
+
+  await screen.getByRole('button', { name: 'Help' }).click();
+  await expect(page.locator('[data-screen="help"]')).toBeVisible();
+  await page.waitForTimeout(2500);
+  // The clock did not run on behind the help screen.
+  expect(await time()).toBe(before);
+
+  await page.locator('[data-screen="help"] [data-action="back"]').click();
+  await expect(screen.locator('.drill__countdown')).toBeVisible();
+  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+  await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+  await expect.poll(time).not.toBe(before);
 });
 
 test.describe('count drill', () => {

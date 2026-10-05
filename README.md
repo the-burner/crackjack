@@ -105,14 +105,18 @@ data for the site) clears them, and the app starts from the defaults in
 npm install                          # dev dependencies (Vitest, Playwright)
 npm start                            # local server: http://127.0.0.1:4173/
 npm run serve                        # phone server: https://<your-mac>.local:8443/
-npx playwright install chromium      # once, for the browser tests
+npx playwright install chromium webkit  # once, for the browser tests
 npm test                             # unit tests
-npm run test:e2e                     # browser tests (starts its own server on port 4173)
+npm run test:e2e                     # browser tests in both engines (starts its own server on port 4173)
 npm run precache                     # update the service worker's file list after changing files
 npm run add-strategy -- <code>       # bundle a strategy by its export code (optional --name "...")
 npm run add-side-bet -- <code>       # bundle a side-bet game by its export code (optional --name "...")
 npm run logo                         # redraw the app icon and wordmark (tools/logo.mjs)
 ```
+
+The browser tests run twice, once in Chromium and once in WebKit (Safari's
+engine, so the closest check on what an iPhone runs). To run one engine only:
+`npx playwright test --project=webkit`.
 
 Run `npm run precache` whenever you add, remove or change a file the app serves;
 it refreshes the list and version in `public/sw.js` so installed copies update

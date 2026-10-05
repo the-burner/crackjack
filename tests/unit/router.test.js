@@ -6,16 +6,29 @@ function element() {
   return { hidden: false, dataset: {}, classList: { add() {}, remove() {} }, removed: false, remove() { this.removed = true; } };
 }
 
+/**
+ * A history with a pointer, as browsers have: pushing truncates whatever was
+ * ahead, and moving the pointer reports the entry it lands on.
+ */
 function fakeHistory() {
-  const entries = [{}];
+  const entries = [null];
+  let index = 0;
   let listener = null;
   return {
     entries,
-    pushState(state) { entries.push(state); },
+    get index() { return index; },
+    /** Entries ahead of the pointer, which a forward gesture could reach. */
+    get ahead() { return entries.length - 1 - index; },
+    pushState(state) {
+      entries.length = index + 1;
+      entries.push(state);
+      index += 1;
+    },
     back() { this.go(-1); },
+    forward() { this.go(1); },
     go(delta) {
-      for (let i = 0; i < -delta && entries.length > 1; i++) entries.pop();
-      queueMicrotask(() => listener?.());
+      index = Math.min(entries.length - 1, Math.max(0, index + delta));
+      queueMicrotask(() => listener?.({ state: entries[index] }));
     },
     window: { addEventListener: (type, fn) => { if (type === 'popstate') listener = fn; } },
   };
@@ -52,7 +65,7 @@ describe('Router', () => {
     router.open('b');
     router.open('c');
     // One guard each for a, b and c, so a back gesture can never reach past the app.
-    expect(history.entries.length).toBe(4);
+    expect(history.index).toBe(3);
   });
 
   it('gives a guard back for every screen closed inside the app', async () => {
@@ -60,18 +73,59 @@ describe('Router', () => {
     router.open('home');
     router.open('a');
     router.open('b');
-    expect(history.entries.length).toBe(3);
+    expect(history.index).toBe(2);
 
     router.back();
     await Promise.resolve();
     // The guard went back with the screen, and the popstate it caused was ignored.
-    expect(history.entries.length).toBe(2);
+    expect(history.index).toBe(1);
     expect(router.current.name).toBe('a');
 
     router.home();
     await Promise.resolve();
-    expect(history.entries.length).toBe(1);
+    expect(history.index).toBe(0);
     expect(router.current.name).toBe('home');
+  });
+
+  it('leaves the screens alone when the browser goes forward', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    router.open('a');
+    router.open('b');
+
+    history.back();
+    await Promise.resolve();
+    expect(router.current.name).toBe('a');
+    expect(history.ahead).toBe(1);
+
+    // Forward cannot reopen the closed screen, so it must not close another one.
+    history.forward();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(router.current.name).toBe('a');
+    expect(router.stack.map(s => s.name)).toEqual(['home', 'a']);
+    // Back is still worth exactly one screen afterwards.
+    history.back();
+    await Promise.resolve();
+    expect(router.current.name).toBe('home');
+  });
+
+  it('survives the browser running forward several times over', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    router.open('a');
+    router.open('b');
+    router.open('c');
+    history.go(-3);
+    await Promise.resolve();
+    expect(router.current.name).toBe('home');
+
+    for (let i = 0; i < 3; i++) {
+      history.forward();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(router.current.name).toBe('home');
+    }
   });
 
   it('never runs out of guards, however often screens are opened and closed', async () => {
@@ -86,9 +140,9 @@ describe('Router', () => {
       await Promise.resolve();
     }
     expect(router.current.name).toBe('home');
-    expect(history.entries.length).toBe(1);
+    expect(history.index).toBe(0);
     router.open('a');
-    expect(history.entries.length).toBe(2);
+    expect(history.index).toBe(1);
   });
 
   it('turns the browser back button into one step back', async () => {
@@ -100,7 +154,18 @@ describe('Router', () => {
     await Promise.resolve();
     expect(router.current.name).toBe('a');
     // One guard left, for the screen still open above home.
-    expect(history.entries.length).toBe(2);
+    expect(history.index).toBe(1);
+  });
+
+  it('closes one screen per guard when the browser goes back several at once', async () => {
+    const { router, history } = setup();
+    router.open('home');
+    router.open('a');
+    router.open('b');
+    router.open('c');
+    history.go(-2);
+    await Promise.resolve();
+    expect(router.stack.map(s => s.name)).toEqual(['home', 'a']);
   });
 
   it('goes back one screen per back press from a deep stack', async () => {
@@ -115,7 +180,7 @@ describe('Router', () => {
       expect(router.current.name).toBe(name);
     }
     // Home is showing with no guards left; the next press leaves the app.
-    expect(history.entries.length).toBe(1);
+    expect(history.index).toBe(0);
   });
 
   it('survives going home and opening screens in quick succession', async () => {
@@ -129,7 +194,7 @@ describe('Router', () => {
     }
     router.open('c');
     expect(router.current.name).toBe('c');
-    expect(history.entries.length).toBe(2);
+    expect(history.index).toBe(1);
   });
 
   it('detaches a screen even when it fails to tear itself down', () => {
@@ -141,6 +206,30 @@ describe('Router', () => {
     expect(() => router.back()).toThrow('boom');
     // The element is gone, so it cannot sit over the screen below catching taps.
     expect(el.removed).toBe(true);
+    expect(router.current.name).toBe('home');
+  });
+
+  it('closes an open dialog instead of the screen behind it', async () => {
+    const history = fakeHistory();
+    let overlays = 1;
+    const router = new Router({ append() {} }, {}, {
+      history,
+      window: history.window,
+      dismissOverlay: () => (overlays > 0 ? (overlays -= 1, true) : false),
+    });
+    for (const name of ['home', 'a']) router.register(name, () => ({ el: element() }));
+    router.open('home');
+    router.open('a');
+
+    // A back gesture while the dialog is up closes the dialog only.
+    history.back();
+    await Promise.resolve();
+    expect(overlays).toBe(0);
+    expect(router.current.name).toBe('a');
+    // The guard it used is back in place, so the next press closes the screen.
+    expect(history.index).toBe(1);
+    history.back();
+    await Promise.resolve();
     expect(router.current.name).toBe('home');
   });
 

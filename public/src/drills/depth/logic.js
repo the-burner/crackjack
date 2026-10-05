@@ -30,8 +30,13 @@ const TC_ROWS = 4;
 const TC_LOWEST = TRUE_COUNT_ANSWERS.low - 1;
 
 /**
- * The answer grid: one column per whole deck, that deck's steps stacked upwards.
- * A cell's value is the number of steps left, so "within 1" means one step.
+ * The answer grid: one column per whole deck, that deck's steps stacked upwards
+ * with the whole decks along the bottom. A cell's value is the number of steps
+ * left, so "within 1" means one step.
+ *
+ * The bottom row is offset half a column, so each whole deck sits between the
+ * fractions either side of it, like a piano's black keys, and reading the rows
+ * in a zig-zag gives the depths in order.
  * @param {object} o
  * @param {string} o.drill
  * @param {number} o.decks
@@ -41,22 +46,21 @@ const TC_LOWEST = TRUE_COUNT_ANSWERS.low - 1;
 export function depthGrid({ drill, decks, resolution, askInTray }) {
   if (isTrueCountDrill(drill)) return trueCountGrid();
   const steps = RESOLUTION_STEPS[resolution];
-  // Cells sit on quarter-deck lines; full resolution uses only the whole-deck
-  // line and half resolution leaves the quarter lines empty.
-  const quartersPerStep = 4 / steps;
-  const rows = { 1: 1, 2: 3, 4: 4 }[steps];
-  const topQuarter = 4 - rows;
   const cells = [];
-  for (let left = 0; left < decks * steps; left++) {
-    const column = Math.floor(left / steps);
-    const quarters = (left % steps) * quartersPerStep;
+  // Zero is never asked, so the bottom row starts at one whole deck.
+  for (let left = 1; left < decks * steps; left++) {
+    const step = left % steps;
     cells.push({
-      row: 3 - quarters - topQuarter,
-      column,
+      row: steps - 1 - step,
+      column: Math.floor(left / steps),
+      offset: step === 0 ? -0.5 : 0,
       value: left,
-      label: left === 0 ? '' : depthLabel(left / steps, { drill, decks, askInTray }),
+      label: depthLabel(left / steps, { drill, decks, askInTray }),
     });
   }
+  // A single deck has no whole-deck key, so the grid is only as tall as the
+  // fractions it does show.
+  const rows = cells.length ? Math.max(...cells.map(c => c.row)) + 1 : 1;
   return new AnswerGrid({ cells, rows, columns: decks });
 }
 

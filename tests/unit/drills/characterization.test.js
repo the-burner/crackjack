@@ -96,18 +96,32 @@ describe('flash indices and plays match the original', () => {
 });
 
 describe('depth answer grids match the original', () => {
+  /** Each column's labels from the top, with the empty rows between them dropped. */
+  const labelsByColumn = columns => columns.map(rows => rows.filter(label => label !== ''));
+  /** How many rows actually carry a label. */
+  const usedRows = columns => {
+    const rows = new Set();
+    columns.forEach(column => column.forEach((label, row) => { if (label !== '') rows.add(row); }));
+    return rows.size;
+  };
+
   for (const record of loadFixture('drills-depth-grids')) {
     const { config } = record;
     it(`${config.drill}, ${config.resolution} resolution, ${config.decks} decks${config.askInTray ? ', in tray' : ''}`, () => {
       const grid = depthGrid(config);
       const labelled = grid.cells.some(c => c.label !== '');
-      // One deck at full resolution has nothing to ask; the new options screen
-      // refuses it instead of showing an empty grid.
-      if (labelled) expect(grid.rows).toBe(record.rows);
       // The original kept its labels in karray[column][row].
       const mine = Array.from({ length: 12 }, (_, column) => Array.from({ length: 12 }, (_, row) =>
         grid.cells.find(c => c.column === column && c.row === row)?.label ?? ''));
-      expect(mine).toEqual(record.columns);
+      // Deliberate difference: at half resolution the original left an empty row
+      // between the halves and the whole decks, which the rebuild drops so the
+      // rows are evenly spaced (see depthGrid). Every label still belongs to the
+      // same column, in the same order down the screen, and the grid is exactly
+      // as many rows tall as the original had in use.
+      expect(labelsByColumn(mine)).toEqual(labelsByColumn(record.columns));
+      // One deck at full resolution has nothing to ask; the new options screen
+      // refuses it instead of showing an empty grid.
+      if (labelled) expect(grid.rows).toBe(usedRows(record.columns));
     });
   }
 });

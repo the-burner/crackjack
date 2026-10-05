@@ -4,6 +4,10 @@ import { test, expect } from '@playwright/test';
 
 test.use({ serviceWorkers: 'allow' });
 
+// Playwright's WebKit build crashes on reload while offline, so this one only
+// runs in Chromium; the service worker itself is engine-independent.
+test.skip(({ browserName }) => browserName === 'webkit', 'offline reload is unsupported in Playwright WebKit');
+
 test('runs offline after the first visit', async ({ page, context }) => {
   await page.goto('/index.html');
   await page.evaluate(async () => {

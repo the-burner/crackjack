@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../public/src/drills/shared/drill-clock.js';
 import { DrillScore, gradeAnswer, ACCURACY } from '../../../public/src/drills/shared/scoring.js';
 import { trayImage, maxDecksInTray } from '../../../public/src/drills/shared/discard-tray.js';
-import { numberGrid, windowContaining } from '../../../public/src/drills/shared/answer-grid.js';
+import { AnswerGrid, numberGrid, windowContaining } from '../../../public/src/drills/shared/answer-grid.js';
 import { clockTime, mixedNumber } from '../../../public/src/drills/shared/format.js';
 import { DrillShoe } from '../../../public/src/drills/shared/shoe.js';
 import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
@@ -82,6 +82,36 @@ describe('DrillClock', () => {
     clock.advance(30);
     expect(clock.rate(10)).toBe(20);
     expect(clock.rate(7)).toBe(14);
+  });
+});
+
+describe('AnswerGrid with an offset row', () => {
+  /** Two columns: a fraction row, and a whole row shifted half a column left. */
+  const grid = () => new AnswerGrid({
+    rows: 2,
+    columns: 2,
+    cells: [
+      { row: 0, column: 0, value: 1, label: '½' },
+      { row: 0, column: 1, value: 3, label: '1½' },
+      { row: 1, column: 1, value: 2, offset: -0.5, label: '1' },
+    ],
+  });
+
+  it('finds the offset cell under the point it is drawn at', () => {
+    // The offset key spans the middle of a 200px-wide grid: 50px to 150px.
+    expect(grid().cellAt(100, 30, 200, 40)?.label).toBe('1');
+    expect(grid().cellAt(55, 30, 200, 40)?.label).toBe('1');
+    expect(grid().cellAt(145, 30, 200, 40)?.label).toBe('1');
+  });
+
+  it('leaves the half key at each end of an offset row empty', () => {
+    expect(grid().cellAt(20, 30, 200, 40)).toBe(null);
+    expect(grid().cellAt(180, 30, 200, 40)).toBe(null);
+  });
+
+  it('still finds cells in rows that are not offset', () => {
+    expect(grid().cellAt(40, 10, 200, 40)?.label).toBe('½');
+    expect(grid().cellAt(160, 10, 200, 40)?.label).toBe('1½');
   });
 });
 

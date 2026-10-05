@@ -8,7 +8,7 @@ everything in `public/` is served as-is; nothing outside it reaches the browser.
 
 ```bash
 npm test                 # Vitest unit tests (fast; run after any logic change)
-npm run test:e2e         # Playwright browser tests (iPhone 13 profile, port 4173)
+npm run test:e2e         # Playwright browser tests (iPhone 13 profile, port 4173; Chromium and WebKit)
 npm run precache         # regenerate public/sw.js file list — REQUIRED after adding/removing/changing any served file
 npm run precache:check   # fails if sw.js is stale (also enforced by tests/unit/precache.test.js)
 npm start                # local server: http://127.0.0.1:4173/ (tools/server.mjs)

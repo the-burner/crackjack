@@ -317,12 +317,14 @@ export function countScreen(app) {
     el: shell.el,
     onShow() {
       if (started) {
+        shell.resumeIfSuspended();
         draw();
         return;
       }
       started = true;
       shell.begin();
     },
+    onHide: shell.suspend,
     destroy: shell.destroy,
   };
 }

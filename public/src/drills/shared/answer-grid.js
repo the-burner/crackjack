@@ -38,9 +38,13 @@ export class AnswerGrid {
 
   /** The cell at a pixel position inside a box of `width` x `height`, or null. */
   cellAt(x, y, width, height) {
-    const column = Math.floor((x / width) * this.columns);
+    const cellWidth = width / this.columns;
     const row = Math.floor((y / height) * this.rows);
-    return this.cells.find(c => c.row === row && c.column === column && c.label !== '') ?? null;
+    return this.cells.find(cell => {
+      if (cell.row !== row || cell.label === '') return false;
+      const left = cellLeft(cell) * cellWidth;
+      return x >= left && x < left + cellWidth;
+    }) ?? null;
   }
 
   mark(cell, state) {
@@ -63,12 +67,15 @@ export class AnswerGrid {
     const colors = Object.fromEntries(Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]));
     for (const cell of this.cells) {
       if (cell.label === '') continue;
-      drawTile(ctx, cell.column * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
+      drawTile(ctx, cellLeft(cell) * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
         cell.label, colors[this.states.get(cell) ?? 'idle']);
     }
     return ctx;
   }
 }
+
+/** A cell's left edge in columns; `offset` shifts a row sideways by part of a cell. */
+const cellLeft = cell => cell.column + (cell.offset ?? 0);
 
 /** One answer button: a rounded tile with centred text. */
 function drawTile(ctx, x, y, width, height, label, { fill, text }) {

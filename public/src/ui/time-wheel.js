@@ -2,6 +2,7 @@
 // iOS Timer. Promise based, like the dialogs.
 
 import { h } from './dom.js';
+import { registerOverlay } from './overlays.js';
 
 /** Row height; matches .wheel__item in app.css. */
 const ITEM_HEIGHT = 36;
@@ -102,6 +103,7 @@ export function pickDuration({ title, value, min = 0, max, columns = durationCol
     const close = result => {
       if (closed) return;
       closed = true;
+      unregister();
       overlay.classList.add('is-leaving');
       setTimeout(() => overlay.remove(), 180);
       document.removeEventListener('keydown', onKey);
@@ -119,6 +121,7 @@ export function pickDuration({ title, value, min = 0, max, columns = durationCol
           h('div', { class: 'sheet__title' }, title),
           h('button', { type: 'button', class: 'sheet__action sheet__action--done', onclick: done, 'data-action': 'done' }, 'Done')),
         h('div', { class: 'wheels' }, wheels)));
+    const unregister = registerOverlay(() => close(null));
     document.body.append(overlay);
     document.addEventListener('keydown', onKey);
     wheels.forEach(w => w.place());

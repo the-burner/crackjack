@@ -177,6 +177,20 @@ test('Play Blackjack keeps the saved seat count and opens the table', async ({ p
   expect(saved ?? 4).toBe(4);
 });
 
+test('going back closes an open dialog, not the screen behind it', async ({ page }) => {
+  await openHub(page, { fresh: true });
+  const el = await openOption(page, 'Basic Setup', 'settings.setup');
+  await el.locator('.value-btn').first().click();
+  await expect(page.locator('.dialog-overlay')).toBeVisible();
+
+  await page.goBack();
+  await expect(page.locator('.dialog-overlay')).toHaveCount(0);
+  // The screen is still there and still works.
+  await expect(el).toBeVisible();
+  await el.locator('.value-btn').first().click();
+  await expect(page.locator('.dialog-overlay')).toBeVisible();
+});
+
 test('a slider value can be typed into its number box', async ({ page }) => {
   await openHub(page, { fresh: true });
   const el = await openOption(page, 'Speed/Mechanics', 'settings.mechanics');

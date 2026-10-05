@@ -1,13 +1,21 @@
 // Modal message, confirmation and input dialogs (promise based).
 
 import { h } from './dom.js';
+import { registerOverlay } from './overlays.js';
 
 const APP_TITLE = 'Crackjack';
 
 function open({ title = APP_TITLE, message, input = null, buttons }) {
   return new Promise(resolve => {
     const field = input ? h('input', { class: 'dialog__input', type: input.type ?? 'text', value: input.value ?? '', inputmode: input.inputmode }) : null;
-    const close = result => { overlay.remove(); resolve(result); };
+    const close = result => {
+      unregister();
+      overlay.remove();
+      resolve(result);
+    };
+    // A back request dismisses the dialog as its last button would (Cancel, No, OK).
+    const dismissed = buttons[buttons.length - 1].value;
+    const unregister = registerOverlay(() => close(dismissed === 'input' ? null : dismissed));
     const overlay = h('div', { class: 'dialog-overlay', role: 'dialog', 'aria-modal': 'true' },
       h('div', { class: 'dialog' },
         h('div', { class: 'dialog__title' }, title),

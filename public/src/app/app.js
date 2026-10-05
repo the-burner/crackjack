@@ -6,6 +6,7 @@ import { Settings } from '../settings/store.js';
 import { SETTINGS_SCHEMA } from '../settings/schema.js';
 import { StrategyLibrary } from '../settings/strategies.js';
 import { Router } from './router.js';
+import { dismissTopOverlay } from '../ui/overlays.js';
 import { ErrorTallies } from '../services/error-tallies.js';
 
 /**
@@ -24,7 +25,7 @@ export function createServices({ backend } = {}) {
 
 export function createApp(root, { backend } = {}) {
   const app = createServices({ backend });
-  app.router = new Router(root, app);
+  app.router = new Router(root, app, { dismissOverlay: dismissTopOverlay });
   /** Opens the help page for a screen. */
   app.help = (topic, title) => app.router.open('help', { topic, title });
   app.open = (name, params) => app.router.open(name, params);

@@ -407,6 +407,7 @@ export function fullScreen(app) {
     el: shell.el,
     onShow() {
       if (started) {
+        shell.resumeIfSuspended();
         layout();
         return;
       }
@@ -414,6 +415,7 @@ export function fullScreen(app) {
       layout();
       shell.begin();
     },
+    onHide: shell.suspend,
     destroy: shell.destroy,
   };
 }

@@ -22,14 +22,24 @@ describe('depth answer grid', () => {
     expect(rows(grid)).toEqual([['', '1', '2', '3', '4', '5']]);
   });
 
-  it('leaves the quarter row empty at half resolution', () => {
+  it('stacks the halves straight above the whole decks, with no row between', () => {
     const grid = depthGrid({ drill: 'decksLeft', decks: 3, resolution: 'half', askInTray: false });
-    expect(grid.rows).toBe(3);
+    expect(grid.rows).toBe(2);
     expect(rows(grid)).toEqual([
       ['½', '1½', '2½'],
-      ['', '', ''],
       ['', '1', '2'],
     ]);
+  });
+
+  it('offsets the whole decks half a column, so they sit between the fractions', () => {
+    const grid = depthGrid({ drill: 'decksLeft', decks: 3, resolution: 'half', askInTray: false });
+    const offsets = label => grid.cells.filter(c => c.label === label).map(c => c.offset);
+    expect(offsets('1')).toEqual([-0.5]);
+    expect(offsets('2')).toEqual([-0.5]);
+    expect(offsets('½')).toEqual([0]);
+    expect(offsets('1½')).toEqual([0]);
+    // Zero is never asked, so no key is left empty on the bottom row.
+    expect(grid.cells.every(c => c.label !== '')).toBe(true);
   });
 
   it('shows two decks at quarter resolution as quarters', () => {
@@ -45,7 +55,7 @@ describe('depth answer grid', () => {
   it('counts half decks, quarter decks and aces', () => {
     const half = depthGrid({ drill: 'halfDecksLeft', decks: 6, resolution: 'half', askInTray: false });
     expect(rows(half)[0].slice(0, 3)).toEqual(['1', '3', '5']);
-    expect(rows(half)[2].slice(0, 3)).toEqual(['', '2', '4']);
+    expect(rows(half)[1].slice(0, 3)).toEqual(['', '2', '4']);
     const quarter = depthGrid({ drill: 'quarterDecksLeft', decks: 2, resolution: 'quarter', askInTray: false });
     expect(rows(quarter).map(r => r[0])).toEqual(['3', '2', '1', '']);
     const aces = depthGrid({ drill: 'acesLeft', decks: 2, resolution: 'full', askInTray: false });

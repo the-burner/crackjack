@@ -27,6 +27,10 @@ import { clockTime } from './format.js';
  */
 export function drillShell(app, { title, help, countLabel, className = '', pausable = false, onStart, onStop, onLayout, onPause, onResume, accuracyText = score => `Accuracy: ${score.accuracy}%` }) {
   const score = new DrillScore();
+  /** Paused because another screen covered the drill, rather than by the player. */
+  let suspended = false;
+  /** What the running countdown will do when it finishes, so it can be restarted. */
+  let pendingThen = null;
   const display = h('div', { class: 'drill__display' });
   const message = h('div', { class: 'drill__message' });
   const statsCells = {
@@ -98,6 +102,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
     /** Shows a "2, 1" countdown, then calls `then`. */
     countdown(then) {
       clearTimeout(shell.countdownTimer);
+      pendingThen = then;
       let remaining = 2;
       countdown.textContent = String(remaining);
       countdown.hidden = false;
@@ -109,6 +114,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
           return;
         }
         countdown.hidden = true;
+        pendingThen = null;
         then();
       };
       shell.countdownTimer = setTimeout(tick, 1000);
@@ -169,6 +175,39 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
       if (pauseButton) pauseButton.textContent = 'Continue';
       onPause?.(shell);
       shell.updateStats(shell.clock);
+    },
+
+    /**
+     * Another screen covered the drill (Help, say), so time must stop: the drill
+     * pauses as if the player had, and `resumeIfSuspended` picks it back up.
+     */
+    suspend() {
+      if (suspended) return;
+      if (pendingThen) {
+        clearTimeout(shell.countdownTimer);
+        countdown.hidden = true;
+        suspended = true;
+        return;
+      }
+      // A drill the player paused, or one that has finished, stays as it is.
+      if (!shell.clock?.running || shell.paused) return;
+      suspended = true;
+      shell.paused = true;
+      if (pauseButton) pauseButton.textContent = 'Continue';
+      onPause?.(shell);
+      shell.updateStats(shell.clock);
+    },
+
+    /**
+     * Picks the drill back up after `suspend`, counting down first.
+     * @returns {boolean} whether it had been suspended.
+     */
+    resumeIfSuspended() {
+      if (!suspended) return false;
+      suspended = false;
+      if (pendingThen) shell.countdown(pendingThen);
+      else shell.togglePause();
+      return true;
     },
 
     destroy() {

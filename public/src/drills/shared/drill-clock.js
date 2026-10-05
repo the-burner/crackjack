@@ -40,6 +40,11 @@ export class DrillClock {
     this.scheduleTick();
   }
 
+  /** Whether time is passing: started, not paused and not stopped. */
+  get running() {
+    return this.startedAt !== null && !this.paused;
+  }
+
   /** Seconds since the run started (0 before it starts; frozen once it stops). */
   get elapsed() {
     if (this.startedAt === null) return this.stoppedElapsed ?? 0;

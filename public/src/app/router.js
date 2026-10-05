@@ -11,19 +11,26 @@
 // depth means a back gesture from any depth can only ever consume a guard, never
 // the app's own entry. Going back in the app consumes a guard too (and ignores
 // the popstate that causes), so the two depths never drift apart.
+//
+// Each guard records how deep it is, because popstate reports going forward as
+// well as back and says nothing about the direction. Going back closes as many
+// screens as the move covered. Going forward cannot reopen a closed screen, so
+// the router returns to its own depth instead, leaving the screen alone.
 
 export class Router {
-  constructor(root, app, { history = globalThis.history, window: win = globalThis.window } = {}) {
+  constructor(root, app, { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false } = {}) {
     this.root = root;
     this.app = app;
     this.history = history;
+    /** Closes the top modal overlay, if one is open, instead of a screen. */
+    this.dismissOverlay = dismissOverlay;
     this.factories = new Map();
     this.stack = [];
-    /** Guard history entries in place; kept equal to `stack.length - 1`. */
+    /** Depth of the current history entry; kept equal to `stack.length - 1`. */
     this.guards = 0;
-    /** Popstate events caused by the router itself, which must not go back again. */
+    /** Popstate events caused by the router itself, which must not move screens. */
     this.selfPops = 0;
-    win?.addEventListener('popstate', () => this.onPopState());
+    win?.addEventListener('popstate', event => this.onPopState(event));
   }
 
   register(name, factory) {
@@ -68,6 +75,8 @@ export class Router {
    * @returns {boolean} false when the bottom screen is already showing.
    */
   back() {
+    // An open dialog or sheet is what a back request means to close.
+    if (this.dismissOverlay()) return true;
     if (this.stack.length <= 1) return false;
     if (this.closeTop()) this.dropGuards(1);
     return true;
@@ -107,8 +116,8 @@ export class Router {
   syncGuard() {
     if (!this.history) return;
     while (this.guards < this.stack.length - 1) {
-      this.history.pushState({ guard: true }, '');
       this.guards += 1;
+      this.history.pushState({ guard: true, depth: this.guards }, '');
     }
   }
 
@@ -123,17 +132,32 @@ export class Router {
     else this.history.go(-going);
   }
 
-  /** The user went back through a guard: go back one screen. */
-  onPopState() {
+  /** The browser moved through the history: match the screens to where it landed. */
+  onPopState(event) {
+    const depth = event?.state?.depth ?? 0;
+    const previous = this.guards;
+    this.guards = depth;
     if (this.selfPops > 0) {
       this.selfPops -= 1;
       return;
     }
-    // The browser has already taken the guard back.
-    if (this.guards > 0) this.guards -= 1;
-    this.closeTop();
-    // Puts the guard back when the top screen kept itself open.
-    this.syncGuard();
+    if (depth < previous) {
+      // Went back. An open dialog or sheet is closed first, and the guard it
+      // used is put back, so the screens stay where they are.
+      if (this.dismissOverlay()) {
+        this.syncGuard();
+        return;
+      }
+      for (let i = previous - depth; i > 0; i -= 1) {
+        if (!this.closeTop()) break;
+      }
+      // Puts a guard back when the top screen kept itself open.
+      this.syncGuard();
+      return;
+    }
+    // Went forward, past the screens that were closed on the way back. They
+    // cannot be reopened, so return to the depth the open screens stand at.
+    this.dropGuards(depth - (this.stack.length - 1));
   }
 
   dispose({ screen }) {
