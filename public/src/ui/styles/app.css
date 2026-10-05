@@ -101,7 +101,9 @@ html, body {
   background: var(--page-bg);
 }
 .screen[hidden] { display: none; }
-.screen:not([hidden]) { animation: fade-in 0.15s ease-out; }
+/* New screens fade in below their title bar; the bar itself stays steady, so
+   Back and Help do not flicker between screens. */
+.screen:not([hidden]) > :not(.topbar):not(.drill__bar):not(.table__bar) { animation: fade-in 0.15s ease-out; }
 
 .screen__body {
   flex: 1;

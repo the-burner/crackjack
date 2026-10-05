@@ -3,6 +3,8 @@
 :root {
   --table-bg: #004000;
   --table-bar-bg: #000;
+  /* The title strip in portrait (the status banner keeps --table-bar-bg). */
+  --table-strip: #000;
   --table-text: #fff;
   --table-accent: #ffff00;
   --status-error-text: #fff;
@@ -13,16 +15,19 @@
 
 .table { background: var(--table-bg); }
 
-/* Title bar: a black strip in portrait, floating over the felt in landscape. */
+/* Title bar: a strip like the drills' in portrait (same height and button
+   positions), floating over the felt in landscape. */
 .table__bar {
   display: flex;
   justify-content: space-between;
-  gap: 4px;
-  padding: 2px 4px;
-  background: var(--table-bar-bg);
+  align-items: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 2px 8px;
+  background: var(--table-strip);
 }
-.table__bar-end { display: flex; gap: 4px; }
-.table__bar .btn--nav { min-height: 36px; padding: 0 8px; background: transparent; color: var(--table-text); font: 400 15px var(--font); }
+.table__bar-end { display: flex; gap: 2px; }
+.table__bar .btn--nav { min-height: 40px; padding: 0 8px; background: transparent; color: var(--bar-text); font: 400 17px var(--font); }
 .table__bar .btn--nav:active { background: transparent; opacity: 0.5; }
 .table__bar .btn--icon-right { padding-right: 26px; }
 .table__bar .btn--icon-right::after { width: 14px; height: 14px; right: 6px; }

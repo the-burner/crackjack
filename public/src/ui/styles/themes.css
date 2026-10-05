@@ -86,6 +86,7 @@
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
   --bar-text: var(--accent);
+  --table-strip: var(--page-bg);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
   --panel-text: var(--ctp-text);
