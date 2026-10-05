@@ -63,6 +63,8 @@
   --logo-crack: #8839ef;
   --logo-jack: #fe640b;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Classic and Latte are light; Mocha overrides this in themes.css. */
+  color-scheme: light;
   --radius: 12px;
   --radius-s: 8px;
   --control-h: 44px;
@@ -80,7 +82,8 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: var(--page-bg);
+  /* On the root too, so the area an over-swipe reveals is the page colour. */
+  background-color: var(--page-bg);
   color: var(--text);
   font: 15px/1.35 var(--font);
   -webkit-font-smoothing: antialiased;
@@ -101,14 +104,16 @@ html, body {
   background: var(--page-bg);
 }
 .screen[hidden] { display: none; }
-/* New screens fade in below their title bar; the bar itself stays steady, so
-   Back and Help do not flicker between screens. */
-.screen:not([hidden]) > :not(.topbar):not(.drill__bar):not(.table__bar) { animation: fade-in 0.15s ease-out; }
+/* A screen being opened fades in below its title bar; the bar itself stays
+   steady, so Back and Help do not flicker. Screens revealed on back do not
+   animate, so going back shows them already in place. */
+.screen.is-entering > :not(.topbar):not(.drill__bar):not(.table__bar) { animation: fade-in 0.15s ease-out; }
 
 .screen__body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 8px 16px 24px;
 }
 

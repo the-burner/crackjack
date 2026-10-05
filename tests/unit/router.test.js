@@ -3,7 +3,7 @@ import { Router } from '../../public/src/app/router.js';
 
 /** Minimal DOM stand-ins: elements with `hidden`, `remove()` and `classList`. */
 function element() {
-  return { hidden: false, dataset: {}, classList: { add() {} }, removed: false, remove() { this.removed = true; } };
+  return { hidden: false, dataset: {}, classList: { add() {}, remove() {} }, removed: false, remove() { this.removed = true; } };
 }
 
 function fakeHistory() {

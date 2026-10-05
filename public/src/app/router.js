@@ -42,10 +42,12 @@ export class Router {
     const previous = this.current;
     if (previous) {
       previous.screen.onHide?.();
+      // Dropped so the screen does not animate again when it is revealed on back.
+      previous.screen.el.classList.remove('is-entering');
       previous.screen.el.hidden = true;
     }
     const screen = factory(this.app, params);
-    screen.el.classList.add('screen');
+    screen.el.classList.add('screen', 'is-entering');
     screen.el.dataset.screen = name;
     this.root.append(screen.el);
     this.stack.push({ name, screen });
