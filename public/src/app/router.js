@@ -5,17 +5,27 @@
 //   { el, onShow?(), onHide?(), destroy?(), onBack?() }
 // `onBack` may return true to handle the back request itself.
 //
-// The browser's back button (or the phone's back gesture) should go back one
-// screen rather than leave the app, so the router keeps one extra history entry
-// — a guard — per screen above the bottom one. Matching history depth to screen
-// depth means a back gesture from any depth can only ever consume a guard, never
-// the app's own entry. Going back in the app consumes a guard too (and ignores
-// the popstate that causes), so the two depths never drift apart.
+// Each screen gets a history entry, and that entry records the whole stack of
+// screens open at the time. Going back or forward therefore needs no guesswork
+// about which way the browser moved: `popstate` hands over the stack that entry
+// stood for, and the router brings the open screens in line with it, closing
+// what is no longer there and reopening what is. Going back inside the app asks
+// the browser to go back as well, so the history and the screens are only ever
+// changed in one place.
 //
-// Each guard records how deep it is, because popstate reports going forward as
-// well as back and says nothing about the direction. Going back closes as many
-// screens as the move covered. Going forward cannot reopen a closed screen, so
-// the router returns to its own depth instead, leaving the screen alone.
+// Screens opened with something that cannot be stored in a history entry (a
+// callback, a live session) are remembered as unrestorable: going back past one
+// still closes it, but going forward stops there rather than rebuilding it
+// wrongly.
+
+/** Params a history entry can carry, or null when they cannot be stored. */
+function storableParams(params) {
+  try {
+    return structuredClone(params ?? {});
+  } catch {
+    return null;
+  }
+}
 
 export class Router {
   constructor(root, app, { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false } = {}) {
@@ -26,10 +36,6 @@ export class Router {
     this.dismissOverlay = dismissOverlay;
     this.factories = new Map();
     this.stack = [];
-    /** Depth of the current history entry; kept equal to `stack.length - 1`. */
-    this.guards = 0;
-    /** Popstate events caused by the router itself, which must not move screens. */
-    this.selfPops = 0;
     win?.addEventListener('popstate', event => this.onPopState(event));
   }
 
@@ -42,24 +48,18 @@ export class Router {
     return this.stack[this.stack.length - 1] ?? null;
   }
 
-  /** Opens a screen on top of the current one. */
+  /** The open screens as a history entry describes them. */
+  get entry() {
+    return { screens: this.stack.map(({ name, params }) => ({ name, params })) };
+  }
+
+  /** Opens a screen on top of the current one, and records it in the history. */
   open(name, params = {}) {
-    const factory = this.factories.get(name);
-    if (!factory) throw new Error(`Unknown screen: ${name}`);
-    const previous = this.current;
-    if (previous) {
-      previous.screen.onHide?.();
-      // Dropped so the screen does not animate again when it is revealed on back.
-      previous.screen.el.classList.remove('is-entering');
-      previous.screen.el.hidden = true;
-    }
-    const screen = factory(this.app, params);
-    screen.el.classList.add('screen', 'is-entering');
-    screen.el.dataset.screen = name;
-    this.root.append(screen.el);
-    this.stack.push({ name, screen });
-    this.syncGuard();
-    screen.onShow?.();
+    const screen = this.mount(name, params);
+    // The bottom screen is the entry the app started on, so it replaces that
+    // entry's state rather than adding one of its own.
+    if (this.stack.length > 1) this.history?.pushState(this.entry, '');
+    else this.history?.replaceState?.(this.entry, '');
     return screen;
   }
 
@@ -67,28 +67,31 @@ export class Router {
   replace(name, params = {}) {
     const top = this.stack.pop();
     if (top) this.dispose(top);
-    return this.open(name, params);
+    const screen = this.mount(name, params);
+    this.history?.replaceState?.(this.entry, '');
+    return screen;
   }
 
   /**
-   * Closes the current screen and shows the one below.
+   * Closes the current screen and shows the one below. The history goes back
+   * too, and its popstate is what actually closes the screen.
    * @returns {boolean} false when the bottom screen is already showing.
    */
   back() {
     // An open dialog or sheet is what a back request means to close.
     if (this.dismissOverlay()) return true;
     if (this.stack.length <= 1) return false;
-    if (this.closeTop()) this.dropGuards(1);
+    if (this.history) this.history.back();
+    else this.closeTop();
     return true;
   }
 
   /** Returns to the bottom (home) screen. */
   home() {
-    const closed = this.stack.length - 1;
-    if (closed <= 0) return;
-    while (this.stack.length > 1) this.dispose(this.stack.pop());
-    this.showCurrent();
-    this.dropGuards(closed);
+    const open = this.stack.length - 1;
+    if (open <= 0) return;
+    if (this.history) this.history.go(-open);
+    else while (this.closeTop());
   }
 
   /**
@@ -112,52 +115,60 @@ export class Router {
     below.screen.onShow?.();
   }
 
-  /** Adds guard entries until there is one per screen above the bottom. */
-  syncGuard() {
-    if (!this.history) return;
-    while (this.guards < this.stack.length - 1) {
-      this.guards += 1;
-      this.history.pushState({ guard: true, depth: this.guards }, '');
+  /** Builds a screen and puts it on top of the stack, history untouched. */
+  mount(name, params) {
+    const factory = this.factories.get(name);
+    if (!factory) throw new Error(`Unknown screen: ${name}`);
+    const previous = this.current;
+    if (previous) {
+      previous.screen.onHide?.();
+      // Dropped so the screen does not animate again when it is revealed on back.
+      previous.screen.el.classList.remove('is-entering');
+      previous.screen.el.hidden = true;
     }
+    const screen = factory(this.app, params);
+    screen.el.classList.add('screen', 'is-entering');
+    screen.el.dataset.screen = name;
+    this.root.append(screen.el);
+    this.stack.push({ name, screen, params: storableParams(params) });
+    screen.onShow?.();
+    return screen;
   }
 
-  /** Gives `count` guards back to the browser, ignoring the popstate that follows. */
-  dropGuards(count) {
-    const going = Math.min(count, this.guards);
-    if (!this.history || going === 0) return;
-    this.guards -= going;
-    // One history move reports one popstate, however many entries it covers.
-    this.selfPops += 1;
-    if (going === 1) this.history.back();
-    else this.history.go(-going);
-  }
-
-  /** The browser moved through the history: match the screens to where it landed. */
+  /** The browser moved through the history: show what that entry stood for. */
   onPopState(event) {
-    const depth = event?.state?.depth ?? 0;
-    const previous = this.guards;
-    this.guards = depth;
-    if (this.selfPops > 0) {
-      this.selfPops -= 1;
+    const wanted = event?.state?.screens;
+    // An entry that is not the router's own — a foreign one, or one whose state
+    // the browser lost — says nothing about the screens, so they are left be.
+    if (!Array.isArray(wanted) || wanted.length === 0) return;
+    // A back request with a dialog or sheet up closes that instead, and the
+    // entry it used goes back.
+    if (wanted.length < this.stack.length && this.dismissOverlay()) {
+      this.history?.pushState(this.entry, '');
       return;
     }
-    if (depth < previous) {
-      // Went back. An open dialog or sheet is closed first, and the guard it
-      // used is put back, so the screens stay where they are.
-      if (this.dismissOverlay()) {
-        this.syncGuard();
+    this.reconcile(wanted);
+  }
+
+  /**
+   * Brings the open screens in line with the stack a history entry describes.
+   * @param {{name: string, params: object|null}[]} wanted
+   */
+  reconcile(wanted) {
+    // Closes from the top until what is left is the start of the wanted stack.
+    while (this.stack.length > wanted.length
+      || (this.stack.length > 1 && this.current.name !== wanted[this.stack.length - 1].name)) {
+      if (!this.closeTop()) {
+        // A screen kept itself open, so the entry it would have used goes back.
+        this.history?.pushState(this.entry, '');
         return;
       }
-      for (let i = previous - depth; i > 0; i -= 1) {
-        if (!this.closeTop()) break;
-      }
-      // Puts a guard back when the top screen kept itself open.
-      this.syncGuard();
-      return;
     }
-    // Went forward, past the screens that were closed on the way back. They
-    // cannot be reopened, so return to the depth the open screens stand at.
-    this.dropGuards(depth - (this.stack.length - 1));
+    // Reopens the rest, as far as they can be rebuilt.
+    for (const { name, params } of wanted.slice(this.stack.length)) {
+      if (params === null || !this.factories.has(name)) break;
+      this.mount(name, params);
+    }
   }
 
   dispose({ screen }) {
