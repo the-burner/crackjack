@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = '11d198697ca3';
+const VERSION = '4bd5508d7723';
 const FILES = [
   './',
   './assets/cards/card-back.png',
@@ -549,6 +549,7 @@ const FILES = [
   './src/ui/components.js',
   './src/ui/dialogs.js',
   './src/ui/dom.js',
+  './src/ui/double-tap.js',
   './src/ui/screen.js',
   './src/ui/styles/app.css',
   './src/ui/styles/drills.css',

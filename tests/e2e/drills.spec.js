@@ -166,6 +166,26 @@ test.describe('flash drill', () => {
     await expect(screen).toBeVisible();
   });
 
+  test('a double tap on the cards is Surrender; diagonal swipes do nothing', async ({ page }) => {
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
+    const screen = await launch(page, DRILLS[0]);
+    const cards = screen.locator('canvas.drill__cards');
+    const box = await cards.boundingBox();
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+
+    // A diagonal swipe is ignored.
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 60, y + 60, { steps: 5 });
+    await page.mouse.up();
+    await expect(screen.locator('.drill__message')).toHaveText('');
+
+    // Only Hard H/S is selected, so Surrender is refused with a message.
+    await cards.dblclick({ position: { x: box.width / 2, y: box.height / 2 } });
+    await expect(screen.locator('.drill__message')).toContainText('Surrender situations were not selected');
+  });
+
   test('pauses, restarts and goes back', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.handsPerDrill': 50, 'drills.flash.testMode': 'errorsAtEnd' });
     // Pause is unavailable during the opening countdown, as it is after Restart.

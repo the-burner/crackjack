@@ -1,11 +1,13 @@
-// Swipe gestures on the felt, so the table can be played with the action
-// buttons hidden: down = Hit, left = Stand, up = Double, right = Split, any
-// diagonal = Surrender. While insurance is offered, vertical = Insure and
-// horizontal = Pass.
+// Gestures on the felt, so the table can be played with the action buttons
+// hidden: swipe down = Hit, left = Stand, up = Double, right = Split, and a
+// double tap = Surrender. While insurance is offered, vertical = Insure and
+// horizontal = Pass. Diagonal swipes mean nothing.
+
+import { doubleTapDetector } from '../../ui/double-tap.js';
 
 /** A swipe shorter than this is a tap, not a gesture. */
 export const MIN_SWIPE = 30;
-/** How far from a diagonal a swipe may be and still count as one. */
+/** How far from a diagonal a swipe may be and still count as one (and be ignored). */
 const DIAGONAL_RATIO = 1.5;
 
 /**
@@ -23,23 +25,32 @@ export function swipeAction({ dx, dy, insurance = false, minDistance = MIN_SWIPE
   // Measure the real distance, so a short swipe is dropped whatever its
   // direction.
   if (Math.hypot(dx, dy) < minDistance) return null;
-  if (ax < DIAGONAL_RATIO * ay && ay < DIAGONAL_RATIO * ax) return 'surrender';
+  if (ax < DIAGONAL_RATIO * ay && ay < DIAGONAL_RATIO * ax) return null;
   if (ax > ay) return insurance ? 'pass' : dx < 0 ? 'stand' : 'split';
   return insurance ? 'insure' : dy < 0 ? 'double' : 'hit';
 }
 
 /**
- * Reports swipes on an element. Returns a function that detaches the listeners.
+ * Reports swipes and double taps on an element. Taps on buttons and the bet
+ * panel are theirs, not gestures. Returns a function that detaches the listeners.
  * @param {HTMLElement} el
  * @param {(action: string, event: PointerEvent) => void} onSwipe
  */
 export function attachSwipes(el, onSwipe, { insurance = () => false } = {}) {
   let start = null;
+  const doubleTap = doubleTapDetector();
   const down = event => { start = { x: event.clientX, y: event.clientY }; };
   const up = event => {
     if (!start) return;
-    const action = swipeAction({ dx: event.clientX - start.x, dy: event.clientY - start.y, insurance: insurance() });
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
     start = null;
+    if (Math.hypot(dx, dy) < MIN_SWIPE) {
+      if (event.target.closest?.('button, .bet-overlay')) return;
+      if (doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })) onSwipe('surrender', event);
+      return;
+    }
+    const action = swipeAction({ dx, dy, insurance: insurance() });
     if (action) onSwipe(action, event);
   };
   const cancel = () => { start = null; };

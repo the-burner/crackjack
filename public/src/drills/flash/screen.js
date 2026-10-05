@@ -4,6 +4,7 @@ import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { confirm } from '../../ui/dialogs.js';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '../../ui/card-sprites.js';
+import { doubleTapDetector } from '../../ui/double-tap.js';
 import { cssVar } from '../../ui/theme.js';
 import { valueName } from '../../core/cards.js';
 import { ACTION } from '../../core/strategy/advisor.js';
@@ -364,12 +365,17 @@ export function flashScreen(app) {
 
   grid.addEventListener('click', gridTap);
   let swipeFrom = null;
+  const doubleTap = doubleTapDetector();
   canvas.addEventListener('pointerdown', event => { swipeFrom = { x: event.clientX, y: event.clientY }; });
   canvas.addEventListener('pointerup', event => {
     if (!swipeFrom || indexTest || silent) return;
     const dx = event.clientX - swipeFrom.x;
     const dy = event.clientY - swipeFrom.y;
     swipeFrom = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < MIN_SWIPE_PIXELS) {
+      if (doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })) answer(ACTION.surrender);
+      return;
+    }
     answer(swipeAction(dx, dy));
   });
 
@@ -391,14 +397,14 @@ export function flashScreen(app) {
 
 /**
  * The action a swipe stands for: down = hit, left = stand, up = double,
- * right = split, diagonal = surrender. Taps are ignored.
+ * right = split. Diagonals and taps are ignored (a double tap is Surrender).
  * @returns {number|null}
  */
 export function swipeAction(dx, dy) {
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
   if (Math.max(ax, ay) < MIN_SWIPE_PIXELS) return null;
-  if (ax < 1.5 * ay && ay < 1.5 * ax) return ACTION.surrender;
+  if (ax < 1.5 * ay && ay < 1.5 * ax) return null;
   if (ax > ay) return dx < 0 ? ACTION.stand : ACTION.split;
   return dy < 0 ? ACTION.double : ACTION.hit;
 }

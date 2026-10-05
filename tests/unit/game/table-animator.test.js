@@ -133,9 +133,9 @@ describe('swipe gestures', () => {
     expect(swipeAction({ dx: 60, dy: 0 })).toBe('split');
   });
 
-  it('reads any diagonal as surrender', () => {
-    expect(swipeAction({ dx: 50, dy: 50 })).toBe('surrender');
-    expect(swipeAction({ dx: -50, dy: 60 })).toBe('surrender');
+  it('ignores diagonal swipes (Surrender is a double tap)', () => {
+    expect(swipeAction({ dx: 50, dy: 50 })).toBe(null);
+    expect(swipeAction({ dx: -50, dy: 60 })).toBe(null);
   });
 
   it('answers the insurance offer instead', () => {
