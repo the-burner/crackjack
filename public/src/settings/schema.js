@@ -155,18 +155,22 @@ export const SETTINGS_SCHEMA = {
   'display.showTrueCount': bool(false),
 
   // Flash drills.
-  'drills.flash.hands': oneOf(['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom'], 'default'),
+  'drills.flash.hands': oneOf(['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom', 'roundRobin'], 'default'),
   'drills.flash.customHands': json(tableGrids(true)),
   'drills.flash.situations': json({ hardStand: true, softStand: true, hardDouble: true, softDouble: true, split: true, surrender: true }),
   'drills.flash.countMode': oneOf(['zero', 'random', 'fixed', 'indexTest'], 'random'),
   'drills.flash.fixedCount': int(0, -99, 99),
   'drills.flash.maxCards': oneOf([2, 3, 4, 5], 2),
   'drills.flash.testMode': oneOf(['warn', 'errorsAtEnd', 'none'], 'warn'),
-  'drills.flash.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
+  /** Warn on error: a brief "X is incorrect" instead of the blocking explanation. */
+  'drills.flash.nonBlockingErrors': bool(false),
+  'drills.flash.timerMode': oneOf(['auto', 'countDownHalt', 'infinite'], 'countDownHalt'),
+  /** Rounds and Infinite: whether each hand has a time limit (the Time per hand below). */
+  'drills.flash.timePerHand': bool(true),
   'drills.flash.handsPerDrill': int(50, 10, 1000),
   'drills.flash.decks': oneOf(DECKS, 6),
   'drills.flash.spanishDecks': bool(false),
-  /** Auto timer mode: seconds to answer each hand. */
+  /** Rounds and Infinite timer modes: seconds to answer each hand. */
   'drills.flash.seconds': int(10, 1, 60),
   /** The count-down and count-up timer modes: seconds for the whole drill. */
   'drills.flash.drillSeconds': int(180, 10, 1799),

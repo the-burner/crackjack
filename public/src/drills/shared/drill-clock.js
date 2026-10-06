@@ -3,7 +3,7 @@
 //
 // Time comes from an injectable clock (seconds), so tests can drive it.
 
-export const TIMER_MODE = { auto: 'auto', countDown: 'countDown', countUp: 'countUp', countDownHalt: 'countDownHalt' };
+export const TIMER_MODE = { auto: 'auto', countDown: 'countDown', countUp: 'countUp', countDownHalt: 'countDownHalt', infinite: 'infinite' };
 
 export class DrillClock {
   /**
@@ -85,7 +85,8 @@ export class DrillClock {
     if (this.alarmed) return;
     const elapsed = this.elapsed;
     const reached = this.mode === TIMER_MODE.countUp ? elapsed >= this.limit : this.limit - elapsed < 0;
-    if (this.mode === TIMER_MODE.auto || !reached) return;
+    // Auto and Infinite count up with no limit to reach.
+    if (this.mode === TIMER_MODE.auto || this.mode === TIMER_MODE.infinite || !reached) return;
     this.alarmed = true;
     this.onAlarm?.();
     if (this.mode === TIMER_MODE.countDownHalt) this.onHalt?.();

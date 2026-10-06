@@ -3,6 +3,7 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { confirm } from '../../ui/dialogs.js';
+import { toast } from '../../ui/toast.js';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '../../ui/card-sprites.js';
 import { doubleTapDetector } from '../../ui/double-tap.js';
 import { cssVar } from '../../ui/theme.js';
@@ -14,7 +15,7 @@ import { drillStrategy } from '../shared/drill-settings.js';
 import { countGrid, countWindow, INITIAL_WINDOW } from '../shared/count-grid.js';
 import { drawGridIn } from '../shared/answer-grid.js';
 import {
-  buildHandList, dealHand, handIndex, countForHand, correctPlay, errorCell,
+  buildHandList, dealHand, handIndex, countForHand, correctPlay, errorCell, RoundRobin,
   describeHand, rowOf, columnOf, ACTION_LABELS, SITUATION_LABELS,
 } from './logic.js';
 
@@ -42,8 +43,10 @@ export function flashScreen(app) {
     fixedCount: s.get('drills.flash.fixedCount'),
     maxCards: s.get('drills.flash.maxCards'),
     testMode: s.get('drills.flash.testMode'),
+    nonBlockingErrors: s.get('drills.flash.nonBlockingErrors'),
     timerMode: s.get('drills.flash.timerMode'),
     handsPerDrill: s.get('drills.flash.handsPerDrill'),
+    timePerHand: s.get('drills.flash.timePerHand'),
     decks: s.get('drills.flash.decks'),
     spanish: s.get('drills.flash.spanishDecks'),
     seconds: s.get('drills.flash.seconds'),
@@ -55,6 +58,8 @@ export function flashScreen(app) {
   const indexTest = options.countMode === 'indexTest';
   const warn = options.testMode === 'warn';
   const silent = options.testMode === 'none';
+  /** Warns with a brief pop-up and lets the player keep trying, instead of stopping to explain. */
+  const nonBlocking = warn && options.nonBlockingErrors;
   // The Drill-Errors list is about mistakes, so splitting is always a legal answer.
   const situations = { ...options.situations, split: options.situations.split || options.hands === 'drillErrors' };
 
@@ -74,6 +79,8 @@ export function flashScreen(app) {
 
   let run = -1;
   let list = [];
+  /** Deals the Round Robin list in order; null for the other hand lists. */
+  let robin = null;
   let hand = null;
   let count = 0;
   let index = null;
@@ -101,7 +108,10 @@ export function flashScreen(app) {
   shell.body.append(indexTest ? gridWrap : answers);
   showButtons();
 
-  /** Seconds per hand (Rounds mode); with Progressive Speed, 10% less on each Restart. */
+  /** Rounds and Infinite can time each hand; Count Down & Halt times the whole drill. */
+  const timedHands = options.timePerHand
+    && (options.timerMode === TIMER_MODE.auto || options.timerMode === TIMER_MODE.infinite);
+  /** Seconds per hand; with Progressive Speed, 10% less on each Restart. */
   const speed = () => progressiveSpeed(options.seconds, run, options.progressive);
 
   function start() {
@@ -116,6 +126,8 @@ export function flashScreen(app) {
       tallies: app.errorTallies.load(),
     });
     list = built.entries;
+    // Round Robin deals every hand once, in a random order, before any repeats.
+    robin = options.hands === 'roundRobin' ? new RoundRobin(list, Math.random) : null;
     if (built.error) {
       shell.setMessage(built.error);
       return;
@@ -139,7 +151,7 @@ export function flashScreen(app) {
   /** Deals the next hand. */
   function nextHand() {
     for (let attempt = 0; attempt < MAX_REDEALS; attempt++) {
-      hand = dealHand(list, options, Math.random);
+      hand = dealHand(robin ? [robin.next()] : list, options, Math.random);
       if (!hand) {
         shell.setMessage('There are no situations selected. Try changing the Situations or Hands option.');
         finish();
@@ -167,8 +179,8 @@ export function flashScreen(app) {
     highlight(null);
     draw();
     shell.updateStats(shell.clock);
-    // A hand only times out when the drill paces itself.
-    if (options.timerMode === TIMER_MODE.auto) shell.clock.after('hand', speed(), timeout);
+    // A hand only times out when the drill gives each hand a time limit.
+    if (timedHands) shell.clock.after('hand', speed(), timeout);
   }
 
   function timeout() {
@@ -180,6 +192,8 @@ export function flashScreen(app) {
     if (indexTest) {
       answerGrid.mark(answerGrid.cellFor(index), 'correct');
       draw();
+    } else if (nonBlocking) {
+      toast('Out of time', { position: 'top' });
     } else if (warn) {
       highlight(play.action);
     } else {
@@ -206,7 +220,9 @@ export function flashScreen(app) {
       return;
     }
     if (!answered) recordError(action);
-    if (warn) {
+    if (nonBlocking) {
+      toast(`${ACTION_LABELS[action]} is incorrect`, { position: 'top' });
+    } else if (warn) {
       highlight(play.action);
       explain(action);
     } else {

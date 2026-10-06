@@ -66,6 +66,15 @@ describe('DrillClock', () => {
     expect(clock.display()).toEqual({ seconds: 0, overdue: true });
   });
 
+  it('counts up with no limit in Infinite mode', () => {
+    const clock = fakeClock();
+    clock.mode = TIMER_MODE.infinite;
+    clock.start();
+    clock.advance(25);
+    expect(clock.display()).toEqual({ seconds: 25, overdue: false });
+    expect(clock.alarms ?? 0).toBe(0);
+  });
+
   it('excludes paused time from the elapsed total', () => {
     const clock = fakeClock();
     clock.start();

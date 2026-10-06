@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildHandList, dealHand, fillHand, handIndex, countForHand, correctPlay, errorCell,
   describeHand, describeEntry, errorCellsAsHands, errorSummary, percent, rowOf, columnOf, upcardOf, SITUATIONS,
+  roundRobinEntries, RoundRobin,
 } from '../../../public/src/drills/flash/logic.js';
 import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
@@ -273,3 +274,76 @@ describe('descriptions', () => {
     expect([0, 0.004, 0.2, 0.666, 1].map(percent)).toEqual(['0%', '<1%', '20%', '67%', '100%']);
   });
 });
+
+describe('Round Robin', () => {
+  const all = Object.fromEntries(SITUATIONS.map(kind => [kind, true]));
+  const key = e => `${e.kind} ${e.value} v ${e.upcard}`;
+
+  it('lists each player hand once per dealer card, merging situations that share it', () => {
+    const entries = roundRobinEntries(all);
+    // Hard 5-17, soft 2-9 (A,2 to A,9) and ten pairs, against ten dealer cards.
+    expect(entries.length).toBe((13 + 8 + 10) * 10);
+    const hardTenVsTen = entries.filter(e => e.upcard === 10 && e.value === 10 && e.kinds.includes('hardStand'));
+    expect(hardTenVsTen).toHaveLength(1);
+    expect(hardTenVsTen[0].kinds).toEqual(['hardStand', 'hardDouble']);
+    // A pair is a hand of its own: 5,5 v 10 is not hard 10 v 10.
+    expect(entries.filter(e => e.upcard === 10 && e.value === 5 && e.kinds.includes('split'))).toHaveLength(1);
+  });
+
+  it('covers only the selected situations', () => {
+    const entries = roundRobinEntries({ ...Object.fromEntries(SITUATIONS.map(k => [k, false])), softDouble: true });
+    expect(entries.length).toBe(8 * 10);
+    expect(entries.every(e => e.kinds.join() === 'softDouble')).toBe(true);
+  });
+
+  it('deals every hand once before any hand repeats', () => {
+    const entries = roundRobinEntries(all);
+    const robin = new RoundRobin(entries, seededRandom(3));
+    for (let round = 0; round < 3; round++) {
+      const dealt = Array.from({ length: entries.length }, () => robin.next());
+      expect(new Set(dealt).size).toBe(entries.length);
+    }
+  });
+
+  it('never starts a new round with the hand the last one ended on', () => {
+    const entries = roundRobinEntries({ ...Object.fromEntries(SITUATIONS.map(k => [k, false])), surrender: true });
+    for (let seed = 1; seed <= 40; seed++) {
+      const robin = new RoundRobin(entries, seededRandom(seed));
+      let last = null;
+      for (let i = 0; i < entries.length * 3; i++) {
+        const next = robin.next();
+        expect(next).not.toBe(last);
+        last = next;
+      }
+    }
+  });
+
+  it('deals a merged hand as one of the selected situations only', () => {
+    const entries = roundRobinEntries(all);
+    const hardTenVsTen = entries.find(e => e.upcard === 10 && e.value === 10 && e.kinds.includes('hardDouble'));
+    const onlyDoubles = { ...Object.fromEntries(SITUATIONS.map(k => [k, false])), hardDouble: true };
+    const random = seededRandom(9);
+    for (let i = 0; i < 30; i++) {
+      const hand = dealHand([hardTenVsTen], { situations: onlyDoubles, maxCards: 4, doubleAnyCards: false }, random);
+      expect(hand.kind).toBe('hardDouble');
+      expect(hand.total).toBe(10);
+      expect(hand.soft).toBe(false);
+      // Hard doubles are two-card hands unless doubling after any number of cards is allowed.
+      expect(hand.cardCount).toBe(2);
+    }
+  });
+
+  it('makes the same hand from different cards', () => {
+    const entries = roundRobinEntries(all);
+    const hardFourteen = entries.find(e => e.upcard === 10 && e.value === 14 && e.kinds.includes('hardStand'));
+    const random = seededRandom(5);
+    const makes = new Set();
+    for (let i = 0; i < 60; i++) {
+      const hand = dealHand([hardFourteen], { situations: all, maxCards: 3, doubleAnyCards: false }, random);
+      expect(hand.total).toBe(14);
+      makes.add(hand.cards.join('+'));
+    }
+    expect(makes.size).toBeGreaterThan(3);
+  });
+});
+

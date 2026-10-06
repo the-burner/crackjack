@@ -14,6 +14,7 @@ const HANDS_OPTIONS = [
   { value: 'withIndices', label: 'Hands: Hands with Indices' },
   { value: 'drillErrors', label: 'Hands: Drill Errors' },
   { value: 'custom', label: 'Hands: Custom' },
+  { value: 'roundRobin', label: 'Hands: Round Robin' },
 ];
 
 const COUNT_OPTIONS = [
@@ -46,11 +47,18 @@ const DECK_OPTIONS = [
 
 const SITUATION_ITEMS = SITUATIONS.map(flag => ({ flag, label: SITUATION_LABELS[flag] }));
 
-/** Flash plays a set number of rounds, each hand timed, or plays until the drill time runs out. */
+/**
+ * Rounds: a set number of hands. Count Down & Halt: until the drill time runs
+ * out. Infinite: until stopped, with the time counting up.
+ */
 const FLASH_TIMER_OPTIONS = [
   { value: 'auto', label: 'Timer Mode: Rounds' },
   COUNT_DOWN_HALT_OPTION,
+  { value: 'infinite', label: 'Timer Mode: Infinite' },
 ];
+
+/** Timer modes in which each hand may have a time limit. */
+const TIMED_HAND_MODES = ['auto', 'infinite'];
 
 export function flashOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
@@ -59,20 +67,28 @@ export function flashOptionsScreen(app) {
   });
   const { form } = screen;
 
-  // Auto mode times each hand; Count Down & Halt times the whole drill.
+  /** Only Warn on error shows error pop-ups, so only it can make them non-blocking. */
+  const nonBlockingToggle = form.checks([{ label: 'Non-blocking error pop-ups', key: 'nonBlockingErrors' }]);
   /** The set count; only Count: Set Count to: uses it. */
   const countButton = form.number('Count', 'fixedCount', { prompt: 'Count' });
+  // Rounds and Infinite may time each hand; Count Down & Halt times the whole drill.
   const roundsButton = form.number('Rounds', 'handsPerDrill', { prompt: 'Rounds' });
+  const perHandToggle = form.checks([{ label: 'Time limit per hand', key: 'timePerHand' }]);
   const perHandRow = form.duration('Time per hand', 'seconds');
   const progressiveRow = form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]);
   const drillTimeRow = form.duration('Drill time', 'drillSeconds');
   form.watch(() => {
-    const auto = form.get('timerMode') === 'auto';
-    roundsButton.hidden = !auto;
+    const mode = form.get('timerMode');
+    const handsCanBeTimed = TIMED_HAND_MODES.includes(mode);
+    const handsTimed = handsCanBeTimed && form.get('timePerHand');
     countButton.hidden = form.get('countMode') !== 'fixed';
-    perHandRow.hidden = !auto;
-    progressiveRow.hidden = !auto;
-    drillTimeRow.hidden = auto;
+    nonBlockingToggle.hidden = form.get('testMode') !== 'warn';
+    roundsButton.hidden = mode !== 'auto';
+    perHandToggle.hidden = !handsCanBeTimed;
+    perHandRow.hidden = !handsTimed;
+    // Progressive Speed shortens the time per hand, so it goes with it.
+    progressiveRow.hidden = !handsTimed;
+    drillTimeRow.hidden = mode !== 'countDownHalt';
   });
 
   const deckSelect = form.custom('decks', DECK_OPTIONS,
@@ -96,10 +112,12 @@ export function flashOptionsScreen(app) {
       withButton(form.select('hands', HANDS_OPTIONS), selectButton),
       withButton(form.select('countMode', COUNT_OPTIONS), countButton),
       form.select('testMode', TEST_MODE_OPTIONS),
+      nonBlockingToggle,
     )),
     section('Situations', form.flags('situations', SITUATION_ITEMS, { chips: true })),
     section('Timer', group(
       withButton(form.select('timerMode', FLASH_TIMER_OPTIONS), roundsButton),
+      perHandToggle,
       perHandRow,
       progressiveRow,
       drillTimeRow,
@@ -145,8 +163,10 @@ async function launch(app) {
     await alert('No situations have been selected.');
     return;
   }
-  if (s.get('drills.flash.testMode') === 'none' && s.get('drills.flash.timerMode') !== 'auto') {
-    await alert('If you do not set Test Mode to Warn on error, you must set Timer Mode to Auto.');
+  // With no tests, hands only move on when their time runs out.
+  const handsTimed = TIMED_HAND_MODES.includes(s.get('drills.flash.timerMode')) && s.get('drills.flash.timePerHand');
+  if (s.get('drills.flash.testMode') === 'none' && !handsTimed) {
+    await alert('With Test Mode set to No tests, each hand needs a time limit: choose Rounds or Infinite and turn on Time limit per hand.');
     return;
   }
   const { strategy } = drillStrategy(app, s.get('drills.flash.decks'));

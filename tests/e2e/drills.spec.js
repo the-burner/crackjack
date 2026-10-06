@@ -152,6 +152,38 @@ test.describe('flash drill', () => {
     expect(await statsText(screen)).toContain('Accuracy: 66%');
   });
 
+  test('non-blocking pop-ups say what was wrong and let play continue', async ({ page }) => {
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'drills.flash.nonBlockingErrors': true });
+    const screen = await launch(page, DRILLS[0]);
+
+    await screen.locator('[data-action="hit"]').click();
+    const toast = page.locator('.toast');
+    await expect(toast).toHaveText('Hit is incorrect');
+    // At the top of the screen, with no dialog and no answer given away.
+    const box = await toast.boundingBox();
+    expect(box.y).toBeLessThan(page.viewportSize().height / 2);
+    await expect(page.locator('.dialog-overlay')).toHaveCount(0);
+    await expect(screen.locator('[data-action="stand"]')).not.toHaveClass(/is-correct/);
+
+    // A second wrong try is not counted again; the right answer moves on.
+    await screen.locator('[data-action="hit"]').click();
+    expect(await statsText(screen)).toContain('Hands: 1');
+    await screen.locator('[data-action="stand"]').click();
+    expect(await statsText(screen)).toContain('Hands: 2');
+    await screen.locator('[data-action="stand"]').click();
+    expect(await statsText(screen)).toContain('Accuracy: 66%');
+  });
+
+  test('offers non-blocking pop-ups only with Warn on error', async ({ page }) => {
+    await open(page);
+    await page.getByRole('button', { name: 'Flash Drills' }).click();
+    const options = page.locator('[data-screen="drills.flash.options"]');
+    const toggle = options.getByRole('checkbox', { name: 'Non-blocking error pop-ups' });
+    await expect(toggle).toBeVisible();
+    await options.locator('select[name="drills.flash.testMode"]').selectOption({ label: 'Test Mode: Number of errors only at end' });
+    await expect(toggle).toBeHidden();
+  });
+
   test('shows the strategy table for a wrong answer', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
     const screen = await launch(page, DRILLS[0]);
@@ -184,6 +216,55 @@ test.describe('flash drill', () => {
     // Only Hard H/S is selected, so Surrender is refused with a message.
     await cards.dblclick({ position: { x: box.width / 2, y: box.height / 2 } });
     await expect(screen.locator('.drill__message')).toContainText('Surrender situations were not selected');
+  });
+
+  test('shows the timing options each timer mode uses', async ({ page }) => {
+    await open(page);
+    await page.getByRole('button', { name: 'Flash Drills' }).click();
+    const options = page.locator('[data-screen="drills.flash.options"]');
+    const mode = options.locator('select[name="drills.flash.timerMode"]');
+    const toggle = options.getByRole('checkbox', { name: 'Time limit per hand' });
+    const perHand = options.getByRole('button', { name: 'Time per hand', exact: true });
+
+    await mode.selectOption({ label: 'Timer Mode: Infinite' });
+    await expect(toggle).toBeVisible();
+    await expect(perHand).toBeVisible();
+    await expect(options.getByRole('button', { name: 'Drill time', exact: true })).toBeHidden();
+    await expect(options.getByRole('button', { name: '50', exact: true })).toBeHidden();
+
+    // Turning the limit off hides the time and Progressive Speed, which shortens it.
+    await toggle.uncheck();
+    await expect(perHand).toBeHidden();
+    await expect(options.getByRole('checkbox', { name: 'Progressive Speed' })).toBeHidden();
+
+    await mode.selectOption({ label: 'Timer Mode: Count Down & Halt' });
+    await expect(toggle).toBeHidden();
+    await expect(options.getByRole('button', { name: 'Drill time', exact: true })).toBeVisible();
+  });
+
+  test('Infinite counts the time up and does not end', async ({ page }) => {
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.timerMode': 'infinite', 'drills.flash.timePerHand': false, 'drills.flash.handsPerDrill': 10 });
+    const screen = await launch(page, DRILLS[0]);
+    expect(await statsText(screen)).toMatch(/Time: 00:00:0[01]/);
+    // More hands than a Rounds drill of 10 would allow.
+    for (let i = 0; i < 12; i++) await screen.locator('[data-action="stand"]').click();
+    expect(await statsText(screen)).toContain('Hands: 13');
+    await expect.poll(() => statsText(screen)).toMatch(/Time: 00:00:0[2-9]/);
+  });
+
+  test('Round Robin deals hands from the selected situations', async ({ page }) => {
+    await open(page, {
+      'drills.flash.hands': 'roundRobin',
+      'drills.flash.situations': { hardStand: false, softStand: false, hardDouble: false, softDouble: false, split: true, surrender: false },
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+      'drills.flash.testMode': 'errorsAtEnd',
+    });
+    const screen = await launch(page, DRILLS[0]);
+    // Only pairs are in play, so every hand dealt is one Split can answer.
+    for (let i = 0; i < 6; i++) await screen.locator('[data-action="split"]').click();
+    expect(await statsText(screen)).toContain('Hands: 7');
+    await expect(screen.locator('.drill__message')).toHaveText('');
   });
 
   test('pauses, restarts and goes back', async ({ page }) => {

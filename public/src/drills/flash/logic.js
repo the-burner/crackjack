@@ -2,7 +2,7 @@
 // play is. No DOM, no timers — the screen drives all of this.
 
 import { cardId, handTotals, valueName } from '../../core/cards.js';
-import { randomInt } from '../../core/random.js';
+import { randomInt, shuffle } from '../../core/random.js';
 import { NEVER, ALWAYS, TABLE_NAMES } from '../../core/strategy/strategy-file.js';
 import { advisePlay, ACTION, SECTION, PROBE, NO_INDEX_MARKER } from '../../core/strategy/advisor.js';
 
@@ -83,6 +83,53 @@ function scanTables(situations, keep) {
   return list;
 }
 
+/** Which kind of player hand each situation's rows stand for. */
+const HAND_TYPE = { hardStand: 'hard', hardDouble: 'hard', surrender: 'hard', softStand: 'soft', softDouble: 'soft', split: 'pair' };
+
+/**
+ * Every distinct player hand against every dealer card, for the chosen
+ * situations. Hands are counted by value, not by the cards that make them:
+ * hard 10 v 10 appears once even though Hard H/S and Hard DD both have it, and
+ * the entry remembers both (`kinds`), so either may be dealt. A pair is its own
+ * hand, so 5,5 v 10 is separate from hard 10 v 10.
+ * @returns {{kind: string, kinds: string[], upcard: number, value: number}[]}
+ */
+export function roundRobinEntries(situations) {
+  const byHand = new Map();
+  for (const e of scanTables(situations, () => true)) {
+    const key = `${HAND_TYPE[e.kind]} ${e.value} ${e.upcard}`;
+    const found = byHand.get(key);
+    if (found) found.kinds.push(e.kind);
+    else byHand.set(key, { ...e, kinds: [e.kind] });
+  }
+  return [...byHand.values()];
+}
+
+/**
+ * Deals the entries of a list in a random order, each once, then starts a new
+ * random order. A new round never begins with the hand the last one ended on.
+ */
+export class RoundRobin {
+  constructor(entries, random) {
+    this.entries = entries;
+    this.random = random;
+    this.queue = [];
+    this.last = null;
+  }
+
+  next() {
+    if (this.queue.length === 0) {
+      this.queue = shuffle(this.entries.slice(), this.random);
+      // Taken from the end, so the first one dealt is the last element.
+      if (this.queue.length > 1 && this.queue[this.queue.length - 1] === this.last) {
+        [this.queue[0], this.queue[this.queue.length - 1]] = [this.queue[this.queue.length - 1], this.queue[0]];
+      }
+    }
+    this.last = this.queue.pop() ?? null;
+    return this.last;
+  }
+}
+
 /** Message shown when the chosen hand list turns out to be empty. */
 const EMPTY_LIST_MESSAGES = {
   withIndices: 'You have an INDEXES option set. There are no indexes for the situations specified.',
@@ -102,6 +149,7 @@ const EMPTY_LIST_MESSAGES = {
  */
 export function buildHandList({ hands, situations, strategy, customMask, tallies }) {
   if (FIXED_LISTS[hands]) return { entries: FIXED_LISTS[hands], error: null };
+  if (hands === 'roundRobin') return { entries: roundRobinEntries(situations), error: null };
   const keep = {
     withIndices: (table, row, column) => hasIndex(strategy.tables[table][row][column]),
     drillErrors: (table, row, column) => (tallies?.[table]?.[row][column] ?? 0) !== 0,
@@ -192,8 +240,12 @@ function dealCardIds(values, random) {
  */
 export function dealHand(list, options, random) {
   for (let attempt = 0; attempt < 300; attempt++) {
-    const e = list[randomInt(list.length, random)];
-    if (!options.situations[e.kind]) continue;
+    const picked = list[randomInt(list.length, random)];
+    // A Round Robin entry may stand for several situations; deal one of those
+    // that are selected, so its cards follow that situation's rules.
+    const kinds = (picked.kinds ?? [picked.kind]).filter(kind => options.situations[kind]);
+    if (kinds.length === 0) continue;
+    const e = picked.kinds ? { ...picked, kind: kinds[randomInt(kinds.length, random)] } : picked;
     const values = handValues(e, options, random);
     if (!values) continue;
     // Two- and three-card hands are thrown away half the time, which biases the
