@@ -3,9 +3,11 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = 'd427426f229c';
+const VERSION = '966e4d3d0587';
 const FILES = [
   './',
+  './apple-touch-icon-precomposed.png',
+  './apple-touch-icon.png',
   './assets/cards/card-back.png',
   './assets/cards/cards.png',
   './assets/icons/icon-180.png',
