@@ -67,7 +67,8 @@ export class DrillClock {
   /** Hands (or tests) per minute, to one decimal place. */
   rate(count) {
     const elapsed = this.elapsed;
-    if (elapsed <= 0) return 0;
+    // Under a second the figure is meaningless, and absurdly large.
+    if (elapsed < 1) return 0;
     return Math.floor((count / (elapsed / 60)) * 10) / 10;
   }
 

@@ -10,18 +10,22 @@
   --mantle: #e6e9ef; --crust: #dce0e8;
   /* Text on the saturated accents. */
   --on-accent: var(--base);
+  /* Text on the tints below, which are too light to take --on-accent. */
+  --on-tint: var(--ctp-text);
 
   --disc: rgba(76, 79, 105, 0.35);
   --disc-on-color: rgba(17, 17, 27, 0.2);
   --shadow: rgba(76, 79, 105, 0.15);
   --input-shadow: rgba(76, 79, 105, 0.15);
-  --overlay: rgba(76, 79, 105, 0.45);
+  /* Light enough already that a weak scrim leaves a dialog floating. */
+  --overlay: rgba(76, 79, 105, 0.6);
   --dialog-shadow: rgba(76, 79, 105, 0.3);
   --bet-overlay-bg: rgba(220, 224, 232, 0.92);
   /* Over the felt photograph, which stays dark in every theme. */
   --table-text: var(--base);
   --table-accent: var(--yellow);
-  --felt-accent: var(--peach);
+  /* Latte's felt is a light page, so the accent over it has to be a dark one. */
+  --felt-accent: var(--mauve);
   --text-shadow: var(--ctp-text);
 }
 
@@ -33,8 +37,9 @@
   --subtext0: #a6adc8; --overlay2: #9399b2; --overlay1: #7f849c; --overlay0: #6c7086;
   --surface2: #585b70; --surface1: #45475a; --surface0: #313244; --base: #1e1e2e;
   --mantle: #181825; --crust: #11111b;
-  /* Text on the pastel accents. */
+  /* Text on the pastel accents; every one of them is pale, so one ink does. */
   --on-accent: var(--crust);
+  --on-tint: var(--crust);
 
   --disc: rgba(147, 153, 178, 0.45);
   --disc-on-color: rgba(17, 17, 27, 0.35);
@@ -85,7 +90,6 @@
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
-  --bar-text: var(--accent);
   --table-strip: var(--page-bg);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
@@ -96,11 +100,11 @@
   --tile-good: var(--green);
   --tile-close: var(--yellow);
   --tile-bad: var(--red);
+  --toast-error-text: var(--on-tint);
   --tile-previous: var(--peach);
-  --tile-mark-text: var(--on-accent);
+  --tile-mark-text: var(--on-tint);
+  --answer-correct: var(--mauve);
   --table-bg: var(--crust);
-  --table-bar-bg: var(--crust);
-  --status-error-text: var(--on-accent);
   --bankroll-negative: var(--red);
   --grid-head-bg: var(--surface1);
   --grid-head-text: var(--ctp-text);
@@ -129,19 +133,35 @@
   --btn-bg: var(--base);
   --btn-bg-active: var(--surface0);
   --separator: var(--surface0);
+  /* A hairline the colour of a divider leaves a field looking like plain text. */
+  --input-border: var(--overlay1);
   --toggle-off: var(--surface1);
   --toggle-knob: #fff;
   --dialog-bg: var(--base);
-  --table-bar-bg: var(--ctp-text);
+  /* A card, so the figures on it keep their contrast. */
+  --panel-bg: var(--base);
+  /* The accents are mid-tones that take neither ink, so everything that has to
+     carry text over one is a tint of it instead. */
+  --tile-good: color-mix(in srgb, var(--green) 30%, var(--base));
+  --tile-close: color-mix(in srgb, var(--yellow) 35%, var(--base));
+  --tile-bad: color-mix(in srgb, var(--red) 25%, var(--base));
+  --tile-previous: color-mix(in srgb, var(--peach) 35%, var(--base));
+  /* The Full Table drill's second felt: Classic's navy beside its green. */
+  --felt-alt: color-mix(in srgb, var(--blue) 35%, var(--crust));
 }
 [data-theme='mocha'] {
   color-scheme: dark;
   --group-bg: var(--surface0);
   --separator: var(--surface1);
-  --toggle-off: var(--surface2);
-  --toggle-knob: var(--ctp-text);
+  --input-border: var(--overlay0);
+  /* Light enough for a dark knob to show on it, on or off. */
+  --toggle-off: var(--overlay1);
+  --toggle-knob: var(--crust);
+  --felt-alt: color-mix(in srgb, var(--blue) 40%, var(--base));
 }
 [data-theme='latte'], [data-theme='mocha'] { --text-secondary: var(--subtext0); --logo-crack: var(--mauve); --logo-jack: var(--peach); }
+/* Latte's peach all but disappears on its page. */
+[data-theme='latte'] { --logo-jack: var(--red); }
 
 /* Classic relies on browser defaults for these. */
 [data-theme='latte'] .help, [data-theme='mocha'] .help { color: var(--text); }

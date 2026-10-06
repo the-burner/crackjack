@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { applyGameChange, applyRuleChange, gameVariant, prepareLaunch } from '../../../public/src/settings/rules-logic.js';
+import {
+  applyGameChange, applyIndexRangeChange, applyRuleChange, gameVariant, prepareLaunch,
+} from '../../../public/src/settings/rules-logic.js';
 
 /** A reader over the schema defaults with the given overrides. */
 function reader(overrides = {}) {
@@ -43,6 +45,11 @@ describe('applyRuleChange: doubling', () => {
       'rules.hitAfterDouble': true,
       'table.doubleDownCardFaceUp': true,
     });
+  });
+
+  it('no longer hitting after a double leaves the double card as it is', () => {
+    expect(change({ 'rules.hitAfterDouble': true, 'table.doubleDownCardFaceUp': false }, 'rules.hitAfterDouble', false))
+      .toEqual({ 'rules.hitAfterDouble': false });
   });
 });
 
@@ -112,6 +119,18 @@ describe('applyRuleChange: splitting', () => {
       'rules.doubleAfterSplitAces': true,
       'rules.doubleAfterSplit': true,
     });
+  });
+
+  it('banning doubles after a split bans them after an ace split too', () => {
+    expect(change({ 'rules.doubleAfterSplitAces': true }, 'rules.doubleAfterSplit', false)).toEqual({
+      'rules.doubleAfterSplit': false,
+      'rules.doubleAfterSplitAces': false,
+    });
+  });
+
+  it('banning doubles after an ace split says nothing about other splits', () => {
+    expect(change({ 'rules.doubleAfterSplitAces': true, 'rules.doubleAfterSplit': true }, 'rules.doubleAfterSplitAces', false))
+      .toEqual({ 'rules.doubleAfterSplitAces': false });
   });
 });
 
@@ -196,9 +215,63 @@ describe('applyGameChange', () => {
     expect(applyGameChange(current, 15)).toEqual({ 'bonuses.game': 15 });
   });
 
+  it('does not reset a rule the new variant forces as well', () => {
+    const current = reader({ 'bonuses.game': 2002, 'rules.dealerWinsTies': true, 'rules.blackjackPayout': '1:1', 'rules.insurance': 'none', 'peeking.mode': 'off' });
+    expect(applyGameChange(current, 2001)).toEqual({
+      'bonuses.game': 2001,
+      // Double exposure's own rules go back to their defaults...
+      'rules.dealerWinsTies': false,
+      'rules.insurance': 'normal',
+      'peeking.mode': 'off',
+      // ...but the even-money payout both variants force stays put.
+      'rules.blackjackPayout': '1:1',
+      'rules.dealerHitsSoft17': true,
+      'rules.dealerPeeksTen': true,
+      'rules.dealerPeeksAce': true,
+      'rules.doubleAfterSplit': true,
+      'rules.dealerBlackjackWinsAll': true,
+      // What blackjack switch overwrote, so that leaving it can put it back.
+      'bonuses.savedRules': {
+        'rules.dealerHitsSoft17': true,
+        'rules.dealerPeeksTen': true,
+        'rules.dealerPeeksAce': true,
+        'rules.doubleAfterSplit': true,
+        'rules.dealerBlackjackWinsAll': false,
+        'rules.blackjackPayout': '3:2',
+      },
+    });
+  });
+
   it('keeps the bundle when moving between two games of the same variant', () => {
     const current = reader({ 'bonuses.game': 16, 'rules.surrender': 'late', 'rules.resplitAces': true });
     expect(applyGameChange(current, 17)).toEqual({ 'bonuses.game': 17 });
+  });
+
+  it('puts back the rules the player had before the variant was chosen', () => {
+    const before = { 'rules.dealerHitsSoft17': false, 'rules.hardDoubles': '9-11' };
+    const spanish = applyGameChange(reader(before), 17);
+    expect(applyGameChange(reader({ ...before, ...spanish }), 0)).toMatchObject({
+      'bonuses.game': 0,
+      'rules.dealerHitsSoft17': false,
+      'rules.hardDoubles': '9-11',
+    });
+  });
+});
+
+describe('applyIndexRangeChange', () => {
+  it('refuses a minimum count above the maximum', () => {
+    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMax': 10 }), 'strategy.indexRangeMin', 50))
+      .toEqual({ 'strategy.indexRangeMin': 10 });
+  });
+
+  it('refuses a maximum count below the minimum', () => {
+    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMin': -4 }), 'strategy.indexRangeMax', -20))
+      .toEqual({ 'strategy.indexRangeMax': -4 });
+  });
+
+  it('takes a range that is the right way round as it is', () => {
+    expect(applyIndexRangeChange(reader(), 'strategy.indexRangeMin', -4)).toEqual({ 'strategy.indexRangeMin': -4 });
+    expect(applyIndexRangeChange(reader(), 'strategy.indexRangeMax', 12)).toEqual({ 'strategy.indexRangeMax': 12 });
   });
 });
 

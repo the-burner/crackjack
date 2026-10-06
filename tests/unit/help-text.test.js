@@ -26,3 +26,40 @@ describe('help text', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('each screen gets its own help', () => {
+  it('does not describe one screen with another screen’s page', () => {
+    const duplicates = new Map();
+    for (const [key, html] of Object.entries(HELP)) {
+      const seen = duplicates.get(html);
+      if (seen) throw new Error(`${key} and ${seen} share the same help page`);
+      duplicates.set(html, key);
+    }
+  });
+
+  it('tells the bet picker apart from the betting settings', () => {
+    expect(HELP['game.betSelect']).toBeDefined();
+    expect(HELP['game.betSelect']).not.toBe(HELP['settings.betting']);
+    // The picker is where a bet is chosen, not where the ramp is configured.
+    expect(HELP['game.betSelect']).not.toContain('Warning on Betting Error');
+  });
+});
+
+describe('the unusual games help', () => {
+  const html = HELP['settings.unusualGames'];
+  const named = [...html.matchAll(/<li>\s*<strong>\s*([^<]+?)\s*<\/strong>/g)].map(m => m[1].replace(/\s+/g, ' ').trim());
+
+  it('names each game once', () => {
+    const twice = named.filter((name, i) => named.indexOf(name) !== i);
+    expect(twice).toEqual([]);
+  });
+
+  it('describes only games the app offers', async () => {
+    const { BUILTIN_SIDE_BET_GAMES } = await import('../../public/src/data/side-bet-games.js');
+    // The help abbreviates "blackjack" to "BJ", so normalise both.
+    const key = name => name.toLowerCase().replace(/blackjack/g, 'bj').replace(/[^a-z0-9+]/g, '');
+    const offered = BUILTIN_SIDE_BET_GAMES.map(game => key(game.name));
+    const missing = named.filter(name => !offered.some(game => game.includes(key(name)) || key(name).includes(game)));
+    expect(missing).toEqual([]);
+  });
+});

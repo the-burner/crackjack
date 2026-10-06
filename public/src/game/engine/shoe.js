@@ -51,13 +51,14 @@ export class Shoe {
     for (let card = 1; card <= CARDS_PER_DECK; card++) {
       pick -= this.remainingByCard[card];
       if (pick < 0) {
-        this.remainingByCard[card] -= 1;
-        this.remaining -= 1;
-        this.dealt += 1;
+        // The original tested penetration before dealing, so the card after it trips the cut card.
         if (!this.cutCardSeen && this.dealt >= this.penetration) {
           this.cutCardSeen = true;
           this.needsShuffle = true;
         }
+        this.remainingByCard[card] -= 1;
+        this.remaining -= 1;
+        this.dealt += 1;
         return card;
       }
     }

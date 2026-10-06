@@ -54,7 +54,8 @@ export function advisePlay(strategy, hand, ctx) {
   const hc = hand.total;
   const sc = hand.hardTotal;
   const ncards = hand.cardCount;
-  const [id1, id2] = hand.cardIds ?? [0, 0];
+  // No ids means the suits are unknown, not that both cards are spades.
+  const [id1, id2] = hand.cardIds ?? [];
   const card1 = Math.min(hand.card1, hand.card2);
   const card2 = Math.max(hand.card1, hand.card2);
   const isSoft = hc !== sc;
@@ -314,7 +315,8 @@ function standUnlessCardsOr678(code, ncards, card1, card2, id1, id2) {
     if (code === CODE.standUnless4CardsOr678 || code === CODE.standUnless5CardsOr678) action = ACTION.hit;
     // Deliberately compares ranks (id % 13), not suits.
     if (code === CODE.standUnless5CardsOrSuited678 && id1 % 13 === id2 % 13) action = ACTION.hit;
-    if ((code === CODE.standUnless5CardsOrSpaded678 || code === CODE.standUnless6CardsOrSpaded678) && id1 <= 13 && id2 <= 13) action = ACTION.hit;
+    const spaded = id1 !== undefined && id2 !== undefined && id1 <= 13 && id2 <= 13;
+    if ((code === CODE.standUnless5CardsOrSpaded678 || code === CODE.standUnless6CardsOrSpaded678) && spaded) action = ACTION.hit;
   }
   return action;
 }

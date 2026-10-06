@@ -9,13 +9,19 @@ const STORAGE_KEY = 'errorTallies';
 const emptyGrid = () => Array.from({ length: 10 }, () => new Array(10).fill(0));
 export const emptyTallies = () => Object.fromEntries(TABLE_NAMES.map(name => [name, emptyGrid()]));
 
+const isGrid = grid => Array.isArray(grid) && grid.length === 10 && grid.every(row => Array.isArray(row) && row.length === 10);
+
 export class ErrorTallies {
   constructor(storage) {
     this.storage = storage;
   }
 
   load() {
-    return { ...emptyTallies(), ...this.storage.get(STORAGE_KEY, {}) };
+    const saved = this.storage.get(STORAGE_KEY, {});
+    const tallies = emptyTallies();
+    // A damaged grid is thrown away rather than left to break recording.
+    for (const name of TABLE_NAMES) if (isGrid(saved[name])) tallies[name] = saved[name];
+    return tallies;
   }
 
   /** Records one error in `table` (a TABLE_NAMES entry) at [row][column]. */

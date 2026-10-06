@@ -15,6 +15,7 @@ import { gradeAnswer } from '../shared/scoring.js';
 import { halfSteps, answerIndex } from '../count/logic.js';
 import {
   dealRound, tableSlots, scatterSlots, fullAnswer, isAceCountDrill, partialView,
+  fullyShownLimit, fullQuestionDrill, asksTwoCounts, nextTwoTablePhase,
   TWO_TABLE_PHASES, TWO_TABLE_MINIMUM_CARDS, SCATTER_CARDS,
 } from './logic.js';
 
@@ -48,7 +49,9 @@ export function fullScreen(app) {
   /** Auto times each test (and warns near the end of the shoe); Count Down & Halt times the whole drill. */
   const timedTests = options.timerMode === TIMER_MODE.auto;
   const twoTables = options.drill === 'twoTables';
-  const inHalfSteps = halfSteps(options.drill === 'twoTables' ? 'runningCount' : options.drill, options.strategy);
+  /** The count this question asks for, and whether that count moves by halves. */
+  const questionDrill = () => fullQuestionDrill(options.drill, askingRunningCount);
+  const inHalfSteps = () => halfSteps(questionDrill(), options.strategy);
 
   const canvas = h('canvas', { class: 'drill__cards' });
   const gridCanvas = h('canvas', { class: 'drill__answers' });
@@ -74,6 +77,13 @@ export function fullScreen(app) {
   let pausedByCover = false;
   /** An answer was finished while paused: move on when play resumes. */
   let advancePending = false;
+  /** The right answer has been given, so further taps are not graded again. */
+  let answered = false;
+  /** The run began behind the cover: deal once the device is turned. */
+  let dealPending = false;
+  /** Clock times (in elapsed seconds) at which the cards go away and the test ends. */
+  let hideAt = 0;
+  let testEndsAt = 0;
 
   const shell = drillShell(app, {
     title: 'Full Table Drills',
@@ -97,6 +107,7 @@ export function fullScreen(app) {
   function start() {
     run += 1;
     advancePending = false;
+    answered = false;
     done = false;
     notice = '';
     cardsHidden = false;
@@ -109,7 +120,14 @@ export function fullScreen(app) {
     }));
     revealedCounts = shoes.map(shoe => shoe.counter.running);
     tables = shoes.map(() => null);
-    drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: finishShoe }).start();
+    const clock = drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: finishShoe });
+    clock.start();
+    // Nothing is dealt or timed while the turn-sideways cover is up.
+    dealPending = pausedByCover;
+    if (dealPending) {
+      clock.pause();
+      return;
+    }
     nextRound();
   }
 
@@ -148,20 +166,19 @@ export function fullScreen(app) {
     const shoe = shoes[0];
     const stopAt = timedTests ? WARNING_REMAINING[options.endWarning] : undefined;
     let warned = false;
-    const draw = drawer(shoe);
-    const { hands, stopped } = dealRound({
-      players: options.players,
-      handStyle: options.handStyle,
-      draw: () => {
-        if (warned) return null;
-        const card = draw();
-        if (card !== null && shoe.remaining === stopAt) warned = true;
-        return card;
-      },
-    });
+    const deal = drawer(shoe);
+    const draw = () => {
+      if (warned) return null;
+      const card = deal();
+      if (card !== null && shoe.remaining === stopAt) warned = true;
+      return card;
+    };
+    const { hands, stopped } = dealRound({ players: options.players, handStyle: options.handStyle, draw });
+    // The scattered layout has no hands behind the loose cards.
+    const scatter = options.handStyle === 'scattered' ? drawScatter(draw) : null;
     tables = [{
       hands,
-      scatter: options.handStyle === 'scattered' ? drawScatter(shoe) : null,
+      scatter,
       scatterSeed: Math.floor(Math.random() * 1e9),
       visible: hands.map(hand => hand.cards.map(() => true)),
       color: TABLE_COLORS[0],
@@ -173,7 +190,7 @@ export function fullScreen(app) {
       shell.clock.after('deal', END_WARNING_SECONDS, nextRound);
       return;
     }
-    if (stopped || !testsPossible()) {
+    if (stopped || scatter?.length < SCATTER_CARDS || !testsPossible()) {
       finishShoe();
       return;
     }
@@ -182,8 +199,7 @@ export function fullScreen(app) {
   }
 
   /** The scattered layout deals loose cards instead of hands. */
-  function drawScatter(shoe) {
-    const draw = drawer(shoe);
+  function drawScatter(draw) {
     const ids = [];
     for (let i = 0; i < SCATTER_CARDS; i++) {
       const card = draw();
@@ -201,7 +217,6 @@ export function fullScreen(app) {
       finishShoe();
       return;
     }
-    fullyShownUpTo = Math.floor(Math.random() * 2);
     tables = shoes.map((shoe, i) => {
       const draw = drawer(shoe);
       const { hands } = dealRound({
@@ -215,6 +230,7 @@ export function fullScreen(app) {
       const countValues = hands.map(hand => hand.cards.map(() => draw.countValues[next++]));
       return { hands, countValues, scatter: null, visible: hands.map(hand => hand.cards.map(() => false)), color: TABLE_COLORS[i] };
     });
+    fullyShownUpTo = fullyShownLimit(tables[0].hands, Math.random);
     phase = 0;
     revealPhase();
   }
@@ -230,30 +246,43 @@ export function fullScreen(app) {
       current.visible[h][c] = true;
       revealedCounts[table] += current.countValues[h][c];
     }));
-    correctIndex = answerIndex(revealedCounts[table], inHalfSteps);
+    correctIndex = answerIndex(revealedCounts[table], inHalfSteps());
     render();
     startTest();
   }
 
   function startTest() {
-    askingRunningCount = options.twoCounts && !twoTables;
+    askingRunningCount = asksTwoCounts(options.drill, options.twoCounts);
     showTest();
   }
 
-  function showTest() {
+  /** `sameTest` is the second answer of a Two Counts test: one test, flashed once. */
+  function showTest({ sameTest = false } = {}) {
     if (!twoTables) {
-      const counts = drillCounts(shoes[0]);
-      const value = askingRunningCount ? counts.runningCount : fullAnswer(options.drill, counts);
-      correctIndex = answerIndex(value, inHalfSteps);
+      correctIndex = answerIndex(fullAnswer(questionDrill(), drillCounts(shoes[0])), inHalfSteps());
     }
     gridWindow = countWindow(correctIndex, gridWindow);
-    grid = countGrid(gridWindow, inHalfSteps ? halfStepLabel : String);
-    shell.score.beginTest();
+    grid = countGrid(gridWindow, inHalfSteps() ? halfStepLabel : String);
+    answered = false;
+    if (!sameTest) shell.score.beginTest();
     render();
     shell.updateStats(shell.clock);
-    shell.clock.after('hide', flashSeconds(), () => { cardsHidden = true; render(); });
-    if (timedTests) shell.clock.after('test', options.testSeconds, timeout);
+    if (!cardsHidden) armHide(sameTest ? secondsLeft(hideAt) : flashSeconds());
+    if (timedTests) armTest(options.testSeconds);
   }
+
+  /** The cards go away when the flash time is up, the test ends when its own time does. */
+  function armHide(seconds) {
+    hideAt = shell.clock.elapsed + seconds;
+    shell.clock.after('hide', seconds, () => { cardsHidden = true; render(); });
+  }
+
+  function armTest(seconds) {
+    testEndsAt = shell.clock.elapsed + seconds;
+    shell.clock.after('test', seconds, timeout);
+  }
+
+  const secondsLeft = deadline => Math.max(0, deadline - shell.clock.elapsed);
 
   function timeout() {
     shell.score.recordError();
@@ -264,7 +293,7 @@ export function fullScreen(app) {
   }
 
   function tap(event) {
-    if (!grid || done || shell.paused) return;
+    if (!grid || done || answered || shell.paused) return;
     const box = gridCanvas.getBoundingClientRect();
     const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -277,9 +306,11 @@ export function fullScreen(app) {
       app.sound.play('correct');
       if (askingRunningCount) {
         askingRunningCount = false;
-        showTest();
+        showTest({ sameTest: true });
         return;
       }
+      // One answer, one advance: a second tap within the pause is not graded.
+      answered = true;
       setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
       return;
     }
@@ -303,30 +334,39 @@ export function fullScreen(app) {
       nextRound();
       return;
     }
-    phase += 1;
-    if (phase < TWO_TABLE_PHASES.length) revealPhase();
-    else nextRound();
+    phase = nextTwoTablePhase(phase);
+    if (phase === 0) nextRound();
+    else revealPhase();
   }
 
   function finishShoe() {
     done = true;
     notice = 'Done.';
+    // A test still on screen was never answered, so it does not count.
+    if (grid && !answered) shell.score.discardTest();
     grid = null;
     shell.finish();
     render();
+    shell.updateStats(shell.clock);
   }
 
   function layout() {
     const portrait = shell.el.clientHeight > shell.el.clientWidth;
     cover.hidden = !portrait;
-    if (portrait && shell.clock && !shell.clock.paused) {
-      shell.clock.pause();
+    // The clock may not exist yet: the cover can go up before the run begins.
+    if (portrait && !pausedByCover) {
       pausedByCover = true;
+      shell.clock?.pause();
     } else if (!portrait && pausedByCover) {
       pausedByCover = false;
       if (!shell.paused) {
-        shell.clock.resume();
-        rearm();
+        shell.clock?.resume();
+        if (dealPending) {
+          dealPending = false;
+          nextRound();
+        } else {
+          rearm();
+        }
       }
     }
     render();
@@ -352,8 +392,9 @@ export function fullScreen(app) {
       advancePending = false;
       advance();
     } else if (grid) {
-      if (!cardsHidden) shell.clock.after('hide', flashSeconds(), () => { cardsHidden = true; render(); });
-      if (timedTests && !shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
+      // Only the time that was left, so a pause buys no second look at the cards.
+      if (!cardsHidden) armHide(secondsLeft(hideAt));
+      if (timedTests && !shell.score.currentTestFailed) armTest(secondsLeft(testEndsAt));
     } else if (notice) {
       shell.clock.after('deal', END_WARNING_SECONDS, nextRound);
     }

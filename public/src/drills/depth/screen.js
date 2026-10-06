@@ -45,6 +45,8 @@ export function depthScreen(app) {
   let image = null;
   let previousAnswer = null;
   let started = false;
+  /** The wait between a right answer and the next test, so it can be called off. */
+  let advanceTimer = null;
 
   const shell = drillShell(app, {
     title: 'Depth Drills',
@@ -75,6 +77,7 @@ export function depthScreen(app) {
 
   function stop() {
     shell.clock?.stop();
+    cancelAdvance();
     test = null;
     image = null;
     grid?.clearMarks();
@@ -88,8 +91,8 @@ export function depthScreen(app) {
       if (test) break;
     }
     if (!test) {
-      shell.setMessage('No tests can be shown with these options.');
-      finish();
+      // Said in place of the accuracy, which finish() would otherwise show.
+      shell.finish('No tests can be shown with these options.');
       return;
     }
     previousAnswer = test.answer;
@@ -114,7 +117,8 @@ export function depthScreen(app) {
   }
 
   function tap(event) {
-    if (!test || !grid) return;
+    // Once the answer is in, further taps are ignored until the next test.
+    if (!test || !grid || advanceTimer) return;
     const box = gridCanvas.getBoundingClientRect();
     const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -124,7 +128,7 @@ export function depthScreen(app) {
       grid.mark(cell, 'correct');
       draw();
       app.sound.play('correct');
-      setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
+      advanceTimer = setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
       return;
     }
     grid.mark(cell, verdict === 'close' ? 'close' : 'wrong');
@@ -138,8 +142,15 @@ export function depthScreen(app) {
   }
 
   function advance() {
+    advanceTimer = null;
     if (rounds && shell.score.tests >= options.testsPerDrill) finish();
     else nextTest();
+  }
+
+  /** Calls off a test that has not been built yet (on Pause, Back or Restart). */
+  function cancelAdvance() {
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
   }
 
   function finish() {
@@ -148,6 +159,7 @@ export function depthScreen(app) {
 
   function pause() {
     shell.clock.pause();
+    cancelAdvance();
     shell.score.discardTest();
     test = null;
     image = null;

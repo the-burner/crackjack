@@ -17,5 +17,8 @@ export function obviouslyBad(action, { total, hardTotal }) {
   return false;
 }
 
+/** What the original called each play when it asked. */
+const PLAY_NAMES = { [ACTION.hit]: 'Hit', [ACTION.stand]: 'Stand', [ACTION.double]: 'Double Down', [ACTION.split]: 'Split' };
+
 /** How the dealer asks. */
-export const areYouSure = action => `Are you sure that you want to ${action[0].toUpperCase()}${action.slice(1)}?`;
+export const areYouSure = action => `Are you sure that you want to ${PLAY_NAMES[action] ?? action}?`;

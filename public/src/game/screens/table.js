@@ -9,21 +9,26 @@
 import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { alert, confirm } from '../../ui/dialogs.js';
+import { toast } from '../../ui/toast.js';
 import { GameSession } from '../session.js';
-import { STATE, ACTION } from '../engine/game.js';
+import { STATE, ACTION, checkAffordable } from '../engine/game.js';
 import { PLAYER } from '../engine/hand.js';
 import { TABLE_LIMITS } from '../../settings/schema.js';
+import { dealerPeeks } from '../engine/rules.js';
+import { valueOf } from '../../core/cards.js';
 import { tableLayout, seatSlot } from '../table/layout.js';
 import { createTableRenderer } from '../table/renderer.js';
 import { createTableState } from '../table/table-state.js';
+import { Counter } from '../../core/counting.js';
 import { createAnimator, planSteps, pauseForSpeed } from '../table/animator.js';
 import { createBetOverlay } from '../table/bet-overlay.js';
 import { attachSwipes } from '../table/gestures.js';
 import { obviouslyBad, areYouSure } from '../table/bad-plays.js';
-import { dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessage, errorHandFrom, dealerStandsByMistake } from '../dealer-errors.js';
+import {
+  dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessage, errorHandFrom,
+  dealerStandsByMistake, bustsGoodHandByMistake, bustedGoodHandShortfall, DEALER_ERROR, ERROR_LABELS,
+} from '../dealer-errors.js';
 
-/** How long a status message stays up. */
-const STATUS_MS = 3500;
 /** The insurance offer passes itself after this long. */
 const INSURANCE_MS = 5000;
 
@@ -43,7 +48,6 @@ export function tableScreen(app) {
   // --- DOM ------------------------------------------------------------------
 
   const canvas = h('canvas', { class: 'table__canvas' });
-  const status = h('div', { class: 'table__status', hidden: true });
   const bankroll = h('div', { class: 'table__bankroll' });
   const counts = h('div', { class: 'table__counts' });
   const chips = new Map();
@@ -71,7 +75,7 @@ export function tableScreen(app) {
   });
 
   const felt = h('div', { class: 'table__felt' },
-    canvas, status, bankroll, counts, sides.left, sides.right, overlay.el);
+    canvas, bankroll, counts, sides.left, sides.right, overlay.el);
   const bar = h('header', { class: 'table__bar' },
     button('Back', { variant: 'nav', onClick: () => app.back(), 'data-action': 'back' }),
     h('div', { class: 'table__bar-end' },
@@ -95,13 +99,27 @@ export function tableScreen(app) {
   let stoodOnSixteen = false;
   /** True once the dealer has queried a bad play, which lets the next one through. */
   let warnedOfBadPlay = false;
-  let statusTimer = null;
+  /** The error pop-up showing, if any. */
+  let errorPopUp = null;
   let insuranceTimer = null;
   let nextRoundTimer = null;
+  /** Set while the next round's shuffle plays, so betting opens after it. */
+  let openBettingWhenIdle = false;
+  /** Hands whose payoff has been planned this round. */
+  const swept = new Set();
   /** False once the screen has been closed, so late callbacks stop drawing. */
   let alive = true;
 
   const animator = createAnimator({ onStep: applyStep, onIdle: whenIdle });
+
+  /**
+   * The count as the player has seen it. The session's count is already final
+   * when the first card is drawn, so the readout follows this one instead.
+   */
+  const shown = new Counter(session.strategy, session.trueCountSettings());
+  shown.reset(session.table.decks);
+  /** Cards the readout has already counted, so a flashed hole card counts once. */
+  const countedCards = new Set();
 
   function pauses() {
     return {
@@ -128,6 +146,7 @@ export function tableScreen(app) {
       decks: session.table.decks,
       showTray: !settings.get('display.hideDiscardTray'),
       showShoe: !settings.get('display.hideShoe'),
+      noHoleCard: session.rules.noHoleCard,
     });
     renderer.resize(layout);
     placeLabels();
@@ -138,7 +157,6 @@ export function tableScreen(app) {
   /** Puts the absolutely positioned labels where the layout says. */
   function placeLabels() {
     box(bankroll, layout.bankroll);
-    box(status, layout.status);
     box(counts, { ...layout.status, y: layout.status.y + layout.status.height + 2 });
     for (const [, chip] of chips) chip.remove();
     chips.clear();
@@ -160,6 +178,7 @@ export function tableScreen(app) {
       hands: state.hands.filter(hand => seatSlot(layout, hand.seat)),
       dealer: state.dealer,
       pointerHand: state.pointerHand,
+      burns: state.burns,
       trayCards: state.trayCards,
       shoeCards: state.shoeCards,
     });
@@ -167,33 +186,73 @@ export function tableScreen(app) {
     bankroll.classList.toggle('is-negative', state.bankroll < 0);
     for (const [seat, chip] of chips) {
       const held = state.chips.get(seat);
-      chip.textContent = held ? chipText(held) : '';
-      chip.classList.toggle('is-result', Boolean(held?.result));
+      if (held?.result) {
+        // A result is shown as a pill, like the app's other pop-ups.
+        const shown = chip.firstElementChild;
+        if (shown?.textContent !== held.result || shown.dataset.tone !== RESULT_TONES[held.result]) {
+          chip.replaceChildren(h('span', { class: 'table__result', dataset: { tone: RESULT_TONES[held.result] ?? 'push' } }, held.result));
+        }
+      } else {
+        chip.textContent = held ? chipText(held) : '';
+      }
     }
   }
 
-  const chipText = held => (held.result ? ` ${held.result} ` : money(held.amount) + (held.sideBet > 0 ? `, SB:$${held.sideBet}` : ''));
+  const chipText = held => {
+    if (held.result) return ` ${held.result} `;
+    if (held.paid !== null) return money(held.paid);
+    if (held.amount === 0) return '';
+    return money(held.amount) + (held.sideBet > 0 ? `, SB:$${held.sideBet}` : '');
+  };
 
   function countsText() {
     const parts = [];
     const accuracy = session.accuracy();
     if (settings.get('display.showBetAccuracy') && session.stats.betDecisions > 0) parts.push(`Bets: ${accuracy.bet}%`);
     if (settings.get('display.showPlayAccuracy') && session.stats.playDecisions > 0) parts.push(`Plays: ${accuracy.play}%`);
-    if (settings.get('display.showRunningCount')) parts.push(`RC: ${round1(session.counts.runningCount)}`);
-    if (settings.get('display.showTrueCount')) parts.push(`TC: ${round1(session.counts.trueCount)}`);
+    if (settings.get('display.showRunningCount')) parts.push(`RC: ${round1(shown.running)}`);
+    if (settings.get('display.showTrueCount')) parts.push(`TC: ${round1(shown.trueCount)}`);
     return parts.join(', ');
   }
 
-  function showStatus(text, tone = 'plain') {
-    clearTimeout(statusTimer);
-    if (!text) {
-      status.hidden = true;
+  /** Counts a card the moment the player sees it, as the original did. */
+  function countStep(event) {
+    if (event.type === 'shuffle' || event.type === 'clear') {
+      if (event.type === 'shuffle') shown.reset(session.table.decks);
+      countedCards.clear();
       return;
     }
-    status.textContent = text;
-    status.className = `table__status table__status--${tone}`;
-    status.hidden = false;
-    statusTimer = setTimeout(() => { status.hidden = true; }, STATUS_MS);
+    // A split moves the second card to a new hand; its counted mark moves with it.
+    if (event.type === 'split') {
+      if (countedCards.delete(`${event.hand}:1`)) countedCards.add(`${event.newHand}:0`);
+      return;
+    }
+    const card = event.card;
+    if (card === undefined) return;
+    const faceUp = event.type === 'reveal' || event.type === 'peek' || event.faceUp;
+    if (!faceUp) return;
+    // A hole card that flashed is turned over again later; count it once.
+    const seen = `${event.hand}:${event.cardIndex}`;
+    if (event.hand !== undefined && countedCards.has(seen)) return;
+    countedCards.add(seen);
+    shown.addCard(card, state.dealt);
+  }
+
+  /** A passing message from the table. It does not cover an error pop-up that is still up. */
+  function showMessage(text) {
+    if (errorPopUp?.isConnected) return;
+    toast(text.trim(), { position: 'top', ms: MESSAGE_MS });
+  }
+
+  /** An error, in the same drop-down pop-up as the drills. */
+  function showError(text, tone = 'error') {
+    errorPopUp = toast(text.trim(), { position: 'top', tone });
+  }
+
+  /** Shows the session's strategy and betting warnings as soon as they are made. */
+  function showWarnings() {
+    const warnings = session.takeWarnings();
+    if (warnings.length) showError(warnings.join(' · '));
   }
 
   // --- the animation timeline ----------------------------------------------
@@ -201,36 +260,50 @@ export function tableScreen(app) {
   /** Applies an engine event and redraws. */
   function applyStep({ event, sound }) {
     state.apply(event);
+    countStep(event);
+    counts.textContent = countsText();
     if (sound) app.sound.play(sound);
-    if (event.type === 'message') showStatus(` ${event.text} `, 'plain');
-    if (event.type === 'offerInsurance') showStatus(' Insurance? ', 'plain');
+    if (event.type === 'message') showMessage(event.text);
+    if (event.type === 'offerInsurance') showMessage('Insurance?');
     render();
   }
 
   /** Queues the events an engine call produced. */
   function queue(events) {
     if (session.state === STATE.settled) injectDealerError(events);
-    animator.play(planSteps(events, { pauses: pauses(), isComputer }));
+    animator.play(planSteps(events, { pauses: pauses(), isComputer, swept, sweepNaturals: !blackjackUnknown() }));
+    // A betting mistake shows while the cards are being dealt.
+    showWarnings();
     updateControls();
   }
 
   /** Applies events with no animation (clearing the table). */
   function applyNow(events) {
-    for (const event of events) state.apply(event);
+    for (const event of events) {
+      state.apply(event);
+      countStep(event);
+    }
+    counts.textContent = countsText();
     render();
   }
 
   function whenIdle() {
-    for (const warning of session.takeWarnings()) showStatus(` ${warning} `, 'error');
-    // The counts only mean anything once every card in the timeline is showing.
+    warnedOfBadPlay = false;
+    showWarnings();
     counts.textContent = countsText();
     updateControls();
     if (session.state === STATE.insurance) startInsuranceTimer();
+    if (openBettingWhenIdle) {
+      openBettingWhenIdle = false;
+      beginBetting();
+      return;
+    }
     if (session.state === STATE.settled && !nextRoundTimer) {
       nextRoundTimer = setTimeout(() => {
         nextRoundTimer = null;
-        applyNow(session.nextRound());
-        beginBetting();
+        // The shoe is shuffled here, so the player sees it before betting.
+        openBettingWhenIdle = true;
+        queue(session.nextRound());
       }, pauses().payoff);
     }
   }
@@ -243,6 +316,7 @@ export function tableScreen(app) {
     const hidden = settings.get('display.hideActionButtons');
     for (const [action, btn] of actionButtons) btn.hidden = hidden || busy || !actions[action];
     const offering = !busy && session.state === STATE.insurance;
+    insureButton.disabled = !session.game.canInsure();
     insureButton.hidden = hidden || !offering;
     passButton.hidden = hidden || !offering;
   }
@@ -266,7 +340,8 @@ export function tableScreen(app) {
     if (!hand || !obviouslyBad(action, hand.totals())) return false;
     warnedOfBadPlay = !warnedOfBadPlay;
     if (!warnedOfBadPlay) return false;
-    alert(areYouSure(action));
+    app.sound.play('card');
+    toast(areYouSure(action), { position: 'top', ms: MESSAGE_MS });
     return true;
   }
 
@@ -295,7 +370,7 @@ export function tableScreen(app) {
     }
     if (action === 'insure' || action === 'pass') return;
     if (!session.availableActions()[action]) {
-      showStatus(` Cannot ${action} `, 'error');
+      showError(`Cannot ${action}`);
       return;
     }
     play(action);
@@ -328,46 +403,84 @@ export function tableScreen(app) {
       overlay.setMessage(`Bet above the table maximum of ${money(high)}.`);
       return;
     }
-    if (amount * seats.length > session.bankroll) {
+    if (!checkAffordable({ bankroll: session.bankroll, betPerHand: amount, hands: seats.length, sideBets: pendingSideBets })) {
       overlay.setMessage('Not enough in the bankroll for that bet.');
+      return;
+    }
+    const overTheMultiple = sideBetOverTheMultiple(amount);
+    if (overTheMultiple) {
+      overlay.setMessage(`Side bet cannot be greater than ${overTheMultiple} times the main bet.`);
       return;
     }
     reportMissedError();
     previousBetLabel = label;
     bankBeforeBet = session.bankroll;
     overlay.hide();
-    state.setBets(seats.map(seat => ({ seat, amount })));
-    state.setBankroll(bankBeforeBet - amount * seats.length);
+    swept.clear();
+    const sideBetTotal = Object.values(pendingSideBets).reduce((sum, staked) => sum + staked, 0);
+    state.setBets(seats.map(seat => ({ seat, amount, sideBet: sideBetTotal })));
+    state.setBankroll(bankBeforeBet - (amount + sideBetTotal) * seats.length);
     const sideBets = pendingSideBets;
     pendingSideBets = {};
     overlay.setSideBet('');
     queue(session.startRound({ betPerHand: amount, hands, sideBets }));
   }
 
-  /** Picks the amount to put on a side-bet spot for the next round. */
+  /** The limit a pending side bet breaks against this main bet, if any. */
+  function sideBetOverTheMultiple(betPerHand) {
+    for (const spot of session.sideBetSpots()) {
+      const staked = pendingSideBets[spot.id] ?? 0;
+      if (staked > betPerHand * spot.maxMultipleOfBet) return spot.maxMultipleOfBet;
+    }
+    return 0;
+  }
+
+  /** Picks the amount to put on each side-bet spot for the next round. */
   function chooseSideBet() {
     const spots = session.sideBetSpots();
     if (spots.length === 0) {
       alert('The selected game has no side bet.');
       return;
     }
-    app.open('game.betSelect', {
-      mode: 'sideBet',
-      chipValue: settings.get('betting.chipValue'),
-      onPick: ({ amount }) => {
-        const spot = spots[0];
-        if (amount > spot.maxAmount) {
-          alert(`The maximum ${spot.id} bet is ${money(spot.maxAmount)}.`);
-          return;
-        }
-        pendingSideBets = amount > 0 ? { [spot.id]: amount } : {};
-        overlay.setSideBet(amount > 0 ? `${spot.id} side bet ${money(amount)}` : '');
-      },
-    });
+    askSideBet(spots, 0);
   }
 
+  /** Asks for one spot's amount, then the next: a game may offer two. */
+  function askSideBet(spots, index) {
+    if (spots[index]) app.open('game.betSelect', sideBetParams(spots, index));
+  }
+
+  function sideBetParams(spots, index) {
+    const spot = spots[index];
+    return {
+      mode: 'sideBet',
+      title: spots.length > 1 ? `${spot.id} side bet` : undefined,
+      chipValue: settings.get('betting.chipValue'),
+      onPick: ({ amount }) => {
+        if (amount > spot.maxAmount) {
+          alert(`The maximum ${spot.id} bet is ${money(spot.maxAmount)}.`);
+          // Stay on the picker so another amount can be chosen.
+          return true;
+        }
+        pendingSideBets = { ...pendingSideBets };
+        if (amount > 0) pendingSideBets[spot.id] = amount;
+        else delete pendingSideBets[spot.id];
+        overlay.setSideBet(sideBetLabel());
+        if (!spots[index + 1]) return false;
+        // Swap this picker for the next spot's, so Back still lands on the table.
+        app.router.replace('game.betSelect', sideBetParams(spots, index + 1));
+        return true;
+      },
+    };
+  }
+
+  const sideBetLabel = () => Object.entries(pendingSideBets)
+    .map(([id, amount]) => `${id} side bet ${money(amount)}`)
+    .join(', ');
+
   function shuffleNow() {
-    applyNow(session.shuffleNow());
+    // Played out like any shuffle: the burn is shown, then goes into the tray.
+    queue(session.shuffleNow());
     overlay.setMessage('Shuffled.');
   }
 
@@ -385,9 +498,27 @@ export function tableScreen(app) {
   // The dealer may wrongly stand on a hard 16; the engine asks before each draw.
   session.beforeDealerDraw = dealer => {
     const enabled = enabledErrors(settings);
-    if (!dealerStandsByMistake({ dealer: dealer.totals(), enabled, random: Math.random })) return true;
+    const dealt = { ...dealer.totals(), cardCount: dealer.cardCount };
+    if (!dealerStandsByMistake({ dealer: dealt, playerTotal: lastPlayerTotal(), enabled, random: Math.random })) return true;
     stoodOnSixteen = true;
     return false;
+  };
+
+  // The dealer may call a good hand a bust as soon as the card lands.
+  session.onGoodHandBusted = hand => {
+    if (pendingError) return false;
+    const enabled = enabledErrors(settings);
+    const judged = { total: hand.total, cardCount: hand.cardCount, doubled: hand.doubled };
+    if (!bustsGoodHandByMistake({ hand: judged, enabled, random: Math.random })) return false;
+    // The hand pays nothing, so the bankroll is already short by what it owed.
+    const shortfall = bustedGoodHandShortfall({ bet: hand.bet, playerTotal: hand.total, dealerTotal: session.game.dealer.total });
+    pendingError = {
+      type: DEALER_ERROR.bustedGoodHand,
+      label: ERROR_LABELS[DEALER_ERROR.bustedGoodHand],
+      amount: shortfall,
+      hands: [{ key: hand.key, shortfall, result: 'Bust' }],
+    };
+    return true;
   };
 
   /** Lets the dealer make one of the mistakes the player enabled. */
@@ -395,28 +526,47 @@ export function tableScreen(app) {
     const enabled = enabledErrors(settings);
     if (enabled.length === 0 || pendingError) return;
     const hands = session.game.hands.filter(hand => hand.owner === PLAYER.human)
-      .map(hand => errorHandFrom(hand, { sideBetWin: sideBetWinOf(events, hand.key) }));
+      .map(hand => errorHandFrom(hand, { sideBetWin: sideBetWinOf(events, hand.key), sideBetPaid: sideBetPaidOf(events, hand.key) }));
     const dealer = session.game.dealer;
     const error = pickDealerError({
       hands,
       dealer: { total: dealer.total, cardCount: dealer.cardCount, busted: dealer.busted(), stoodOnSixteen },
       dealerBlackjack: Boolean(session.game.dealerBlackjack),
+      dealerPeeked: !blackjackUnknown(),
+      blackjackBonus: session.game.rules.blackjackPayout !== '1:1',
       enabled,
       random: Math.random,
     });
     if (!error) return;
     pendingError = error;
-    // The chips never arrive: take them back and show the result the dealer called.
-    session.game.bankroll -= error.amount;
-    session.save();
-    for (const affected of error.hands) {
-      const settled = events.find(event => event.type === 'settled' && event.hand === affected.key);
-      if (!settled) continue;
-      settled.result = affected.result;
-      settled.payout -= affected.shortfall;
+    // A mistake made during play has cost the hand already; one made at the
+    // payoff is made here: the chips never arrive.
+    if (!error.alreadyPaid) {
+      session.game.bankroll -= error.amount;
+      session.save();
+      for (const affected of error.hands) {
+        const settled = events.find(event => event.type === 'settled' && event.hand === affected.key);
+        if (!settled) continue;
+        settled.result = affected.result;
+        settled.payout -= affected.shortfall;
+      }
     }
     const end = events.find(event => event.type === 'roundEnd');
     if (end) end.bankroll = session.game.bankroll;
+  }
+
+  /** The total the last human hand left behind, which is what the original compared. */
+  function lastPlayerTotal() {
+    const human = session.game.hands.filter(hand => hand.owner === PLAYER.human);
+    return human.length ? human[human.length - 1].total : 0;
+  }
+
+  /** True when a blackjack could still be under an ace or ten the dealer never checked. */
+  function blackjackUnknown() {
+    const upcard = session.game.dealer.cards[0];
+    if (upcard === undefined) return false;
+    const value = valueOf(upcard);
+    return (value === 1 || value === 10) && !dealerPeeks(session.game.rules, upcard);
   }
 
   /** What a hand's side bets paid, read from its settled event. */
@@ -425,25 +575,34 @@ export function tableScreen(app) {
     return (settled?.sideBets ?? []).reduce((sum, bet) => sum + Math.max(0, bet.payout - bet.stake), 0);
   }
 
+  /** Everything a hand's side bets returned, stakes included. */
+  function sideBetPaidOf(events, key) {
+    const settled = events.find(event => event.type === 'settled' && event.hand === key);
+    return (settled?.sideBets ?? []).reduce((sum, bet) => sum + bet.payout, 0);
+  }
+
   function claimDealerError() {
     const { caught, refund, message, tone } = claimFoul(pendingError);
     if (caught) {
       session.game.bankroll += refund;
-      session.save();
+      session.recordFoulCaught();
       state.setBankroll(session.bankroll);
       pendingError = null;
       render();
+      app.sound.play('card');
     } else {
+      session.recordFalseFoul();
       app.sound.play('error');
     }
     overlay.setMessage(message.trim());
-    showStatus(message, tone === 'good' ? 'good' : 'error');
+    showError(message, tone === 'good' ? 'good' : 'error');
   }
 
   function reportMissedError() {
     stoodOnSixteen = false;
     if (!pendingError) return;
-    showStatus(` ${missedMessage(pendingError)} `, 'error');
+    session.recordMissedDealerError();
+    showError(missedMessage(pendingError));
     pendingError = null;
   }
 
@@ -458,7 +617,7 @@ export function tableScreen(app) {
     if (animator.busy) return;
     const error = session.lastError;
     if (!error || !error.table) {
-      showStatus(' No play errors yet ', 'error');
+      showError('No play errors yet', 'plain');
       return;
     }
     app.open('strategy.tables', {
@@ -499,9 +658,13 @@ export function tableScreen(app) {
       relayout();
       if (!overlay.visible && session.state === STATE.betting) {
         state.setBankroll(session.bankroll);
-        applyNow(session.game.takeEvents());
         counts.textContent = countsText();
-        beginBetting();
+        // The shoe's shuffle and burn play out before betting opens, once the
+        // felt, cards and pointer can be drawn, so nothing appears half-made.
+        openBettingWhenIdle = true;
+        renderer.whenReady().then(() => {
+          if (alive) queue(session.game.takeEvents());
+        });
       }
     },
 
@@ -514,7 +677,6 @@ export function tableScreen(app) {
       observer.disconnect();
       detachSwipes();
       animator.cancel();
-      clearTimeout(statusTimer);
       clearTimeout(nextRoundTimer);
       stopInsuranceTimer();
       refundOpenBets();
@@ -525,6 +687,12 @@ export function tableScreen(app) {
 const round1 = n => Math.round(n * 10) / 10;
 
 /** Chip labels drop the cents when there are none. */
+/** How long a table message stays up, as the original's bar did. */
+const MESSAGE_MS = 3500;
+
+/** The original's colours for a result on the chips. */
+const RESULT_TONES = { Win: 'win', '21': 'win', Bonus: 'win', Push: 'push', Lose: 'lose', Bust: 'lose', Surrender: 'lose' };
+
 const money = amount => `$${amount.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 })}`;
 
 /** The bankroll always shows cents. */

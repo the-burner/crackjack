@@ -89,6 +89,8 @@ export function doubleAllowed(rules, hand) {
     // Split aces can still double when that is allowed explicitly.
     if (!(hand.isAcePair() && rules.doubleAfterSplitAces)) return false;
   }
+  // A split ace may only stand or resplit, as the original had it, unless it may draw.
+  if (isSplitAce(rules, hand) && !rules.hitSplitAces && !rules.doubleAfterSplitAces) return false;
   if (hand.doubled && !rules.redouble) return false;
   const { total, hardTotal, soft } = hand.totals();
   if (soft) {
@@ -116,17 +118,28 @@ export function splitAllowed(rules, hand, handsInSeat) {
   return true;
 }
 
-/** Whether a split hand of aces may be hit or doubled. */
+/** Whether a split hand of aces may act at all, rather than standing at once. */
 export function splitAcesMayDraw(rules, hand) {
-  return !(hand.isSplit && valueOf(hand.cards[0]) === 1 && !rules.hitSplitAces);
+  if (!isSplitAce(rules, hand)) return true;
+  if (rules.hitSplitAces || rules.doubleAfterSplitAces) return true;
+  // Resplitting is the only play left, and it needs another ace.
+  return rules.resplitAces && hand.isAcePair();
 }
+
+/** Whether a split hand of aces may take another card. */
+export const splitAcesMayHit = (rules, hand) => !isSplitAce(rules, hand) || rules.hitSplitAces;
+
+const isSplitAce = (rules, hand) => hand.isSplit && valueOf(hand.cards[0]) === 1;
 
 /** Whether a hand may surrender now. */
 export function surrenderAllowed(rules, hand, { hasInsurance = false } = {}) {
-  if (rules.surrender === SURRENDER.none) return false;
   if (hasInsurance && !rules.surrenderAfterInsurance) return false;
   if (hand.isSplit) return false;
-  if (rules.surrender === SURRENDER.macao) return hand.cardCount >= 2 && !hand.busted();
+  // Double-down rescue is its own rule: it does not need the table to offer surrender.
+  if (hand.doubled) return Boolean(rules.doubleDownRescue) && !hand.busted();
+  if (rules.surrender === SURRENDER.none) return false;
+  // Macao surrenders an unbusted five-card hand, not a fresh one.
+  if (rules.surrender === SURRENDER.macao) return hand.cardCount === 5 && !hand.busted();
   return hand.cardCount === 2;
 }
 
@@ -173,8 +186,8 @@ export function blackjackPremium(rules, hand) {
 /** Rounds a blackjack premium the way the table does. */
 export const roundPremium = (rules, amount) => (rules.blackjackRoundUp ? Math.floor(amount + 0.5) : amount);
 
-/** The value a hand busts above. */
-export const bustValue = () => 21;
+/** The value a player hand busts above: 22 where a 22 counts as 21. */
+export const bustValue = rules => (rules?.player22CountsAs21 ? 22 : 21);
 
 /** True when three cards are a suited 6-7-8. */
 export function isSuited678(cards) {

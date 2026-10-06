@@ -72,7 +72,7 @@ export function flashPositions({ layout, rotated, cards, maxCards, width, height
   const places = [];
   for (let i = 0; i < cards; i++) {
     if (layout === 'vertical') places.push({ x: centreX, y: i * stepY });
-    else if (layout === 'horizontal') places.push({ x: i * stepX, y: centreY });
+    else if (layout === 'horizontal') places.push({ x: maxCards === 1 ? centreX : i * stepX, y: centreY });
     else places.push({ x: maxCards === 1 ? centreX : i * stepX, y: stepY * (maxCards - 1) - i * stepY });
   }
   return { cards: places, cardWidth, cardHeight };

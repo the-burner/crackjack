@@ -3,7 +3,7 @@
 // `npm run precache` (tools/update-precache.mjs) — run it after changing files.
 
 // <precache>
-const VERSION = '54d8705feecc';
+const VERSION = 'f5aae4dde4c9';
 const FILES = [
   './',
   './assets/cards/card-back.png',
@@ -602,7 +602,12 @@ self.addEventListener('fetch', event => {
           }
           return response;
         })
-        .catch(() => (request.mode === 'navigate' ? caches.match('./index.html') : Response.error()));
+        .catch(() => {
+          // A navigation anywhere else is sent to the shell, so the app's relative
+          // assets resolve under its own base rather than the link's.
+          const shell = new URL('./index.html', location.href).href;
+          return request.mode === 'navigate' && url.href !== shell ? Response.redirect(shell) : Response.error();
+        });
     }),
   );
 });

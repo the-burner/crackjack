@@ -69,7 +69,8 @@ export function fullOptionsScreen(app) {
     drillTime.hidden = autoMode;
     // Two Tables always deals complete hands, asks only running counts and never warns.
     handStyle.hidden = twoTables;
-    twoCounts.hidden = twoTables;
+    // Two Counts adds the running count, which the Running Count drill already asks for.
+    twoCounts.hidden = twoTables || form.get('drill') === 'runningCount';
     endWarning.hidden = twoTables || !autoMode;
   });
 

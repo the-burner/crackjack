@@ -56,10 +56,10 @@ export class Router {
   /** Opens a screen on top of the current one, and records it in the history. */
   open(name, params = {}) {
     const screen = this.mount(name, params);
-    // The bottom screen is the entry the app started on, so it replaces that
-    // entry's state rather than adding one of its own.
-    if (this.stack.length > 1) this.history?.pushState(this.entry, '');
-    else this.history?.replaceState?.(this.entry, '');
+    // The bottom screen keeps the entry the app started on below it, so that a
+    // back request with a dialog over it has an entry to spend on dismissing it.
+    if (this.stack.length === 1) this.history?.replaceState?.({ bottom: true }, '');
+    this.history?.pushState(this.entry, '');
     return screen;
   }
 
@@ -137,6 +137,18 @@ export class Router {
 
   /** The browser moved through the history: show what that entry stood for. */
   onPopState(event) {
+    // The entry below the bottom screen: a dialog over home is what a back
+    // request there means to close, and otherwise it means to leave the app.
+    if (event?.state?.bottom) {
+      if (this.dismissOverlay()) this.history?.pushState(this.entry, '');
+      else {
+        // Nothing to leave to (an installed app, a fresh tab) leaves this entry
+        // standing for the bottom screen, so the stack and the history agree.
+        this.history?.replaceState?.(this.entry, '');
+        this.history?.back?.();
+      }
+      return;
+    }
     const wanted = event?.state?.screens;
     // An entry that is not the router's own — a foreign one, or one whose state
     // the browser lost — says nothing about the screens, so they are left be.
@@ -166,7 +178,12 @@ export class Router {
     }
     // Reopens the rest, as far as they can be rebuilt.
     for (const { name, params } of wanted.slice(this.stack.length)) {
-      if (params === null || !this.factories.has(name)) break;
+      if (params === null || !this.factories.has(name)) {
+        // The entry stands for more than is open, so it is given up rather than
+        // left one ahead of the screens, swallowing the next back press.
+        this.history?.back?.();
+        return;
+      }
       this.mount(name, params);
     }
   }

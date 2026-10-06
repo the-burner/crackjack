@@ -154,6 +154,23 @@ describe('generateDepthTest', () => {
     const random = seededRandom(1);
     expect(generateDepthTest({ ...base, drill: 'trueCount', countRange: { min: 5, max: 5 }, random })).toBe(null);
   });
+
+  it('gives up when the count range holds no whole running count', () => {
+    const random = seededRandom(2);
+    expect(generateDepthTest({ ...base, drill: 'trueCount', countRange: { min: 0.2, max: 0.8 }, random })).toBe(null);
+  });
+
+  it('never repeats the previous true count', () => {
+    const random = seededRandom(13);
+    let found = 0;
+    for (let i = 0; i < 400; i++) {
+      const test = generateDepthTest({ ...base, drill: 'trueCount', previousAnswer: 2, random });
+      if (!test) continue;
+      found += 1;
+      expect(test.answer).not.toBe(2);
+    }
+    expect(found).toBeGreaterThan(50);
+  });
 });
 
 describe('trueCountFor', () => {

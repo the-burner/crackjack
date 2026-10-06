@@ -37,11 +37,17 @@ export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } =
  * A native select styled like the rest of the UI.
  * @param {{value: *, label: string}[]} options
  */
+/**
+ * Which option a value selects, or -1 when it is none of them. Showing the
+ * first option for an unknown value would claim a value nobody chose.
+ */
+export const selectedIndexFor = (options, value) => options.findIndex(o => o.value === value);
+
 export function select(options, value, onChange, { mini = false, name } = {}) {
   const el = h('select', { name, onchange: () => onChange(options[el.selectedIndex].value) },
     options.map(o => h('option', {}, o.label)));
   const wrap = h('div', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el);
-  wrap.setValue = v => { el.selectedIndex = Math.max(0, options.findIndex(o => o.value === v)); };
+  wrap.setValue = v => { el.selectedIndex = selectedIndexFor(options, v); };
   wrap.setValue(value);
   wrap.control = el;
   return wrap;

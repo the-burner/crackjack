@@ -2,10 +2,13 @@
 // strategy, trueCount, display) are used by both the game and the drills;
 // drills.* groups belong to one drill each.
 
+import { BUILTIN_STRATEGIES } from './strategies.js';
+import { BUILTIN_SIDE_BET_GAMES } from '../data/side-bet-games.js';
+
 const bool = value => ({ type: 'bool', default: value });
 const int = (value, min, max) => ({ type: 'int', default: value, min, max });
 const oneOf = (values, value) => ({ type: 'enum', values, default: value });
-const json = value => ({ type: 'json', default: value });
+const json = (value, shape) => ({ type: 'json', default: value, shape });
 
 const grid = (rows, cols, value) => Array.from({ length: rows }, () => new Array(cols).fill(value));
 const tableGrids = value => ({
@@ -78,7 +81,7 @@ export const SETTINGS_SCHEMA = {
   'table.refreshBankrollOnStart': bool(false),
 
   // Playing strategy (shared).
-  'strategy.system': int(100),
+  'strategy.system': oneOf(BUILTIN_STRATEGIES.map(strategy => strategy.id), 100),
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
@@ -100,10 +103,13 @@ export const SETTINGS_SCHEMA = {
   'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
   'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
-  'betting.ramp': json({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }),
+  'betting.ramp': json({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) },
+    value => Boolean(value) && Array.isArray(value.rows)),
 
   // Unusual games, side bets and bonuses (game).
-  'bonuses.game': int(0),
+  'bonuses.game': oneOf(BUILTIN_SIDE_BET_GAMES.map(game => game.id), 0),
+  /** The rules an unusual game overwrote, put back when it is left. */
+  'bonuses.savedRules': json({}),
   'bonuses.sevens777': oneOf(['none', '2:1', '3:2', 'suited10:1'], 'none'),
   'bonuses.suitedAceJack': bool(false),
   'bonuses.heartsAceJack': bool(false),

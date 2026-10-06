@@ -107,4 +107,12 @@ describe('decodeSideBetGame', () => {
   it('rejects a definition with no field list', () => {
     expect(() => decodeSideBetGame('|Broken')).toThrow();
   });
+
+  it('reads a definition that runs out of fields as empty labels and zeroes', () => {
+    const game = decodeSideBetGame('|Truncated|');
+    expect(game.name).toBe('Truncated');
+    expect(game.rules).toHaveLength(RULE_COUNT);
+    expect(game.rules.every(rule => rule.sideBetId === '')).toBe(true);
+    expect(game.rules.every(rule => rule.payTenths === 0 && rule.sideBetMinLimit === 0)).toBe(true);
+  });
 });

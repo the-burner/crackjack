@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildHandList, dealHand, fillHand, handIndex, countForHand, correctPlay, errorCell,
+  buildHandList, dealHand, fillHand, handIndex, ownIndex, countCentre, countForHand, correctPlay, errorCell,
   describeHand, describeEntry, errorCellsAsHands, errorSummary, percent, rowOf, columnOf, upcardOf, SITUATIONS,
   roundRobinEntries, RoundRobin,
 } from '../../../public/src/drills/flash/logic.js';
@@ -14,6 +14,9 @@ const ALL_SITUATIONS = Object.fromEntries(SITUATIONS.map(k => [k, true]));
 const options = extra => ({ decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all', ...extra });
 const highLow = buildStrategy(STRATEGY_FILES[30], options());
 const basic = buildStrategy(STRATEGY_FILES[5], options());
+/** The system a fresh install drills with, and an unbalanced one that counts to a pivot. */
+const crackjack = buildStrategy(STRATEGY_FILES[100], options());
+const knockOut = buildStrategy(STRATEGY_FILES[74], options());
 
 const emptyMask = () => Object.fromEntries(SITUATIONS.map(k => [k, Array.from({ length: 10 }, () => new Array(10).fill(false))]));
 
@@ -73,6 +76,18 @@ describe('hand lists', () => {
     expect(none.error).toMatch(/ERRORS/);
   });
 
+  it('reports an empty drill-errors list when no errors have been recorded at all', () => {
+    const { entries, error } = buildHandList({ hands: 'drillErrors', situations: ALL_SITUATIONS, strategy: highLow });
+    expect(entries).toHaveLength(0);
+    expect(error).toMatch(/ERRORS/);
+  });
+
+  it('builds the round-robin list from the selected situations', () => {
+    const { entries, error } = buildHandList({ hands: 'roundRobin', situations: { surrender: true }, strategy: highLow });
+    expect(error).toBe(null);
+    expect(entries).toEqual(roundRobinEntries({ surrender: true }));
+  });
+
   it('only includes situations that are switched on', () => {
     const { entries } = buildHandList({ hands: 'withIndices', situations: { split: true, surrender: true }, strategy: highLow });
     expect(new Set(entries.map(e => e.kind))).toEqual(new Set(['split', 'surrender']));
@@ -118,6 +133,21 @@ describe('fillHand', () => {
   it('refuses a total it cannot reach', () => {
     expect(fillHand(10, 10, 2, random)).toBe(null);
   });
+
+  it('builds a hand of more than two cards that opens with a pair', () => {
+    const rolled = seededRandom(13);
+    const makes = new Set();
+    for (let i = 0; i < 200; i++) makes.add(fillHand(5, 16, 3, rolled)?.join('+'));
+    expect(makes).toContain('5+5+6');
+  });
+
+  it('still refuses a two-card pair when more cards are allowed', () => {
+    const rolled = seededRandom(17);
+    for (let i = 0; i < 200; i++) {
+      const cards = fillHand(8, 16, 5, rolled);
+      if (cards) expect(cards).not.toEqual([8, 8]);
+    }
+  });
 });
 
 describe('dealHand', () => {
@@ -157,6 +187,63 @@ describe('dealHand', () => {
     expect(suits.size).toBe(4);
   });
 
+  it('deals a soft double as an ace plus the row value, either way round', () => {
+    const random = seededRandom(7);
+    const orders = new Set();
+    for (let i = 0; i < 60; i++) {
+      const hand = dealHand([{ kind: 'softDouble', upcard: 5, value: 6 }], { maxCards: 5, doubleAnyCards: false, situations: ALL_SITUATIONS }, random);
+      expect(hand.cards).toHaveLength(2);
+      expect(hand.total).toBe(17);
+      expect(hand.soft).toBe(true);
+      orders.add(hand.cards.join('+'));
+    }
+    expect(orders).toEqual(new Set(['1+6', '6+1']));
+  });
+
+  it('gives up on a soft double that would be a blackjack', () => {
+    const random = seededRandom(3);
+    expect(dealHand([{ kind: 'softDouble', upcard: 5, value: 10 }], { maxCards: 2, situations: ALL_SITUATIONS }, random)).toBe(null);
+  });
+
+  it('deals hard doubles of more than two cards only when doubling on any cards is allowed', () => {
+    const random = seededRandom(4);
+    const counts = new Set();
+    for (let i = 0; i < 80; i++) {
+      const hand = dealHand([{ kind: 'hardDouble', upcard: 6, value: 9 }], { maxCards: 4, doubleAnyCards: true, situations: ALL_SITUATIONS }, random);
+      expect(hand.hardTotal).toBe(9);
+      counts.add(hand.cardCount);
+    }
+    expect([...counts].some(n => n > 2)).toBe(true);
+  });
+
+  it('never deals an ace in a surrender hand', () => {
+    const random = seededRandom(6);
+    for (let i = 0; i < 40; i++) {
+      const hand = dealHand([{ kind: 'surrender', upcard: 10, value: 16 }], { maxCards: 5, situations: ALL_SITUATIONS }, random);
+      expect(hand.cards).toHaveLength(2);
+      expect(hand.cards).not.toContain(1);
+    }
+  });
+
+  it('opens a surrender hand with any card up to a ten', () => {
+    const random = seededRandom(8);
+    const firsts = new Set();
+    for (let i = 0; i < 300; i++) {
+      const hand = dealHand([{ kind: 'surrender', upcard: 10, value: 16 }], { maxCards: 5, situations: ALL_SITUATIONS }, random);
+      firsts.add(hand.cards[0]);
+    }
+    expect(firsts).toEqual(new Set([6, 7, 8, 9, 10]));
+  });
+
+  it('never shows the same card twice, dealer upcard included', () => {
+    const random = seededRandom(12);
+    for (let i = 0; i < 300; i++) {
+      const hand = dealHand([{ kind: 'hardStand', upcard: 10, value: 16 }], { maxCards: 5, doubleAnyCards: false, situations: ALL_SITUATIONS }, random);
+      const shown = [hand.upcardId, ...hand.cardIds];
+      expect(new Set(shown).size).toBe(shown.length);
+    }
+  });
+
   it('gives up when the situation of the only entry is switched off', () => {
     const random = seededRandom(1);
     expect(dealHand(list, { maxCards: 5, situations: { hardStand: false } }, random)).toBe(null);
@@ -174,12 +261,60 @@ describe('the count shown with a hand', () => {
       expect(n).toBeLessThanOrEqual(8);
     }
   });
+
+  it('centres a hand with no index on zero, or on the pivot of an unbalanced system', () => {
+    expect(countCentre(highLow)).toBe(0);
+    expect(countCentre(knockOut)).toBe(knockOut.realPivot);
+    const random = seededRandom(3);
+    for (let i = 0; i < 200; i++) {
+      const n = countForHand({ countMode: 'random', fixedCount: 0, index: null, centre: 5 }, random);
+      expect(n).toBeGreaterThanOrEqual(1);
+      expect(n).toBeLessThanOrEqual(9);
+    }
+  });
+});
+
+describe('the spread of the random count over a drill', () => {
+  const mean = numbers => numbers.reduce((a, b) => a + b, 0) / numbers.length;
+
+  /** The counts the Default Hands would be shown with, over a long run. */
+  const sample = (strategy, seed) => {
+    const { entries } = buildHandList({ hands: 'default', situations: ALL_SITUATIONS, strategy });
+    const random = seededRandom(seed);
+    const centre = countCentre(strategy);
+    const counts = [];
+    for (let i = 0; i < 2000; i++) {
+      const hand = dealHand(entries, { maxCards: 2, doubleAnyCards: false, situations: ALL_SITUATIONS }, random);
+      counts.push(countForHand({ countMode: 'random', fixedCount: 0, index: ownIndex(strategy, hand, ALL_SITUATIONS), centre }, random));
+    }
+    return counts;
+  };
+
+  it('straddles zero for a balanced system', () => {
+    const counts = sample(crackjack, 4);
+    expect(Math.abs(mean(counts))).toBeLessThan(1);
+    expect(counts.filter(n => n < 0).length / counts.length).toBeGreaterThan(0.25);
+  });
+
+  it('sits around the pivot for an unbalanced system', () => {
+    expect(mean(sample(knockOut, 4))).toBeCloseTo(knockOut.realPivot, 0);
+  });
 });
 
 describe('handIndex', () => {
+  /** Hard 17 against a six is always Stand, so the hand has no index of its own. */
+  const alwaysStand = { kind: 'hardStand', cards: [10, 7], cardIds: [10, 20], total: 17, hardTotal: 17, soft: false, cardCount: 2, upcard: 6 };
+
   it('finds the own playing index of the hand', () => {
     const hand = { kind: 'hardStand', cards: [10, 6], cardIds: [10, 19], total: 16, hardTotal: 16, soft: false, cardCount: 2, upcard: 10 };
     expect(handIndex(highLow, hand, ALL_SITUATIONS)).toBe(highLow.tables.hardStand[1][8]);
+    expect(ownIndex(highLow, hand, ALL_SITUATIONS)).toBe(highLow.tables.hardStand[1][8]);
+  });
+
+  it('has no own index for a hand the tables always play the same way', () => {
+    expect(ownIndex(highLow, alwaysStand, ALL_SITUATIONS)).toBe(null);
+    // The old reading of such a hand: the insurance index, which is not its own.
+    expect(handIndex(highLow, alwaysStand, ALL_SITUATIONS)).toBe(highLow.insurance / 10);
   });
 
   it('has no index for a basic-strategy hand, so the count is centred on zero', () => {
@@ -235,6 +370,28 @@ describe('errorCell', () => {
   it('files a timeout under the table that decided', () => {
     const play = correctPlay(highLow, soft18, { count: 0, situations: ALL_SITUATIONS, doubleAnyCards: false });
     expect(errorCell(play, null, soft18)).toEqual({ table: 'softDouble', row: 2, column: 3 });
+  });
+
+  // With surrender on, every error of a 16 is filed under the surrender table,
+  // so these use a drill with surrender switched off.
+  const noSurrender = { ...ALL_SITUATIONS, surrender: false };
+  const hard16 = { cards: [10, 6], cardIds: [10, 6], total: 16, hardTotal: 16, soft: false, cardCount: 2, upcard: 10, kind: 'hardStand' };
+  const pair8 = { cards: [8, 8], cardIds: [8, 8], total: 16, hardTotal: 16, soft: false, cardCount: 2, upcard: 10, kind: 'split' };
+
+  it('keeps the deciding table when the action the player chose has no row for the hand', () => {
+    const play = correctPlay(highLow, hard16, { count: 0, situations: noSurrender, doubleAnyCards: false });
+    // Hard 16 is in neither the split nor the hard-double table.
+    for (const action of [ACTION.split, ACTION.double, ACTION.stand]) {
+      expect(errorCell(play, action, hard16)).toEqual({ table: 'hardStand', row: 1, column: 8 });
+    }
+  });
+
+  it('keeps the deciding table when the action the player chose comes from a later one', () => {
+    const split = correctPlay(highLow, pair8, { count: 0, situations: noSurrender, doubleAnyCards: false });
+    expect(errorCell(split, ACTION.hit, pair8)).toEqual({ table: 'split', row: 3, column: 8 });
+    const soft = correctPlay(highLow, soft18, { count: 0, situations: noSurrender, doubleAnyCards: false });
+    expect(errorCell(soft, ACTION.stand, soft18)).toEqual({ table: 'softDouble', row: 2, column: 3 });
+    expect(errorCell(soft, ACTION.double, soft18)).toEqual({ table: 'softDouble', row: 2, column: 3 });
   });
 });
 
@@ -313,6 +470,24 @@ describe('Round Robin', () => {
       for (let i = 1; i <= entries.length; i++) {
         robin.next();
         expect(robin.endsRound).toBe(i === entries.length);
+      }
+    }
+  });
+
+  it('has nothing to deal from an empty list', () => {
+    const robin = new RoundRobin([], seededRandom(1));
+    expect(robin.next()).toBe(null);
+    expect(robin.endsRound).toBe(false);
+  });
+
+  it('never starts a new round with the hand the last one ended on, even with two hands', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const robin = new RoundRobin([{ id: 1 }, { id: 2 }], seededRandom(seed));
+      let last = null;
+      for (let i = 0; i < 12; i++) {
+        const next = robin.next();
+        expect(next).not.toBe(last);
+        last = next;
       }
     }
   });

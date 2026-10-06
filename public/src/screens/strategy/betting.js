@@ -7,8 +7,9 @@ import { standardScreen } from '../../ui/screen.js';
 import { promptNumber } from '../../ui/dialogs.js';
 import {
   CHIP_CHOICES, HAND_CHOICES, MIN_ROWS, MAX_ROWS,
-  countLabels, formatRow, maxChipsForHands, normalizeRamp, setRow, setRowCount,
+  countLabels, formatRow, maxChipsForHands, normalizeRamp, rampToSave, setRow, setRowCount,
 } from '../../settings/bet-ramp.js';
+import { group } from '../settings/controls.js';
 
 const CHIP_VALUES = [1, 5, 10, 25, 100, 500, 1000];
 
@@ -40,11 +41,13 @@ export function bettingScreen(app) {
   const table = h('div', {});
 
   body.append(h('div', { class: 'column' },
-    h('div', { class: 'note' }, 'Enter the number of different bets in the table and then click on a table cell to enter a new bet.'),
-    warn,
-    h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Chip Value:'), chipValue),
-    h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Number of bets:'), rowCountButton),
-    minCountRow,
+    h('p', { class: 'note settings-note' }, 'Enter the number of different bets in the table and then click on a table cell to enter a new bet.'),
+    group(
+      warn,
+      h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Chip Value:'), chipValue),
+      h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Number of bets:'), rowCountButton),
+      minCountRow,
+    ),
     table,
   ));
 
@@ -66,6 +69,9 @@ export function bettingScreen(app) {
   return {
     el,
     onShow() {
+      // A ramp saved out of range is shown tidied, so keep the tidied one.
+      const tidy = rampToSave(settings.get('betting.ramp'));
+      if (tidy) settings.set('betting.ramp', tidy);
       warn.refresh(() => settings.get('betting.warnOnError'));
       chipValue.setValue(settings.get('betting.chipValue'));
       render();
@@ -76,7 +82,7 @@ export function bettingScreen(app) {
 /** Picks the number of hands and chips for one row of the bet table. */
 export function betSelectScreen(app, { row = 0 } = {}) {
   const { settings } = app;
-  const { el, body } = standardScreen(app, { title: 'Allowed Bets', help: 'game.betSelect' });
+  const { el, body } = standardScreen(app, { title: 'Allowed Bets', help: 'settings.betting' });
   const current = normalizeRamp(settings.get('betting.ramp'));
   let hands = current.rows[row]?.hands ?? 1;
 

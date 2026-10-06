@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CHIP_CHOICES, MAX_CHIPS, MAX_ROWS, checkBet, countLabels, decodeRow, encodeRow,
-  formatRow, fromPackedRamp, maxChipsForHands, normalizeRamp, rowCounts,
+  formatRow, fromPackedRamp, maxChipsForHands, normalizeRamp, rampToSave, rowCounts,
   rowForCount, setRow, setRowCount, toPackedRamp,
 } from '../../../public/src/settings/bet-ramp.js';
 import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
@@ -79,9 +79,24 @@ describe('row labels', () => {
     expect(rowCounts({ ...DEFAULT_RAMP, minCount: 1 })).toEqual([1, 2, 3, 4, 5]);
   });
 
+  it('counts the rows of a ramp with no minCount from zero', () => {
+    expect(rowCounts({ rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] })).toEqual([0, 1]);
+  });
+
   it('writes multi-hand bets as hands x chips', () => {
     expect(formatRow({ chips: 10, hands: 1 })).toBe('10');
     expect(formatRow({ chips: 10, hands: 3 })).toBe('3x10');
+  });
+});
+
+describe('rampToSave', () => {
+  it('has nothing to save for a ramp that is already in range', () => {
+    expect(rampToSave(DEFAULT_RAMP)).toBe(null);
+  });
+
+  it('brings a ramp with out-of-range values back into range', () => {
+    expect(rampToSave({ minCount: 1.5, rows: [{ chips: 999, hands: 9 }] }))
+      .toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
   });
 });
 
@@ -119,6 +134,11 @@ describe('checkBet', () => {
 
   it('reports betting too little', () => {
     expect(checkBet({ ramp, count: 1, chipValue: 5, hands: 2, total: 20 })).toMatchObject({ ok: false, tooMuch: false });
+  });
+
+  it('treats betting on no hands at all as too little', () => {
+    expect(checkBet({ ramp, count: 0, chipValue: 5, hands: 0, total: 0 }))
+      .toMatchObject({ ok: false, tooMuch: false, expectedPerHand: 5 });
   });
 });
 

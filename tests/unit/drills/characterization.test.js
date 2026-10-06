@@ -128,19 +128,41 @@ describe('depth answer grids match the original', () => {
 
 describe('depth tray photos match the original', () => {
   const styles = Object.keys(TRAY_STYLES);
-  it('picks the same photo, or gives up at the same depth', () => {
+
+  /**
+   * A deliberate divergence. The original picked a photo one step too low, so
+   * every tray held a quarter deck more than the drill asked about and the
+   * deepest step of two styles showed an empty tray from another style's
+   * series. We shifted each style's base up by two, which is this offset.
+   * See tests/unit/drills/tray-depth.test.js for what is now guaranteed.
+   */
+  const CORRECTION = 2;
+
+  it('picks the photo the original picked, one step deeper', () => {
     const wrong = [];
     for (const record of loadFixture('drills-depth-trays')) {
       const { style, decksInTray } = record.config;
       const mine = trayImage(decksInTray, styles[style]);
       const theirs = record.failed ? null : record.image;
       const mineNumber = mine ? Number(mine.src.match(/(\d+)\.jpg/)[1]) : null;
-      if (mineNumber !== theirs) wrong.push({ ...record.config, mine: mineNumber, theirs });
+      const expected = theirs === null ? null : theirs + CORRECTION;
+      // The original gave up two steps earlier than we do, so it recorded no
+      // photo where we now have one; that is the point of the correction.
+      if (mineNumber !== expected && !(theirs === null && mineNumber !== null)) {
+        wrong.push({ ...record.config, mine: mineNumber, original: theirs });
+      }
       if (mine) {
         expect([mine.crop.width, mine.crop.height]).toEqual(record.crop);
       }
     }
     expect(wrong).toEqual([]);
+  });
+
+  it('shows a tray at the two depths the original could not', () => {
+    const rescued = loadFixture('drills-depth-trays')
+      .filter(record => record.failed)
+      .filter(record => trayImage(record.config.decksInTray, styles[record.config.style]));
+    expect(rescued.map(r => r.config.decksInTray)).toEqual(Array(rescued.length).fill(7.5));
   });
 });
 

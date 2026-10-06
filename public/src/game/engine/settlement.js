@@ -35,15 +35,21 @@ export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
 
   // Surrender: half the bet comes back. Against a dealer blackjack a late
   // surrender (decided before the dealer checked) loses everything.
+  // A hand the dealer wrongly busted pays nothing, whatever it held.
+  if (hand.mistakenBust) return finish(0, RESULT.bust);
+
   if (hand.surrendered) {
     const lateAgainstBlackjack = dealerBlackjack && rules.surrender === 'late';
-    return finish(lateAgainstBlackjack ? 0 : hand.bet / 2, RESULT.surrender);
+    // Half of everything wagered comes back, so a rescued double returns half of both bets.
+    return finish(lateAgainstBlackjack ? 0 : (hand.bet + hand.doubleBet) / 2, RESULT.surrender);
   }
 
   const playerBlackjack = hand.isNatural() || (rules.bonuses.splitTenAceIsBlackjack && hand.cardCount === 2 && hand.total === 21);
   const wager = hand.bet + hand.doubleBet;
 
   if (dealerBlackjack) {
+    // "Player BJ always wins" pays 3:2 instead of pushing (the original's own flat 0.5).
+    if (playerBlackjack && rules.playerBlackjackAlwaysWins) return finish(hand.bet * 2.5, RESULT.win);
     if (playerBlackjack) return finish(wager, RESULT.push);
     if (rules.dealerBlackjackWinsAll) return finish(0, RESULT.lose);
     // Original bets only: the dealer takes just the hand's first bet, so a
@@ -59,7 +65,7 @@ export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
   }
 
   // Bonuses that win regardless of the dealer's hand.
-  const bonus = handBonus(rules, hand);
+  const bonus = handBonus(rules, hand, { dealerTotal: dealer.total });
   if (bonus) return finish(wager * (1 + bonus.multiplier), RESULT.bonus);
 
   if (hand.busted()) return finish(0, RESULT.bust);
@@ -86,7 +92,7 @@ function settleInsurance({ hand, dealerBlackjack }) {
  * A bonus that wins on the player's cards alone.
  * @returns {{multiplier: number, name: string}|null} multiplier is the profit as a multiple of the wager.
  */
-export function handBonus(rules, hand) {
+export function handBonus(rules, hand, { dealerTotal = 0 } = {}) {
   const b = rules.bonuses;
   const n = hand.cardCount;
   const twentyOne = hand.total === 21 && !hand.busted();
@@ -97,7 +103,8 @@ export function handBonus(rules, hand) {
     if (b.sevens777 === '2:1') return { multiplier: 2, name: '777' };
     if (b.sevens777 === '3:2') return { multiplier: 1.5, name: '777' };
   }
-  if (isSuited678(hand.cards) && (b.suited678 || b.suited678IfWins)) return { multiplier: 2, name: 'Suited 678' };
+  // "Pays 2:1 if it wins" does not pay against a dealer 21.
+  if (isSuited678(hand.cards) && (b.suited678 || (b.suited678IfWins && dealerTotal !== 21))) return { multiplier: 2, name: 'Suited 678' };
   if (twentyOne && n === 5 && b.fiveCard21) return { multiplier: 2, name: 'Five card 21' };
   if (twentyOne && n === 6 && b.sixCard21) return { multiplier: 2, name: 'Six card 21' };
   if (twentyOne && n >= 5 && b.fivePlusCard21) return { multiplier: 2, name: 'Five or more card 21' };

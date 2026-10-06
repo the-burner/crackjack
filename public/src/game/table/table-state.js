@@ -4,7 +4,7 @@
 // screen cannot render the engine's hands directly: it replays the engine's
 // events into this model one at a time and draws that instead.
 
-const DEALER_KEY = '0-0';
+export const DEALER_KEY = '0-0';
 
 /**
  * @param {object} o
@@ -23,8 +23,14 @@ export function createTableState({ decks }) {
     insurance: false,
     /** Cards drawn from the shoe this shoe, including burns. */
     dealt: 0,
+    /** Burn cards sitting out in front of the tray: {card, faceUp}. */
+    burns: [],
     /** Amount showing on each seat's chip label, by seat number. */
     chips: new Map(),
+    /** What each player hand has wagered, by hand key, so a swept hand takes its chips with it. */
+    stakes: new Map(),
+    /** Hands already paid and swept off the table this round. */
+    swept: new Set(),
     /**
      * The bankroll as the player has seen it so far. The engine's bankroll is
      * already final when the first card is drawn, so the label follows the
@@ -35,7 +41,7 @@ export function createTableState({ decks }) {
 
     /** Cards sitting in the discard tray: dealt, less what is still on the table. */
     get trayCards() {
-      return Math.max(0, state.dealt - state.cardsOnTable);
+      return Math.max(0, state.dealt - state.cardsOnTable - state.burns.length);
     },
 
     /** Cards left in the shoe. */
@@ -65,7 +71,7 @@ export function createTableState({ decks }) {
 
     /** Sets what each seat has wagered, so the chip labels can be drawn. */
     setBets(bets) {
-      state.chips = new Map(bets.map(({ seat, amount, sideBet = 0 }) => [seat, { base: amount, amount, sideBet, result: null }]));
+      state.chips = new Map(bets.map(({ seat, amount, sideBet = 0 }) => [seat, { base: amount, amount, sideBet, result: null, paid: null }]));
     },
 
     /** Clears the table for a new round. */
@@ -75,6 +81,19 @@ export function createTableState({ decks }) {
       state.pointerHand = null;
       state.insurance = false;
       state.chips = new Map();
+      state.stakes = new Map();
+      state.swept = new Set();
+    },
+
+    /** A seat's chip label; computer seats get one only to show their results. */
+    chipFor(seat) {
+      if (!state.chips.has(seat)) state.chips.set(seat, { base: 0, amount: 0, sideBet: 0, result: null, paid: null, computer: true });
+      return state.chips.get(seat);
+    },
+
+    /** Adds to what a hand has wagered. */
+    stake(key, amount) {
+      state.stakes.set(key, (state.stakes.get(key) ?? 0) + amount);
     },
 
     /** Applies one engine event. */
@@ -82,20 +101,37 @@ export function createTableState({ decks }) {
       switch (event.type) {
         case 'shuffle':
           state.dealt = 0;
+          state.burns = [];
           break;
         case 'burn':
           state.dealt += 1;
+          state.burns.push({ card: event.card, faceUp: Boolean(event.faceUp) });
+          break;
+        case 'burnsToTray':
+          state.burns = [];
+          break;
+        case 'roundStart':
+          // The burn cards are gathered up before the deal, if they were not already.
+          state.burns = [];
           break;
         case 'card': {
+          const chip = state.chips.get(Number(event.hand.split('-')[0]));
+          if (event.hand !== DEALER_KEY && chip && !state.stakes.has(event.hand)) state.stake(event.hand, chip.base);
           const hand = state.hand(event.hand);
           hand.cards.push(event.card);
           hand.faceUp.push(event.faceUp);
           state.dealt += 1;
           break;
         }
-        case 'reveal': {
+        case 'reveal':
+        case 'peek': {
           const hand = state.hand(event.hand);
           hand.faceUp[event.cardIndex] = true;
+          break;
+        }
+        case 'conceal': {
+          const hand = state.hand(event.hand);
+          hand.faceUp[event.cardIndex] = false;
           break;
         }
         case 'split': {
@@ -111,6 +147,7 @@ export function createTableState({ decks }) {
           if (chip) {
             chip.amount += chip.base;
             state.bankroll -= chip.base;
+            state.stake(event.newHand, chip.base);
           }
           break;
         }
@@ -119,6 +156,7 @@ export function createTableState({ decks }) {
           if (bet) {
             bet.amount += event.amount;
             state.bankroll -= event.amount;
+            state.stake(event.hand, event.amount);
           }
           break;
         }
@@ -128,13 +166,21 @@ export function createTableState({ decks }) {
         case 'insuranceTaken':
           state.insurance = false;
           // Insurance costs half the bet on each hand that has one.
-          for (const [, chip] of state.chips) {
+          for (const [seat, chip] of state.chips) {
             chip.amount += chip.base / 2;
             state.bankroll -= chip.base / 2;
+            state.stake(`${seat}-0`, chip.base / 2);
           }
           break;
         case 'insuranceDeclined':
           state.insurance = false;
+          break;
+        case 'insuranceLost':
+          // The dealer takes the insurance chips as soon as it has checked.
+          for (const [seat, chip] of state.chips) {
+            chip.amount -= chip.base / 2;
+            state.stake(`${seat}-0`, -chip.base / 2);
+          }
           break;
         case 'turn':
           state.pointerHand = event.hand;
@@ -142,10 +188,32 @@ export function createTableState({ decks }) {
         case 'dealerTurn':
           state.pointerHand = null;
           break;
+        case 'result':
+          // The pointer leaves before a hand is paid.
+          if (state.pointerHand === event.hand) state.pointerHand = null;
+          state.chipFor(state.hand(event.hand).seat).result = event.result;
+          break;
         case 'settled': {
+          if (state.pointerHand === event.hand) state.pointerHand = null;
           const chip = state.chips.get(event.seat);
-          if (chip) chip.result = event.result;
-          if (chip) state.bankroll += event.payout;
+          if (chip && !chip.computer) state.bankroll += event.payout;
+          if (!state.swept.has(event.hand)) state.chipFor(event.seat).result = event.result;
+          break;
+        }
+        case 'payout': {
+          const chip = state.chipFor(state.hand(event.hand).seat);
+          chip.result = null;
+          chip.paid = event.amount;
+          break;
+        }
+        case 'sweep': {
+          // The hand's cards go to the tray and its chips leave the seat.
+          const { seat } = state.hand(event.hand);
+          state.hands = state.hands.filter(h => h.key !== event.hand);
+          state.swept.add(event.hand);
+          const chip = state.chipFor(seat);
+          Object.assign(chip, { result: null, paid: null, amount: chip.amount - (state.stakes.get(event.hand) ?? 0) });
+          if (!state.hands.some(h => h.seat === seat)) Object.assign(chip, { amount: 0, sideBet: 0 });
           break;
         }
         case 'roundEnd':

@@ -14,13 +14,16 @@ const HELP_TEXT = 'Tap the number of chips to bet. To play more than one spot, '
  * @param {object} app
  * @param {object} params
  * @param {'main'|'sideBet'} [params.mode='main']  Side bets are for one spot only.
+ * @param {string} [params.title]  Names the spot where a game has two.
  * @param {number} [params.chipValue]
  * @param {number} [params.hands]
- * @param {(bet: {chips: number, hands: number, amount: number}) => void} params.onPick
+ * @param {(bet: {chips: number, hands: number, amount: number}) => boolean|void} params.onPick
+ *   Returning true means the handler moved to another screen itself.
  */
-export function betSelectScreen(app, { mode = 'main', chipValue = app.settings.get('betting.chipValue'), hands: initialHands = 1, onPick } = {}) {
+export function betSelectScreen(app, { mode = 'main', title, chipValue = app.settings.get('betting.chipValue'), hands: initialHands = 1, onPick } = {}) {
   const sideBet = mode === 'sideBet';
-  const { el, body } = standardScreen(app, { title: sideBet ? 'Side Bet' : 'Allowed Bets', help: 'game.betSelect', className: 'bet-select' });
+  const heading = title ?? (sideBet ? 'Side Bet' : 'Allowed Bets');
+  const { el, body } = standardScreen(app, { title: heading, help: 'game.betSelect', className: 'bet-select' });
   let hands = Math.min(Math.max(1, initialHands), HAND_CHOICES.length);
 
   const handButtons = HAND_CHOICES.map(count => button(count === 1 ? '1' : `${count}x`, {
@@ -41,15 +44,15 @@ export function betSelectScreen(app, { mode = 'main', chipValue = app.settings.g
   }
 
   function pick(chips) {
-    onPick?.({ chips, hands: sideBet ? 1 : hands, amount: chips * chipValue });
-    app.back();
+    const moved = onPick?.({ chips, hands: sideBet ? 1 : hands, amount: chips * chipValue });
+    if (moved !== true) app.back();
   }
 
   async function custom() {
     const amount = await promptNumber('Amount to bet', chipValue, { min: 0, max: MAX_CHIPS * chipValue });
     if (amount === null) return;
-    onPick?.({ chips: amount / chipValue, hands: sideBet ? 1 : hands, amount });
-    app.back();
+    const moved = onPick?.({ chips: amount / chipValue, hands: sideBet ? 1 : hands, amount });
+    if (moved !== true) app.back();
   }
 
   body.append(h('div', { class: 'column bet-select__body' },

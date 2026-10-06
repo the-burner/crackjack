@@ -27,8 +27,12 @@ export class Hand {
     this.cards = [];
     /** Whether each card is face up. */
     this.faceUp = [];
+    /** Whether each card has been counted, so a card seen twice counts once. */
+    this.counted = [];
     this.doubled = false;
     this.surrendered = false;
+    /** Set when the dealer wrongly called this hand a bust. */
+    this.mistakenBust = false;
     this.stood = false;
     this.splitFrom = null;
     /** How many times this seat has split (0 means not split). */
@@ -37,6 +41,8 @@ export class Hand {
     this.switched = false;
     this.result = null;
     this.payout = 0;
+    /** The value this hand busts above: 22 where a player 22 counts as 21. */
+    this.bustCeiling = 21;
   }
 
   /** The hand's own unique key, used by the UI to track it. */
@@ -62,8 +68,11 @@ export class Hand {
   }
 
   /** Totals, where `bust` is the value a hand busts above (21 normally). */
-  totals(bust = 21) {
-    return handTotals(this.values, bust);
+  totals(bust = this.bustCeiling) {
+    const t = handTotals(this.values, bust);
+    // A 22 that does not bust counts as 21, as the original did.
+    if (bust !== 22) return t;
+    return { ...t, total: t.total === 22 ? 21 : t.total, hardTotal: t.hardTotal === 22 ? 21 : t.hardTotal };
   }
 
   get total() {
@@ -78,7 +87,7 @@ export class Hand {
     return this.totals().soft;
   }
 
-  busted(bust = 21) {
+  busted(bust = this.bustCeiling) {
     return this.totals(bust).total > bust;
   }
 

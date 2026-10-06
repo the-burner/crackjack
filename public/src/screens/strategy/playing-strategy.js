@@ -5,6 +5,7 @@
 import { h } from '../../ui/dom.js';
 import { button, select, checkList, valueButton } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
+import { applyIndexRangeChange, applyRuleChange } from '../../settings/rules-logic.js';
 import { INDEX_SETS } from '../../core/strategy/strategy-tables.js';
 
 const INDEX_SET_LABELS = {
@@ -27,6 +28,11 @@ const RULE_CHECKS = [
 export function playingStrategyScreen(app) {
   const { settings, strategies } = app;
   const { el, body } = standardScreen(app, { title: 'Strategies', help: 'settings.strategy' });
+  const get = key => settings.get(key);
+  // A rule here is the same rule as on the settings screens, so it goes through
+  // the same constraints and the whole form is re-read afterwards.
+  const write = (key, value) => { settings.update(applyRuleChange(get, key, value)); refresh(); };
+  const writeRange = (key, value) => { settings.update(applyIndexRangeChange(get, key, value)); refresh(); };
 
   const systemOptions = strategies.list().map(({ id, name }) => ({ value: id, label: name }));
   const systemSelect = select(systemOptions, settings.get('strategy.system'), id => settings.set('strategy.system', id));
@@ -36,10 +42,10 @@ export function playingStrategyScreen(app) {
     value => settings.set('strategy.indexSet', value),
     { mini: true },
   );
-  const rangeMin = valueButton(settings.get('strategy.indexRangeMin'), v => settings.set('strategy.indexRangeMin', v), { prompt: 'Minimum Count', min: -99, max: 99 });
-  const rangeMax = valueButton(settings.get('strategy.indexRangeMax'), v => settings.set('strategy.indexRangeMax', v), { prompt: 'Maximum Count', min: -99, max: 99 });
+  const rangeMin = valueButton(settings.get('strategy.indexRangeMin'), v => writeRange('strategy.indexRangeMin', v), { prompt: 'Minimum Count', min: -99, max: 99 });
+  const rangeMax = valueButton(settings.get('strategy.indexRangeMax'), v => writeRange('strategy.indexRangeMax', v), { prompt: 'Maximum Count', min: -99, max: 99 });
   const rules = checkList(RULE_CHECKS.map(({ label, key }) => ({
-    label, checked: settings.get(key), onChange: on => settings.set(key, on),
+    label, checked: settings.get(key), onChange: on => write(key, on),
   })));
   const ircCheck = checkList([{
     label: 'Adjust IRC',
@@ -62,16 +68,16 @@ export function playingStrategyScreen(app) {
     button('Display Tables', { icon: 'grid', iconPos: 'bottom', onClick: () => app.open('strategy.tables', { mode: 'view' }), 'data-action': 'display-tables' }),
   ));
 
-  return {
-    el,
-    onShow() {
-      systemSelect.setValue(settings.get('strategy.system'));
-      indexSelect.setValue(settings.get('strategy.indexSet'));
-      rangeMin.setValue(settings.get('strategy.indexRangeMin'));
-      rangeMax.setValue(settings.get('strategy.indexRangeMax'));
-      rules.refresh(i => settings.get(RULE_CHECKS[i].key));
-      ircCheck.refresh(() => settings.get('strategy.adjustInitialCount'));
-      ircValue.setValue(settings.get('strategy.initialCount'));
-    },
-  };
+  /** Re-reads every control from the settings. */
+  function refresh() {
+    systemSelect.setValue(settings.get('strategy.system'));
+    indexSelect.setValue(settings.get('strategy.indexSet'));
+    rangeMin.setValue(settings.get('strategy.indexRangeMin'));
+    rangeMax.setValue(settings.get('strategy.indexRangeMax'));
+    rules.refresh(i => settings.get(RULE_CHECKS[i].key));
+    ircCheck.refresh(() => settings.get('strategy.adjustInitialCount'));
+    ircValue.setValue(settings.get('strategy.initialCount'));
+  }
+
+  return { el, onShow: refresh };
 }

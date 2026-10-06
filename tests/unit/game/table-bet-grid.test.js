@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { betCells, betLabel, gridGeometry, cellIndexAt, COLUMNS, ROWS } from '../../../public/src/game/table/bet-grid.js';
+import { betCells, betLabel, gridGeometry, cellIndexAt, drawTile, COLUMNS, ROWS, TILE, TILE_GAP } from '../../../public/src/game/table/bet-grid.js';
 import { trayPhoto, shoePhoto } from '../../../public/src/game/table/photos.js';
 
 const ramp = (...rows) => ({ minCount: 0, rows: rows.map(r => (Array.isArray(r) ? { chips: r[0], hands: r[1] } : { chips: r, hands: 1 })) });
@@ -69,6 +69,44 @@ describe('grid geometry', () => {
     expect(cellIndexAt({ x: 250, y: 150 }, geometry)).toBe(-1);
     expect(cellIndexAt({ x: 5, y: 250 }, geometry)).toBe(-1);
     expect(cellIndexAt({ x: -5, y: 5 }, geometry)).toBe(-1);
+  });
+});
+
+describe('drawing a tile', () => {
+  /** A canvas context that only remembers what it was told to draw. */
+  const recorder = () => ({
+    calls: [],
+    beginPath() { this.calls.push(['beginPath']); },
+    roundRect(...args) { this.calls.push(['roundRect', ...args]); },
+    fill() { this.calls.push(['fill', this.fillStyle]); },
+    fillText(text, x, y) { this.calls.push(['fillText', this.fillStyle, text, x, y]); },
+  });
+
+  const tile = over => {
+    const ctx = recorder();
+    drawTile(ctx, { x: 100, y: 200, width: 60, height: 40, label: '25', color: TILE.normal, font: '12px sans', ...over });
+    return ctx.calls;
+  };
+
+  it('insets the face from its cell on every side', () => {
+    expect(tile()).toContainEqual(['roundRect', 100 + TILE_GAP, 200 + TILE_GAP, 60 - 2 * TILE_GAP, 40 - 2 * TILE_GAP, 8]);
+  });
+
+  it('fills the face with the colour it was given', () => {
+    expect(tile({ color: TILE.single })).toContainEqual(['fill', TILE.single[1]]);
+  });
+
+  it('centres the label on the tile', () => {
+    expect(tile()).toContainEqual(['fillText', '#ffffff', '25', 130, 220]);
+  });
+
+  it('writes on a marked tile in dark text instead of white', () => {
+    expect(tile({ color: TILE.previous })).toContainEqual(['fillText', '#000000', '25', 130, 220]);
+    expect(tile({ color: TILE.selected })).toContainEqual(['fillText', '#000000', '25', 130, 220]);
+  });
+
+  it('leaves an unlabelled tile blank', () => {
+    expect(tile({ label: '' }).some(([call]) => call === 'fillText')).toBe(false);
   });
 });
 

@@ -4,6 +4,7 @@
 import { h } from '../../ui/dom.js';
 import { select, checkList, valueButton } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
+import { group } from '../settings/controls.js';
 
 const ROWS = [
   {
@@ -45,10 +46,12 @@ export function trueCountScreen(app) {
   })));
 
   body.append(h('div', { class: 'column' },
-    h('div', { class: 'note' }, 'Set the method of calculating true counts'),
-    ROWS.map((row, i) => h('div', { class: 'tc-row' }, h('span', { class: 'label' }, row.label), selects[i])),
-    h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Allowed estimation error:'), allowedError),
-    sideCounts,
+    h('p', { class: 'note settings-note' }, 'Set the method of calculating true counts'),
+    group(
+      ROWS.map((row, i) => h('div', { class: 'tc-row' }, h('span', { class: 'label' }, row.label), selects[i])),
+      h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Allowed estimation error:'), allowedError),
+      sideCounts,
+    ),
   ));
 
   return {

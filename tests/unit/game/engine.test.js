@@ -6,6 +6,9 @@ import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
 import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
 import { cardId } from '../../../public/src/core/cards.js';
 import { seededRandom } from '../../../public/src/core/random.js';
+import { decodeSideBetGame } from '../../../public/src/settings/side-bet-games.js';
+import { sideBetSpots } from '../../../public/src/game/engine/side-bets.js';
+import { SIDE_BET_GAME_DEFINITIONS } from '../../../public/src/data/side-bet-games.js';
 
 const SPADES = 0, HEARTS = 2, DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
@@ -17,12 +20,13 @@ function makeRules(overrides = {}) {
 }
 
 /** A game whose shoe deals the given cards in order, then falls back to random. */
-function riggedGame(cards, { rules = makeRules(), table = {}, bankroll = 1000 } = {}) {
+function riggedGame(cards, { rules = makeRules(), table = {}, bankroll = 1000, ...options } = {}) {
   const game = new BlackjackGame({
     rules,
     table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true, ...table },
     bankroll,
     random: seededRandom(1),
+    ...options,
   });
   const queue = [...cards];
   const realDraw = game.shoe.draw.bind(game.shoe);
@@ -217,6 +221,19 @@ describe('shoe', () => {
     expect(game.shoe.dealt).toBeLessThan(12);
   });
 
+  it('shuffles in the middle of a deal when the shoe runs out', () => {
+    const game = riggedGame([], { table: { decks: 1, shuffleMode: 'rounds', roundsPerShoe: 80, burnCards: 0 } });
+    let shuffles = 0;
+    for (let round = 0; round < 20 && shuffles === 0; round++) {
+      const events = [...game.startRound([{ seat: 1, bet: 1 }])];
+      while (game.state === STATE.insurance) events.push(...game.declineInsurance());
+      while (game.state === STATE.playerAction) events.push(...game.act(ACTION.stand));
+      shuffles += events.filter(event => event.type === 'shuffle').length;
+    }
+    expect(shuffles).toBe(1);
+    expect(game.shoe.remaining).toBeGreaterThan(0);
+  });
+
   it('counts only the cards that are face up', () => {
     const seen = [];
     const game = new BlackjackGame({
@@ -226,6 +243,293 @@ describe('shoe', () => {
     game.startRound([{ seat: 1, bet: 10 }]);
     // Three cards are face up after the deal; the hole card is counted when revealed.
     expect(seen.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('seats and bets', () => {
+  it('leaves out a seat that did not bet', () => {
+    const game = riggedGame([], { table: { seatCount: 2 } });
+    game.startRound([{ seat: 1, bet: 0 }, { seat: 2, bet: 10 }]);
+    expect(game.hands.map(hand => hand.seat)).toEqual([2]);
+    expect(game.bankroll).toBe(990);
+  });
+
+  it('leaves out a computer seat the table does not have', () => {
+    const game = riggedGame([], { table: { seatCount: 2, computerSeats: [2, 3] } });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.hands.map(hand => hand.seat)).toEqual([1, 2]);
+  });
+
+  it('seats and burns nothing at a table that says nothing about either', () => {
+    const game = riggedGame([], { table: { seatCount: undefined, computerSeats: undefined, burnCards: undefined } });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.hands.map(hand => hand.owner)).toEqual(['human']);
+    game.shuffleAndBurn();
+    expect(game.takeEvents().map(event => event.type)).toEqual(['shuffle']);
+  });
+
+  it('seats no computer player at a table that says it has no seats', () => {
+    const game = riggedGame([], { table: { seatCount: undefined, computerSeats: [1] } });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.hands.map(hand => hand.owner)).toEqual(['human']);
+  });
+});
+
+describe('answers the engine ignores', () => {
+  it('ignores an insurance answer when none was offered', () => {
+    const game = riggedGame(deal(card(10), card(9), card(6), card(5)));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.state).toBe(STATE.playerAction);
+    expect(game.takeInsurance()).toEqual([]);
+    expect(game.declineInsurance()).toEqual([]);
+    expect(game.hands[0].insuranceBet).toBe(0);
+    expect(game.bankroll).toBe(990);
+  });
+
+  it('ignores an action the hand may not take', () => {
+    const game = riggedGame(deal(card(10), card(9), card(6), card(5)));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.availableActions().split).toBe(false);
+    expect(game.act(ACTION.split)).toEqual([]);
+    expect(game.hands.length).toBe(1);
+    expect(game.state).toBe(STATE.playerAction);
+  });
+
+  it('ignores an action once the round is settled', () => {
+    const game = riggedGame(deal(card(10), card(9), card(10), card(9)));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.stand);
+    expect(game.state).toBe(STATE.settled);
+    expect(game.act(ACTION.hit)).toEqual([]);
+    expect(game.hands[0].cardCount).toBe(2);
+    expect(game.bankroll).toBe(1010);
+  });
+});
+
+describe('surrender before the insurance answer', () => {
+  it('lets a hand give up early, and only once', () => {
+    const rules = makeRules({ 'rules.surrender': 'early' });
+    const game = riggedGame(deal(card(10), card(1), card(6), card(10)), { rules });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.state).toBe(STATE.insurance);
+    expect(game.availableActions().surrender).toBe(true);
+    // Nothing else can be played while the insurance offer stands.
+    expect(game.act(ACTION.hit)).toEqual([]);
+    game.act(ACTION.surrender);
+    expect(game.hands[0].surrendered).toBe(true);
+    expect(game.availableActions().surrender).toBe(false);
+    game.declineInsurance();
+    expect(game.bankroll).toBe(995);
+  });
+
+  it('offers no surrender at a table that does not allow it', () => {
+    const rules = makeRules({ 'rules.surrender': 'none' });
+    const game = riggedGame(deal(card(10), card(1), card(6), card(9)), { rules });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.state).toBe(STATE.insurance);
+    expect(game.availableActions()).toEqual({ surrender: false });
+  });
+
+  it('offers no surrender when only computer seats are in play', () => {
+    const game = riggedGame([card(10), card(1), card(7), card(10)], { table: { seatCount: 2, computerSeats: [2] } });
+    game.startRound([]);
+    expect(game.state).toBe(STATE.insurance);
+    expect(game.availableActions()).toEqual({ surrender: false });
+  });
+});
+
+describe('when the dealer takes the decision away', () => {
+  it('stands a hand that reaches the table card limit', () => {
+    const game = riggedGame(deal(card(2), card(9), card(3), card(5), [card(4)]), { table: { maxCardsPerHand: 3 } });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.hit);
+    expect(game.hands[0].cardCount).toBe(3);
+    expect(game.state).toBe(STATE.settled);
+  });
+
+  it('stands the dealer when the table says not to draw', () => {
+    const game = riggedGame(deal(card(10), card(5), card(10), card(6)), { beforeDealerDraw: () => false });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.stand);
+    expect(game.dealer.cardCount).toBe(2);
+    expect(game.dealer.total).toBe(11);
+    expect(game.bankroll).toBe(1010);
+  });
+});
+
+describe('doubling', () => {
+  it('doubles twice over when the table allows a triple down', () => {
+    const rules = makeRules({ 'rules.tripleDown': true });
+    const game = riggedGame(deal(card(5), card(9), card(6), card(5), [card(9)]), { rules });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.double);
+    expect(game.hands[0].doubleBet).toBe(20);
+    expect(game.hands[0].wagered).toBe(30);
+  });
+
+  it('busts a doubled hand and goes straight to the payoff', () => {
+    const game = riggedGame(deal(card(10), card(9), card(6), card(5), [card(10)]));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.double);
+    expect(game.hands[0].result).toBe('Bust');
+    expect(game.dealer.cardCount).toBe(2);
+    expect(game.bankroll).toBe(980);
+  });
+});
+
+describe('split aces', () => {
+  it('stands both halves when split aces may not draw', () => {
+    const game = riggedGame(deal(card(1), card(5), card(1), card(6), [card(9), card(8), card(10)]));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.split);
+    expect(game.state).toBe(STATE.settled);
+    expect(game.hands.map(hand => hand.total)).toEqual([20, 19]);
+    expect(game.hands.every(hand => hand.stood)).toBe(true);
+    expect(game.bankroll).toBe(980);
+  });
+});
+
+describe('no hole card and nothing left to beat', () => {
+  it('leaves the dealer one card when every hand is already out', () => {
+    const rules = makeRules({ 'rules.noHoleCard': true });
+    const game = riggedGame([card(10), card(9), card(6), card(7)], { rules });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.hit);
+    expect(game.hands[0].result).toBe('Bust');
+    expect(game.dealer.cardCount).toBe(1);
+    expect(game.bankroll).toBe(990);
+  });
+});
+
+describe('computer seats', () => {
+  const twoSeats = { seatCount: 2, computerSeats: [2] };
+  const computerHand = game => game.hands.find(hand => hand.seat === 2);
+
+  it('plays a dealer-like strategy when no decisions are supplied', () => {
+    const game = riggedGame([card(10), card(10), card(5), card(10), card(6), card(6)], { table: twoSeats });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.stand);
+    // 16 against a 5: the fallback strategy stands.
+    expect(computerHand(game).cardCount).toBe(2);
+    expect(computerHand(game).stood).toBe(true);
+  });
+
+  it('follows the decisions it is given', () => {
+    const game = riggedGame([card(10), card(2), card(9), card(10), card(3), card(9), card(4), card(10)], {
+      table: twoSeats,
+      computerPlay: hand => (hand.total < 17 ? ACTION.hit : ACTION.stand),
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.stand);
+    expect(computerHand(game).cardCount).toBe(4);
+    expect(computerHand(game).total).toBe(19);
+    expect(computerHand(game).stood).toBe(true);
+  });
+
+  it('stops a computer hand that reaches 21', () => {
+    const game = riggedGame([card(10), card(5), card(9), card(10), card(6), card(9), card(10)], {
+      table: twoSeats,
+      computerPlay: () => ACTION.hit,
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.stand);
+    expect(computerHand(game).total).toBe(21);
+    expect(computerHand(game).cardCount).toBe(3);
+    expect(computerHand(game).stood).toBe(true);
+  });
+
+  it('doubles without touching the player bankroll', () => {
+    const game = riggedGame([card(10), card(5), card(9), card(10), card(6), card(9), card(10)], {
+      table: twoSeats,
+      computerPlay: () => ACTION.double,
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.bankroll).toBe(990);
+    game.act(ACTION.stand);
+    expect(computerHand(game).doubled).toBe(true);
+    expect(computerHand(game).doubleBet).toBe(5);
+    expect(computerHand(game).cardCount).toBe(3);
+    expect(game.bankroll).toBe(1010);
+  });
+
+  it('busts a computer hand that keeps hitting', () => {
+    const game = riggedGame([card(10), card(10), card(9), card(10), card(6), card(9), card(10)], {
+      table: twoSeats,
+      computerPlay: () => ACTION.hit,
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    const events = game.act(ACTION.stand);
+    expect(computerHand(game).result).toBe('Bust');
+    expect(events).toContainEqual({ type: 'message', text: 'Bust', hand: '2-0' });
+  });
+
+  it('splits into two hands without touching the player bankroll', () => {
+    const game = riggedGame([card(10), card(8), card(9), card(10), card(8), card(9), card(2), card(3)], {
+      table: twoSeats,
+      computerPlay: () => ACTION.split,
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.bankroll).toBe(990);
+    game.act(ACTION.stand);
+    expect(game.hands.filter(hand => hand.seat === 2).map(hand => hand.key)).toEqual(['2-0', '2-1']);
+    expect(game.bankroll).toBe(1010);
+  });
+});
+
+describe('side bets through the engine', () => {
+  it('keeps a side-bet stake at a table with no side-bet game', () => {
+    const game = riggedGame(deal(card(10), card(9), card(10), card(9)));
+    game.startRound([{ seat: 1, bet: 10, sideBets: { main: 5 } }]);
+    expect(game.bankroll).toBe(985);
+    const [settled] = game.act(ACTION.stand).filter(event => event.type === 'settled');
+    expect(settled.sideBets).toEqual([]);
+    expect(game.bankroll).toBe(1005);
+  });
+
+  it('pays a five-card 21 bonus on the main bet', () => {
+    const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[17]);
+    const game = riggedGame(deal(card(2), card(10), card(3), card(7), [card(4), card(5), card(7)]), { sideBetGame });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.hit);
+    game.act(ACTION.hit);
+    const [settled] = game.act(ACTION.hit).filter(event => event.type === 'settled');
+    expect(game.hands[0].cardCount).toBe(5);
+    expect(game.hands[0].total).toBe(21);
+    expect(settled.sideBets).toEqual([{ name: 'bonus', stake: 0, payout: 5, multiplier: 0.5, label: 'Bonus' }]);
+    expect(game.bankroll).toBe(1015);
+  });
+
+  it('adds the game bonus on top of a hand the table already paid a bonus', () => {
+    const rules = makeRules({ 'bonuses.fiveCard21': true });
+    const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[17]);
+    const game = riggedGame(deal(card(2), card(10), card(3), card(7), [card(4), card(5), card(7)]), { rules, sideBetGame });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.hit);
+    game.act(ACTION.hit);
+    game.act(ACTION.hit);
+    expect(game.hands[0].result).toBe('Bonus');
+    expect(game.bankroll).toBe(1025);
+  });
+
+  it('pays a side bet the player placed on a spot', () => {
+    const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[13]);
+    const [spot] = sideBetSpots(sideBetGame);
+    const game = riggedGame(deal(card(10), card(9), cardId(10, 1), card(9)), { sideBetGame });
+    game.startRound([{ seat: 1, bet: 10, sideBets: { [spot.id]: 5 } }]);
+    expect(game.bankroll).toBe(985);
+    const [settled] = game.act(ACTION.stand).filter(event => event.type === 'settled');
+    expect(settled.sideBets).toEqual([{ name: spot.id, stake: 5, payout: 65, multiplier: 12, label: spot.id }]);
+    expect(game.bankroll).toBe(1070);
+  });
+
+  it('loses a side bet the hand does not match', () => {
+    const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[13]);
+    const [spot] = sideBetSpots(sideBetGame);
+    const game = riggedGame(deal(card(10), card(9), card(8), card(8)), { sideBetGame });
+    game.startRound([{ seat: 1, bet: 10, sideBets: { [spot.id]: 5 } }]);
+    const [settled] = game.act(ACTION.stand).filter(event => event.type === 'settled');
+    expect(settled.sideBets).toEqual([{ name: spot.id, stake: 5, payout: 0, multiplier: -1, label: spot.id }]);
+    expect(game.bankroll).toBe(1005);
   });
 });
 

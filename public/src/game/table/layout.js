@@ -13,16 +13,25 @@ export const MAX_PORTRAIT_SEATS = 4;
 export const HANDS_PER_SEAT = 4;
 /** Card slots laid out per hand (hands are capped at 7 cards in play). */
 export const CARDS_PER_HAND = 10;
-/** Card slots laid out for the dealer. */
-export const DEALER_CARDS = 8;
+/** Dealer hands up to this long sit side by side; longer ones overlap. */
+export const DEALER_SPREAD_CARDS = 4;
 /** Cards a hand's fan is sized for. */
 const FAN_CARDS = 7;
 /** Fraction of the height where the padded rail begins. */
 const RAIL_TOP = { landscape: 0.77, portrait: 0.93 };
+/** Size of the rail photograph. */
+export const RAIL_SIZE = { width: 1600, height: 232 };
+/**
+ * How far down the rail photograph its felt edge runs, in source pixels, every
+ * 50 pixels across. The edge bows down to the middle and is symmetric.
+ */
+const RAIL_EDGE = [0, 32, 55, 72, 87, 99, 109, 118, 126, 132, 138, 142, 146, 148, 150, 151, 152];
+/** Space between a bet circle and the table's edge, in card heights. */
+const CIRCLE_GAP = 0.12;
 /** Aspect ratio of the shoe photographs. */
 const SHOE_ASPECT = 276 / 140;
-/** How far each dealer card is offset from the one before it. */
-const DEALER_STEP = 0.45;
+/** How far the face-down hole card peeks out from under the up card. */
+const HOLE_PEEK = 0.45;
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
@@ -61,9 +70,10 @@ function cardHeightFor({ width, height, seatsShown, portrait }) {
  * @param {number} [o.decks]           Chooses the discard-tray silhouette.
  * @param {boolean} [o.showTray]
  * @param {boolean} [o.showShoe]
+ * @param {boolean} [o.noHoleCard]    The dealer takes a second card only after the players.
  * @returns {object} the layout
  */
-export function tableLayout({ width, height, seatCount, humanSeats = [1], decks = 6, showTray = true, showShoe = true }) {
+export function tableLayout({ width, height, seatCount, humanSeats = [1], decks = 6, showTray = true, showShoe = true, noHoleCard = false }) {
   const portrait = height > width;
   const seats = visibleSeats({ seatCount, humanSeats, portrait });
   const shown = seats.length;
@@ -72,7 +82,8 @@ export function tableLayout({ width, height, seatCount, humanSeats = [1], decks 
 
   const boxExpand = portrait ? 1.26 : 1.24;
   const sepRatio = shown > 2 ? 0.75 : 0.6;
-  const boxHeight = height * (shown > 2 ? 0.52 : 0.6) * (portrait ? 1.03 : 1);
+  // Every table uses the row of the fullest one, which keeps the seats on the felt.
+  const boxHeight = height * 0.52 * (portrait ? 1.03 : 1);
   const boxWidth = (boxExpand * (width - 2)) / shown;
   const stepUp = (boxHeight - cardHeight) / (FAN_CARDS - 1);
   // Cards must step far enough right to leave each one's rank index showing,
@@ -81,37 +92,60 @@ export function tableLayout({ width, height, seatCount, humanSeats = [1], decks 
   const splitStep = Math.max(6, Math.floor((boxWidth * (1 - sepRatio)) / 3));
   /** Horizontal room one seat's hands take up. */
   const seatWidth = cardWidth + splitStep * 3;
-  const baseY = height * (shown > 4 ? 0.28 : shown > 2 ? 0.35 : 0.34) + boxHeight - cardHeight;
+  const railY = Math.round(height * (portrait ? RAIL_TOP.portrait : RAIL_TOP.landscape));
+  const rail = { y: railY, height: height - railY, sourceHeight: Math.min(RAIL_SIZE.height, (RAIL_SIZE.width * (height - railY)) / width) };
+  const edge = x => railEdgeY(rail, width, x);
 
   const seatLayouts = seats.map((seat, i) => {
-    // Seat 1 sits at the right; outer seats ride higher, which bows the row.
+    // Seat 1 sits at the right.
     const column = shown - 1 - i;
-    const middle = (shown - 1) / 2;
-    const arc = Math.round(Math.abs(column - middle) * cardHeight * 0.4) * -1;
     const x = Math.floor((column * (width - 2)) / (shown - 1 + boxExpand) + boxWidth * (1 - sepRatio)) + 2;
-    const y = Math.round(baseY + arc + cardHeight * 0.4);
-    return buildSeat({ seat, x, y, cardWidth, cardHeight, stepUp, stepRight, splitStep, seatWidth, width, portrait });
+    return buildSeat({ seat, x, cardWidth, cardHeight, stepUp, stepRight, splitStep, seatWidth, width, edge });
   });
 
   const topOfSeats = Math.min(...seatLayouts.map(s => s.hands[0][FAN_CARDS - 1].y));
   const tray = showTray ? trayRect({ width, cardWidth, cardHeight, decks, portrait, seatLayouts }) : null;
   // The shoe photo only fits beside the dealer in landscape.
   const shoe = showShoe && !portrait ? shoeRect({ width, topOfSeats, cardWidth }) : null;
-  const dealer = dealerSlots({ width, cardWidth, cardHeight, portrait, topOfSeats, tray });
+  const dealer = dealerRow({ width, cardWidth, cardHeight, portrait, topOfSeats, tray, noHoleCard });
 
-  const railY = Math.round(height * (portrait ? RAIL_TOP.portrait : RAIL_TOP.landscape));
   return {
     width, height, portrait, cardWidth, cardHeight,
     seatCount, seats: seatLayouts, hiddenSeats: seatCount - shown,
     dealer, tray, shoe,
-    rail: { y: railY, height: height - railY },
+    burns: burnRow({ cardWidth, cardHeight, portrait, tray }),
+    rail,
     bankroll: bankrollBox({ width, height, portrait, dealer, cardHeight, tray }),
     status: statusBox({ width, portrait, tray, shoe }),
   };
 }
 
-/** One seat: its hand columns, its bet circle and its chip label. */
-function buildSeat({ seat, x, y, cardWidth, cardHeight, stepUp, stepRight, splitStep, seatWidth, width, portrait }) {
+/**
+ * Where the felt meets the rail at `x`: the rail photograph is drawn across
+ * the full width from `rail.y`, showing `rail.sourceHeight` rows of it.
+ */
+export function railEdgeY(rail, width, x) {
+  const at = clamp(x / width, 0, 1) * (RAIL_SIZE.width / 50);
+  const i = Math.min(Math.floor(Math.min(at, 32 - at)), RAIL_EDGE.length - 2);
+  const t = Math.min(at, 32 - at) - i;
+  const row = RAIL_EDGE[i] + (RAIL_EDGE[i + 1] - RAIL_EDGE[i]) * t;
+  return rail.y + (Math.min(row, rail.sourceHeight) * rail.height) / rail.sourceHeight;
+}
+
+/**
+ * One seat: its hand columns, its bet circle and its chip label. The circle
+ * sits under the first card, the same gap above the table's edge at every
+ * seat; the cards stand on it.
+ */
+function buildSeat({ seat, x, cardWidth, cardHeight, stepUp, stepRight, splitStep, seatWidth, width, edge }) {
+  const circleWidth = Math.min(seatWidth, width / 5, cardWidth * 2);
+  const rx = Math.round((circleWidth - 8) / 2);
+  const ry = Math.round(rx * 0.75);
+  const centerX = Math.round(x + cardWidth / 2);
+  // The edge is highest at the circle's outer side.
+  const edgeY = Math.min(edge(centerX - rx), edge(centerX), edge(centerX + rx));
+  const centerY = Math.round(edgeY - cardHeight * CIRCLE_GAP - ry);
+  const y = centerY - cardHeight;
   const hands = [];
   for (let hand = 0; hand < HANDS_PER_SEAT; hand++) {
     const slots = [];
@@ -123,14 +157,10 @@ function buildSeat({ seat, x, y, cardWidth, cardHeight, stepUp, stepRight, split
     }
     hands.push(slots);
   }
-  const circleWidth = Math.min(seatWidth, width / 5) * (portrait ? 1.4 : 1);
-  const left = x - splitStep * (HANDS_PER_SEAT - 1);
-  const centerX = Math.round(left + splitStep * 1.5 + circleWidth / 2);
-  const centerY = Math.round(y + cardHeight);
   return {
     seat,
     hands,
-    circle: { x: centerX, y: centerY, rx: Math.round((circleWidth - 8) / 2), ry: Math.round(((circleWidth - 8) / 2) * 0.75) },
+    circle: { x: centerX, y: centerY, rx, ry },
     chip: {
       x: Math.round(centerX - seatWidth / 2),
       y: Math.round(y + cardHeight + 1),
@@ -141,30 +171,51 @@ function buildSeat({ seat, x, y, cardWidth, cardHeight, stepUp, stepRight, split
 }
 
 /**
- * Dealer card slots. The hole card takes the leftmost slot so the up card and
- * every card after it stay readable.
+ * The dealer's row, laid out as in the original: the hand runs right to left
+ * from `right`, side by side up to DEALER_SPREAD_CARDS cards and overlapping
+ * after that.
  */
-function dealerSlots({ width, cardWidth, cardHeight, portrait, topOfSeats, tray }) {
-  const step = Math.max(10, Math.round(cardWidth * DEALER_STEP));
-  const rightEdge = portrait ? width - 2 : Math.floor(width * 0.62) + cardWidth;
-  // Room is kept for a five-card fan; a longer hand stacks at the right edge.
-  const x = Math.max(2, rightEdge - cardWidth - step * 4);
-  const lastX = width - cardWidth - 2;
+function dealerRow({ width, cardWidth, cardHeight, portrait, topOfSeats, tray, noHoleCard }) {
+  const right = portrait ? width - cardWidth - 2 : Math.floor(width * 0.62);
   const y = portrait
     ? Math.max(tray ? tray.y + tray.height + 6 : 6, topOfSeats - cardHeight - 6)
     : Math.round(cardHeight * 0.86);
-  const slots = [];
-  for (let card = 0; card < DEALER_CARDS; card++) {
-    slots.push({ x: Math.min(x + step * dealerSlotIndex(card), lastX), y });
-  }
-  return { slots, step, y };
+  return {
+    right,
+    y,
+    spread: cardWidth + (portrait ? 3 : 1),
+    overlap: Math.round(portrait ? (cardWidth * 3 + 4) / 9 : cardWidth / 2),
+    peek: Math.max(10, Math.round(cardWidth * HOLE_PEEK)),
+    noHoleCard,
+  };
 }
 
-/** Slot order: the hole card first (leftmost), then the up card, then the draws. */
-export function dealerSlotIndex(cardIndex) {
-  if (cardIndex === 0) return 1;
-  if (cardIndex === 1) return 0;
-  return cardIndex;
+/**
+ * Where the dealer's card `index` sits. The face-down hole card peeks out to
+ * the left from under the up card; once turned it moves to the right of it.
+ * With no hole card, the up card moves right when the second card comes.
+ * @param {object} dealer         `layout.dealer`
+ * @param {number} index
+ * @param {{count: number, holeHidden: boolean}} hand  Cards in the hand, and
+ *   whether the hole card is still face down.
+ */
+export function dealerSlot(dealer, index, { count, holeHidden }) {
+  const { right, y, spread, overlap, peek } = dealer;
+  if (holeHidden || count === 1) return { x: right - spread - (index === 1 ? peek : 0), y };
+  // Places from the right: the turned hole card first, or the up card when there is none.
+  const place = !dealer.noHoleCard && index < 2 ? 1 - index : index;
+  return { x: right - place * (count > DEALER_SPREAD_CARDS ? overlap : spread), y };
+}
+
+/** Burn cards are dealt in a row just right of the discard tray. */
+function burnRow({ cardWidth, cardHeight, portrait, tray }) {
+  return {
+    x: (tray ? tray.width : 0) + cardWidth / 2,
+    y: 37,
+    step: portrait ? cardWidth * 0.5 : cardWidth + 2,
+    width: cardWidth,
+    height: cardHeight,
+  };
 }
 
 /** The discard tray sits in the top-left corner, as tall as the shortest seat fan. */
@@ -224,15 +275,25 @@ function statusBox({ width, portrait, tray, shoe }) {
  * @param {object} layout
  * @param {string} handKey  "seat-index"; seat 0 is the dealer.
  * @param {number} cardIndex
+ * @param {{count: number, holeHidden: boolean}} [dealerHand]  For the dealer (see dealerSlot).
  * @returns {{x: number, y: number}|null} null when the seat is not shown.
  */
-export function cardSlot(layout, handKey, cardIndex) {
+export function cardSlot(layout, handKey, cardIndex, dealerHand = { count: cardIndex + 1, holeHidden: false }, { handsInSeat = 0 } = {}) {
   const [seat, index] = handKey.split('-').map(Number);
-  if (seat === 0) return layout.dealer.slots[Math.min(cardIndex, DEALER_CARDS - 1)] ?? null;
+  if (seat === 0) return dealerSlot(layout.dealer, cardIndex, dealerHand);
   const seatLayout = layout.seats.find(s => s.seat === seat);
   if (!seatLayout) return null;
-  const column = seatLayout.hands[Math.min(index, HANDS_PER_SEAT - 1)];
+  const column = seatLayout.hands[splitColumn(index, handsInSeat)];
   return column[Math.min(cardIndex, CARDS_PER_HAND - 1)] ?? null;
+}
+
+/**
+ * Which column a hand sits in. A single split puts its two hands at the two
+ * ends of the seat's box, as the original did; three or four sit side by side.
+ */
+export function splitColumn(index, handsInSeat = 0) {
+  if (handsInSeat === 2 && index === 1) return HANDS_PER_SEAT - 1;
+  return Math.min(index, HANDS_PER_SEAT - 1);
 }
 
 /** The seat's layout, or null when that seat is not shown. */

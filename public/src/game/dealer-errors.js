@@ -56,6 +56,15 @@ export const ERROR_CHANCE = {
   bonusNotPaid: 0.385,
 };
 
+/** A natural the dealer never peeked for, settled at the showdown, is mispaid more often. */
+export const UNPEEKED_BLACKJACK_CHANCE = 0.525;
+
+/** How often a mistake happens in this situation. */
+function chanceOf(type, { dealerPeeked }) {
+  if (type === DEALER_ERROR.blackjackMispaid && !dealerPeeked) return UNPEEKED_BLACKJACK_CHANCE;
+  return ERROR_CHANCE[type];
+}
+
 /** Every mistake this table can make. */
 export const SUPPORTED_ERRORS = [
   DEALER_ERROR.insuranceMispaid,
@@ -70,11 +79,19 @@ export const SUPPORTED_ERRORS = [
 
 /**
  * Whether the dealer stops drawing on this hand by mistake. The caller asks
- * before each draw; a stand on a hard 16 is the mistake players must catch.
+ * before each draw; a stand on 16, soft or hard, is the mistake players must
+ * catch. It only happens on a long dealer hand the player is not already
+ * beating, so the stand costs the player something.
+ * @param {object} o
+ * @param {{total: number, hardTotal: number, cardCount: number}} o.dealer
+ * @param {number} o.playerTotal  The total of the last player hand to act.
+ * @param {string[]} o.enabled
+ * @param {() => number} o.random
  */
-export function dealerStandsByMistake({ dealer, enabled, random }) {
+export function dealerStandsByMistake({ dealer, playerTotal, enabled, random }) {
   if (!enabled.includes(DEALER_ERROR.stoodOn16)) return false;
-  if (dealer.total !== 16 || dealer.soft) return false;
+  if (dealer.total !== 16 && dealer.hardTotal !== 16) return false;
+  if (!(dealer.cardCount >= 4 && playerTotal < 17)) return false;
   return random() < ERROR_CHANCE[DEALER_ERROR.stoodOn16];
 }
 
@@ -106,42 +123,76 @@ export const dealerErrorsOn = settings => Object.values(ERROR_SETTINGS).some(key
  * @param {ErrorHand[]} o.hands         The player's settled hands.
  * @param {{total: number, cardCount: number, busted: boolean}} o.dealer
  * @param {boolean} o.dealerBlackjack
+ * @param {boolean} [o.dealerPeeked]    False when the dealer never checked the hole card.
+ * @param {boolean} [o.blackjackBonus]  False when blackjacks pay even money.
  * @param {string[]} o.enabled          From enabledErrors().
  * @param {() => number} o.random
  * @returns {{type: string, label: string, amount: number, hands: {key: string, shortfall: number, result: string}[]}|null}
  */
-export function pickDealerError({ hands, dealer, dealerBlackjack, enabled, random }) {
+export function pickDealerError({ hands, dealer, dealerBlackjack, dealerPeeked = true, blackjackBonus = true, enabled, random }) {
   for (const type of enabled) {
-    const affected = affectedHands(type, { hands, dealer, dealerBlackjack });
+    const affected = affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus });
     const amount = affected.reduce((sum, hand) => sum + hand.shortfall, 0);
     if (affected.length === 0 || amount <= 0) continue;
-    if (random() >= ERROR_CHANCE[type]) continue;
-    return { type, label: ERROR_LABELS[type], amount: round2(amount), hands: affected };
+    // A mistake made during play has already happened; only one made at the
+    // payoff is still a matter of chance.
+    const madeInPlay = MADE_IN_PLAY.has(type);
+    if (!madeInPlay && random() >= chanceOf(type, { dealerPeeked })) continue;
+    return { type, label: ERROR_LABELS[type], amount: round2(amount), hands: affected, alreadyPaid: madeInPlay };
   }
   return null;
 }
 
+/** Mistakes the dealer makes while playing, whose cost the hand has already paid. */
+const MADE_IN_PLAY = new Set([DEALER_ERROR.stoodOn16]);
+
+/**
+ * Whether the dealer wrongly calls a good hand a bust, judged as the card lands.
+ * A doubled 21 is left alone; a doubled 20 is not.
+ * @param {object} o
+ * @param {{total: number, cardCount: number, doubled: boolean}} o.hand
+ * @param {string[]} o.enabled
+ * @param {() => number} o.random
+ */
+export function bustsGoodHandByMistake({ hand, enabled, random }) {
+  if (!enabled.includes(DEALER_ERROR.bustedGoodHand)) return false;
+  if (hand.cardCount < 3) return false;
+  if (random() >= ERROR_CHANCE[DEALER_ERROR.bustedGoodHand]) return false;
+  return hand.total === 20 || (hand.total === 21 && !hand.doubled);
+}
+
+/**
+ * What the dealer owes for a hand it wrongly busted. The original judged this
+ * against the dealer's total at that moment, before it had drawn.
+ */
+export function bustedGoodHandShortfall({ bet, playerTotal, dealerTotal }) {
+  if (dealerTotal < playerTotal) return bet * 2;
+  if (dealerTotal === playerTotal) return bet;
+  return 0;
+}
+
+/** The dealer can claim 21 on 22 with four cards, or on 22 or 23 with five. */
+const canClaim21 = dealer =>
+  (dealer.cardCount >= 4 && dealer.total === 22) || (dealer.cardCount >= 5 && (dealer.total === 22 || dealer.total === 23));
+
 /** The hands a mistake of this type would touch, and what each one loses. */
-function affectedHands(type, { hands, dealer, dealerBlackjack }) {
+function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus }) {
   const plain = hand => hand.cardCount >= 3 && !hand.doubled && hand.insuranceBet === 0 && hand.splitCount <= 1;
   switch (type) {
-    // Insurance paid at 1:1 instead of 2:1.
+    // Insurance paid at 1:1 instead of 2:1, on a hand the blackjack beat.
     case DEALER_ERROR.insuranceMispaid:
-      if (!dealerBlackjack) return [];
-      return hands.filter(h => h.insuranceBet > 0)
+      if (!dealerBlackjack || !blackjackBonus) return [];
+      return hands.filter(h => h.insuranceBet > 0 && h.result === 'Lose')
         .map(h => ({ key: h.key, shortfall: h.insuranceBet, result: h.result }));
-    // A natural paid at even money instead of the blackjack premium.
+    // A natural paid at even money instead of the blackjack premium. A side bet
+    // the hand also won is in its payout, and is not what the dealer shorted.
     case DEALER_ERROR.blackjackMispaid:
-      return hands.filter(h => h.isNatural && h.payout > h.bet * 2)
-        .map(h => ({ key: h.key, shortfall: h.payout - h.bet * 2, result: 'Win' }));
-    // A good hand of three or more cards called a bust.
-    case DEALER_ERROR.bustedGoodHand:
-      return hands.filter(h => h.cardCount >= 3 && !h.doubled && h.payout > 0 && (h.total === 20 || h.total === 21))
-        .map(h => ({ key: h.key, shortfall: h.payout, result: 'Bust' }));
+      return hands.map(h => ({ hand: h, premium: h.payout - (h.sideBetPaid ?? h.sideBetWin ?? 0) - h.bet * 2 }))
+        .filter(({ hand: h, premium }) => h.isNatural && premium > 0)
+        .map(({ hand: h, premium }) => ({ key: h.key, shortfall: premium, result: 'Win' }));
     // The dealer busted but counted the hand as 21.
     case DEALER_ERROR.shouldHaveBusted:
-      if (!dealer.busted || dealer.cardCount < 3) return [];
-      if (dealer.total > 23 || (dealer.total === 23 && dealer.cardCount < 4)) return [];
+      if (!dealer.busted || !canClaim21(dealer)) return [];
       return hands.filter(h => h.payout > 0 && !h.isNatural && h.total <= 21)
         .map(h => ({
           key: h.key,
@@ -159,7 +210,7 @@ function affectedHands(type, { hands, dealer, dealerBlackjack }) {
     case DEALER_ERROR.chipsOnPush:
       return hands.filter(h => plain(h) && h.result === 'Push')
         .map(h => ({ key: h.key, shortfall: h.bet, result: 'Lose' }));
-    // The dealer stood on a hard 16. The hands that lost to it are the ones the
+    // The dealer stood on 16. The hands that lost to it are the ones the
     // player was cheated of, since a drawing dealer busts more often than not.
     case DEALER_ERROR.stoodOn16:
       if (dealer.stoodOnSixteen !== true) return [];
@@ -197,10 +248,12 @@ const round2 = n => Math.round(n * 100) / 100;
  * Reads the fields pickDealerError needs off an engine hand and its settlement.
  * @param {import('./engine/hand.js').Hand} hand
  */
-export function errorHandFrom(hand, { sideBetWin = 0 } = {}) {
+export function errorHandFrom(hand, { sideBetWin = 0, sideBetPaid = 0 } = {}) {
   return {
     key: hand.key,
     sideBetWin,
+    /** Everything the side bets returned, stakes included, which is in `payout`. */
+    sideBetPaid,
     bet: hand.bet,
     insuranceBet: hand.insuranceBet,
     payout: hand.payout,

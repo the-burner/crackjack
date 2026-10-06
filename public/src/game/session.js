@@ -5,7 +5,7 @@
 import { BlackjackGame, STATE, ACTION } from './engine/game.js';
 import { rulesFrom } from './engine/rules.js';
 import { Counter } from '../core/counting.js';
-import { checkPlay, checkInsurance, checkBet, expectedBet } from './play-check.js';
+import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check.js';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../core/counting.js';
 import { decodeSideBetGame } from '../settings/side-bet-games.js';
 import { SIDE_BET_GAME_DEFINITIONS } from '../data/side-bet-games.js';
@@ -23,6 +23,7 @@ const emptyStats = () => ({
   rounds: 0, totalBet: 0, highBet: 0, lowBet: 0,
   highBankroll: 0, lowBankroll: 0, bankrollSum: 0,
   playDecisions: 0, playErrors: 0, betDecisions: 0, betErrors: 0,
+  foulDecisions: 0, foulErrors: 0,
 });
 
 export class GameSession {
@@ -48,12 +49,13 @@ export class GameSession {
       table: this.table,
       bankroll,
       computerPlay: (hand, context) => this.computerAction(hand, context),
-      onCardSeen: card => this.counter.addCard(card, this.game.shoe.dealt),
+      onCardSeen: (card, faceUp, cardsGone) => this.counter.addCard(card, cardsGone),
       sideBetGame: this.sideBetGame,
       trueCount: () => this.counter.trueCount,
       beforeDealerDraw: dealer => this.beforeDealerDraw?.(dealer) ?? true,
+      onGoodHandBusted: hand => this.onGoodHandBusted?.(hand) ?? false,
+      onShuffle: () => this.counter.reset(this.table.decks),
     });
-    this.counter.reset(this.table.decks);
   }
 
   /** The decoded side-bet game the player selected, if any. */
@@ -86,10 +88,20 @@ export class GameSession {
       cardsBehindCutCard: get('table.cardsBehindCutCard'),
       roundsPerShoe: get('table.roundsPerShoe'),
       burnCards: get('table.burnCards'),
+      showBurnCards: get('table.showBurnCards'),
       seatCount,
       computerSeats,
       cardsFaceDown: get('table.cardsFaceDown'),
       doubleDownCardFaceUp: get('table.doubleDownCardFaceUp'),
+      dealerMakesObviousPlays: get('mechanics.dealerMakesObviousPlays'),
+      playersComeAndGo: get('table.playersComeAndGo'),
+      peeking: {
+        mode: get('peeking.mode'),
+        percent: get('peeking.percent'),
+        adjacentHands: get('peeking.adjacentHands'),
+        randomizeCard: get('peeking.randomizeCard'),
+        randomizeHand: get('peeking.randomizeHand'),
+      },
       limits: get('table.limits'),
       maxCardsPerHand: 7,
     };
@@ -135,15 +147,16 @@ export class GameSession {
    * @returns {object[]} engine events
    */
   startRound({ betPerHand, hands = 1, sideBets = {} }) {
-    if (this.game.shoe.needsShuffle) this.counter.reset(this.table.decks);
     this.warnings = [];
     const humanSeats = this.humanSeats().slice(0, hands);
     if (this.settings.get('betting.warnOnError')) this.checkBetting(betPerHand, humanSeats.length);
 
+    // Bet stats are round totals, not per hand.
+    const roundBet = betPerHand * humanSeats.length;
     this.stats.rounds += 1;
-    this.stats.totalBet += betPerHand * humanSeats.length;
-    this.stats.highBet = Math.max(this.stats.highBet, betPerHand);
-    this.stats.lowBet = this.stats.lowBet === 0 ? betPerHand : Math.min(this.stats.lowBet, betPerHand);
+    this.stats.totalBet += roundBet;
+    this.stats.highBet = Math.max(this.stats.highBet, roundBet);
+    if (roundBet > 0) this.stats.lowBet = this.stats.lowBet === 0 ? roundBet : Math.min(this.stats.lowBet, roundBet);
 
     const events = this.game.startRound(humanSeats.map(seat => ({ seat, bet: betPerHand, sideBets })));
     this.afterEngineStep();
@@ -241,11 +254,35 @@ export class GameSession {
     return warnings;
   }
 
+  // --- dealer errors --------------------------------------------------------
+
+  /** The player called Foul and there was an error to catch. */
+  recordFoulCaught() {
+    this.stats.foulDecisions += 1;
+    this.save();
+  }
+
+  /** The player called Foul with nothing wrong. */
+  recordFalseFoul() {
+    this.stats.foulDecisions += 1;
+    this.stats.foulErrors += 1;
+    this.save();
+  }
+
+  /** A dealer error went uncalled. */
+  recordMissedDealerError() {
+    this.stats.foulDecisions += 1;
+    this.stats.foulErrors += 1;
+    this.save();
+  }
+
   /** How a computer seat plays: with the player's own strategy. */
   computerAction(hand, { dealerUpcard }) {
-    const { action } = checkPlay({
-      strategy: this.strategy, rules: this.rules, hand, upcard: dealerUpcard,
-      counts: this.counts, shoe: this.game.shoe, handsInSeat: this.game.handsInSeat(hand.seat), action: null,
+    // Computer seats never give a hand up, as in the original, so the strategy is
+    // asked for its best move with surrender taken away.
+    const { action } = correctPlay({
+      strategy: this.strategy, rules: { ...this.rules, surrender: 'none' }, hand, upcard: dealerUpcard,
+      counts: this.counts, shoe: this.game.shoe, handsInSeat: this.game.handsInSeat(hand.seat),
     });
     return action === ACTION.surrender ? ACTION.stand : action;
   }
@@ -279,7 +316,6 @@ export class GameSession {
    */
   shuffleNow() {
     this.game.shuffleAndBurn();
-    this.counter.reset(this.table.decks);
     return this.game.takeEvents();
   }
 
@@ -296,10 +332,12 @@ export class GameSession {
 
   /** Accuracy percentages for the stats screen. */
   accuracy() {
-    const pct = (errors, total) => (total === 0 ? 100 : Math.round(100 * (1 - errors / total)));
+    // Plays round, bets truncate.
+    const rate = (errors, total) => (total === 0 ? 100 : 100 * (1 - errors / total));
     return {
-      play: pct(this.stats.playErrors, this.stats.playDecisions),
-      bet: pct(this.stats.betErrors, this.stats.betDecisions),
+      play: Math.round(rate(this.stats.playErrors, this.stats.playDecisions)),
+      bet: Math.floor(rate(this.stats.betErrors, this.stats.betDecisions)),
+      foul: Math.floor(rate(this.stats.foulErrors, this.stats.foulDecisions)),
     };
   }
 

@@ -140,11 +140,7 @@ export function countScreen(app) {
     if (options.endWarning === 'oneCardLeft' && shoe.remaining === 2) cards = 1;
     cardsToDeal -= cards;
     const ids = [];
-    for (let i = 0; i < cards; i++) {
-      if (shoe.remaining === 0) {
-        finishShoe();
-        return;
-      }
+    for (let i = 0; i < cards && shoe.remaining > 0; i++) {
       shoe.biasNext(options.bias);
       ids.push(shoe.deal());
       if (auto && shoe.remaining === WARNING_REMAINING[options.endWarning]) {
@@ -152,6 +148,11 @@ export function countScreen(app) {
         shell.clock.every('deal', END_WARNING_SECONDS, dealFlash);
         break;
       }
+    }
+    // The shoe only ends once the cards it had left have been shown.
+    if (!ids.length) {
+      finishShoe();
+      return;
     }
     tray = null;
     flash = {
@@ -177,6 +178,9 @@ export function countScreen(app) {
     grid = countGrid(gridWindow, inHalfSteps ? halfStepLabel : String);
     // One dealt card is not worth a tray photo; keep the card on screen.
     tray = shoe.dealt > 1 ? trayImage(shoe.decksInTray(), options.trayStyle) : null;
+    // Anything deeper than the last photo has none, but the cards must still be
+    // covered, or the answer can be read off them.
+    if (shoe.dealt > 1) flash = null;
     if (tray) {
       trayPicture = loadTrayImage(tray.src);
       if (!trayPicture.complete) trayPicture.addEventListener('load', draw, { once: true });
@@ -282,10 +286,15 @@ export function countScreen(app) {
         else if (flash) drawFlash(ctx, width, height);
       }
       if (notice && !shell.paused) {
-        ctx.fillStyle = cssVar('--felt-text', '#ffffff');
-        ctx.font = `bold ${notice === 'Done.' ? 32 : 20}px Helvetica, Arial, sans-serif`;
+        const size = notice === 'Done.' ? 32 : 20;
+        ctx.font = `bold ${size}px Helvetica, Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        // On a plate of felt, so a warning over the cards can be read.
+        const plate = { width: ctx.measureText(notice).width + size, height: size * 2 };
+        ctx.fillStyle = cssVar('--felt', '#008000');
+        ctx.fillRect((width - plate.width) / 2, (height - plate.height) / 2, plate.width, plate.height);
+        ctx.fillStyle = cssVar('--felt-text', '#ffffff');
         ctx.fillText(notice, width / 2, height / 2);
       }
     }

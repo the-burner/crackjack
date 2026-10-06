@@ -65,6 +65,8 @@ export function gameStatsScreen(app, { session } = {}) {
       row('Bet Correct', `${accuracy.bet}%`),
       row('Play Errors', stats.playErrors),
       row('Bet Errors', stats.betErrors),
+      row('Dealer Error Correct', `${accuracy.foul}%`),
+      row('Dealer Errors Missed', stats.foulErrors),
     );
     return out;
   }

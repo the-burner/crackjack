@@ -185,7 +185,6 @@ export function fillHand(first, total, maxCards, random) {
     for (let n = 2; n <= maxCards; n++) {
       const card = n === maxCards ? total - sum : randomRank(maxCards, random);
       cards.push(card);
-      if (maxCards !== 2 && cards[0] === cards[1]) { restart = true; break; }
       sum += card;
       if (sum === 21) { restart = true; break; }
       if (sum === 11 && cards.includes(1)) { restart = true; break; }
@@ -193,6 +192,8 @@ export function fillHand(first, total, maxCards, random) {
       if (sum === total) break;
     }
     if (restart) continue;
+    // A finished two-card pair is the Split table's hand; a longer one is not.
+    if (maxCards !== 2 && cards.length === 2 && cards[0] === cards[1]) continue;
     if (sum === total && cards[cards.length - 1] <= 10) return cards;
   }
   return null;
@@ -209,7 +210,7 @@ function handValues(e, { maxCards, doubleAnyCards }, random) {
       return cards && cards.slice(0, 2).includes(1) ? null : cards;
     }
     case 'surrender': {
-      const cards = fillHand(2 + randomInt(6, random), e.value, 2, random);
+      const cards = fillHand(2 + randomInt(9, random), e.value, 2, random);
       return cards && cards.includes(1) ? null : cards;
     }
     case 'softDouble': {
@@ -227,12 +228,14 @@ function handValues(e, { maxCards, doubleAnyCards }, random) {
 
 /** Card ids for a list of card values: a random suit each, tens becoming 10/J/Q/K. */
 function dealCardIds(values, random) {
-  const ids = values.map(value => {
-    const suit = randomInt(4, random);
-    return cardId(value === 10 ? 10 + randomInt(4, random) : value, suit);
-  });
-  // Two identical sprites look like a mistake: move the first card to the next suit.
-  if (ids[1] === ids[2] && ids[1] <= 39) ids[1] += 13;
+  const ids = [];
+  for (const value of values) {
+    const rank = value === 10 ? 10 + randomInt(4, random) : value;
+    let id = cardId(rank, randomInt(4, random));
+    // Two identical sprites look like a mistake: move to the next suit instead.
+    for (let tries = 0; tries < 3 && ids.includes(id); tries++) id = id > 39 ? id - 39 : id + 13;
+    ids.push(id);
+  }
   return ids;
 }
 
@@ -298,13 +301,8 @@ const allowedFrom = situations => ({
   split: situations.split, surrender: situations.surrender,
 });
 
-/**
- * The playing index for a hand: the count at which the basic play changes.
- * Used to centre the "Random" count on something useful and as the answer of
- * the index test. Returns the insurance index when the hand has no index, and
- * null when even that is out of range.
- */
-export function handIndex(strategy, hand, situations) {
+/** The index the hand's own tables hold, before the grid range is applied. */
+function rawIndex(strategy, hand, situations) {
   const probe = advisePlay(strategy, advisorHand(hand),
     advisorContext(hand, 99, ownSituation(hand.kind), PROBE.section));
   let index = probe.threshold;
@@ -312,11 +310,26 @@ export function handIndex(strategy, hand, situations) {
     index = advisePlay(strategy, advisorHand(hand),
       advisorContext(hand, 99, { ...allowedFrom(situations), surrender: false }, PROBE.none)).threshold;
   }
-  if (index === NEVER || index === ALWAYS || index === NO_INDEX_MARKER || index === null) {
-    index = strategy.insurance / 10;
-  }
-  return Math.abs(index) > 150 ? null : index;
+  if (index === NEVER || index === ALWAYS || index === NO_INDEX_MARKER || index === null) return null;
+  return index;
 }
+
+/** An index far outside any count a player could hold is no use as an answer. */
+const inRange = index => (index !== null && Math.abs(index) <= 150 ? index : null);
+
+/**
+ * The hand's own playing index: the count at which its basic play changes, or
+ * null when it has none (so the index test must not ask about it).
+ */
+export const ownIndex = (strategy, hand, situations) => inRange(rawIndex(strategy, hand, situations));
+
+/** `ownIndex`, falling back to the insurance index as the original app did. */
+export function handIndex(strategy, hand, situations) {
+  return inRange(rawIndex(strategy, hand, situations) ?? strategy.insurance / 10);
+}
+
+/** Where the "Random" count sits for a hand with no index: zero, or the pivot. */
+export const countCentre = strategy => (strategy.unbalanced ? strategy.realPivot : 0);
 
 /**
  * The count to show with a hand.
@@ -324,15 +337,16 @@ export function handIndex(strategy, hand, situations) {
  * @param {string} o.countMode  zero | fixed | random | indexTest
  * @param {number} o.fixedCount
  * @param {number|null} o.index The hand's own playing index.
+ * @param {number} [o.centre]   Where to sit when the hand has no index.
  */
-export function countForHand({ countMode, fixedCount, index }, random) {
+export function countForHand({ countMode, fixedCount, index, centre = 0 }, random) {
   if (countMode === 'fixed') return fixedCount;
   if (countMode !== 'random') return 0;
   // A count near the hand's own index, so the decision is actually in doubt.
   let offset = Math.round(random() * 3);
   if (random() > 0.8) offset = Math.round(random() * 4);
   if (random() > 0.5) offset = -offset;
-  return (index ?? 0) + offset;
+  return (index ?? centre) + offset;
 }
 
 /**

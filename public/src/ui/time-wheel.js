@@ -9,14 +9,16 @@ const ITEM_HEIGHT = 36;
 
 /**
  * The wheels needed for durations up to `max` seconds, largest first: hours only
- * when `max` reaches an hour, minutes only when it reaches a minute. The largest
- * wheel runs to the most `max` allows; the others wrap at 59.
+ * when `max` reaches two hours, minutes only when it reaches two minutes. The
+ * largest wheel runs to the most `max` allows; the others wrap at 59.
  * @returns {{unit: string, label: string, size: number, count: number}[]}
  */
 export function durationColumns(max) {
   const columns = [];
-  if (max >= 3600) columns.push({ unit: 'h', label: 'Hours', size: 3600 });
-  if (max >= 60) columns.push({ unit: 'min', label: 'Minutes', size: 60 });
+  // A wheel earns its place only once two of its units fit: with one, the wheels
+  // below it would run past `max` (a 60 s limit offering 1:59).
+  if (max >= 7200) columns.push({ unit: 'h', label: 'Hours', size: 3600 });
+  if (max >= 120) columns.push({ unit: 'min', label: 'Minutes', size: 60 });
   columns.push({ unit: 's', label: 'Seconds', size: 1 });
   return columns.map((c, i) => ({ ...c, count: i === 0 ? Math.floor(max / c.size) + 1 : 60 }));
 }

@@ -17,6 +17,12 @@ import { rankOf, suitOf, valueOf, handTotals } from '../../core/cards.js';
 const PATTERN = {
   none: 0, pair: 1, trips: 2, straight: 3, flush: 4, straightFlush: 5,
   suitedPair: 6, suitedTrips: 7,
+  /**
+   * No pattern required, and the player's conditions are judged on the cards
+   * the rule picks out rather than the whole hand. The original reached this by
+   * falling through its pattern tests when `code - 1` was 7.
+   */
+  selection: 8,
 };
 
 /** Rank used in `exactCards` to mean "any ten-valued card". */
@@ -121,14 +127,26 @@ function suitMatches(code, cards) {
 
 /** Whether the cards contain each required rank (0 means "no requirement"). */
 function exactRanksMatch(required, cards) {
-  const available = cards.map(c => rankOf(c) % 13);
+  const available = cards.map(rankOf);
   for (const wanted of required) {
     if (!wanted) continue;
-    const index = available.findIndex(rank => (wanted === ANY_TEN ? valueOf(rank === 0 ? 13 : rank) === 10 : rank === wanted % 13));
+    const index = available.findIndex(rank => (wanted === ANY_TEN ? rank >= 10 : rank === wanted));
     if (index === -1) return false;
     available.splice(index, 1);
   }
   return true;
+}
+
+/**
+ * Whether one named card is the rank a rule wants. The original compared the
+ * card id modulo 13 here rather than its rank, so a king (13) can never be
+ * asked for by name; `ANY_TEN` means any ten-valued card.
+ */
+function namedCardMatches(wanted, card) {
+  if (!wanted) return true;
+  if (card === undefined) return false;
+  if (wanted === ANY_TEN) return valueOf(card) === 10;
+  return card % 13 === wanted;
 }
 
 /** Totals of a set of cards, with aces counted as 1 or 11 per the rule. */
@@ -141,11 +159,11 @@ function totalOf(cards, acesCountOne) {
 /**
  * Whether one rule's card conditions match.
  * @param {object} rule
- * @param {object} context {playerHandCards, dealerHandCards, won, doubled, split}
+ * @param {object} context {playerHandCards, dealerHandCards, won, doubled, split, firstTwoCardsOnly}
  */
 export function ruleMatches(rule, context) {
   if (!rule?.enabled) return false;
-  const { playerHandCards, dealerHandCards, won, doubled, split } = context;
+  const { playerHandCards, dealerHandCards, won, doubled, split, firstTwoCardsOnly = false } = context;
   if (rule.winRequired && !won) return false;
   if (split && !rule.allowedAfterSplit) return false;
   if (doubled && !rule.allowedAfterDouble) return false;
@@ -156,11 +174,11 @@ export function ruleMatches(rule, context) {
   // The pattern is judged on the selected cards together: the three-card games
   // select the player's two cards plus the dealer's up card.
   const selected = [...selectedPlayer, ...selectedDealer];
-  if (pattern !== PATTERN.none) {
+  if (pattern !== PATTERN.none && pattern !== PATTERN.selection) {
     if (selected.length === 0 || !patternMatches(pattern, selected)) return false;
   }
 
-  const playerSet = playerHandCards;
+  const playerSet = playerConditionCards({ rule, pattern, playerHandCards, selected, firstTwoCardsOnly });
   if (!countMatches(rule.playerCombo[0], playerSet.length)) return false;
   if (!totalMatches(rule.playerCombo[1], totalOf(playerSet, rule.acesCountOne))) return false;
   if (!suitMatches(rule.playerCombo[2], playerSet)) return false;
@@ -169,13 +187,24 @@ export function ruleMatches(rule, context) {
   if (!totalMatches(rule.dealerCombo[1], totalOf(dealerHandCards, rule.acesCountOne))) return false;
   if (!suitMatches(rule.dealerCombo[2], dealerHandCards)) return false;
 
-  if (!exactRanksMatch(rule.exactCards.slice(0, 6), playerHandCards)) return false;
+  if (!exactRanksMatch(rule.exactCards.slice(0, 6), playerSet)) return false;
   if (!exactRanksMatch(rule.exactCards.slice(6, 12), dealerHandCards)) return false;
   const [upRank, holeRank, lastRank] = rule.exactCards.slice(12, 15);
-  if (upRank && rankOf(dealerHandCards[0] ?? 0) % 13 !== upRank % 13) return false;
-  if (holeRank && rankOf(dealerHandCards[1] ?? 0) % 13 !== holeRank % 13) return false;
-  if (lastRank && rankOf(dealerHandCards.at(-1) ?? 0) % 13 !== lastRank % 13) return false;
+  if (!namedCardMatches(upRank, dealerHandCards[0])) return false;
+  if (!namedCardMatches(holeRank, dealerHandCards[1])) return false;
+  if (!namedCardMatches(lastRank, dealerHandCards.at(-1))) return false;
   return true;
+}
+
+/**
+ * The cards the player's count, total, suit and rank conditions are judged on.
+ * Normally the whole hand; the cards the rule picked out where the pattern code
+ * says so; the first two only where the game says so.
+ */
+function playerConditionCards({ rule, pattern, playerHandCards, selected, firstTwoCardsOnly }) {
+  if (pattern === PATTERN.selection) return selected;
+  if (firstTwoCardsOnly) return playerHandCards.slice(0, 2);
+  return playerHandCards;
 }
 
 /**
@@ -204,13 +233,14 @@ export function evaluateSideBet({ game, ruleIndex, stake, context }) {
   // A game with two separate side bets (Over/Under, Red/Black) pays only the
   // spot that was bet on; otherwise the whole pay table is in play.
   const twoSpots = sideBetSpots(game).length > 1;
+  const judged = { ...context, firstTwoCardsOnly: Boolean(game.firstTwoCardsOnly) };
   let payout = 0;
   let matched = false;
   for (let i = start; i < game.rules.length; i++) {
     const rule = game.rules[i];
     if (twoSpots && i !== ruleIndex) continue;
     if (i !== ruleIndex && !allowedAtCount(rule, context.trueCount ?? 0)) continue;
-    if (!ruleMatches(rule, context)) continue;
+    if (!ruleMatches(rule, judged)) continue;
     matched = true;
     payout += (rule.payTenths / 10) * stake + rule.payFixed;
     if (!game.nonAdditive) break;
@@ -235,8 +265,9 @@ export function evaluateHandBonus({ game, bet, context }) {
   let tenths = 0;
   let fixedTenths = 0;
   let matched = false;
+  const judged = { ...context, firstTwoCardsOnly: Boolean(game.firstTwoCardsOnly) };
   for (const rule of game.rules.slice(0, sideBetStart)) {
-    if (!ruleMatches(rule, context)) continue;
+    if (!ruleMatches(rule, judged)) continue;
     matched = true;
     tenths += rule.twentyOneAlwaysWins ? twentyOneAlwaysWinsTenths(context) : rule.payTenths;
     fixedTenths = rule.payFixed;

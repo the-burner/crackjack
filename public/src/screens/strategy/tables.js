@@ -93,7 +93,11 @@ export function strategyTablesScreen(app, params = {}) {
   grid.addEventListener('click', event => {
     const cell = event.target.closest('td[data-row]');
     if (!cell || !editingMask || view.table === null) return;
-    toggleMask(Number(cell.dataset.row), Number(cell.dataset.col));
+    // An extended strategy shows dealer totals in the extra columns, which the
+    // mask has no cell for.
+    const column = Number(cell.dataset.col);
+    if (column >= BASE_COLUMNS) return;
+    toggleMask(Number(cell.dataset.row), column);
     render();
   });
 

@@ -74,7 +74,7 @@
   justify-content: center;
   padding: 2px 4px;
   border: 1px groove var(--grid-mark);
-  font: bold 12px var(--font);
+  font: 600 12px var(--font);
   text-align: center;
 }
 .tables__specialty { flex: 1; min-width: 0; }

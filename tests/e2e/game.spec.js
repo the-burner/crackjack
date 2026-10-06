@@ -134,7 +134,7 @@ test.describe('the table', () => {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 120, { steps: 4 });
     await page.mouse.up();
     // The table may be showing a dealing message, but never a refused action.
-    await expect(page.locator('.table__status')).not.toContainText('Cannot');
+    await expect(page.locator('.toast')).toHaveCount(0);
     // Once the timeline finishes, the player is asked to act for the first time.
     await expect(action(page, 'stand')).toBeVisible({ timeout: 30000 });
     await expect(bankroll(page)).toHaveText('$995.00');
@@ -218,7 +218,7 @@ test.describe('the table', () => {
   test('says there is no error to review before one has been made', async ({ page }) => {
     await openTable(page);
     await page.locator('[data-action="error"]').click();
-    await expect(page.locator('.table__status')).toContainText('No play errors yet');
+    await expect(page.locator('.toast')).toHaveText('No play errors yet');
   });
 
   test('hands the chips back when the player leaves in the middle of a round', async ({ page }) => {
@@ -244,6 +244,46 @@ test.describe('the table', () => {
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.bankroll')));
     expect(saved).toBe(before);
+  });
+
+  test('shows a hand\'s result on its chips, then sweeps its cards', async ({ page }) => {
+    // Slow enough to see each result.
+    await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 } });
+    await placeBet(page);
+    const hit = action(page, 'hit');
+    await expect(hit).toBeVisible({ timeout: 30000 });
+    // Hit until the hand is over.
+    for (let i = 0; i < 12 && await hit.isVisible(); i++) {
+      await hit.click();
+      await page.waitForTimeout(150);
+    }
+    const result = page.locator('.table__chip .table__result');
+    await expect(result).toBeVisible({ timeout: 30000 });
+    await expect(result).toHaveText(/^\s*(Win|Lose|Push|Bust|21)\s*$/);
+    await expect(result).toHaveCount(0, { timeout: 30000 });
+    await expect(page.locator('.table__status')).toHaveCount(0);
+  });
+
+  test('shows a betting mistake as soon as the cards start coming', async ({ page }) => {
+    await openTable(page, {
+      settings: {
+        'mechanics.dealerSpeed': 10,
+        'betting.warnOnError': true,
+        // The first tile is the bet for a count of -1, so at 0 it is a mistake.
+        'betting.ramp': { minCount: -1, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+      },
+    });
+    await placeBet(page);
+    const toast = page.locator('.toast');
+    await expect(toast).toBeVisible();
+    // Still dealing: the player has not been asked to act yet.
+    await expect(action(page, 'stand')).toBeHidden();
+    await expect(toast).toHaveClass(/toast--error/);
+    const box = await toast.boundingBox();
+    expect(box.y).toBeLessThan(page.viewportSize().height / 2);
+    // The table's own messages do not replace it while it is up.
+    await page.waitForTimeout(600);
+    await expect(toast).toHaveClass(/toast--error/);
   });
 
   test('plays with the action buttons hidden, using swipes', async ({ page }) => {
@@ -275,7 +315,8 @@ test.describe('the table', () => {
     await overlay(page).locator('[data-action="side-bet"]').click();
     await expect(page.locator('.bet-select')).toBeVisible();
     await expect(page.locator('.bet-select__chips .btn')).toHaveCount(18);
-    await page.locator('.bet-select__chips [data-chips="2"]').click();
+    // Lucky Ladies allows a side bet of at most one times the main bet.
+    await page.locator('.bet-select__chips [data-chips="1"]').click();
     await expect(overlay(page).locator('.bet-overlay__title')).toContainText('side bet');
 
     // The stake leaves the bankroll with the main bet.
@@ -284,5 +325,15 @@ test.describe('the table', () => {
     expect(await bankroll(page).textContent()).not.toBe(before);
     await playRound(page);
     await expect(overlay(page)).toBeVisible();
+  });
+
+  test('refuses a side bet larger than its multiple of the main bet', async ({ page }) => {
+    await openTable(page, { settings: { 'bonuses.game': 8 } });
+    await overlay(page).locator('[data-action="side-bet"]').click();
+    await page.locator('.bet-select__chips [data-chips="2"]').click();
+    // The smallest main bet is one chip, and Lucky Ladies allows only one times it.
+    await grid(page).click({ position: { x: 25, y: 25 } });
+    await expect(overlay(page)).toBeVisible();
+    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('cannot be greater than 1 times the main bet');
   });
 });

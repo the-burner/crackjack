@@ -3,13 +3,13 @@ import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../public/src/dr
 import { DrillScore, gradeAnswer, ACCURACY } from '../../../public/src/drills/shared/scoring.js';
 import { trayImage, maxDecksInTray } from '../../../public/src/drills/shared/discard-tray.js';
 import { AnswerGrid, numberGrid, windowContaining } from '../../../public/src/drills/shared/answer-grid.js';
-import { clockTime, mixedNumber } from '../../../public/src/drills/shared/format.js';
+import { clockTime, mixedNumber, signedCount } from '../../../public/src/drills/shared/format.js';
 import { DrillShoe } from '../../../public/src/drills/shared/shoe.js';
 import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
 import { seededRandom } from '../../../public/src/core/random.js';
 
-function fakeClock() {
+function fakeClock(options = {}) {
   let now = 1000;
   const timers = [];
   const clock = new DrillClock({
@@ -18,6 +18,8 @@ function fakeClock() {
     setTimer: (fn, ms) => { timers.push({ fn, at: now + ms / 1000 }); return timers.length - 1; },
     clearTimer: id => { if (timers[id]) timers[id].cancelled = true; },
     onAlarm: () => { clock.alarms = (clock.alarms ?? 0) + 1; },
+    onHalt: () => { clock.halts = (clock.halts ?? 0) + 1; },
+    ...options,
   });
   clock.advance = seconds => {
     const target = now + seconds;
@@ -81,6 +83,7 @@ describe('DrillClock', () => {
     clock.advance(3);
     clock.pause();
     clock.advance(10);
+    expect(clock.elapsed).toBe(3);
     clock.resume();
     expect(Math.round(clock.elapsed)).toBe(3);
   });
@@ -91,6 +94,151 @@ describe('DrillClock', () => {
     clock.advance(30);
     expect(clock.rate(10)).toBe(20);
     expect(clock.rate(7)).toBe(14);
+  });
+
+  it('shows no rate until a whole second has passed', () => {
+    const clock = fakeClock();
+    clock.start();
+    clock.advance(0.005);
+    expect(clock.rate(1)).toBe(0);
+    clock.advance(0.995);
+    expect(clock.rate(1)).toBe(60);
+  });
+
+  it('is only running between a start and a pause or a stop', () => {
+    const clock = fakeClock();
+    expect(clock.running).toBe(false);
+    clock.start();
+    expect(clock.running).toBe(true);
+    clock.pause();
+    expect(clock.running).toBe(false);
+    clock.resume();
+    expect(clock.running).toBe(true);
+    clock.stop();
+    expect(clock.running).toBe(false);
+  });
+
+  it('reads no time and no rate before it starts', () => {
+    const clock = fakeClock();
+    expect(clock.elapsed).toBe(0);
+    expect(clock.rate(10)).toBe(0);
+  });
+
+  it('keeps the elapsed time it reached once it stops', () => {
+    const clock = fakeClock();
+    clock.start();
+    clock.advance(12);
+    clock.stop();
+    clock.advance(30);
+    expect(clock.elapsed).toBe(12);
+    expect(clock.rate(6)).toBe(30);
+  });
+
+  it('ignores a pause before the start, a second pause and a pointless resume', () => {
+    const clock = fakeClock();
+    clock.pause();
+    clock.resume();
+    clock.stop();
+    expect([clock.paused, clock.elapsed]).toEqual([false, 0]);
+    clock.start();
+    clock.advance(2);
+    clock.pause();
+    const pausedAt = clock.pausedAt;
+    clock.advance(5);
+    clock.pause();
+    expect(clock.pausedAt).toBe(pausedAt);
+    clock.resume();
+    clock.resume();
+    expect(Math.round(clock.elapsed)).toBe(2);
+  });
+
+  it('counts up to the limit in Count Up mode', () => {
+    const clock = fakeClock({ mode: TIMER_MODE.countUp, limit: 5 });
+    clock.start();
+    clock.advance(4);
+    expect(clock.display()).toEqual({ seconds: 4, overdue: false });
+    expect(clock.alarms ?? 0).toBe(0);
+    clock.advance(2);
+    expect(clock.alarms).toBe(1);
+  });
+
+  it('halts the run when a count-down-and-halt runs out', () => {
+    const clock = fakeClock({ mode: TIMER_MODE.countDownHalt, limit: 3 });
+    clock.start();
+    clock.advance(4);
+    expect([clock.alarms, clock.halts]).toEqual([1, 1]);
+  });
+
+  it('ignores a tick that fires after a pause', () => {
+    let tick = null;
+    let ticks = 0;
+    const clock = new DrillClock({
+      mode: TIMER_MODE.countUp, limit: 10, now: () => 0,
+      setTimer: fn => { tick = fn; return 1; },
+      clearTimer: () => {},
+      onTick: () => { ticks += 1; },
+    });
+    clock.start();
+    clock.pause();
+    tick();
+    expect(ticks).toBe(0);
+  });
+
+  it('runs a named timer once, after the seconds given', () => {
+    const clock = fakeClock();
+    const fired = [];
+    clock.start();
+    clock.after('reveal', 2, () => fired.push(clock.elapsed));
+    clock.advance(1);
+    expect(fired).toEqual([]);
+    clock.advance(2);
+    expect(fired).toEqual([2]);
+  });
+
+  it('replaces a named timer instead of running both', () => {
+    const clock = fakeClock();
+    const fired = [];
+    clock.start();
+    clock.after('reveal', 2, () => fired.push('first'));
+    clock.after('reveal', 3, () => fired.push('second'));
+    clock.advance(5);
+    expect(fired).toEqual(['second']);
+  });
+
+  it('repeats a named timer until it is cancelled', () => {
+    const clock = fakeClock();
+    let beeps = 0;
+    clock.start();
+    clock.every('beep', 1, () => { beeps += 1; });
+    clock.advance(3.5);
+    expect(beeps).toBe(3);
+    clock.cancel('beep');
+    clock.advance(5);
+    expect(beeps).toBe(3);
+  });
+
+  it('cancels its named timers when it is paused', () => {
+    const clock = fakeClock();
+    let beeps = 0;
+    clock.start();
+    clock.every('beep', 1, () => { beeps += 1; });
+    clock.pause();
+    clock.advance(5);
+    expect(beeps).toBe(0);
+  });
+
+  it('ticks off the wall clock with real timers by default', () => {
+    vi.useFakeTimers();
+    try {
+      const seconds = [];
+      const clock = new DrillClock({ mode: TIMER_MODE.countUp, limit: 60, onTick: () => seconds.push(clock.display().seconds) });
+      clock.start();
+      vi.advanceTimersByTime(3000);
+      clock.stop();
+      expect(seconds).toEqual([1, 2, 3]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -151,6 +299,22 @@ describe('DrillScore', () => {
     score.discardTest();
     expect([score.tests, score.errors]).toEqual([0, 0]);
   });
+
+  it('scores nothing before the first test, and has nothing to discard', () => {
+    const score = new DrillScore();
+    expect(score.accuracy).toBe(0);
+    score.discardTest();
+    expect([score.tests, score.errors]).toEqual([0, 0]);
+  });
+
+  it('keeps the errors of earlier tests when a clean test is discarded', () => {
+    const score = new DrillScore();
+    score.beginTest();
+    score.recordError();
+    score.beginTest();
+    score.discardTest();
+    expect([score.tests, score.errors, score.accuracy]).toEqual([1, 1, 0]);
+  });
 });
 
 describe('gradeAnswer', () => {
@@ -166,19 +330,19 @@ describe('gradeAnswer', () => {
 
 describe('discard tray photos', () => {
   it('steps through the series every quarter deck', () => {
-    expect(trayImage(0, 'eightDeckFront').src).toContain('/301.jpg');
-    expect(trayImage(1, 'eightDeckFront').src).toContain('/293.jpg');
-    expect(trayImage(2, 'eightDeckFront').src).toContain('/285.jpg');
+    expect(trayImage(0, 'eightDeckFront').src).toContain('/303.jpg');
+    expect(trayImage(1, 'eightDeckFront').src).toContain('/295.jpg');
+    expect(trayImage(2, 'eightDeckFront').src).toContain('/287.jpg');
   });
 
   it('falls back to the eight-deck tray when a style cannot hold the depth', () => {
-    expect(trayImage(7, 'doubleDeckFront').src).toContain('/245.jpg');
-    expect(trayImage(1, 'doubleDeckFront').src).toContain('/372.jpg');
+    expect(trayImage(7, 'doubleDeckFront').src).toContain('/247.jpg');
+    expect(trayImage(1, 'doubleDeckFront').src).toContain('/374.jpg');
   });
 
   it('has no photo for a nearly full eight-deck tray', () => {
     expect(trayImage(7.75, 'eightDeckFront')).toBeNull();
-    expect(maxDecksInTray('eightDeckFront')).toBe(7.25);
+    expect(maxDecksInTray('eightDeckFront')).toBe(7.5);
   });
 });
 
@@ -222,6 +386,12 @@ describe('mixedNumber', () => {
   });
 });
 
+describe('signedCount', () => {
+  it('signs a positive count and leaves the others alone', () => {
+    expect([3, 0, -2].map(signedCount)).toEqual(['+3', '0', '-2']);
+  });
+});
+
 describe('DrillShoe', () => {
   const strategy = buildStrategy(STRATEGY_FILES[30], { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
   const settings = { division: 0, lastDeck: 1, rounding: 'round' };
@@ -240,6 +410,37 @@ describe('DrillShoe', () => {
     const shoe = new DrillShoe({ decks: 1, strategy, trueCountSettings: settings, random: seededRandom(5), cardsPerDeck: 48 });
     expect(shoe.cards.length).toBe(48);
     expect(shoe.cards.some(id => id % 13 === 10)).toBe(false);
+  });
+
+  it('reports what each card did to the running count', () => {
+    const shoe = new DrillShoe({ decks: 1, strategy, trueCountSettings: settings, random: seededRandom(7) });
+    const values = [];
+    for (let i = 0; i < 52; i++) {
+      const dealt = shoe.dealWithCountValue();
+      expect(dealt.card).toBe(shoe.cards[i]);
+      values.push(dealt.countValue);
+    }
+    expect(new Set(values)).toEqual(new Set([-1, 0, 1]));
+    // A whole High-Low deck nets zero.
+    expect(values.reduce((a, b) => a + b, 0)).toBe(0);
+    expect(shoe.dealWithCountValue()).toBeNull();
+  });
+
+  it('measures the decks left and the decks in the tray', () => {
+    const shoe = new DrillShoe({ decks: 2, strategy, trueCountSettings: settings, random: seededRandom(3) });
+    expect(shoe.decksInTray()).toBe(0);
+    for (let i = 0; i < 26; i++) shoe.deal();
+    expect(shoe.decksInTray()).toBe(0.5);
+    // Full-deck resolution rounds the 1½ decks left down to one.
+    expect(shoe.decksRemaining()).toBe(1);
+    expect(shoe.decksRemaining()).toBe(shoe.counter.decksRemaining(26));
+  });
+
+  it('leaves the order alone when nothing is biased', () => {
+    const shoe = new DrillShoe({ decks: 1, strategy, trueCountSettings: settings, random: seededRandom(2) });
+    const before = shoe.cards.slice();
+    shoe.applyBias('none');
+    expect(shoe.cards).toEqual(before);
   });
 
   it('biases the next card toward the wanted count direction', () => {

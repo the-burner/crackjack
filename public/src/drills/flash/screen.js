@@ -15,7 +15,7 @@ import { drillStrategy } from '../shared/drill-settings.js';
 import { countGrid, countWindow, INITIAL_WINDOW } from '../shared/count-grid.js';
 import { drawGridIn } from '../shared/answer-grid.js';
 import {
-  buildHandList, dealHand, handIndex, countForHand, correctPlay, errorCell, RoundRobin,
+  buildHandList, dealHand, ownIndex, countCentre, countForHand, correctPlay, errorCell, RoundRobin,
   describeHand, rowOf, columnOf, ACTION_LABELS, SITUATION_LABELS,
 } from './logic.js';
 
@@ -90,6 +90,8 @@ export function flashScreen(app) {
   let index = null;
   let play = null;
   let answered = false;
+  /** The hand on screen has had no answer, so ending the drill now discards it. */
+  let pending = false;
   let gridWindow = INITIAL_WINDOW;
   let answerGrid = null;
   let finished = false;
@@ -150,6 +152,7 @@ export function flashScreen(app) {
   function stop() {
     shell.clock?.stop();
     answered = false;
+    pending = false;
     hand = null;
     showButtons();
     draw();
@@ -164,8 +167,8 @@ export function flashScreen(app) {
         finish();
         return;
       }
-      index = handIndex(strategy, hand, situations);
-      // The index test can only ask about hands whose index fits on the grid.
+      index = ownIndex(strategy, hand, situations);
+      // The index test can only ask about a hand that has an index of its own.
       if (!indexTest || index !== null) break;
       hand = null;
     }
@@ -174,10 +177,13 @@ export function flashScreen(app) {
       finish();
       return;
     }
-    count = again ? again.count : indexTest ? 0 : countForHand({ ...options, index }, Math.random);
+    count = again ? again.count
+      : indexTest ? 0
+        : countForHand({ ...options, index, centre: countCentre(strategy) }, Math.random);
     play = correctPlay(strategy, hand, { count, situations, doubleAnyCards: options.doubleAnyCards });
     // A resumed hand is the same test, so it keeps its place in the count.
     answered = again ? again.answered : false;
+    pending = !answered;
     if (!again) shell.score.beginTest();
     shell.clearMessage();
     if (indexTest) {
@@ -201,7 +207,7 @@ export function flashScreen(app) {
       answerGrid.mark(answerGrid.cellFor(index), 'correct');
       draw();
     } else if (nonBlocking) {
-      toast('Out of time', { position: 'top' });
+      toast('Out of time', { position: 'top', tone: 'error' });
     } else if (warn) {
       highlight(play.action);
     } else {
@@ -229,7 +235,7 @@ export function flashScreen(app) {
     }
     if (!answered) recordError(action);
     if (nonBlocking) {
-      toast(`${ACTION_LABELS[action]} is incorrect`, { position: 'top' });
+      toast(`${ACTION_LABELS[action]} is incorrect`, { position: 'top', tone: 'error' });
     } else if (warn) {
       highlight(play.action);
       explain(action);
@@ -245,6 +251,10 @@ export function flashScreen(app) {
     const cell = answerGrid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
     shell.clock.cancel('hand');
+    if (silent) {
+      advance();
+      return;
+    }
     if (cell.value === index) {
       answerGrid.mark(cell, 'correct');
       draw();
@@ -268,6 +278,7 @@ export function flashScreen(app) {
   /** Counts the error once per hand and files it in the strategy tables. */
   function recordError(action) {
     answered = true;
+    pending = false;
     shell.score.recordError();
     if (warn) app.sound.play('error');
     // The index test asks about the index, so the error belongs to the hand's
@@ -281,6 +292,7 @@ export function flashScreen(app) {
 
   /** Moves on, or ends the drill when the round count is reached (Rounds mode only). */
   function advance() {
+    pending = false;
     if (robin?.endsRound) {
       rounds += 1;
       toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });
@@ -291,7 +303,10 @@ export function flashScreen(app) {
 
   function finish() {
     finished = true;
+    // A hand nobody answered is no test, so it must not count as a right one.
+    if (pending) shell.score.discardTest();
     shell.finish();
+    shell.updateStats(shell.clock);
     draw();
   }
 
@@ -311,18 +326,20 @@ export function flashScreen(app) {
       cell ? `Table: ${SITUATION_LABELS[cell.table]}` : null,
     ].filter(Boolean);
     const show = await confirm(`${lines.join('\n')}\n\nShow the strategy table?`, { yes: 'Table', no: 'OK' });
-    if (show) {
-      app.open('strategy.tables', {
-        decks: options.decks,
-        title: cell ? SITUATION_LABELS[cell.table] : 'Tables',
-        view: cell?.table,
-        highlight: cell ? { row: cell.row, column: cell.column } : null,
-      });
-    }
+    // Resumed before the table opens, so the screen change can suspend the drill
+    // itself; a clock that is already paused would be left running behind it.
     shell.clock.resume();
+    if (!show) return;
+    app.open('strategy.tables', {
+      decks: options.decks,
+      title: cell ? SITUATION_LABELS[cell.table] : 'Tables',
+      view: cell?.table,
+      highlight: cell ? { row: cell.row, column: cell.column } : null,
+    });
   }
 
   function pause() {
+    if (finished) return;
     shell.clock.pause();
     // Kept for the resume, so the hand is neither skipped nor counted twice.
     held = hand ? { hand, count, answered } : null;
@@ -331,6 +348,7 @@ export function flashScreen(app) {
   }
 
   function resume() {
+    if (finished) return;
     shell.clock.resume();
     nextHand(held);
     held = null;
@@ -365,7 +383,7 @@ export function flashScreen(app) {
     if (hand) drawCards(ctx, width, height);
     if (finished) {
       ctx.fillStyle = cssVar('--felt-text', '#ffffff');
-      ctx.font = '40px Helvetica, Arial, sans-serif';
+      ctx.font = `40px ${cssVar('--font', 'Helvetica, Arial, sans-serif')}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(resultText(), width / 2, height / 2);
@@ -373,8 +391,16 @@ export function flashScreen(app) {
     countPanel.hidden = !hand;
     if (hand) countPanel.textContent = indexTest ? SITUATION_LABELS[hand.kind] : `Count: ${count}`;
     if (indexTest && answerGrid) {
+      fitGrid();
       drawGridIn(answerGrid, grid, gridWrap);
     }
+  }
+
+  /** Trims the 2:1 grid when its shape would push the cards off the bottom. */
+  function fitGrid() {
+    gridWrap.style.maxHeight = '';
+    const over = shell.body.scrollHeight - shell.body.clientHeight;
+    if (over > 0) gridWrap.style.maxHeight = `${Math.max(0, gridWrap.clientHeight - over)}px`;
   }
 
   /** Dealer card top left, the player's hand fanned from the bottom left. */

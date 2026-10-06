@@ -32,7 +32,7 @@ export function settingsHubScreen(app) {
   const { el, body } = standardScreen(app, { title: 'Options', help: 'settings', className: 'settings' });
   const navButton = ([label, screen]) => button(label, { icon: 'arrow-r', block: true, className: 'list-row', onClick: () => app.open(screen) });
 
-  body.append(h('div', { class: 'column settings-hub' },
+  body.append(h('div', { class: 'settings-cols settings-hub' },
     SECTIONS.map(([title, screens], i) => h('div', { class: 'section' },
       h('h2', { class: 'section__title' }, title),
       h('div', { class: 'settings-group' }, screens.map(navButton)),

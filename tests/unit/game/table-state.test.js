@@ -8,7 +8,8 @@ const dealt = () => {
   state.setBankroll(1000);
   state.setBets([{ seat: 1, amount: 10 }]);
   state.apply({ type: 'shuffle' });
-  state.apply({ type: 'burn', card: 7 });
+  state.apply({ type: 'burn', card: 7, faceUp: true });
+  state.apply({ type: 'roundStart', round: 1 });
   state.apply(card('1-0', 5));
   state.apply(card('0-0', 13));
   state.apply(card('1-0', 9));
@@ -77,6 +78,22 @@ describe('what the player can see', () => {
     state.apply({ type: 'insuranceDeclined' });
     expect(state.insurance).toBe(false);
   });
+
+  it('turns the hole card back down after a peek', () => {
+    const state = dealt();
+    state.apply({ type: 'peek', hand: '0-0', cardIndex: 1, card: 20 });
+    expect(state.dealer.faceUp).toEqual([true, true]);
+    state.apply({ type: 'conceal', hand: '0-0', cardIndex: 1 });
+    expect(state.dealer.faceUp).toEqual([true, false]);
+  });
+
+  it('ignores an event that says nothing about the table', () => {
+    const state = dealt();
+    const before = JSON.stringify(state.hands);
+    state.apply({ type: 'action', hand: '1-0', action: 'hit' });
+    expect(JSON.stringify(state.hands)).toBe(before);
+    expect(state.dealer.cards).toEqual([13, 20]);
+  });
 });
 
 describe('the chips on the table', () => {
@@ -107,10 +124,105 @@ describe('the chips on the table', () => {
     expect(state.bankroll).toBe(995);
   });
 
+  it('spends nothing of the player bankroll when another seat splits or doubles', () => {
+    const state = dealt();
+    state.apply(card('3-0', 4));
+    state.apply(card('3-0', 17));
+    state.apply({ type: 'split', hand: '3-0', newHand: '3-1', card: 17 });
+    state.apply({ type: 'double', hand: '3-0', amount: 50 });
+    expect(state.bankroll).toBe(1000);
+    expect(state.chips.has(3)).toBe(false);
+  });
+
   it('shows the result instead of the amount once a hand is settled', () => {
     const state = dealt();
     state.apply({ type: 'settled', hand: '1-0', seat: 1, result: 'Win', payout: 20, net: 10 });
     expect(state.chips.get(1).result).toBe('Win');
+  });
+});
+
+describe('burn cards', () => {
+  it('shows each one, and keeps it out of the tray until the round starts', () => {
+    const state = createTableState({ decks: 6 });
+    state.apply({ type: 'shuffle' });
+    state.apply({ type: 'burn', card: 7, faceUp: true });
+    state.apply({ type: 'burn', card: 9, faceUp: false });
+    expect(state.burns).toEqual([{ card: 7, faceUp: true }, { card: 9, faceUp: false }]);
+    expect(state.trayCards).toBe(0);
+    state.apply({ type: 'roundStart', round: 1 });
+    expect(state.burns).toEqual([]);
+    expect(state.trayCards).toBe(2);
+  });
+
+  it('clears them when the shoe is shuffled again', () => {
+    const state = createTableState({ decks: 6 });
+    state.apply({ type: 'burn', card: 7, faceUp: true });
+    state.apply({ type: 'shuffle' });
+    expect(state.burns).toEqual([]);
+  });
+});
+
+describe('the payoff', () => {
+  it('shows what the hand paid, then sweeps its cards to the tray and its chips off the seat', () => {
+    const state = dealt();
+    state.apply({ type: 'settled', hand: '1-0', seat: 1, result: 'Win', payout: 20, net: 10 });
+    state.apply({ type: 'payout', hand: '1-0', amount: 20 });
+    expect(state.chips.get(1)).toMatchObject({ result: null, paid: 20 });
+    const tray = state.trayCards;
+    state.apply({ type: 'sweep', hand: '1-0' });
+    expect(state.hands).toHaveLength(0);
+    expect(state.trayCards).toBe(tray + 2);
+    expect(state.chips.get(1)).toMatchObject({ result: null, paid: null, amount: 0 });
+  });
+
+  it('takes the turn pointer off a hand that is being paid', () => {
+    const state = dealt();
+    state.apply({ type: 'turn', hand: '1-0' });
+    state.apply({ type: 'result', hand: '1-0', result: 'Bust' });
+    expect(state.pointerHand).toBe(null);
+  });
+
+  it('takes the turn pointer off a hand that is settled', () => {
+    const state = dealt();
+    state.apply({ type: 'turn', hand: '1-0' });
+    state.apply({ type: 'settled', hand: '1-0', seat: 1, result: 'Win', payout: 20, net: 10 });
+    expect(state.pointerHand).toBe(null);
+  });
+
+  it('leaves the turn pointer on the hand still to play', () => {
+    const state = dealt();
+    state.apply(card('3-0', 4));
+    state.apply({ type: 'turn', hand: '1-0' });
+    state.apply({ type: 'result', hand: '3-0', result: 'Bust' });
+    expect(state.pointerHand).toBe('1-0');
+  });
+
+  it('leaves a split seat the chips of the hands still on the table', () => {
+    const state = dealt();
+    state.apply({ type: 'split', hand: '1-0', newHand: '1-1', card: 9 });
+    state.apply({ type: 'double', hand: '1-1', amount: 10 });
+    state.apply({ type: 'sweep', hand: '1-1' });
+    expect(state.chips.get(1).amount).toBe(10);
+  });
+
+  it('labels a computer seat with its result but never pays it into the bankroll', () => {
+    const state = dealt();
+    state.apply(card('3-0', 4));
+    state.apply({ type: 'result', hand: '3-0', result: 'Bust' });
+    expect(state.chips.get(3)).toMatchObject({ result: 'Bust', computer: true });
+    state.apply({ type: 'sweep', hand: '3-0' });
+    state.apply({ type: 'settled', hand: '3-0', seat: 3, result: 'Bust', payout: 0, net: -5 });
+    expect(state.chips.get(3).result).toBe(null);
+    expect(state.bankroll).toBe(1000);
+  });
+
+  it('pays a hand swept during play without labelling it again', () => {
+    const state = dealt();
+    state.apply({ type: 'result', hand: '1-0', result: 'Surrender' });
+    state.apply({ type: 'sweep', hand: '1-0' });
+    state.apply({ type: 'settled', hand: '1-0', seat: 1, result: 'Surrender', payout: 5, net: -5 });
+    expect(state.chips.get(1).result).toBe(null);
+    expect(state.bankroll).toBe(1005);
   });
 });
 
@@ -131,5 +243,18 @@ describe('the bankroll the player sees', () => {
     const state = dealt();
     state.apply({ type: 'roundEnd', bankroll: 1234, needsShuffle: false });
     expect(state.bankroll).toBe(1234);
+  });
+});
+
+describe('burn cards going into the tray', () => {
+  it('leave the burn row and count in the tray', () => {
+    const state = createTableState({ decks: 6 });
+    state.apply({ type: 'shuffle' });
+    state.apply({ type: 'burn', card: 7, faceUp: true });
+    expect(state.burns).toHaveLength(1);
+    expect(state.trayCards).toBe(0);
+    state.apply({ type: 'burnsToTray' });
+    expect(state.burns).toEqual([]);
+    expect(state.trayCards).toBe(1);
   });
 });

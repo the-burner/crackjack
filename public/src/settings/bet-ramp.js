@@ -54,7 +54,19 @@ export function setRow(ramp, index, { chips, hands }) {
 }
 
 /** The count each row applies at. */
-export const rowCounts = ramp => normalizeRamp(ramp).rows.map((_, i) => ramp.minCount + i);
+export function rowCounts(ramp) {
+  const { minCount, rows } = normalizeRamp(ramp);
+  return rows.map((_, i) => minCount + i);
+}
+
+/** The ramp brought back into range when it is not already there, otherwise null. */
+export function rampToSave(ramp) {
+  const tidy = normalizeRamp(ramp);
+  const rows = ramp?.rows;
+  const inRange = ramp?.minCount === tidy.minCount && Array.isArray(rows) && rows.length === tidy.rows.length
+    && tidy.rows.every(({ chips, hands }, i) => rows[i]?.chips === chips && rows[i]?.hands === hands);
+  return inRange ? null : tidy;
+}
 
 /**
  * The text of the "Count" column. A single row has no count at all; otherwise

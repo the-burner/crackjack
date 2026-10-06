@@ -30,6 +30,14 @@ describe('plays the dealer questions', () => {
 
   it('asks the question the way the dealer would', () => {
     expect(areYouSure(ACTION.hit)).toBe('Are you sure that you want to Hit?');
-    expect(areYouSure(ACTION.double)).toBe('Are you sure that you want to Double?');
+    expect(areYouSure(ACTION.stand)).toBe('Are you sure that you want to Stand?');
+    expect(areYouSure(ACTION.split)).toBe('Are you sure that you want to Split?');
+    // The original named this one in full.
+    expect(areYouSure(ACTION.double)).toBe('Are you sure that you want to Double Down?');
+  });
+
+  it('falls back to the action itself for a play the original never named', () => {
+    // Surrender is never questioned, so the original had no wording for it.
+    expect(areYouSure(ACTION.surrender)).toBe('Are you sure that you want to surrender?');
   });
 });

@@ -10,7 +10,20 @@ const STORAGE_KEY = 'settings';
  * @property {Array} [values]   Allowed values for 'enum'.
  * @property {number} [min]
  * @property {number} [max]
+ * @property {(value: *) => boolean} [shape]  Accepts a 'json' value the default's shape cannot describe.
  */
+
+/** Whether a json value is shaped like its default: same kind, array lengths and keys. */
+function sameShape(value, def) {
+  if (Array.isArray(def)) {
+    return Array.isArray(value) && value.length === def.length && def.every((d, i) => sameShape(value[i], d));
+  }
+  if (def !== null && typeof def === 'object') {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+      && Object.entries(def).every(([key, d]) => sameShape(value[key], d));
+  }
+  return typeof value === typeof def;
+}
 
 export class Settings {
   /**
@@ -23,6 +36,8 @@ export class Settings {
     this.listeners = new Set();
     this.values = {};
     this.load();
+    // Another tab writing the same key would otherwise be erased by our next save.
+    this.storage.watch?.(STORAGE_KEY, () => this.load());
   }
 
   load() {
@@ -107,7 +122,7 @@ export class Settings {
       case 'string':
         return String(value);
       default:
-        return value;
+        return (def.shape ? def.shape(value) : sameShape(value, def.default)) ? value : structuredClone(def.default);
     }
   }
 }

@@ -5,12 +5,18 @@
 // Each tray style has its own series and crop.
 
 /** Tray styles, in the order the options screen lists them. */
+/**
+ * `base` is the photograph of an empty tray; the numbers count down as it
+ * fills, two per quarter deck. The original app's bases were one step low, so
+ * every picture held a quarter deck more than the drill claimed and the deepest
+ * step of two styles fell out of its own series. Corrected here on purpose.
+ */
 export const TRAY_STYLES = {
-  eightDeckFront: { base: 301, crop: { width: 201, height: 332 }, minEmptyPercent: 0 },
-  sixDeckFront: { base: 349, crop: { width: 201, height: 287 }, minEmptyPercent: 25 },
-  doubleDeckFront: { base: 380, crop: { width: 186, height: 182 }, minEmptyPercent: 75 },
-  sixDeckRear: { base: 429, crop: { width: 201, height: 277 }, minEmptyPercent: 25 },
-  doubleDeckRear: { base: 445, crop: { width: 185, height: 188 }, minEmptyPercent: 75 },
+  eightDeckFront: { base: 303, crop: { width: 201, height: 332 }, minEmptyPercent: 0 },
+  sixDeckFront: { base: 351, crop: { width: 201, height: 287 }, minEmptyPercent: 25 },
+  doubleDeckFront: { base: 382, crop: { width: 186, height: 182 }, minEmptyPercent: 75 },
+  sixDeckRear: { base: 431, crop: { width: 201, height: 277 }, minEmptyPercent: 25 },
+  doubleDeckRear: { base: 447, crop: { width: 185, height: 188 }, minEmptyPercent: 75 },
 };
 
 const FALLBACK_STYLE = 'eightDeckFront';

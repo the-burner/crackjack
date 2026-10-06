@@ -11,6 +11,9 @@
 
 import { SETTINGS_SCHEMA } from './schema.js';
 
+/** Holds what the rules a variant forces were set to before it was chosen. */
+const SAVED_RULES = 'bonuses.savedRules';
+
 /** Side-bet game ids that change the rules of the game itself. */
 const BLACKJACK_SWITCH = 2001;
 const DOUBLE_EXPOSURE = 2002;
@@ -104,6 +107,9 @@ function implicationsOf(key, read, set) {
     case 'rules.doubleAfterSplitAces':
       if (read(key)) set('rules.doubleAfterSplit', true);
       break;
+    case 'rules.doubleAfterSplit':
+      if (!read(key)) set('rules.doubleAfterSplitAces', false);
+      break;
     default:
       break;
   }
@@ -145,9 +151,23 @@ export function applyRuleChange(get, key, value) {
 }
 
 /**
+ * Applies one end of the index range. A bound that crosses the other one is
+ * clamped to it, so the range is never inverted.
+ * @param {(key: string) => *} get
+ * @param {'strategy.indexRangeMin'|'strategy.indexRangeMax'} key
+ * @param {number} value
+ * @returns {Record<string, number>}
+ */
+export function applyIndexRangeChange(get, key, value) {
+  const lowEnd = key === 'strategy.indexRangeMin';
+  const other = get(lowEnd ? 'strategy.indexRangeMax' : 'strategy.indexRangeMin');
+  return { [key]: lowEnd ? Math.min(value, other) : Math.max(value, other) };
+}
+
+/**
  * Selects a side-bet / unusual game and applies its rule bundle. Rules the
- * previous variant forced, and the new one does not, go back to their defaults;
- * unrelated options are left alone.
+ * previous variant forced, and the new one does not, go back to the values the
+ * player had before it was chosen; unrelated options are left alone.
  * @param {(key: string) => *} get
  * @param {number} gameId
  * @returns {Record<string, *>}
@@ -157,9 +177,17 @@ export function applyGameChange(get, gameId) {
   const previous = gameVariant(get('bonuses.game'));
   const next = gameVariant(gameId);
   if (previous !== next) {
+    const saved = get(SAVED_RULES) ?? {};
+    // What a rule holds once the previous variant stops forcing it.
+    const restored = key => {
+      if (!(key in VARIANT_RULES[previous])) return get(key);
+      return key in saved ? saved[key] : structuredClone(SETTINGS_SCHEMA[key].default);
+    };
     for (const key of Object.keys(VARIANT_RULES[previous])) {
-      if (!(key in VARIANT_RULES[next])) changes[key] = structuredClone(SETTINGS_SCHEMA[key].default);
+      if (!(key in VARIANT_RULES[next])) changes[key] = restored(key);
     }
+    const remembered = Object.keys(VARIANT_RULES[next]);
+    if (remembered.length) changes[SAVED_RULES] = Object.fromEntries(remembered.map(key => [key, restored(key)]));
     Object.assign(changes, VARIANT_RULES[next]);
   }
   return close(get, changes);

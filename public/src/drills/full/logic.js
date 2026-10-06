@@ -85,6 +85,8 @@ export function handComplete(cards, { spot, dealerStopsAt16 = false } = {}) {
  * @returns {{hands: {spot: number, cards: *[]}[], stopped: boolean}}
  */
 export function dealRound({ players, handStyle, dealerStopsAt16 = false, draw }) {
+  // "Scattered Cards" shows loose cards instead of hands, so none are dealt.
+  if (handStyle === 'scattered') return { hands: [], stopped: false };
   const hands = [];
   for (const spot of spotsFor(players)) {
     const cards = [];
@@ -117,6 +119,14 @@ export function fullAnswer(drill, counts) {
 /** Drills that stop once every ace has been dealt. */
 export const isAceCountDrill = drill => drill === 'acesLeft' || drill === 'acesDealt';
 
+/** The count a question asks for: Two Tables and the first of two counts ask the running count. */
+export const fullQuestionDrill = (drill, askingRunningCount) =>
+  (drill === 'twoTables' || askingRunningCount ? 'runningCount' : drill);
+
+/** Two Counts adds the running count, which the Running Count drill already asks for. */
+export const asksTwoCounts = (drill, twoCounts) =>
+  twoCounts && drill !== 'runningCount' && drill !== 'twoTables';
+
 /**
  * Which cards of a round are shown in a Two Tables partial view: the first two
  * cards of every hand, every card of the first `fullyShownUpTo` spots, and only
@@ -130,11 +140,24 @@ export function partialView(hands, fullyShownUpTo) {
   }));
 }
 
+/**
+ * The spot limit for a partial view: the first seat in play, so that seat's whole
+ * hand shows, or -1 for none of them. (A spot number only suits the seats dealt.)
+ */
+export function fullyShownLimit(hands, random) {
+  if (random() < 0.5) return -1;
+  const seat = hands.find(hand => hand.spot !== DEALER_SPOT);
+  return seat ? seat.spot : -1;
+}
+
 /** The four questions of the Two Tables cycle: which table, and how much of it. */
 export const TWO_TABLE_PHASES = [
   { table: 0, partial: true }, { table: 1, partial: true },
   { table: 0, partial: false }, { table: 1, partial: false },
 ];
+
+/** The question after this one; after the last comes the first of a fresh pair of tables. */
+export const nextTwoTablePhase = phase => (phase + 1) % TWO_TABLE_PHASES.length;
 
 /** Cards left in a shoe below which a Two Tables cycle cannot be dealt. */
 export const TWO_TABLE_MINIMUM_CARDS = 20;

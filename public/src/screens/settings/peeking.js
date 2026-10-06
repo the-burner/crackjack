@@ -23,7 +23,10 @@ export function peekingScreen(app) {
   const strategies = [{ value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.name }];
   columns.append(
     group(
-      h('div', { class: 'peeking-modes' }, form.checks(CHECKS), form.select('peeking.percent', PERCENTS, { mini: true })),
+      form.checks(CHECKS),
+      h('div', { class: 'settings-row peeking-modes' },
+        h('span', { class: 'label' }, 'Percent of the time:'),
+        form.select('peeking.percent', PERCENTS, { mini: true })),
     ),
     group(
       trailingLabel(form.select('peeking.strategyHigh', strategies), 'HC High'),
@@ -35,5 +38,5 @@ export function peekingScreen(app) {
 
 /** A control with its label to the right of it. */
 function trailingLabel(control, label) {
-  return h('div', { class: 'settings-row' }, control, h('span', { class: 'label' }, label));
+  return h('div', { class: 'settings-row settings-row--trailing' }, control, h('span', { class: 'label' }, label));
 }

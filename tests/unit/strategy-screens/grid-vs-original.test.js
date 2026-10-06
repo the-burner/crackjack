@@ -5,8 +5,10 @@ import { describe, it, expect } from 'vitest';
 import { buildStrategy, INDEX_SETS } from '../../../public/src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
 import { loadFixture } from '../../support/fixtures.js';
+import { ALWAYS, NEVER, NO_ENTRY } from '../../../public/src/core/strategy/strategy-file.js';
 import {
-  TABLE_VIEWS, columnLabels, countsTables, gridCell, rowCount, rowLabels, specialtyPlays,
+  TABLE_VIEWS, columnLabels, countsTables, gridCell, isIndexCell, rowCount, rowLabels,
+  specialtyPlays, viewByKey,
 } from '../../../public/src/core/strategy/strategy-grid.js';
 
 /**
@@ -102,5 +104,19 @@ describe.each(records.map(r => [`${r.name} ${JSON.stringify(r.config)}`, r]))('%
     // The original left the per-deck table showing the previous strategy's
     // numbers when the current one does not use it, so only check it when it does.
     if (counts.insuranceDecks) expect(counts.insuranceDecks.rows[0].values).toEqual(record.counts.insuranceDecks[0]);
+  });
+});
+
+describe('views the recording does not cover', () => {
+  it('gives the Insurance/Counts view no row labels', () => {
+    expect(rowLabels(viewByKey('counts'))).toEqual([]);
+  });
+
+  it('counts only cells holding a real index as pickable for a mask', () => {
+    expect(isIndexCell(-3)).toBe(true);
+    expect(isIndexCell(0)).toBe(true);
+    expect(isIndexCell(ALWAYS)).toBe(false);
+    expect(isIndexCell(NEVER)).toBe(false);
+    expect(isIndexCell(NO_ENTRY)).toBe(false);
   });
 });

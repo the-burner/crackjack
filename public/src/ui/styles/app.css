@@ -26,6 +26,8 @@
   --input-bg: #fff;
   --input-text: #000;
   --input-shadow: rgba(0, 0, 0, 0.2);
+  /* The ring that says a value can be edited. */
+  --input-border: var(--separator);
   --focus: #38c;
   --overlay: rgba(0, 0, 0, 0.55);
   --dialog-bg: #fff;
@@ -40,8 +42,9 @@
   --felt: #008000;
   --felt-alt: #000080;
   --felt-text: #fff;
-  /* Back / Help over the felt; Classic's blue accent is unreadable on its green felt. */
-  --bar-text: var(--felt-text);
+  /* Back / Help over the table's felt photograph, which is dark in every theme;
+     an accent colour here is unreadable on it. */
+  --bar-text: var(--table-text);
   --felt-accent: #ffff00;
   --panel-bg: #fff;
   --panel-head-bg: #eceff3;
@@ -52,16 +55,19 @@
   --tile-good: #00ff00;
   --tile-close: #ffff00;
   --tile-bad: #ff0000;
+  --toast-error-text: #fff;
   --tile-previous: #dc780c;
   --tile-mark-text: #000;
+  /* The drill's "this was the right answer" marker. */
+  --answer-correct: #0000c0;
   --group-bg: #fff;
   --separator: rgba(0, 0, 0, 0.12);
   --text-secondary: #555;
   --toggle-off: rgba(0, 0, 0, 0.16);
   --toggle-knob: #fff;
   --accent: var(--nav-bg);
-  --logo-crack: #8839ef;
-  --logo-jack: #fe640b;
+  --logo-crack: var(--chrome);
+  --logo-jack: var(--nav-bg);
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   /* Classic and Latte are light; Mocha overrides this in themes.css. */
   color-scheme: light;
@@ -187,7 +193,7 @@ html, body {
   transition: background-color 0.15s, transform 0.1s, opacity 0.15s;
 }
 .btn:active { background: var(--btn-bg-active); transform: scale(0.98); }
-.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+.btn:disabled { opacity: 0.4; background: var(--btn-bg); color: var(--btn-text); cursor: default; transform: none; }
 .btn--large { font-size: 17px; min-height: 52px; border-radius: var(--radius); }
 .btn--nav { background: var(--nav-bg); color: var(--nav-text); }
 .btn--nav:active { background: var(--nav-bg-active); }
@@ -242,6 +248,10 @@ html, body {
   font: 500 15px var(--font);
   text-align: left;
   text-align-last: left;
+  /* A long strategy name ends in an ellipsis rather than being cut mid-letter. */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
@@ -363,7 +373,7 @@ html, body {
   border: 0;
   border-radius: var(--radius-s);
   background: var(--input-bg);
-  box-shadow: inset 0 0 0 1px var(--separator);
+  box-shadow: inset 0 0 0 1px var(--input-border);
   color: var(--input-text);
   font: 600 15px var(--font);
   font-variant-numeric: tabular-nums;
@@ -518,6 +528,7 @@ html, body {
 }
 .toast.is-leaving { opacity: 0; }
 .toast--good { background: var(--tile-good); color: var(--tile-mark-text); }
+.toast--error { background: var(--tile-bad); color: var(--toast-error-text); }
 /* Below the title bar, clear of the buttons a drill is answered with. */
 .toast--top { top: calc(56px + var(--safe-top)); bottom: auto; animation-name: toast-in-top; }
 @keyframes toast-in-top { from { opacity: 0; transform: translate(-50%, -8px); } }
