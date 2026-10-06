@@ -146,7 +146,7 @@ export const SETTINGS_SCHEMA = {
   'display.theme': oneOf(['classic', 'latte', 'mocha'], 'mocha'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
-  'display.hideActionButtons': bool(false),
+  'display.hideActionButtons': bool(true),
   'display.hideDiscardTray': bool(false),
   'display.hideShoe': bool(false),
   'display.showBetAccuracy': bool(false),

@@ -38,6 +38,8 @@ async function openTable(page, { settings = {}, size = PORTRAIT, seed = 7 } = {}
       'betting.warnOnError': false,
       'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
       'rules.surrender': 'none',
+      // Hidden by default; most tests play with the buttons.
+      'display.hideActionButtons': false,
       ...overrides,
     }));
   }, settings);
@@ -245,7 +247,7 @@ test.describe('the table', () => {
   });
 
   test('plays with the action buttons hidden, using swipes', async ({ page }) => {
-    await openTable(page, { settings: { 'display.hideActionButtons': true } });
+    await openTable(page, { settings: { 'display.hideActionButtons': undefined } });
     await placeBet(page);
     await expect(action(page, 'stand')).toBeHidden();
     const felt = page.locator('.table__felt');
