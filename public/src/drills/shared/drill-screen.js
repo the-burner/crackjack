@@ -24,8 +24,9 @@ import { clockTime } from './format.js';
  * @param {(shell: DrillShell) => void} [o.onResume]
  * @param {(score: DrillScore) => string} [o.accuracyText]  Text of the accuracy cell
  *   (the Flash drill hides the accuracy until the end in some test modes).
+ * @param {(score: DrillScore) => string} [o.countText]  Text of the count cell.
  */
-export function drillShell(app, { title, help, countLabel, className = '', pausable = false, onStart, onStop, onLayout, onPause, onResume, accuracyText = score => `Accuracy: ${score.accuracy}%` }) {
+export function drillShell(app, { title, help, countLabel, className = '', pausable = false, onStart, onStop, onLayout, onPause, onResume, accuracyText = score => `Accuracy: ${score.accuracy}%`, countText = score => `${countLabel}: ${score.tests}` }) {
   const score = new DrillScore();
   /** Paused because another screen covered the drill, rather than by the player. */
   let suspended = false;
@@ -89,7 +90,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
 
     /** Refreshes the stats panel. `clock` is a DrillClock. */
     updateStats(clock) {
-      statsCells.count.textContent = `${countLabel}: ${score.tests}`;
+      statsCells.count.textContent = countText(score);
       statsCells.accuracy.textContent = accuracyText(score);
       if (clock) {
         const { seconds, overdue } = clock.display();

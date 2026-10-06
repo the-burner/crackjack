@@ -128,6 +128,11 @@ export class RoundRobin {
     this.last = this.queue.pop() ?? null;
     return this.last;
   }
+
+  /** Whether the hand last dealt was the last of its round. */
+  get endsRound() {
+    return this.last !== null && this.queue.length === 0;
+  }
 }
 
 /** Message shown when the chosen hand list turns out to be empty. */

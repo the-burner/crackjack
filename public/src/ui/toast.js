@@ -5,10 +5,11 @@ import { h } from './dom.js';
 
 let current = null;
 
-/** @param {{position?: 'bottom'|'top'}} [o] */
-export function toast(message, { position = 'bottom' } = {}) {
+/** @param {{position?: 'bottom'|'top', tone?: 'plain'|'good'}} [o] */
+export function toast(message, { position = 'bottom', tone = 'plain' } = {}) {
   current?.remove();
-  const el = h('div', { class: `toast${position === 'top' ? ' toast--top' : ''}`, role: 'status' }, message);
+  const classes = ['toast', position === 'top' && 'toast--top', tone === 'good' && 'toast--good'].filter(Boolean).join(' ');
+  const el = h('div', { class: classes, role: 'status' }, message);
   document.body.append(el);
   current = el;
   setTimeout(() => {

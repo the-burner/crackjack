@@ -267,6 +267,25 @@ test.describe('flash drill', () => {
     await expect(screen.locator('.drill__message')).toHaveText('');
   });
 
+  test('counts finished Round Robin rounds', async ({ page }) => {
+    await open(page, {
+      'drills.flash.hands': 'roundRobin',
+      'drills.flash.situations': { hardStand: false, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: true },
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+      'drills.flash.testMode': 'errorsAtEnd',
+    });
+    const screen = await launch(page, DRILLS[0]);
+    expect(await statsText(screen)).toContain('Hands: 1, Rounds: 0');
+    // Errors at End takes any answer, so each tap deals the next hand.
+    const hit = screen.locator('[data-action="hit"]');
+    for (let i = 0; i < 59; i++) await hit.click();
+    expect(await statsText(screen)).toContain('Rounds: 0');
+    await hit.click();
+    expect(await statsText(screen)).toContain('Hands: 61, Rounds: 1');
+    await expect(page.locator('.toast.toast--good')).toHaveText('Round 1 done');
+  });
+
   test('pauses, restarts and goes back', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.handsPerDrill': 50, 'drills.flash.testMode': 'errorsAtEnd' });
     // Pause is unavailable during the opening countdown, as it is after Restart.

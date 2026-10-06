@@ -517,6 +517,7 @@ html, body {
   pointer-events: none;
 }
 .toast.is-leaving { opacity: 0; }
+.toast--good { background: var(--tile-good); color: var(--tile-mark-text); }
 /* Below the title bar, clear of the buttons a drill is answered with. */
 .toast--top { top: calc(56px + var(--safe-top)); bottom: auto; animation-name: toast-in-top; }
 @keyframes toast-in-top { from { opacity: 0; transform: translate(-50%, -8px); } }

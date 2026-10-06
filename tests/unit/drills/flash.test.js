@@ -305,6 +305,18 @@ describe('Round Robin', () => {
     }
   });
 
+  it('marks the last hand of each round', () => {
+    const entries = roundRobinEntries(all);
+    const robin = new RoundRobin(entries, seededRandom(5));
+    expect(robin.endsRound).toBe(false);
+    for (let round = 0; round < 2; round++) {
+      for (let i = 1; i <= entries.length; i++) {
+        robin.next();
+        expect(robin.endsRound).toBe(i === entries.length);
+      }
+    }
+  });
+
   it('never starts a new round with the hand the last one ended on', () => {
     const entries = roundRobinEntries({ ...Object.fromEntries(SITUATIONS.map(k => [k, false])), surrender: true });
     for (let seed = 1; seed <= 40; seed++) {

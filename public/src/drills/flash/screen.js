@@ -81,6 +81,8 @@ export function flashScreen(app) {
   let list = [];
   /** Deals the Round Robin list in order; null for the other hand lists. */
   let robin = null;
+  /** Round Robin rounds finished this run. */
+  let rounds = 0;
   let hand = null;
   let count = 0;
   let index = null;
@@ -98,6 +100,7 @@ export function flashScreen(app) {
     className: 'drill--flash',
     pausable: true,
     accuracyText: score => (warn ? `Accuracy: ${score.accuracy}%` : silent ? 'No Tests' : 'Displayed at end'),
+    countText: score => (options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`),
     onStart: start,
     onStop: stop,
     onLayout: draw,
@@ -116,6 +119,7 @@ export function flashScreen(app) {
 
   function start() {
     run += 1;
+    rounds = 0;
     finished = false;
     gridWindow = INITIAL_WINDOW;
     const built = buildHandList({
@@ -273,6 +277,10 @@ export function flashScreen(app) {
 
   /** Moves on, or ends the drill when the round count is reached (Rounds mode only). */
   function advance() {
+    if (robin?.endsRound) {
+      rounds += 1;
+      toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });
+    }
     if (options.timerMode === TIMER_MODE.auto && shell.score.tests >= options.handsPerDrill) finish();
     else nextHand();
   }
