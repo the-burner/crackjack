@@ -96,11 +96,7 @@ async function main() {
     await page.screenshot({ path: path.join(ICONS, `icon-${size}.png`), omitBackground: false });
   }
   await browser.close();
-  // iOS also asks for these at the site root when adding to the Home Screen.
-  for (const name of ['apple-touch-icon.png', 'apple-touch-icon-precomposed.png']) {
-    fs.copyFileSync(path.join(ICONS, 'icon-180.png'), path.join(REPO, 'public', name));
-  }
-  console.log(`Wrote icon.svg, wordmark.js, icon-{${PNG_SIZES.join(',')}}.png and the root apple-touch-icons`);
+  console.log(`Wrote icon.svg, wordmark.js and icon-{${PNG_SIZES.join(',')}}.png`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) await main();
