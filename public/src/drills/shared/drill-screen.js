@@ -35,7 +35,7 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
   const display = h('div', { class: 'drill__display' });
   const message = h('div', { class: 'drill__message' });
   const statsCells = {
-    count: h('td', {}, `${countLabel}: 0`),
+    count: h('td', {}, countText(score)),
     accuracy: h('td', {}, 'Accuracy: 0%'),
     seconds: h('td', {}, `Time: ${clockTime(0)}`),
     rate: h('td', {}, `${countLabel}/Min: 0`),

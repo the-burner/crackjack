@@ -275,7 +275,20 @@ test.describe('flash drill', () => {
       'drills.flash.timePerHand': false,
       'drills.flash.testMode': 'errorsAtEnd',
     });
-    const screen = await launch(page, DRILLS[0]);
+    await page.getByRole('button', { name: DRILLS[0].button }).click();
+    await page.locator('[data-screen="drills.flash.options"] [data-action="launch"]').click();
+    // Shown from the countdown on, not only once the first hand is dealt.
+    expect(await statsText(page.locator('[data-screen="drills.flash"]'))).toContain('Hands: 0, Rounds: 0');
+    const screen = page.locator('[data-screen="drills.flash"]');
+    await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+    expect(await statsText(screen)).toContain('Hands: 1, Rounds: 0');
+    // A pause deals the same hand again, so it is not skipped from the round.
+    for (let i = 0; i < 2; i++) {
+      await screen.getByRole('button', { name: 'Pause' }).click();
+      expect(await statsText(screen)).toContain('Hands: 1, Rounds: 0');
+      await screen.getByRole('button', { name: 'Continue' }).click();
+      await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled({ timeout: 5000 });
+    }
     expect(await statsText(screen)).toContain('Hands: 1, Rounds: 0');
     // Errors at End takes any answer, so each tap deals the next hand.
     const hit = screen.locator('[data-action="hit"]');
@@ -301,8 +314,8 @@ test.describe('flash drill', () => {
     const pause = screen.getByRole('button', { name: 'Pause' });
     await pause.click();
     await expect(screen.getByRole('button', { name: 'Continue' })).toBeVisible();
-    // The thrown-away hand does not count.
-    expect(await statsText(screen)).toContain('Hands: 1');
+    // The paused hand comes back on resume, so the count stays put.
+    expect(await statsText(screen)).toContain('Hands: 2');
     await screen.getByRole('button', { name: 'Continue' }).click();
     await expect(pause).toBeVisible();
     expect(await statsText(screen)).toContain('Hands: 2');

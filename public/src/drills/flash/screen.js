@@ -83,6 +83,8 @@ export function flashScreen(app) {
   let robin = null;
   /** Round Robin rounds finished this run. */
   let rounds = 0;
+  /** The hand a pause interrupted, dealt again on resume. */
+  let held = null;
   let hand = null;
   let count = 0;
   let index = null;
@@ -120,6 +122,7 @@ export function flashScreen(app) {
   function start() {
     run += 1;
     rounds = 0;
+    held = null;
     finished = false;
     gridWindow = INITIAL_WINDOW;
     const built = buildHandList({
@@ -152,10 +155,10 @@ export function flashScreen(app) {
     draw();
   }
 
-  /** Deals the next hand. */
-  function nextHand() {
+  /** Deals the next hand, or resumes `again`, a hand a pause interrupted. */
+  function nextHand(again = null) {
     for (let attempt = 0; attempt < MAX_REDEALS; attempt++) {
-      hand = dealHand(robin ? [robin.next()] : list, options, Math.random);
+      hand = again?.hand ?? dealHand(robin ? [robin.next()] : list, options, Math.random);
       if (!hand) {
         shell.setMessage('There are no situations selected. Try changing the Situations or Hands option.');
         finish();
@@ -171,10 +174,11 @@ export function flashScreen(app) {
       finish();
       return;
     }
-    count = indexTest ? 0 : countForHand({ ...options, index }, Math.random);
+    count = again ? again.count : indexTest ? 0 : countForHand({ ...options, index }, Math.random);
     play = correctPlay(strategy, hand, { count, situations, doubleAnyCards: options.doubleAnyCards });
-    answered = false;
-    shell.score.beginTest();
+    // A resumed hand is the same test, so it keeps its place in the count.
+    answered = again ? again.answered : false;
+    if (!again) shell.score.beginTest();
     shell.clearMessage();
     if (indexTest) {
       gridWindow = countWindow(index, gridWindow);
@@ -320,15 +324,16 @@ export function flashScreen(app) {
 
   function pause() {
     shell.clock.pause();
-    // The paused hand is thrown away, so it must not count.
-    shell.score.discardTest();
+    // Kept for the resume, so the hand is neither skipped nor counted twice.
+    held = hand ? { hand, count, answered } : null;
     hand = null;
     draw();
   }
 
   function resume() {
     shell.clock.resume();
-    nextHand();
+    nextHand(held);
+    held = null;
   }
 
   /** Which answers the chosen situations allow. */
