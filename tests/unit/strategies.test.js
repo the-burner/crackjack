@@ -4,11 +4,11 @@ import {
   HOLE_CARD_STRATEGY,
   StrategyLibrary,
   strategyOptions,
-} from '../../src/settings/strategies.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
-import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
-import { Settings } from '../../src/settings/store.js';
-import { Storage, MemoryBackend } from '../../src/services/storage.js';
+} from '../../src/settings/strategies.ts';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.ts';
+import { Settings } from '../../src/settings/store.ts';
+import { Storage, MemoryBackend } from '../../src/services/storage.ts';
 
 const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));
 

@@ -6,16 +6,16 @@ import {
   checkInsurance,
   checkBet,
   expectedBet,
-} from '../../../src/game/play-check.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { rulesFrom } from '../../../src/game/engine/rules.js';
-import { ACTION } from '../../../src/game/engine/game.js';
-import { Hand } from '../../../src/game/engine/hand.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
+} from '../../../src/game/play-check.ts';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { rulesFrom } from '../../../src/game/engine/rules.ts';
+import { ACTION } from '../../../src/game/engine/game.ts';
+import { Hand } from '../../../src/game/engine/hand.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
 
 const SPADES = 0,
   HEARTS = 2;

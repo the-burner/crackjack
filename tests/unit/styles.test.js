@@ -46,14 +46,14 @@ describe('custom properties', () => {
     // Canvas code reads some of them by name instead.
     const fromScript = new Set();
     for (const file of [
-      'src/game/table/bet-grid.js',
-      'src/drills/shared/answer-grid.js',
-      'src/game/table/renderer.js',
-      'src/drills/full/screen.js',
-      'src/drills/depth/screen.js',
-      'src/drills/count/screen.js',
-      'src/game/screens/table.js',
-      'src/ui/theme.js',
+      'src/game/table/bet-grid.ts',
+      'src/drills/shared/answer-grid.ts',
+      'src/game/table/renderer.ts',
+      'src/drills/full/screen.ts',
+      'src/drills/depth/screen.ts',
+      'src/drills/count/screen.ts',
+      'src/game/screens/table.ts',
+      'src/ui/theme.ts',
     ]) {
       for (const match of readFileSync(file, 'utf8').matchAll(/(--[a-z0-9-]+)/g)) fromScript.add(match[1]);
     }
@@ -147,17 +147,17 @@ describe('canvas colours', () => {
    * These two are the exceptions, and should be converted.
    */
   const KNOWN_LITERALS = {
-    'src/game/table/renderer.js': ['CIRCLE_COLOR', 'FELT_FALLBACK'],
+    'src/game/table/renderer.ts': ['CIRCLE_COLOR', 'FELT_FALLBACK'],
   };
 
   const FILES_WITH_CANVAS = [
-    'src/game/table/renderer.js',
-    'src/game/table/bet-grid.js',
-    'src/drills/shared/answer-grid.js',
-    'src/drills/shared/discard-tray.js',
-    'src/drills/full/screen.js',
-    'src/drills/depth/screen.js',
-    'src/drills/count/screen.js',
+    'src/game/table/renderer.ts',
+    'src/game/table/bet-grid.ts',
+    'src/drills/shared/answer-grid.ts',
+    'src/drills/shared/discard-tray.ts',
+    'src/drills/full/screen.ts',
+    'src/drills/depth/screen.ts',
+    'src/drills/count/screen.ts',
   ];
 
   for (const file of FILES_WITH_CANVAS) {
@@ -176,7 +176,7 @@ describe('canvas colours', () => {
 });
 
 describe('the table canvas', () => {
-  const renderer = readFileSync('src/game/table/renderer.js', 'utf8');
+  const renderer = readFileSync('src/game/table/renderer.ts', 'utf8');
 
   /**
    * Colours of the felt artwork itself: the fill shown before the photograph

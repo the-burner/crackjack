@@ -3,10 +3,10 @@
 // bundled strategy file uses are written straight into a built table cell.
 
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE, INSURANCE } from '../../src/core/strategy/strategy-tables.js';
-import { NEVER, NO_ENTRY } from '../../src/core/strategy/strategy-file.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
-import { ACTION, SECTION, advisePlay, adviseInsurance } from '../../src/core/strategy/advisor.js';
+import { buildStrategy, CODE, INSURANCE } from '../../src/core/strategy/strategy-tables.ts';
+import { NEVER, NO_ENTRY } from '../../src/core/strategy/strategy-file.ts';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
+import { ACTION, SECTION, advisePlay, adviseInsurance } from '../../src/core/strategy/advisor.ts';
 
 const ALL = { double: true, softDouble: true, split: true, surrender: true };
 const SURRENDER_ONLY = { double: false, softDouble: false, split: false, surrender: true };

@@ -2,13 +2,13 @@
 // filling and emptying between rounds.
 
 import { describe, it, expect, vi } from 'vitest';
-import { BlackjackGame } from '../../../src/game/engine/game.js';
-import { rulesFrom } from '../../../src/game/engine/rules.js';
-import { PLAYER } from '../../../src/game/engine/hand.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
+import { BlackjackGame } from '../../../src/game/engine/game.ts';
+import { rulesFrom } from '../../../src/game/engine/rules.ts';
+import { PLAYER } from '../../../src/game/engine/hand.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
 
 function makeRules(overrides = {}) {
   const settings = new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));

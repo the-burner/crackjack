@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { durationColumns, joinDuration, splitDuration, tenthsColumns } from '../../src/ui/time-wheel.js';
+import { durationColumns, joinDuration, splitDuration, tenthsColumns } from '../../src/ui/time-wheel.ts';
 
 describe('duration wheels', () => {
   it('shows only the wheels a range needs', () => {

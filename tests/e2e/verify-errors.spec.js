@@ -1,7 +1,7 @@
 // Dealer errors and the game statistics, checked through the table itself:
 // what the player sees, what Foul does, and what the Stats screen shows.
 //
-// Randomness: Math.random is replaced. A call made from dealer-errors.js (the
+// Randomness: Math.random is replaced. A call made from dealer-errors.ts (the
 // dealer's "does it make a mistake now?" roll) returns a value the test picks,
 // keyed by the deciding function's name, so an allowed error always happens
 // (0) or never does (0.99). Every other call is a seeded generator. The cards
@@ -60,7 +60,7 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
       window.__cjRolls = { dealerStandsByMistake: 0, bustsGoodHandByMistake: 0, pickDealerError: 0, ...picked };
       Math.random = () => {
         const stack = new Error().stack ?? '';
-        if (stack.includes('dealer-errors.js')) {
+        if (stack.includes('dealer-errors.ts')) {
           const name = Object.keys(window.__cjRolls).find(fn => stack.includes(fn));
           return name ? window.__cjRolls[name] : 0;
         }
@@ -104,7 +104,7 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
 /** Makes the shoe deal from `window.__cjStack` while it has cards. */
 async function stackTheShoe(page) {
   await page.evaluate(async () => {
-    const { Shoe } = await import('/src/game/engine/shoe.js');
+    const { Shoe } = await import('/src/game/engine/shoe.ts');
     const draw = Shoe.prototype.draw;
     window.__cjStack = [];
     Shoe.prototype.draw = function stackedDraw() {

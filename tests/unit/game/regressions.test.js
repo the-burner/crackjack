@@ -1,13 +1,13 @@
 // Bugs this app introduced for itself, each found by an application-wide bug bash.
 
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, ACTION, STATE } from '../../../src/game/engine/game.js';
-import { rulesFrom } from '../../../src/game/engine/rules.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
+import { BlackjackGame, ACTION, STATE } from '../../../src/game/engine/game.ts';
+import { rulesFrom } from '../../../src/game/engine/rules.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 const card = (rank, suit = 0) => cardId(rank, suit);
 
@@ -74,9 +74,9 @@ describe('a 21 where a player 22 counts as 21', () => {
 
 describe('settling two side-bet spots', () => {
   it('settles each stake with the rule of the spot it was placed on', async () => {
-    const { decodeSideBetGame } = await import('../../../src/settings/side-bet-games.js');
-    const { SIDE_BET_GAME_DEFINITIONS } = await import('../../../src/data/side-bet-games.js');
-    const { sideBetSpots } = await import('../../../src/game/engine/side-bets.js');
+    const { decodeSideBetGame } = await import('../../../src/settings/side-bet-games.ts');
+    const { SIDE_BET_GAME_DEFINITIONS } = await import('../../../src/data/side-bet-games.ts');
+    const { sideBetSpots } = await import('../../../src/game/engine/side-bets.ts');
     const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[11]);
     const spots = sideBetSpots(sideBetGame);
     expect(spots.map(s => s.id)).toEqual(['U', 'O']);
@@ -120,7 +120,7 @@ describe('settling two side-bet spots', () => {
 
 describe('a bet the bankroll cannot cover', () => {
   it('is refused when the side bet is what breaks it', async () => {
-    const { checkAffordable } = await import('../../../src/game/engine/game.js');
+    const { checkAffordable } = await import('../../../src/game/engine/game.ts');
     expect(checkAffordable({ bankroll: 100, betPerHand: 100, hands: 1, sideBets: { LL: 100 } })).toBe(false);
     expect(checkAffordable({ bankroll: 200, betPerHand: 100, hands: 1, sideBets: { LL: 100 } })).toBe(true);
     expect(checkAffordable({ bankroll: 100, betPerHand: 100, hands: 1, sideBets: {} })).toBe(true);

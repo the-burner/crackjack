@@ -481,7 +481,7 @@ test.describe('the result label', () => {
       const pills = log.filter(e => e.kind === 'chip' && e.pill !== null);
       expect(new Set(pills.map(e => e.tone))).toEqual(new Set(['win', 'lose', 'push']));
       const popUps = await page.evaluate(async () => {
-        const { toast } = await import('/src/ui/toast.js');
+        const { toast } = await import('/src/ui/toast.ts');
         const out = {};
         for (const tone of ['good', 'error', 'plain']) {
           const el = toast('x', { tone });
@@ -673,7 +673,7 @@ test.describe('split hands', () => {
   /** Where the layout puts the first card of each hand column, by seat. */
   const columns = page =>
     page.evaluate(async () => {
-      const { tableLayout } = await import('/src/game/table/layout.js');
+      const { tableLayout } = await import('/src/game/table/layout.ts');
       const felt = document.querySelector('.table__felt');
       const layout = tableLayout({
         width: Math.max(200, Math.round(felt.clientWidth)),

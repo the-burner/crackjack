@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy } from '../../src/core/strategy/strategy-tables.js';
+import { buildStrategy } from '../../src/core/strategy/strategy-tables.ts';
 import {
   Counter,
   decksRemaining,
@@ -8,9 +8,9 @@ import {
   TC_DIVISION,
   TC_LAST_DECK,
   TC_ROUNDING,
-} from '../../src/core/counting.js';
-import { cardId, suitOf } from '../../src/core/cards.js';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+} from '../../src/core/counting.ts';
+import { cardId, suitOf } from '../../src/core/cards.ts';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
 import { loadFixture } from '../support/fixtures.js';
 
 function replay(record) {

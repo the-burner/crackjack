@@ -7,6 +7,8 @@
     "types": ["vite/client", "vite-plugin-pwa/client"],
     "allowJs": true,
     "checkJs": false,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
@@ -14,5 +16,5 @@
     "skipLibCheck": true
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["src/sw.js"]
+  "exclude": ["src/sw.ts"]
 }

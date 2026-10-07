@@ -9,8 +9,8 @@ import {
   ROWS,
   TILE,
   TILE_GAP,
-} from '../../../src/game/table/bet-grid.js';
-import { trayPhoto, shoePhoto } from '../../../src/game/table/photos.js';
+} from '../../../src/game/table/bet-grid.ts';
+import { trayPhoto, shoePhoto } from '../../../src/game/table/photos.ts';
 
 const ramp = (...rows) => ({
   minCount: 0,

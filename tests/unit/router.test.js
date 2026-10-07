@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Router } from '../../src/app/router.js';
+import { Router } from '../../src/app/router.ts';
 
 /** Minimal DOM stand-ins: elements with `hidden`, `remove()` and `classList`. */
 function element() {

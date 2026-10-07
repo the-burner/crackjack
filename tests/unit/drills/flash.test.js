@@ -20,12 +20,12 @@ import {
   SITUATIONS,
   roundRobinEntries,
   RoundRobin,
-} from '../../../src/drills/flash/logic.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { ACTION, SECTION } from '../../../src/core/strategy/advisor.js';
-import { seededRandom } from '../../../src/core/random.js';
-import { emptyTallies } from '../../../src/services/error-tallies.js';
+} from '../../../src/drills/flash/logic.ts';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { ACTION, SECTION } from '../../../src/core/strategy/advisor.ts';
+import { seededRandom } from '../../../src/core/random.ts';
+import { emptyTallies } from '../../../src/services/error-tallies.ts';
 
 const ALL_SITUATIONS = Object.fromEntries(SITUATIONS.map(k => [k, true]));
 const options = extra => ({

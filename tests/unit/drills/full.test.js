@@ -12,9 +12,9 @@ import {
   SCATTER_CARDS,
   SLOTS_PER_SPOT,
   TWO_TABLE_PHASES,
-} from '../../../src/drills/full/logic.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../src/drills/full/logic.ts';
+import { cardId } from '../../../src/core/cards.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 /** A card of the given blackjack value, in spades. */
 const card = value => cardId(value, 0);

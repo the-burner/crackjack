@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE } from '../../../src/core/strategy/strategy-tables.js';
-import { NEVER, ALWAYS, NO_ENTRY } from '../../../src/core/strategy/strategy-file.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { buildStrategy, CODE } from '../../../src/core/strategy/strategy-tables.ts';
+import { NEVER, ALWAYS, NO_ENTRY } from '../../../src/core/strategy/strategy-file.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
 import {
   GRID_COLOR,
   TABLE_VIEWS,
@@ -16,7 +16,7 @@ import {
   specialCode,
   specialtyPlays,
   viewByKey,
-} from '../../../src/core/strategy/strategy-grid.js';
+} from '../../../src/core/strategy/strategy-grid.ts';
 
 const view = key => viewByKey(key);
 const OPTIONS = {

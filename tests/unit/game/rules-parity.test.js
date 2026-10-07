@@ -1,21 +1,21 @@
 // Rules the original applied that this app had stopped applying.
 
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.js';
+import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.ts';
 import {
   rulesFrom,
   surrenderAllowed,
   splitAcesMayDraw,
   splitAcesMayHit,
   bustValue,
-} from '../../../src/game/engine/rules.js';
-import { settleHand, handBonus, RESULT } from '../../../src/game/engine/settlement.js';
-import { Hand } from '../../../src/game/engine/hand.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../src/game/engine/rules.ts';
+import { settleHand, handBonus, RESULT } from '../../../src/game/engine/settlement.ts';
+import { Hand } from '../../../src/game/engine/hand.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 const SPADES = 0,
   CLUBS = 1,

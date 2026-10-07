@@ -6,13 +6,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseStrategyFile } from '../src/core/strategy/strategy-file.js';
-import { decodeSideBetGame, sideBetGameName } from '../src/settings/side-bet-games.js';
+import { parseStrategyFile } from '../src/core/strategy/strategy-file.ts';
+import { decodeSideBetGame, sideBetGameName } from '../src/settings/side-bet-games.ts';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const STRATEGY_FILES = 'src/data/strategy-files.js';
-const STRATEGY_CATALOG = 'src/settings/strategies.js';
-const SIDE_BET_GAMES = 'src/data/side-bet-games.js';
+const STRATEGY_FILES = 'src/data/strategy-files.ts';
+const STRATEGY_CATALOG = 'src/settings/strategies.ts';
+const SIDE_BET_GAMES = 'src/data/side-bet-games.ts';
 
 /** Where exports are downloaded from. */
 export const EXPORT_HOST = 'https://www.qfit.com';

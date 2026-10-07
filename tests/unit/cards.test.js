@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cardId, rankOf, suitOf, valueOf, rankName } from '../../src/core/cards.js';
+import { cardId, rankOf, suitOf, valueOf, rankName } from '../../src/core/cards.ts';
 
 describe('card ids', () => {
   it('names the rank of a card id', () => {

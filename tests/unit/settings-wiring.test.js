@@ -6,13 +6,13 @@
 // it. That is what caught the settings that used to be read nowhere at all.
 
 import { describe, it, expect } from 'vitest';
-import { GameSession } from '../../src/game/session.js';
-import { createServices } from '../../src/app/app.js';
-import { MemoryBackend } from '../../src/services/storage.js';
-import { rulesFrom } from '../../src/game/engine/rules.js';
-import { Settings } from '../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
-import { Storage } from '../../src/services/storage.js';
+import { GameSession } from '../../src/game/session.ts';
+import { createServices } from '../../src/app/app.ts';
+import { MemoryBackend } from '../../src/services/storage.ts';
+import { rulesFrom } from '../../src/game/engine/rules.ts';
+import { Settings } from '../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.ts';
+import { Storage } from '../../src/services/storage.ts';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -144,7 +144,7 @@ describe('the unusual-game picker', () => {
 describe('speeds reaching the table', () => {
   for (const key of ['mechanics.dealerSpeed', 'mechanics.otherPlayerSpeed', 'mechanics.payoffSpeed']) {
     it(`${key} changes how long the table waits`, async () => {
-      const { pauseForSpeed } = await import('../../src/game/table/animator.js');
+      const { pauseForSpeed } = await import('../../src/game/table/animator.ts');
       const settings = settingsWith();
       const slow = pauseForSpeed(settings.get(key));
       const fast = pauseForSpeed(otherValue(key));
@@ -184,18 +184,18 @@ describe('every setting does something', () => {
     for (const entry of readdirSync(dir)) {
       const full = join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.js')) sourceFiles.push(full);
+      else if (/\.tsx?$/.test(entry)) sourceFiles.push(full);
     }
   })('src');
 
   /** Files that only define or edit settings, so reading one there proves nothing. */
   const isEditor = file =>
-    file.includes('settings/schema.js') ||
-    file.includes('data/help.js') ||
+    file.includes('settings/schema.ts') ||
+    file.includes('data/help.ts') ||
     file.includes('screens/settings/') ||
     file.includes('screens/strategy/') ||
-    (file.includes('drills/') && file.endsWith('options.js')) ||
-    file.includes('drills/shared/options-screen.js');
+    (file.includes('drills/') && file.endsWith('options.ts')) ||
+    file.includes('drills/shared/options-screen.ts');
 
   const consumers = new Map();
   const sources = sourceFiles.filter(file => !isEditor(file)).map(file => readFileSync(file, 'utf8'));

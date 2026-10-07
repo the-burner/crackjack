@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../src/drills/shared/drill-clock.js';
-import { DrillScore, gradeAnswer, ACCURACY } from '../../../src/drills/shared/scoring.js';
-import { trayImage, maxDecksInTray } from '../../../src/drills/shared/discard-tray.js';
-import { AnswerGrid, numberGrid, windowContaining } from '../../../src/drills/shared/answer-grid.js';
-import { clockTime, mixedNumber, signedCount } from '../../../src/drills/shared/format.js';
-import { DrillShoe } from '../../../src/drills/shared/shoe.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { seededRandom } from '../../../src/core/random.js';
+import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../src/drills/shared/drill-clock.ts';
+import { DrillScore, gradeAnswer, ACCURACY } from '../../../src/drills/shared/scoring.ts';
+import { trayImage, maxDecksInTray } from '../../../src/drills/shared/discard-tray.ts';
+import { AnswerGrid, numberGrid, windowContaining } from '../../../src/drills/shared/answer-grid.ts';
+import { clockTime, mixedNumber, signedCount } from '../../../src/drills/shared/format.ts';
+import { DrillShoe } from '../../../src/drills/shared/shoe.ts';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 function fakeClock(options = {}) {
   let now = 1000;

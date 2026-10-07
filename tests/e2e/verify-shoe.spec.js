@@ -90,7 +90,7 @@ async function statsCount(page) {
 /** What a fresh shoe's running count is after seeing `cards`, by the selected strategy. */
 const countOf = (page, cards) =>
   page.evaluate(async seen => {
-    const { Counter } = await import('/src/core/counting.js');
+    const { Counter } = await import('/src/core/counting.ts');
     const decks = window.app.settings.get('table.decks');
     const counter = new Counter(window.app.strategies.current(window.app.settings, decks), {
       division: 0,

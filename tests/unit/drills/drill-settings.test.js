@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { trueCountSettings, drillStrategy } from '../../../src/drills/shared/drill-settings.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { StrategyLibrary } from '../../../src/settings/strategies.js';
-import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../../../src/core/counting.js';
+import { trueCountSettings, drillStrategy } from '../../../src/drills/shared/drill-settings.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { StrategyLibrary } from '../../../src/settings/strategies.ts';
+import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../../../src/core/counting.ts';
 
 /** The settings a screen would pass in: the schema defaults with overrides. */
 function settings(overrides = {}) {

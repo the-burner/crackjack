@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { BUILTIN_SIDE_BET_GAMES, SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.js';
-import { RULE_COUNT, decodeSideBetGame, sideBetGameName } from '../../../src/settings/side-bet-games.js';
+import { BUILTIN_SIDE_BET_GAMES, SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.ts';
+import { RULE_COUNT, decodeSideBetGame, sideBetGameName } from '../../../src/settings/side-bet-games.ts';
 
 const decode = id => decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[id]);
 const enabled = game => game.rules.filter(rule => rule.enabled);

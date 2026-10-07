@@ -267,7 +267,7 @@ test.describe('count drill', () => {
 /** Records when each drill card is dealt, in `window.__cjDeals`. */
 const recordDeals = page =>
   page.evaluate(async () => {
-    const { DrillShoe } = await import('/src/drills/shared/shoe.js');
+    const { DrillShoe } = await import('/src/drills/shared/shoe.ts');
     const deal = DrillShoe.prototype.deal;
     window.__cjDeals = [];
     DrillShoe.prototype.deal = function recordedDeal() {

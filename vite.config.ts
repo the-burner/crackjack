@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
-      filename: 'sw.js',
+      filename: 'sw.ts',
       registerType: 'prompt',
       injectRegister: false,
       // public/manifest.webmanifest is used as it is.

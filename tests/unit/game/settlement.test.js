@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { settleHand, handBonus, RESULT } from '../../../src/game/engine/settlement.js';
-import { rulesFrom } from '../../../src/game/engine/rules.js';
-import { Hand } from '../../../src/game/engine/hand.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
+import { settleHand, handBonus, RESULT } from '../../../src/game/engine/settlement.ts';
+import { rulesFrom } from '../../../src/game/engine/rules.ts';
+import { Hand } from '../../../src/game/engine/hand.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
 
 const SPADES = 0,
   CLUBS = 1,

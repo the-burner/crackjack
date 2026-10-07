@@ -7,10 +7,10 @@ import {
   trayStyleFor,
   isTrueCountDrill,
   RESOLUTION_STEPS,
-} from '../../../src/drills/depth/logic.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../src/drills/depth/logic.ts';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 const highLow = buildStrategy(STRATEGY_FILES[30], {
   decks: 6,

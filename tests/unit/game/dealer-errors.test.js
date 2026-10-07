@@ -13,9 +13,9 @@ import {
   bustsGoodHandByMistake,
   bustedGoodHandShortfall,
   errorHandFrom,
-} from '../../../src/game/dealer-errors.js';
-import { Hand } from '../../../src/game/engine/hand.js';
-import { cardId } from '../../../src/core/cards.js';
+} from '../../../src/game/dealer-errors.ts';
+import { Hand } from '../../../src/game/engine/hand.ts';
+import { cardId } from '../../../src/core/cards.ts';
 
 const settingsWith = on => ({ get: key => on.includes(key) });
 

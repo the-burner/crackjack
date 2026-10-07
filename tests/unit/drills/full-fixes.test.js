@@ -10,13 +10,13 @@ import {
   spotsFor,
   DEALER_SPOT,
   TWO_TABLE_PHASES,
-} from '../../../src/drills/full/logic.js';
-import { halfSteps, answerIndex } from '../../../src/drills/count/logic.js';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.js';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
+} from '../../../src/drills/full/logic.ts';
+import { halfSteps, answerIndex } from '../../../src/drills/count/logic.ts';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.ts';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { cardId } from '../../../src/core/cards.ts';
+import { seededRandom } from '../../../src/core/random.ts';
 
 const card = value => cardId(value, 0);
 const cards = values => values.map(card);

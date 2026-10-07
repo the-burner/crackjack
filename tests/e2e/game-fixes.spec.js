@@ -162,7 +162,7 @@ test.describe('the result shown on a seat at the payoff', () => {
       const compare = await page.evaluate(async () => {
         const el = document.querySelector('.table__result');
         const tone = el.dataset.tone;
-        const { toast } = await import('/src/ui/toast.js');
+        const { toast } = await import('/src/ui/toast.ts');
         const pop = toast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain' });
         const pick = node => {
           const c = getComputedStyle(node);

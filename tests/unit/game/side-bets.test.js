@@ -5,10 +5,10 @@ import {
   sideBetSpots,
   ruleMatches,
   allowedAtCount,
-} from '../../../src/game/engine/side-bets.js';
-import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
-import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../src/data/side-bet-games.js';
-import { cardId } from '../../../src/core/cards.js';
+} from '../../../src/game/engine/side-bets.ts';
+import { decodeSideBetGame } from '../../../src/settings/side-bet-games.ts';
+import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../src/data/side-bet-games.ts';
+import { cardId } from '../../../src/core/cards.ts';
 
 const SPADES = 0,
   CLUBS = 1,

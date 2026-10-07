@@ -3,5 +3,5 @@ test-results/
 playwright-report/
 package-lock.json
 src/data/
-src/ui/wordmark.js
+src/ui/wordmark.ts
 tests/fixtures/

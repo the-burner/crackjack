@@ -6,7 +6,7 @@
 // divergence recorded in `depth tray photos match the original`.
 
 import { describe, it, expect } from 'vitest';
-import { trayImage, TRAY_STYLES, maxDecksInTray } from '../../../src/drills/shared/discard-tray.js';
+import { trayImage, TRAY_STYLES, maxDecksInTray } from '../../../src/drills/shared/discard-tray.ts';
 
 /** The photo number a style shows at a depth, or null when it cannot. */
 const photoAt = (decks, style) => {

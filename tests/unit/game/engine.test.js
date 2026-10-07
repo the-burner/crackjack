@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.js';
-import { rulesFrom } from '../../../src/game/engine/rules.js';
-import { Settings } from '../../../src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../src/services/storage.js';
-import { cardId } from '../../../src/core/cards.js';
-import { seededRandom } from '../../../src/core/random.js';
-import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
-import { sideBetSpots } from '../../../src/game/engine/side-bets.js';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.js';
+import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.ts';
+import { rulesFrom } from '../../../src/game/engine/rules.ts';
+import { Settings } from '../../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
+import { cardId } from '../../../src/core/cards.ts';
+import { seededRandom } from '../../../src/core/random.ts';
+import { decodeSideBetGame } from '../../../src/settings/side-bet-games.ts';
+import { sideBetSpots } from '../../../src/game/engine/side-bets.ts';
+import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.ts';
 
 const SPADES = 0,
   HEARTS = 2,
@@ -550,8 +550,8 @@ describe('side bets through the engine', () => {
 
 describe('GameSession', () => {
   it('plays a round, keeps the count, and persists the bankroll', async () => {
-    const { GameSession } = await import('../../../src/game/session.js');
-    const { createServices } = await import('../../../src/app/app.js');
+    const { GameSession } = await import('../../../src/game/session.ts');
+    const { createServices } = await import('../../../src/app/app.ts');
     const app = createServices({ backend: new MemoryBackend() });
     app.sound = { play() {} };
     const session = new GameSession(app);

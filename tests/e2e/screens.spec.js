@@ -92,7 +92,7 @@ for (const { name, title, control } of SCREENS) {
 test('every screen with a Help button has help text behind it', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const topics = await page.evaluate(() => import('/src/data/help.js').then(m => Object.keys(m.HELP)));
+  const topics = await page.evaluate(() => import('/src/data/help.ts').then(m => Object.keys(m.HELP)));
   expect(topics.length).toBeGreaterThan(20);
 
   for (const topic of topics) {
@@ -107,7 +107,7 @@ test('every screen with a Help button has help text behind it', async ({ page })
 test('every screen a Help button names is a screen the app registers', async ({ page }) => {
   await openApp(page);
   const { topics, registered } = await page.evaluate(() =>
-    import('/src/data/help.js').then(m => ({
+    import('/src/data/help.ts').then(m => ({
       topics: Object.keys(m.HELP),
       registered: [...window.app.router.factories.keys()],
     })),

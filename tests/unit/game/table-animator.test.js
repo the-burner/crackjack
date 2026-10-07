@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { planSteps, pauseForSpeed, createAnimator } from '../../../src/game/table/animator.js';
-import { swipeAction, MIN_SWIPE } from '../../../src/game/table/gestures.js';
+import { planSteps, pauseForSpeed, createAnimator } from '../../../src/game/table/animator.ts';
+import { swipeAction, MIN_SWIPE } from '../../../src/game/table/gestures.ts';
 
 const PAUSES = { dealer: 500, player: 200, payoff: 700 };
 const plan = (events, over = {}) => planSteps(events, { pauses: PAUSES, ...over });

@@ -2,10 +2,10 @@
 // table viewer drew, recorded in tests/fixtures/strategy-screens-tables.json.gz.
 
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, INDEX_SETS } from '../../../src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { buildStrategy, INDEX_SETS } from '../../../src/core/strategy/strategy-tables.ts';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
 import { loadFixture } from '../../support/fixtures.js';
-import { ALWAYS, NEVER, NO_ENTRY } from '../../../src/core/strategy/strategy-file.js';
+import { ALWAYS, NEVER, NO_ENTRY } from '../../../src/core/strategy/strategy-file.ts';
 import {
   TABLE_VIEWS,
   columnLabels,
@@ -16,7 +16,7 @@ import {
   rowLabels,
   specialtyPlays,
   viewByKey,
-} from '../../../src/core/strategy/strategy-grid.js';
+} from '../../../src/core/strategy/strategy-grid.ts';
 
 /**
  * The recorded views number the tables in the original's order; this maps each

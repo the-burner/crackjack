@@ -11,7 +11,7 @@ import {
   MAX_PORTRAIT_SEATS,
   CARDS_PER_HAND,
   HANDS_PER_SEAT,
-} from '../../../src/game/table/layout.js';
+} from '../../../src/game/table/layout.ts';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
