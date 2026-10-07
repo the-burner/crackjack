@@ -71,7 +71,7 @@ function SelectRow<K extends keyof SettingValues>({ row }: { row: Row<K> }) {
   );
 }
 
-function TrueCount() {
+export function TrueCount() {
   const settings = useSettings();
   return (
     <StandardScreen title="TC Calcs" help="settings.trueCount">

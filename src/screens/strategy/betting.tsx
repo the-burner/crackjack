@@ -24,7 +24,7 @@ import {
 
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
 
-function Betting() {
+export function Betting() {
   const app = useApp();
   const settings = useSettings();
   // A ramp saved out of range is shown tidied, so keep the tidied one.
@@ -110,7 +110,7 @@ export const bettingScreen = reactScreen(Betting);
 export type BetSelectParams = { row?: number };
 
 /** Picks the number of hands and chips for one row of the bet table. */
-function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>) {
+export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>) {
   const app = useApp();
   const { settings } = app;
   const [current] = useState(() => normalizeRamp(settings.get('betting.ramp')));

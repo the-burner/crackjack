@@ -48,7 +48,7 @@ const SURRENDER: readonly SelectOption<SettingValues['rules.surrender']>[] = [
 
 const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
-function CommonRules() {
+export function CommonRules() {
   return (
     <SettingsScreen title="Common Rules" help="settings.commonRules" note={NOTE}>
       <SettingsGroup>

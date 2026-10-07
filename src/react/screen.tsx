@@ -9,7 +9,10 @@ import type { App, Screen, ScreenFactory, ScreenParams } from '../app/app.ts';
 import { AppContext } from './app-context.ts';
 
 type Handler = () => boolean | void;
-type Lifecycle = Record<'show' | 'hide' | 'back', Set<Handler>>;
+/** The handlers a screen's components registered for the router's calls. */
+export type Lifecycle = Record<'show' | 'hide' | 'back', Set<Handler>>;
+
+export const createLifecycle = (): Lifecycle => ({ show: new Set(), hide: new Set(), back: new Set() });
 
 const LifecycleContext = createContext<Lifecycle | null>(null);
 
@@ -44,6 +47,15 @@ export const useOnBack = (fn: () => boolean | void) => useScreenEvent('back', fn
 
 export type ScreenProps<P extends ScreenParams> = { params: P };
 
+/** What a screen's components need around them: the app, and the lifecycle hooks. */
+export function ScreenProviders({ app, lifecycle, children }: { app: App; lifecycle: Lifecycle; children: ReactNode }) {
+  return (
+    <AppContext.Provider value={app}>
+      <LifecycleContext.Provider value={lifecycle}>{children}</LifecycleContext.Provider>
+    </AppContext.Provider>
+  );
+}
+
 /**
  * A screen factory rendering `Component` into a `<section>` with `className`.
  * The first render happens before the factory returns, so the router shows a
@@ -56,15 +68,13 @@ export function reactScreen<P extends ScreenParams = ScreenParams>(
   return (app: App, params: P): Screen => {
     const el = document.createElement('section');
     if (className) el.className = className;
-    const lifecycle: Lifecycle = { show: new Set(), hide: new Set(), back: new Set() };
+    const lifecycle = createLifecycle();
     const root = createRoot(el);
     flushSync(() =>
       root.render(
-        <AppContext.Provider value={app}>
-          <LifecycleContext.Provider value={lifecycle}>
-            <Component params={params} />
-          </LifecycleContext.Provider>
-        </AppContext.Provider>,
+        <ScreenProviders app={app} lifecycle={lifecycle}>
+          <Component params={params} />
+        </ScreenProviders>,
       ),
     );
     return {

@@ -37,7 +37,7 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, string])
   ],
 ];
 
-function SettingsHub() {
+export function SettingsHub() {
   const app = useApp();
   return (
     <StandardScreen title="Options" help="settings">

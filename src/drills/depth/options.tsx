@@ -43,7 +43,7 @@ const RESOLUTION_OPTIONS: Options<'drills.depth.resolution'> = [
   { value: 'quarter', label: 'Resolution: Quarter Deck' },
 ];
 
-function DepthOptions() {
+export function DepthOptions() {
   const app = useApp();
   const settings = useSettings();
   const rounds = settings.get('drills.depth.timerMode') === 'auto';

@@ -46,7 +46,7 @@ const MAX_SEATS = 6;
 /** The cut card cannot sit beyond the shoe. */
 const maxCardsBehindCutCard = (decks: number) => 52 * decks - 1;
 
-function Setup() {
+export function Setup() {
   const app = useApp();
   const settings = useSettings();
   const decks = settings.get('table.decks');

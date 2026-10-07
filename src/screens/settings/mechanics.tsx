@@ -16,7 +16,7 @@ const CHECKS: readonly SettingCheck[] = [
   { label: 'Players come and go', key: 'table.playersComeAndGo' },
 ];
 
-function Mechanics() {
+export function Mechanics() {
   return (
     <SettingsScreen title="Speed/Ops" help="settings.mechanics" note={NOTE}>
       <SettingsGroup>

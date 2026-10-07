@@ -32,7 +32,7 @@ const RULE_CHECKS: SettingCheck[] = [
   { label: 'Double any number of cards', key: 'rules.doubleAnyNumberOfCards' },
 ];
 
-function PlayingStrategy() {
+export function PlayingStrategy() {
   const app = useApp();
   const settings = useSettings();
   const writeRange = (key: 'strategy.indexRangeMin' | 'strategy.indexRangeMax', value: number) =>

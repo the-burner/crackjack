@@ -20,7 +20,7 @@ const DRILLS = [
   ['Full Table Drills', 'Count a whole table', 'drills.full.options'],
 ] as const;
 
-function Home() {
+export function Home() {
   const app = useApp();
   const [installHint, setInstallHint] = useState(() =>
     installHintWanted(currentNavigator(), app.storage.get(INSTALL_HINT_KEY, false) === true),

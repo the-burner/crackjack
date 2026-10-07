@@ -43,7 +43,7 @@ const MODE_OPTIONS: Options<'drills.full.timerMode'> = [
   COUNT_DOWN_HALT_OPTION,
 ];
 
-function FullOptions() {
+export function FullOptions() {
   const app = useApp();
   const settings = useSettings();
   // Settings that only matter in some set-ups.

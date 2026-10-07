@@ -20,7 +20,7 @@ function withExternalLinks(html: string): string {
   return template.innerHTML;
 }
 
-function Help({ params: { topic, title = 'Help' } }: ScreenProps<HelpParams>) {
+export function Help({ params: { topic, title = 'Help' } }: ScreenProps<HelpParams>) {
   const app = useApp();
   const html = useMemo(() => withExternalLinks(HELP[topic] ?? '<p>No help is available for this screen.</p>'), [topic]);
   // The body holds the bundled text, so it is laid out here rather than by StandardScreen.

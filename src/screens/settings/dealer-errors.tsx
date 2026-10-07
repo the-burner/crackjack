@@ -29,7 +29,7 @@ const ERRORS: readonly SettingCheck[] = [
   { label: 'No bonus or side bet payoff', key: 'dealerErrors.noBonusPayoff' },
 ];
 
-function DealerErrors() {
+export function DealerErrors() {
   return (
     <SettingsScreen title="Errs/Biases" help="settings.dealerErrors" note={NOTE}>
       <SettingsGroup>

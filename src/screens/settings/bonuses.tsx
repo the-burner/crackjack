@@ -30,7 +30,7 @@ const HANDS: readonly SettingCheck[] = [
   { label: 'Split tens then draw ace is BJ', key: 'bonuses.splitTenAceIsBlackjack' },
 ];
 
-function Bonuses() {
+export function Bonuses() {
   return (
     <SettingsScreen title="Bonuses" help="settings.bonuses" note={NOTE}>
       <SettingsGroup>

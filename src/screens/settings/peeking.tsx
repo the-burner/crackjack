@@ -34,7 +34,7 @@ const TrailingLabel = ({ label, children }: { label: string; children: ReactNode
   </div>
 );
 
-function Peeking() {
+export function Peeking() {
   return (
     <SettingsScreen title="Peeking" help="settings.peeking" note={NOTE}>
       <SettingsGroup>

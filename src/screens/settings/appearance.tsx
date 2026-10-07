@@ -5,7 +5,7 @@ import { reactScreen } from '../../react/screen.tsx';
 import { SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
 import { THEMES } from '../../ui/theme.ts';
 
-function Appearance() {
+export function Appearance() {
   return (
     <SettingsScreen title="Appearance" help="settings.appearance">
       <SettingsGroup>

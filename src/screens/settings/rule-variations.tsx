@@ -27,7 +27,7 @@ const SPLITTING: readonly SettingCheck[] = [
   { label: 'No 4, 5, or ten splits', key: 'rules.noSplit4s5s10s' },
 ];
 
-function RuleVariations() {
+export function RuleVariations() {
   return (
     <SettingsScreen title="Rule Variations" help="settings.ruleVariations" note={NOTE}>
       <SettingsGroup>

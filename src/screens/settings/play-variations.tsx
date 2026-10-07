@@ -25,7 +25,7 @@ const HANDS: readonly SettingCheck[] = [
   { label: 'Dealer ties 17, 18 and 19', key: 'rules.dealerWinsTies17to19' },
 ];
 
-function PlayVariations() {
+export function PlayVariations() {
   return (
     <SettingsScreen title="Play Variations" help="settings.playVariations" note={NOTE}>
       <SettingsGroup>

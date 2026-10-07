@@ -63,7 +63,7 @@ function statRows(session: GameSession | undefined, get: SettingReader): StatRow
   return out;
 }
 
-function GameStats({ params: { session } }: { params: { session?: GameSession } }) {
+export function GameStats({ params: { session } }: { params: { session?: GameSession } }) {
   const settings = useSettings();
   // The session changes while the table covers this screen.
   const [, refresh] = useReducer((n: number) => n + 1, 0);

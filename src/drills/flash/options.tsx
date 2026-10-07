@@ -76,7 +76,7 @@ const FLASH_TIMER_OPTIONS: Options<'drills.flash.timerMode'> = [
 /** Timer modes in which each hand may have a time limit. */
 const TIMED_HAND_MODES: readonly SettingValues['drills.flash.timerMode'][] = ['auto', 'infinite'];
 
-function FlashOptions() {
+export function FlashOptions() {
   const app = useApp();
   const settings = useSettings();
   const mode = settings.get('drills.flash.timerMode');

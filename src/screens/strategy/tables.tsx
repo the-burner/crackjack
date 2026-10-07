@@ -63,7 +63,7 @@ export type TablesParams = {
   highlight?: { row: number; column: number } | null;
 };
 
-function StrategyTables({ params }: ScreenProps<TablesParams>) {
+export function StrategyTables({ params }: ScreenProps<TablesParams>) {
   const app = useApp();
   const settings = useSettings();
   const { mode = 'view', maskKey = null, title = 'Tables', highlight = null } = params;

@@ -25,7 +25,7 @@ export type BetSelectParams = {
   onPick?: (bet: BetPick) => boolean | void;
 };
 
-function BetSelect({
+export function BetSelect({
   params: { mode = 'main', title, chipValue: chipParam, hands: initialHands = 1, onPick },
 }: {
   params: BetSelectParams;

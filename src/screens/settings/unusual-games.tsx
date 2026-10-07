@@ -11,7 +11,7 @@ const NOTE = 'You can select one of numerous unusual games above.';
 
 const GAMES = BUILTIN_SIDE_BET_GAMES.map(({ id, name }) => ({ value: id, label: name }));
 
-function UnusualGames() {
+export function UnusualGames() {
   const settings = useSettings();
   return (
     <SettingsScreen title="Unusual Games" help="settings.unusualGames">

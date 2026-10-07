@@ -29,7 +29,7 @@ const ValueRow = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-function FlashErrors() {
+export function FlashErrors() {
   const app = useApp();
   // The tallies change while the drills cover this screen.
   const [, refresh] = useReducer((n: number) => n + 1, 0);
