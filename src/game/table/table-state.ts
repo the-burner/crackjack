@@ -1,43 +1,85 @@
-// @ts-nocheck
 // What is on the table right now, as far as the player can see.
 //
 // The engine finishes a round before the screen has drawn any of it, so the
 // screen cannot render the engine's hands directly: it replays the engine's
 // events into this model one at a time and draws that instead.
 
-export const DEALER_KEY = '0-0';
+import { handKey, parseHandKey } from '../engine/hand.ts';
+import type { HandKey } from '../engine/hand.ts';
+import type { GameEvent } from '../engine/events.ts';
+import type { Result } from '../engine/settlement.ts';
+import type { CardId } from '../../core/cards.ts';
 
-/**
- * @param {object} o
- * @param {number} o.decks  Decks in the shoe, for the shoe photograph.
- */
-export function createTableState({ decks }) {
-  const emptyHand = key => ({
+export const DEALER_KEY = handKey(0, 0);
+
+/** An engine event, or one of the steps the animator adds around them. */
+export type TableEvent =
+  | GameEvent
+  /** The burn cards are gathered into the tray. */
+  | { type: 'burnsToTray' }
+  /** A hand's result shows on its seat's chips. */
+  | { type: 'result'; hand: HandKey; result: Result }
+  /** What a hand paid shows on its seat's chips. */
+  | { type: 'payout'; hand: HandKey; amount: number }
+  /** A paid hand's cards and chips leave the table. */
+  | { type: 'sweep'; hand: HandKey };
+
+/** A hand as the player has seen it. */
+export interface ShownHand {
+  key: HandKey;
+  seat: number;
+  index: number;
+  cards: CardId[];
+  faceUp: boolean[];
+}
+
+export interface BurnCard {
+  card: CardId;
+  faceUp: boolean;
+}
+
+/** What a seat's chip label shows. */
+export interface Chip {
+  /** The bet on each hand. */
+  base: number;
+  /** Everything on the seat: bets, doubles, splits and insurance. */
+  amount: number;
+  sideBet: number;
+  result: Result | null;
+  paid: number | null;
+  /** Computer seats get a chip only to show their results. */
+  computer?: boolean;
+}
+
+export type TableState = ReturnType<typeof createTableState>;
+
+/** @param decks  Decks in the shoe, for the shoe photograph. */
+export function createTableState({ decks }: { decks: number }) {
+  const emptyHand = (key: HandKey): ShownHand => ({
     key,
-    seat: Number(key.split('-')[0]),
-    index: Number(key.split('-')[1]),
+    ...parseHandKey(key),
     cards: [],
     faceUp: [],
   });
 
   const state = {
     /** Player hands in play, in seat order. */
-    hands: [],
+    hands: [] as ShownHand[],
     dealer: emptyHand(DEALER_KEY),
     /** The hand the turn pointer points at. */
-    pointerHand: null,
+    pointerHand: null as HandKey | null,
     /** True while the insurance offer is up. */
     insurance: false,
     /** Cards drawn from the shoe this shoe, including burns. */
     dealt: 0,
-    /** Burn cards sitting out in front of the tray: {card, faceUp}. */
-    burns: [],
+    /** Burn cards sitting out in front of the tray. */
+    burns: [] as BurnCard[],
     /** Amount showing on each seat's chip label, by seat number. */
-    chips: new Map(),
+    chips: new Map<number, Chip>(),
     /** What each player hand has wagered, by hand key, so a swept hand takes its chips with it. */
-    stakes: new Map(),
+    stakes: new Map<HandKey, number>(),
     /** Hands already paid and swept off the table this round. */
-    swept: new Set(),
+    swept: new Set<HandKey>(),
     /**
      * The bankroll as the player has seen it so far. The engine's bankroll is
      * already final when the first card is drawn, so the label follows the
@@ -47,20 +89,20 @@ export function createTableState({ decks }) {
     bankroll: 0,
 
     /** Cards sitting in the discard tray: dealt, less what is still on the table. */
-    get trayCards() {
+    get trayCards(): number {
       return Math.max(0, state.dealt - state.cardsOnTable - state.burns.length);
     },
 
     /** Cards left in the shoe. */
-    get shoeCards() {
+    get shoeCards(): number {
       return Math.max(0, decks * 52 - state.dealt);
     },
 
-    get cardsOnTable() {
+    get cardsOnTable(): number {
       return state.hands.reduce((sum, hand) => sum + hand.cards.length, 0) + state.dealer.cards.length;
     },
 
-    hand(key) {
+    hand(key: HandKey): ShownHand {
       if (key === DEALER_KEY) return state.dealer;
       let found = state.hands.find(h => h.key === key);
       if (!found) {
@@ -72,14 +114,14 @@ export function createTableState({ decks }) {
     },
 
     /** Sets the bankroll the label shows. */
-    setBankroll(amount) {
+    setBankroll(amount: number) {
       state.bankroll = amount;
     },
 
     /** Sets what each seat has wagered, so the chip labels can be drawn. */
-    setBets(bets) {
+    setBets(bets: { seat: number; amount: number; sideBet?: number }[]) {
       state.chips = new Map(
-        bets.map(({ seat, amount, sideBet = 0 }) => [
+        bets.map(({ seat, amount, sideBet = 0 }): [number, Chip] => [
           seat,
           { base: amount, amount, sideBet, result: null, paid: null },
         ]),
@@ -98,19 +140,22 @@ export function createTableState({ decks }) {
     },
 
     /** A seat's chip label; computer seats get one only to show their results. */
-    chipFor(seat) {
-      if (!state.chips.has(seat))
-        state.chips.set(seat, { base: 0, amount: 0, sideBet: 0, result: null, paid: null, computer: true });
-      return state.chips.get(seat);
+    chipFor(seat: number): Chip {
+      let chip = state.chips.get(seat);
+      if (!chip) {
+        chip = { base: 0, amount: 0, sideBet: 0, result: null, paid: null, computer: true };
+        state.chips.set(seat, chip);
+      }
+      return chip;
     },
 
     /** Adds to what a hand has wagered. */
-    stake(key, amount) {
+    stake(key: HandKey, amount: number) {
       state.stakes.set(key, (state.stakes.get(key) ?? 0) + amount);
     },
 
     /** Applies one engine event. */
-    apply(event) {
+    apply(event: TableEvent) {
       switch (event.type) {
         case 'shuffle':
           state.dealt = 0;
@@ -128,7 +173,7 @@ export function createTableState({ decks }) {
           state.burns = [];
           break;
         case 'card': {
-          const chip = state.chips.get(Number(event.hand.split('-')[0]));
+          const chip = state.chips.get(parseHandKey(event.hand).seat);
           if (event.hand !== DEALER_KEY && chip && !state.stakes.has(event.hand)) state.stake(event.hand, chip.base);
           const hand = state.hand(event.hand);
           hand.cards.push(event.card);
@@ -182,7 +227,7 @@ export function createTableState({ decks }) {
           for (const [seat, chip] of state.chips) {
             chip.amount += chip.base / 2;
             state.bankroll -= chip.base / 2;
-            state.stake(`${seat}-0`, chip.base / 2);
+            state.stake(handKey(seat, 0), chip.base / 2);
           }
           break;
         case 'insuranceDeclined':
@@ -192,7 +237,7 @@ export function createTableState({ decks }) {
           // The dealer takes the insurance chips as soon as it has checked.
           for (const [seat, chip] of state.chips) {
             chip.amount -= chip.base / 2;
-            state.stake(`${seat}-0`, -chip.base / 2);
+            state.stake(handKey(seat, 0), -chip.base / 2);
           }
           break;
         case 'turn':

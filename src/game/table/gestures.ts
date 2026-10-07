@@ -1,10 +1,13 @@
-// @ts-nocheck
 // Gestures on the felt, so the table can be played with the action buttons
 // hidden: swipe down = Hit, left = Stand, up = Double, right = Split, and a
 // double tap = Surrender. While insurance is offered, vertical = Insure and
 // horizontal = Pass. Diagonal swipes mean nothing.
 
 import { doubleTapDetector } from '../../ui/double-tap.ts';
+import type { GameAction } from '../engine/game.ts';
+
+/** What a gesture asks for: a play, or an answer to the insurance offer. */
+export type SwipeAction = GameAction | 'insure' | 'pass';
 
 /** A swipe shorter than this is a tap, not a gesture. */
 export const MIN_SWIPE = 30;
@@ -13,14 +16,22 @@ const DIAGONAL_RATIO = 1.5;
 
 /**
  * The action a swipe asks for.
- * @param {object} o
- * @param {number} o.dx          End x minus start x.
- * @param {number} o.dy          End y minus start y (down is positive).
- * @param {boolean} [o.insurance]  True while the insurance offer is up.
- * @param {number} [o.minDistance]
- * @returns {string|null} an ACTION value, 'insure', 'pass', or null for a tap
+ * @param dx  End x minus start x.
+ * @param dy  End y minus start y (down is positive).
+ * @param insurance  True while the insurance offer is up.
+ * @returns an ACTION value, 'insure', 'pass', or null for a tap
  */
-export function swipeAction({ dx, dy, insurance = false, minDistance = MIN_SWIPE }) {
+export function swipeAction({
+  dx,
+  dy,
+  insurance = false,
+  minDistance = MIN_SWIPE,
+}: {
+  dx: number;
+  dy: number;
+  insurance?: boolean;
+  minDistance?: number;
+}): Exclude<SwipeAction, 'surrender'> | null {
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
   // Measure the real distance, so a short swipe is dropped whatever its
@@ -34,22 +45,24 @@ export function swipeAction({ dx, dy, insurance = false, minDistance = MIN_SWIPE
 /**
  * Reports swipes and double taps on an element. Taps on buttons and the bet
  * panel are theirs, not gestures. Returns a function that detaches the listeners.
- * @param {HTMLElement} el
- * @param {(action: string, event: PointerEvent) => void} onSwipe
  */
-export function attachSwipes(el, onSwipe, { insurance = () => false } = {}) {
-  let start = null;
+export function attachSwipes(
+  el: HTMLElement,
+  onSwipe: (action: SwipeAction, event: PointerEvent) => void,
+  { insurance = () => false }: { insurance?: () => boolean } = {},
+): () => void {
+  let start: { x: number; y: number } | null = null;
   const doubleTap = doubleTapDetector();
-  const down = event => {
+  const down = (event: PointerEvent) => {
     start = { x: event.clientX, y: event.clientY };
   };
-  const up = event => {
+  const up = (event: PointerEvent) => {
     if (!start) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     start = null;
     if (Math.hypot(dx, dy) < MIN_SWIPE) {
-      if (event.target.closest?.('button, .bet-overlay')) return;
+      if (event.target instanceof Element && event.target.closest('button, .bet-overlay')) return;
       if (doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })) onSwipe('surrender', event);
       return;
     }

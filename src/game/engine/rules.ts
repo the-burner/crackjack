@@ -1,15 +1,28 @@
-// @ts-nocheck
 // Table rules: the questions the engine asks about what is allowed and what a
 // hand pays, derived from the user's settings.
 
 import { valueOf, rankOf } from '../../core/cards.ts';
+import type { CardId } from '../../core/cards.ts';
+import type { AppSettings } from '../../settings/schema.ts';
+import type { Hand } from './hand.ts';
 
-export const SURRENDER = { none: 'none', late: 'late', early: 'early', earlyVsTen: 'earlyVsTen', macao: 'macao' };
-export const INSURANCE = { none: 'none', normal: 'normal', blackjackOnly: 'blackjackOnly' };
+export const SURRENDER = {
+  none: 'none',
+  late: 'late',
+  early: 'early',
+  earlyVsTen: 'earlyVsTen',
+  macao: 'macao',
+} as const;
+export const INSURANCE = { none: 'none', normal: 'normal', blackjackOnly: 'blackjackOnly' } as const;
+
+/** The most cards a hand may hold; the dealer stands it on the last. */
+export const MAX_CARDS_PER_HAND = 7;
+
+export type Rules = ReturnType<typeof rulesFrom>;
 
 /** Builds a rules object from the settings. */
-export function rulesFrom(settings) {
-  const get = key => settings.get(key);
+export function rulesFrom(settings: Pick<AppSettings, 'get'>) {
+  const get: AppSettings['get'] = key => settings.get(key);
   return {
     dealerHitsSoft17: get('rules.dealerHitsSoft17'),
     dealerPeeksTen: get('rules.dealerPeeksTen'),
@@ -61,10 +74,10 @@ export function rulesFrom(settings) {
 }
 
 /** Hands a player may hold at once in one seat. */
-export const maxHandsPerSeat = rules => rules.maxSplitHands;
+export const maxHandsPerSeat = (rules: Rules): number => rules.maxSplitHands;
 
 /** Whether the dealer checks for blackjack under an ace or ten. */
-export function dealerPeeks(rules, upcard) {
+export function dealerPeeks(rules: Rules, upcard: CardId): boolean {
   if (rules.noHoleCard) return false;
   const value = valueOf(upcard);
   if (value === 1) return rules.dealerPeeksAce;
@@ -73,17 +86,14 @@ export function dealerPeeks(rules, upcard) {
 }
 
 /** Whether insurance is offered against this upcard. */
-export function insuranceOffered(rules, upcard, playerHasTwentyOne) {
+export function insuranceOffered(rules: Rules, upcard: CardId, playerHasTwentyOne: boolean): boolean {
   if (rules.insurance === INSURANCE.none) return false;
   if (valueOf(upcard) !== 1) return false;
   return rules.insurance !== INSURANCE.blackjackOnly || playerHasTwentyOne;
 }
 
-/**
- * Whether a hand may double now.
- * @param {import('./hand.ts').Hand} hand
- */
-export function doubleAllowed(rules, hand) {
+/** Whether a hand may double now. */
+export function doubleAllowed(rules: Rules, hand: Hand): boolean {
   if (hand.cardCount < 2) return false;
   if (hand.cardCount > 2 && !(rules.doubleAnyNumberOfCards || (rules.doubleOnThreeCards && hand.cardCount === 3)))
     return false;
@@ -115,7 +125,7 @@ export function doubleAllowed(rules, hand) {
 }
 
 /** Whether a hand may split now. `handsInSeat` counts the hands the seat already holds. */
-export function splitAllowed(rules, hand, handsInSeat) {
+export function splitAllowed(rules: Rules, hand: Hand, handsInSeat: number): boolean {
   if (!hand.isPair({ sameRankOnly: rules.splitTensSameRankOnly && valueOf(hand.cards[0]) === 10 })) return false;
   if (handsInSeat >= maxHandsPerSeat(rules)) return false;
   const value = valueOf(hand.cards[0]);
@@ -126,7 +136,7 @@ export function splitAllowed(rules, hand, handsInSeat) {
 }
 
 /** Whether a split hand of aces may act at all, rather than standing at once. */
-export function splitAcesMayDraw(rules, hand) {
+export function splitAcesMayDraw(rules: Rules, hand: Hand): boolean {
   if (!isSplitAce(rules, hand)) return true;
   if (rules.hitSplitAces || rules.doubleAfterSplitAces) return true;
   // Resplitting is the only play left, and it needs another ace.
@@ -134,12 +144,12 @@ export function splitAcesMayDraw(rules, hand) {
 }
 
 /** Whether a split hand of aces may take another card. */
-export const splitAcesMayHit = (rules, hand) => !isSplitAce(rules, hand) || rules.hitSplitAces;
+export const splitAcesMayHit = (rules: Rules, hand: Hand): boolean => !isSplitAce(rules, hand) || rules.hitSplitAces;
 
-const isSplitAce = (rules, hand) => hand.isSplit && valueOf(hand.cards[0]) === 1;
+const isSplitAce = (rules: Rules, hand: Hand): boolean => hand.isSplit && valueOf(hand.cards[0]) === 1;
 
 /** Whether a hand may surrender now. */
-export function surrenderAllowed(rules, hand, { hasInsurance = false } = {}) {
+export function surrenderAllowed(rules: Rules, hand: Hand, { hasInsurance = false }: { hasInsurance?: boolean } = {}) {
   if (hasInsurance && !rules.surrenderAfterInsurance) return false;
   if (hand.isSplit) return false;
   // Double-down rescue is its own rule: it does not need the table to offer surrender.
@@ -151,13 +161,13 @@ export function surrenderAllowed(rules, hand, { hasInsurance = false } = {}) {
 }
 
 /** Whether early surrender is allowed against this upcard (before the dealer checks). */
-export function earlySurrenderAllowed(rules, upcard) {
+export function earlySurrenderAllowed(rules: Rules, upcard: CardId): boolean {
   if (rules.surrender === SURRENDER.early || rules.surrender === SURRENDER.macao) return true;
   return rules.surrender === SURRENDER.earlyVsTen && valueOf(upcard) === 10;
 }
 
 /** Whether the dealer must draw another card. */
-export function dealerShouldDraw(rules, dealerHand) {
+export function dealerShouldDraw(rules: Rules, dealerHand: Hand): boolean {
   const { total, hardTotal } = dealerHand.totals();
   if (total > 21) return false;
   if (hardTotal > 16) return false;
@@ -167,7 +177,7 @@ export function dealerShouldDraw(rules, dealerHand) {
 }
 
 /** A player hand that wins automatically for having many cards without busting. */
-export function charlieWin(rules, hand) {
+export function charlieWin(rules: Rules, hand: Hand): boolean {
   if (hand.busted()) return false;
   const n = hand.cardCount;
   return (
@@ -179,7 +189,7 @@ export function charlieWin(rules, hand) {
  * Extra amount a blackjack pays on top of an even-money win, as a multiple of
  * the bet (0.5 means 3:2).
  */
-export function blackjackPremium(rules, hand) {
+export function blackjackPremium(rules: Rules, hand: Hand): number {
   const b = rules.bonuses;
   if (b.diamondBlackjack && hand.isDiamondPair) return 1;
   if (b.suitedAceJack && hand.isSuitedAceJack) return 1;
@@ -197,13 +207,14 @@ export function blackjackPremium(rules, hand) {
 }
 
 /** Rounds a blackjack premium the way the table does. */
-export const roundPremium = (rules, amount) => (rules.blackjackRoundUp ? Math.floor(amount + 0.5) : amount);
+export const roundPremium = (rules: Rules, amount: number): number =>
+  rules.blackjackRoundUp ? Math.floor(amount + 0.5) : amount;
 
 /** The value a player hand busts above: 22 where a 22 counts as 21. */
-export const bustValue = rules => (rules?.player22CountsAs21 ? 22 : 21);
+export const bustValue = (rules?: Pick<Rules, 'player22CountsAs21'>): number => (rules?.player22CountsAs21 ? 22 : 21);
 
 /** True when three cards are a suited 6-7-8. */
-export function isSuited678(cards) {
+export function isSuited678(cards: readonly CardId[]): boolean {
   if (cards.length < 3) return false;
   const three = cards.slice(0, 3);
   const suits = new Set(three.map(c => Math.floor((c - 1) / 13)));
@@ -217,7 +228,7 @@ export function isSuited678(cards) {
 }
 
 /** Describes a three-of-sevens hand: none, unsuited or suited. */
-export function sevensKind(cards) {
+export function sevensKind(cards: readonly CardId[]): 'none' | 'unsuited' | 'suited' {
   if (cards.length < 3) return 'none';
   const three = cards.slice(0, 3);
   if (!three.every(c => valueOf(c) === 7)) return 'none';
@@ -226,4 +237,4 @@ export function sevensKind(cards) {
 }
 
 /** True when a card is a ten-valued card but not a ten (a face card). */
-export const isFaceCard = card => rankOf(card) > 10;
+export const isFaceCard = (card: CardId): boolean => rankOf(card) > 10;

@@ -1,28 +1,44 @@
-// @ts-nocheck
 // The shoe: cards still available, drawn in random order, with the cut card
 // and shuffle rules.
 
 import { CARDS_PER_DECK } from '../../core/cards.ts';
 import { defaultRandom } from '../../core/random.ts';
+import type { Random } from '../../core/random.ts';
+import type { CardId } from '../../core/cards.ts';
 
-export const SHUFFLE_MODE = { cutCard: 'cutCard', rounds: 'rounds' };
+export const SHUFFLE_MODE = { cutCard: 'cutCard', rounds: 'rounds' } as const;
+export type ShuffleMode = (typeof SHUFFLE_MODE)[keyof typeof SHUFFLE_MODE];
+
+export interface ShoeOptions {
+  decks: number;
+  /** Shuffle when the cut card appears, or after a fixed number of rounds. */
+  shuffleMode?: ShuffleMode;
+  cardsBehindCutCard?: number;
+  roundsPerShoe?: number;
+  random?: Random;
+}
 
 export class Shoe {
-  /**
-   * @param {object} o
-   * @param {number} o.decks
-   * @param {string} o.shuffleMode       A SHUFFLE_MODE: shuffle when the cut card appears, or after a fixed number of rounds.
-   * @param {number} o.cardsBehindCutCard
-   * @param {number} o.roundsPerShoe
-   * @param {() => number} [o.random]
-   */
+  decks: number;
+  shuffleMode: ShuffleMode;
+  cardsBehindCutCard: number;
+  roundsPerShoe: number;
+  random: Random;
+  /** How many of each card id (1..52) remain. */
+  remainingByCard: number[] = [];
+  remaining = 0;
+  dealt = 0;
+  roundsDealt = 0;
+  cutCardSeen = false;
+  needsShuffle = false;
+
   constructor({
     decks,
     shuffleMode = SHUFFLE_MODE.cutCard,
     cardsBehindCutCard = 78,
     roundsPerShoe = 6,
     random = defaultRandom,
-  }) {
+  }: ShoeOptions) {
     this.decks = decks;
     this.shuffleMode = shuffleMode;
     this.cardsBehindCutCard = cardsBehindCutCard;
@@ -31,17 +47,16 @@ export class Shoe {
     this.shuffle();
   }
 
-  get totalCards() {
+  get totalCards(): number {
     return this.decks * CARDS_PER_DECK;
   }
 
   /** Cards that may be dealt before the cut card shows. */
-  get penetration() {
+  get penetration(): number {
     return this.shuffleMode === SHUFFLE_MODE.rounds ? Infinity : this.totalCards - this.cardsBehindCutCard;
   }
 
-  shuffle() {
-    /** How many of each card id (1..52) remain. */
+  shuffle(): void {
     this.remainingByCard = new Array(CARDS_PER_DECK + 1).fill(this.decks);
     this.remainingByCard[0] = 0;
     this.remaining = this.totalCards;
@@ -52,7 +67,7 @@ export class Shoe {
   }
 
   /** Draws a uniformly random remaining card, or null when the shoe is empty. */
-  draw() {
+  draw(): CardId | null {
     if (this.remaining === 0) return null;
     let pick = Math.floor(this.random() * this.remaining);
     for (let card = 1; card <= CARDS_PER_DECK; card++) {
@@ -73,21 +88,21 @@ export class Shoe {
   }
 
   /** Puts a card back (used when a bias rejects a drawn card). */
-  putBack(card) {
+  putBack(card: CardId): void {
     this.remainingByCard[card] += 1;
     this.remaining += 1;
     this.dealt -= 1;
   }
 
   /** Called at the end of each round; sets `needsShuffle` when the shoe is done. */
-  endRound() {
+  endRound(): void {
     this.roundsDealt += 1;
     if (this.shuffleMode === SHUFFLE_MODE.rounds && this.roundsDealt >= this.roundsPerShoe) this.needsShuffle = true;
     if (this.remaining === 0) this.needsShuffle = true;
   }
 
   /** Decks sitting in the discard tray. */
-  get decksInTray() {
+  get decksInTray(): number {
     return this.dealt / CARDS_PER_DECK;
   }
 }

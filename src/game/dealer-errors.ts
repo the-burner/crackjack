@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Dealers make mistakes. With the options under "Dealer Errors" on, the table
 // occasionally shorts the player, who is meant to notice and call "Foul".
 //
@@ -8,6 +7,12 @@
 //
 // The refund for a caught error and the cost reported for
 // a missed one are the same number: exactly what the player was short.
+
+import { money } from '../core/money.ts';
+import type { Random } from '../core/random.ts';
+import type { AppSettings, SettingKey } from '../settings/schema.ts';
+import type { Hand, HandKey } from './engine/hand.ts';
+import type { Result } from './engine/settlement.ts';
 
 /** The mistakes a dealer can make. */
 export const DEALER_ERROR = {
@@ -19,10 +24,11 @@ export const DEALER_ERROR = {
   chipsOnPush: 'chipsOnPush',
   stoodOn16: 'stoodOn16',
   bonusNotPaid: 'bonusNotPaid',
-};
+} as const;
+export type DealerErrorType = (typeof DEALER_ERROR)[keyof typeof DEALER_ERROR];
 
 /** What each mistake is called in the messages. */
-export const ERROR_LABELS = {
+export const ERROR_LABELS: Record<DealerErrorType, string> = {
   insuranceMispaid: 'Insurance Mispaid',
   blackjackMispaid: 'BJ Mispaid',
   bustedGoodHand: 'Busted a good hand',
@@ -43,10 +49,10 @@ export const ERROR_SETTINGS = {
   chipsOnPush: 'dealerErrors.loseOnPush',
   stoodOn16: 'dealerErrors.standOn16',
   bonusNotPaid: 'dealerErrors.noBonusPayoff',
-};
+} as const satisfies Record<DealerErrorType, SettingKey>;
 
 /** How often each mistake happens when its option is on. */
-export const ERROR_CHANCE = {
+export const ERROR_CHANCE: Record<DealerErrorType, number> = {
   insuranceMispaid: 0.35,
   blackjackMispaid: 0.385,
   bustedGoodHand: 0.14,
@@ -61,13 +67,13 @@ export const ERROR_CHANCE = {
 export const UNPEEKED_BLACKJACK_CHANCE = 0.525;
 
 /** How often a mistake happens in this situation. */
-function chanceOf(type, { dealerPeeked }) {
+function chanceOf(type: DealerErrorType, { dealerPeeked }: { dealerPeeked: boolean }): number {
   if (type === DEALER_ERROR.blackjackMispaid && !dealerPeeked) return UNPEEKED_BLACKJACK_CHANCE;
   return ERROR_CHANCE[type];
 }
 
 /** Every mistake this table can make. */
-export const SUPPORTED_ERRORS = [
+export const SUPPORTED_ERRORS: DealerErrorType[] = [
   DEALER_ERROR.insuranceMispaid,
   DEALER_ERROR.blackjackMispaid,
   DEALER_ERROR.bustedGoodHand,
@@ -83,13 +89,19 @@ export const SUPPORTED_ERRORS = [
  * before each draw; a stand on 16, soft or hard, is the mistake players must
  * catch. It only happens on a long dealer hand the player is not already
  * beating, so the stand costs the player something.
- * @param {object} o
- * @param {{total: number, hardTotal: number, cardCount: number}} o.dealer
- * @param {number} o.playerTotal  The total of the last player hand to act.
- * @param {string[]} o.enabled
- * @param {() => number} o.random
  */
-export function dealerStandsByMistake({ dealer, playerTotal, enabled, random }) {
+export function dealerStandsByMistake({
+  dealer,
+  playerTotal,
+  enabled,
+  random,
+}: {
+  dealer: { total: number; hardTotal: number; cardCount: number };
+  /** The total of the last player hand to act. */
+  playerTotal: number;
+  enabled: readonly DealerErrorType[];
+  random: Random;
+}): boolean {
   if (!enabled.includes(DEALER_ERROR.stoodOn16)) return false;
   if (dealer.total !== 16 && dealer.hardTotal !== 16) return false;
   if (!(dealer.cardCount >= 4 && playerTotal < 17)) return false;
@@ -97,39 +109,63 @@ export function dealerStandsByMistake({ dealer, playerTotal, enabled, random }) 
 }
 
 /** The mistakes the player's options allow, in the order they are considered. */
-export function enabledErrors(settings, { supported = SUPPORTED_ERRORS } = {}) {
+export function enabledErrors(
+  settings: Pick<AppSettings, 'get'>,
+  { supported = SUPPORTED_ERRORS }: { supported?: readonly DealerErrorType[] } = {},
+): DealerErrorType[] {
   return supported.filter(type => settings.get(ERROR_SETTINGS[type]));
 }
 
 /** True when any dealer-error option is on, which is when "Foul" is offered. */
-export const dealerErrorsOn = settings => Object.values(ERROR_SETTINGS).some(key => settings.get(key));
+export const dealerErrorsOn = (settings: Pick<AppSettings, 'get'>): boolean =>
+  Object.values(ERROR_SETTINGS).some(key => settings.get(key));
 
-/**
- * @typedef {object} ErrorHand
- * @property {string} key
- * @property {number} bet
- * @property {number} insuranceBet
- * @property {number} payout        What the hand actually paid out.
- * @property {number} total
- * @property {number} cardCount
- * @property {boolean} doubled
- * @property {boolean} isNatural
- * @property {number} splitCount
- * @property {string} result        A RESULT value.
- */
+export interface ErrorHand {
+  key: HandKey;
+  /** What the side bets won. */
+  sideBetWin: number;
+  /** Everything the side bets returned, stakes included, which is in `payout`. */
+  sideBetPaid?: number;
+  bet: number;
+  insuranceBet: number;
+  /** What the hand actually paid out. */
+  payout: number;
+  total: number;
+  cardCount: number;
+  doubled: boolean;
+  isNatural: boolean;
+  splitCount: number;
+  result: Result | null;
+}
 
-/**
- * Picks the mistake a settled round carries, if any. At most one per round.
- * @param {object} o
- * @param {ErrorHand[]} o.hands         The player's settled hands.
- * @param {{total: number, cardCount: number, busted: boolean}} o.dealer
- * @param {boolean} o.dealerBlackjack
- * @param {boolean} [o.dealerPeeked]    False when the dealer never checked the hole card.
- * @param {boolean} [o.blackjackBonus]  False when blackjacks pay even money.
- * @param {string[]} o.enabled          From enabledErrors().
- * @param {() => number} o.random
- * @returns {{type: string, label: string, amount: number, hands: {key: string, shortfall: number, result: string}[]}|null}
- */
+/** The dealer's hand as the mistakes judge it. */
+export interface ErrorDealer {
+  total: number;
+  cardCount: number;
+  busted: boolean;
+  /** Set when the dealer stood on 16 by mistake this round. */
+  stoodOnSixteen?: boolean;
+}
+
+/** A hand a mistake touched, and what it lost. */
+export interface AffectedHand {
+  key: HandKey;
+  shortfall: number;
+  /** What the hand is shown as instead. */
+  result: Result | null;
+}
+
+/** A mistake the dealer made, waiting to be caught. */
+export interface DealerError {
+  type: DealerErrorType;
+  label: string;
+  amount: number;
+  hands: AffectedHand[];
+  /** True when the hand already paid for it during play. */
+  alreadyPaid?: boolean;
+}
+
+/** Picks the mistake a settled round carries, if any. At most one per round. */
 export function pickDealerError({
   hands,
   dealer,
@@ -138,7 +174,19 @@ export function pickDealerError({
   blackjackBonus = true,
   enabled,
   random,
-}) {
+}: {
+  /** The player's settled hands. */
+  hands: readonly ErrorHand[];
+  dealer: ErrorDealer;
+  dealerBlackjack: boolean;
+  /** False when the dealer never checked the hole card. */
+  dealerPeeked?: boolean;
+  /** False when blackjacks pay even money. */
+  blackjackBonus?: boolean;
+  /** From enabledErrors(). */
+  enabled: readonly DealerErrorType[];
+  random: Random;
+}): DealerError | null {
   for (const type of enabled) {
     const affected = affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus });
     const amount = affected.reduce((sum, hand) => sum + hand.shortfall, 0);
@@ -153,17 +201,21 @@ export function pickDealerError({
 }
 
 /** Mistakes the dealer makes while playing, whose cost the hand has already paid. */
-const MADE_IN_PLAY = new Set([DEALER_ERROR.stoodOn16]);
+const MADE_IN_PLAY = new Set<DealerErrorType>([DEALER_ERROR.stoodOn16]);
 
 /**
  * Whether the dealer wrongly calls a good hand a bust, judged as the card lands.
  * A doubled 21 is left alone; a doubled 20 is not.
- * @param {object} o
- * @param {{total: number, cardCount: number, doubled: boolean}} o.hand
- * @param {string[]} o.enabled
- * @param {() => number} o.random
  */
-export function bustsGoodHandByMistake({ hand, enabled, random }) {
+export function bustsGoodHandByMistake({
+  hand,
+  enabled,
+  random,
+}: {
+  hand: { total: number; cardCount: number; doubled: boolean };
+  enabled: readonly DealerErrorType[];
+  random: Random;
+}): boolean {
   if (!enabled.includes(DEALER_ERROR.bustedGoodHand)) return false;
   if (hand.cardCount < 3) return false;
   if (random() >= ERROR_CHANCE[DEALER_ERROR.bustedGoodHand]) return false;
@@ -174,20 +226,37 @@ export function bustsGoodHandByMistake({ hand, enabled, random }) {
  * What the dealer owes for a hand it wrongly busted. The original judged this
  * against the dealer's total at that moment, before it had drawn.
  */
-export function bustedGoodHandShortfall({ bet, playerTotal, dealerTotal }) {
+export function bustedGoodHandShortfall({
+  bet,
+  playerTotal,
+  dealerTotal,
+}: {
+  bet: number;
+  playerTotal: number;
+  dealerTotal: number;
+}): number {
   if (dealerTotal < playerTotal) return bet * 2;
   if (dealerTotal === playerTotal) return bet;
   return 0;
 }
 
 /** The dealer can claim 21 on 22 with four cards, or on 22 or 23 with five. */
-const canClaim21 = dealer =>
+const canClaim21 = (dealer: ErrorDealer): boolean =>
   (dealer.cardCount >= 4 && dealer.total === 22) ||
   (dealer.cardCount >= 5 && (dealer.total === 22 || dealer.total === 23));
 
 /** The hands a mistake of this type would touch, and what each one loses. */
-function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus }) {
-  const plain = hand => hand.cardCount >= 3 && !hand.doubled && hand.insuranceBet === 0 && hand.splitCount <= 1;
+function affectedHands(
+  type: DealerErrorType,
+  {
+    hands,
+    dealer,
+    dealerBlackjack,
+    blackjackBonus,
+  }: { hands: readonly ErrorHand[]; dealer: ErrorDealer; dealerBlackjack: boolean; blackjackBonus: boolean },
+): AffectedHand[] {
+  const plain = (hand: ErrorHand) =>
+    hand.cardCount >= 3 && !hand.doubled && hand.insuranceBet === 0 && hand.splitCount <= 1;
   switch (type) {
     // Insurance paid at 1:1 instead of 2:1, on a hand the blackjack beat.
     case DEALER_ERROR.insuranceMispaid:
@@ -207,7 +276,7 @@ function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus })
       if (!dealer.busted || !canClaim21(dealer)) return [];
       return hands
         .filter(h => h.payout > 0 && !h.isNatural && h.total <= 21)
-        .map(h => ({
+        .map((h): AffectedHand => ({
           key: h.key,
           // A hand of 21 would push against the claimed 21; anything less loses.
           shortfall: h.total === 21 ? Math.max(0, h.payout - h.bet) : h.payout,
@@ -240,30 +309,29 @@ function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus })
   }
 }
 
-/**
- * Settles a Foul claim.
- * @param {object|null} pending  The error from pickDealerError, or null.
- * @returns {{caught: boolean, refund: number, message: string, tone: string}}
- */
-export function claimFoul(pending) {
+/** Settles a Foul claim. `pending` is the error from pickDealerError, or null. */
+export function claimFoul(pending: DealerError | null): {
+  caught: boolean;
+  refund: number;
+  message: string;
+  tone: 'error' | 'good';
+} {
   if (!pending) return { caught: false, refund: 0, message: ' No dealer errors ', tone: 'error' };
   return { caught: true, refund: pending.amount, message: ' You caught a dealer error ', tone: 'good' };
 }
 
 /** What to say at the start of the next round when the player did not notice. */
-export function missedMessage(pending) {
-  return `You missed a dealer error, ${pending.label}, costing ${formatAmount(pending.amount)}`;
+export function missedMessage(pending: DealerError): string {
+  return `You missed a dealer error, ${pending.label}, costing ${money(pending.amount)}`;
 }
 
-const formatAmount = amount => `$${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
+const round2 = (n: number): number => Math.round(n * 100) / 100;
 
-const round2 = n => Math.round(n * 100) / 100;
-
-/**
- * Reads the fields pickDealerError needs off an engine hand and its settlement.
- * @param {import('./engine/hand.ts').Hand} hand
- */
-export function errorHandFrom(hand, { sideBetWin = 0, sideBetPaid = 0 } = {}) {
+/** Reads the fields pickDealerError needs off an engine hand and its settlement. */
+export function errorHandFrom(
+  hand: Hand,
+  { sideBetWin = 0, sideBetPaid = 0 }: { sideBetWin?: number; sideBetPaid?: number } = {},
+): ErrorHand {
   return {
     key: hand.key,
     sideBetWin,

@@ -1,16 +1,27 @@
-// @ts-nocheck
 // A play session at the table: the engine plus the things that live across
 // rounds — the count, the bankroll, statistics, and checking the player's
 // decisions against their strategy.
 
 import { BlackjackGame, STATE, ACTION } from './engine/game.ts';
-import { rulesFrom } from './engine/rules.ts';
+import type { AvailableActions, ComputerPlayContext, GameAction, GameState } from './engine/game.ts';
+import type { GameEvent } from './engine/events.ts';
+import type { Hand, HandKey } from './engine/hand.ts';
+import { rulesFrom, MAX_CARDS_PER_HAND } from './engine/rules.ts';
+import type { Rules } from './engine/rules.ts';
 import { Counter } from '../core/counting.ts';
+import type { CounterSettings } from '../core/counting.ts';
+import type { CardId } from '../core/cards.ts';
+import type { Strategy } from '../core/strategy/strategy-tables.ts';
+import type { Services } from '../app/app.ts';
+import type { AppSettings } from '../settings/schema.ts';
+import type { SideBetGame } from '../settings/side-bet-games.ts';
 import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check.ts';
+import type { ExpectedBet, PlayCheck, PlayCounts } from './play-check.ts';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../core/counting.ts';
 import { decodeSideBetGame } from '../settings/side-bet-games.ts';
 import { SIDE_BET_GAME_DEFINITIONS } from '../data/side-bet-games.ts';
 import { sideBetSpots } from './engine/side-bets.ts';
+import type { SideBetSpot } from './engine/side-bets.ts';
 
 const BANKROLL_KEY = 'bankroll';
 const STATS_KEY = 'gameStats';
@@ -40,10 +51,54 @@ const emptyStats = () => ({
   foulDecisions: 0,
   foulErrors: 0,
 });
+export type GameStats = ReturnType<typeof emptyStats>;
+
+/** The table as the session sets it up from the settings. */
+export type SessionTable = ReturnType<GameSession['tableFrom']>;
+
+/** The counts the player is judged at, plus the shoe's state. */
+export interface SessionCounts extends PlayCounts {
+  exactTrueCount: number;
+  betCount: number;
+  aces: number;
+  tens: number;
+  decksRemaining: number;
+}
+
+/** The player's last strategy error, for the Last Error screen. */
+export type PlayError = PlayCheck & { hand: HandKey; cards: CardId[]; upcard: CardId; action: GameAction };
+
+/** A settled round's bankroll figures. */
+interface SettledRound {
+  bankroll: number;
+  highBankroll: number;
+  lowBankroll: number;
+}
 
 export class GameSession {
-  /** @param {object} app  The application services (settings, storage, strategies, sound, errorTallies). */
-  constructor(app) {
+  app: Services;
+  settings: AppSettings;
+  rules: Rules;
+  table: SessionTable;
+  strategy: Strategy;
+  sideBetGame: SideBetGame | null;
+  counter: Counter;
+  stats: GameStats;
+  warnings: string[];
+  lastError: PlayError | null;
+  /** The last settled round's bankroll figures, until the next round starts. */
+  settledRound: SettledRound | null;
+  game: BlackjackGame;
+  /**
+   * Set by the table screen: asked before each dealer draw; false makes the
+   * dealer stand (dealer errors).
+   */
+  beforeDealerDraw?: (dealer: Hand) => boolean;
+  /** Set by the table screen: true lets the dealer wrongly bust this good hand. */
+  onGoodHandBusted?: (hand: Hand) => boolean;
+
+  /** `app` is the application services (settings, storage, strategies, sound, errorTallies). */
+  constructor(app: Services) {
     this.app = app;
     this.settings = app.settings;
     this.rules = rulesFrom(this.settings);
@@ -51,14 +106,15 @@ export class GameSession {
     this.strategy = app.strategies.current(this.settings, this.table.decks);
     this.sideBetGame = this.loadSideBetGame();
     this.counter = new Counter(this.strategy, this.trueCountSettings());
-    this.stats = { ...emptyStats(), ...app.storage.get(STATS_KEY, {}) };
+    // What save() stored.
+    this.stats = { ...emptyStats(), ...(app.storage.get(STATS_KEY, {}) as Partial<GameStats>) };
     this.warnings = [];
     this.lastError = null;
-    /** The last settled round's bankroll figures, until the next round starts. */
     this.settledRound = null;
 
     const startingBankroll = this.settings.get('table.startingBankroll');
-    const saved = app.storage.get(BANKROLL_KEY, null);
+    // What save() stored.
+    const saved = app.storage.get(BANKROLL_KEY, null) as number | null;
     const bankroll = this.settings.get('table.refreshBankrollOnStart') || saved === null ? startingBankroll : saved;
 
     this.game = new BlackjackGame({
@@ -76,7 +132,7 @@ export class GameSession {
   }
 
   /** The decoded side-bet game the player selected, if any. */
-  loadSideBetGame() {
+  loadSideBetGame(): SideBetGame | null {
     const id = this.settings.get('bonuses.game');
     if (!id) return null;
     const definition = SIDE_BET_GAME_DEFINITIONS[id];
@@ -89,16 +145,16 @@ export class GameSession {
   }
 
   /** The side-bet spots the selected game offers, for the betting screen. */
-  sideBetSpots() {
+  sideBetSpots(): SideBetSpot[] {
     return sideBetSpots(this.sideBetGame);
   }
 
   tableFrom() {
-    const get = key => this.settings.get(key);
+    const get: AppSettings['get'] = key => this.settings.get(key);
     const seatCount = get('table.seatCount');
     const computerSeats = get('table.computerSeats')
       .map((isComputer, i) => (isComputer ? i + 1 : null))
-      .filter(seat => seat !== null && seat <= seatCount);
+      .filter((seat): seat is number => seat !== null && seat <= seatCount);
     return {
       decks: get('table.decks'),
       shuffleMode: get('table.shuffleMode'),
@@ -120,12 +176,12 @@ export class GameSession {
         randomizeHand: get('peeking.randomizeHand'),
       },
       limits: get('table.limits'),
-      maxCardsPerHand: 7,
+      maxCardsPerHand: MAX_CARDS_PER_HAND,
     };
   }
 
-  trueCountSettings() {
-    const get = key => this.settings.get(key);
+  trueCountSettings(): CounterSettings {
+    const get: AppSettings['get'] = key => this.settings.get(key);
     return {
       division: DIVISION[get('trueCount.resolution')],
       lastDeck: LAST_DECK[get('trueCount.lastDeckResolution')],
@@ -136,7 +192,7 @@ export class GameSession {
 
   // --- counting -------------------------------------------------------------
 
-  get counts() {
+  get counts(): SessionCounts {
     return {
       runningCount: this.counter.running,
       trueCount: this.counter.trueCount,
@@ -151,7 +207,7 @@ export class GameSession {
   // --- betting --------------------------------------------------------------
 
   /** The bet the player's ramp calls for right now. */
-  suggestedBet() {
+  suggestedBet(): ExpectedBet {
     return expectedBet({
       ramp: this.settings.get('betting.ramp'),
       chipValue: this.settings.get('betting.chipValue'),
@@ -159,11 +215,16 @@ export class GameSession {
     });
   }
 
-  /**
-   * Starts a round. `betPerHand` is wagered on `hands` human seats.
-   * @returns {object[]} engine events
-   */
-  startRound({ betPerHand, hands = 1, sideBets = {} }) {
+  /** Starts a round, returning the engine events. `betPerHand` is wagered on `hands` human seats. */
+  startRound({
+    betPerHand,
+    hands = 1,
+    sideBets = {},
+  }: {
+    betPerHand: number;
+    hands?: number;
+    sideBets?: Record<string, number>;
+  }): GameEvent[] {
     this.warnings = [];
     const humanSeats = this.humanSeats().slice(0, hands);
     if (this.settings.get('betting.warnOnError')) this.checkBetting(betPerHand, humanSeats.length);
@@ -181,14 +242,14 @@ export class GameSession {
     return events;
   }
 
-  humanSeats() {
-    const seats = [];
+  humanSeats(): number[] {
+    const seats: number[] = [];
     for (let seat = 1; seat <= this.table.seatCount; seat++)
       if (!this.table.computerSeats.includes(seat)) seats.push(seat);
     return seats;
   }
 
-  checkBetting(betPerHand, hands) {
+  checkBetting(betPerHand: number, hands: number): void {
     const check = checkBet({
       ramp: this.settings.get('betting.ramp'),
       chipValue: this.settings.get('betting.chipValue'),
@@ -206,12 +267,12 @@ export class GameSession {
   // --- actions --------------------------------------------------------------
 
   /** The actions the player may take, from the engine. */
-  availableActions() {
+  availableActions(): AvailableActions {
     return this.game.availableActions();
   }
 
   /** Plays an action, after checking it against the strategy. */
-  act(action) {
+  act(action: GameAction): GameEvent[] {
     const hand = this.game.activeHand;
     if (hand) this.checkAction(hand, action);
     const events = this.game.act(action);
@@ -219,21 +280,21 @@ export class GameSession {
     return events;
   }
 
-  takeInsurance() {
+  takeInsurance(): GameEvent[] {
     this.checkInsuranceDecision(true);
     const events = this.game.takeInsurance();
     this.afterEngineStep();
     return events;
   }
 
-  declineInsurance() {
+  declineInsurance(): GameEvent[] {
     this.checkInsuranceDecision(false);
     const events = this.game.declineInsurance();
     this.afterEngineStep();
     return events;
   }
 
-  checkAction(hand, action) {
+  checkAction(hand: Hand, action: GameAction): void {
     if (!this.settings.get('strategy.warnOnError')) return;
     const check = checkPlay({
       strategy: this.strategy,
@@ -253,7 +314,7 @@ export class GameSession {
     this.warn(check.message);
   }
 
-  checkInsuranceDecision(took) {
+  checkInsuranceDecision(took: boolean): void {
     if (!this.settings.get('strategy.warnOnError')) return;
     const check = checkInsurance({
       strategy: this.strategy,
@@ -270,14 +331,14 @@ export class GameSession {
     this.warn(check.message);
   }
 
-  warn(message) {
+  warn(message: string): void {
     if (!message) return;
     this.warnings.push(message);
     this.app.sound.play('error');
   }
 
   /** Takes the warnings raised since the last call. */
-  takeWarnings() {
+  takeWarnings(): string[] {
     const warnings = this.warnings;
     this.warnings = [];
     return warnings;
@@ -286,27 +347,27 @@ export class GameSession {
   // --- dealer errors --------------------------------------------------------
 
   /** The player called Foul and there was an error to catch. */
-  recordFoulCaught() {
+  recordFoulCaught(): void {
     this.stats.foulDecisions += 1;
     this.save();
   }
 
   /** The player called Foul with nothing wrong. */
-  recordFalseFoul() {
+  recordFalseFoul(): void {
     this.stats.foulDecisions += 1;
     this.stats.foulErrors += 1;
     this.save();
   }
 
   /** A dealer error went uncalled. */
-  recordMissedDealerError() {
+  recordMissedDealerError(): void {
     this.stats.foulDecisions += 1;
     this.stats.foulErrors += 1;
     this.save();
   }
 
   /** How a computer seat plays: with the player's own strategy. */
-  computerAction(hand, { dealerUpcard }) {
+  computerAction(hand: Hand, { dealerUpcard }: ComputerPlayContext): GameAction {
     // Computer seats never give a hand up, as in the original, so the strategy is
     // asked for its best move with surrender taken away.
     const { action } = correctPlay({
@@ -321,7 +382,7 @@ export class GameSession {
     return action === ACTION.surrender ? ACTION.stand : action;
   }
 
-  afterEngineStep() {
+  afterEngineStep(): void {
     if (this.game.state !== STATE.settled) return;
     // Kept so a later change to this round's bankroll (a dealer error, a Foul
     // refund) replaces what the round recorded rather than going unrecorded.
@@ -335,25 +396,25 @@ export class GameSession {
   }
 
   /** Adds the bankroll to the high, low and average figures. */
-  recordBankroll() {
+  recordBankroll(): void {
     const bankroll = this.game.bankroll;
     this.stats.bankrollSum += bankroll;
     this.stats.highBankroll = Math.max(this.stats.highBankroll, bankroll);
     this.stats.lowBankroll = this.stats.lowBankroll === 0 ? bankroll : Math.min(this.stats.lowBankroll, bankroll);
   }
 
-  nextRound() {
+  nextRound(): GameEvent[] {
     return this.game.nextRound();
   }
 
   /** Puts the bankroll back to its starting amount. */
-  resetBankroll() {
+  resetBankroll(): void {
     this.settledRound = null;
     this.game.bankroll = this.settings.get('table.startingBankroll');
     this.save();
   }
 
-  resetStats() {
+  resetStats(): void {
     this.stats = emptyStats();
     this.save();
   }
@@ -362,13 +423,13 @@ export class GameSession {
    * Shuffles now and returns the events, so the screen can animate the new shoe
    * and tray straight away.
    */
-  shuffleNow() {
+  shuffleNow(): GameEvent[] {
     this.game.shuffleAndBurn();
     return this.game.takeEvents();
   }
 
   /** Adjusts the bankroll (dealer-error refunds, mid-round returns). */
-  adjustBankroll(delta) {
+  adjustBankroll(delta: number): void {
     this.game.bankroll += delta;
     const round = this.settledRound;
     if (round) {
@@ -381,15 +442,15 @@ export class GameSession {
     this.save();
   }
 
-  save() {
+  save(): void {
     this.app.storage.set(BANKROLL_KEY, this.game.bankroll);
     this.app.storage.set(STATS_KEY, this.stats);
   }
 
   /** Accuracy percentages for the stats screen. */
-  accuracy() {
+  accuracy(): { play: number; bet: number; foul: number } {
     // Plays round, bets truncate.
-    const rate = (errors, total) => (total === 0 ? 100 : 100 * (1 - errors / total));
+    const rate = (errors: number, total: number) => (total === 0 ? 100 : 100 * (1 - errors / total));
     return {
       play: Math.round(rate(this.stats.playErrors, this.stats.playDecisions)),
       bet: Math.floor(rate(this.stats.betErrors, this.stats.betDecisions)),
@@ -397,11 +458,11 @@ export class GameSession {
     };
   }
 
-  get bankroll() {
+  get bankroll(): number {
     return this.game.bankroll;
   }
 
-  get state() {
+  get state(): GameState {
     return this.game.state;
   }
 }

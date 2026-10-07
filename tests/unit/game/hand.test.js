@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Hand } from '../../../src/game/engine/hand.ts';
+import { Hand, handKey, parseHandKey } from '../../../src/game/engine/hand.ts';
 import { cardId } from '../../../src/core/cards.ts';
 
 const SPADES = 0,
@@ -87,5 +87,14 @@ describe('bonus shapes', () => {
     expect(handOf([card(1), card(11, HEARTS)]).isHeartsAceJack).toBe(false);
     expect(handOf([card(1, HEARTS), card(12, HEARTS)]).isHeartsAceJack).toBe(false);
     expect(handOf([card(1, HEARTS), card(11, HEARTS), card(2)]).isHeartsAceJack).toBe(false);
+  });
+});
+
+describe('hand keys', () => {
+  it('name a seat and index, and read back', () => {
+    expect(handKey(3, 1)).toBe('3-1');
+    expect(new Hand({ seat: 2, index: 1 }).key).toBe(handKey(2, 1));
+    expect(parseHandKey('3-1')).toEqual({ seat: 3, index: 1 });
+    expect(parseHandKey(handKey(0, 0))).toEqual({ seat: 0, index: 0 });
   });
 });

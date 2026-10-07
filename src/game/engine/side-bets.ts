@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Evaluates the bonus and side-bet rules of a game definition against a hand.
 //
 // A definition (see settings/side-bet-games.js) holds 20 rules. Rules below
@@ -7,6 +6,30 @@
 // sets is satisfied; the first match pays, unless the game accumulates.
 
 import { rankOf, suitOf, valueOf, handTotals } from '../../core/cards.ts';
+import type { CardId } from '../../core/cards.ts';
+import type { SideBetGame, SideBetRule } from '../../settings/side-bet-games.ts';
+
+/** What a rule is judged against. */
+export interface SideBetContext {
+  playerHandCards: readonly CardId[];
+  dealerHandCards: readonly CardId[];
+  won: boolean;
+  doubled: boolean;
+  split: boolean;
+  firstTwoCardsOnly?: boolean;
+  trueCount?: number;
+  playerTotal?: number;
+  dealerTotal?: number;
+  dealerBlackjack?: boolean;
+}
+
+/** A side-bet spot on the table. */
+export interface SideBetSpot {
+  ruleIndex: number;
+  id: string;
+  maxMultipleOfBet: number;
+  maxAmount: number;
+}
 
 /**
  * Card-pattern codes in `rule.mixMatch[2]`.
@@ -30,7 +53,7 @@ const PATTERN = {
    * falling through its pattern tests when `code - 1` was 7.
    */
   selection: 8,
-};
+} as const;
 
 /** Rank used in `exactCards` to mean "any ten-valued card". */
 const ANY_TEN = 14;
@@ -38,7 +61,7 @@ const ANY_TEN = 14;
 const BLACK_SUITS = [0, 1];
 
 /** The player cards a rule looks at. */
-function playerCards(cards, code) {
+function playerCards(cards: readonly CardId[], code: number): readonly CardId[] {
   switch (code) {
     case 1:
       return cards.slice(0, 1);
@@ -54,7 +77,7 @@ function playerCards(cards, code) {
 }
 
 /** The dealer cards a rule looks at. */
-function dealerCards(cards, code) {
+function dealerCards(cards: readonly CardId[], code: number): readonly CardId[] {
   switch (code) {
     case 1:
       return cards.slice(0, 1);
@@ -70,10 +93,10 @@ function dealerCards(cards, code) {
 }
 
 /** Ranks in ascending order, treating an ace as both low and high for straights. */
-function straightMatches(cards) {
+function straightMatches(cards: readonly CardId[]): boolean {
   if (cards.length < 3) return false;
   const ranks = cards.map(rankOf).sort((a, b) => a - b);
-  const consecutive = list => list.every((r, i) => i === 0 || r === list[i - 1] + 1);
+  const consecutive = (list: number[]) => list.every((r, i) => i === 0 || r === list[i - 1] + 1);
   if (consecutive(ranks)) return true;
   // An ace also runs high, so A-K-Q counts.
   if (ranks[0] === 1) {
@@ -83,11 +106,11 @@ function straightMatches(cards) {
   return false;
 }
 
-const allSameSuit = cards => cards.length > 0 && cards.every(c => suitOf(c) === suitOf(cards[0]));
-const allSameRank = cards => cards.length > 0 && cards.every(c => rankOf(c) === rankOf(cards[0]));
+const allSameSuit = (cards: readonly CardId[]) => cards.length > 0 && cards.every(c => suitOf(c) === suitOf(cards[0]));
+const allSameRank = (cards: readonly CardId[]) => cards.length > 0 && cards.every(c => rankOf(c) === rankOf(cards[0]));
 
 /** Whether two of the cards make a pair, matching or avoiding equal suits. */
-function hasPair(cards, { suited }) {
+function hasPair(cards: readonly CardId[], { suited }: { suited: boolean }): boolean {
   for (let i = 0; i < cards.length; i++) {
     for (let j = i + 1; j < cards.length; j++) {
       if (rankOf(cards[i]) !== rankOf(cards[j])) continue;
@@ -98,7 +121,7 @@ function hasPair(cards, { suited }) {
 }
 
 /** Whether the selected cards show the rule's pattern. */
-function patternMatches(pattern, cards) {
+function patternMatches(pattern: number, cards: readonly CardId[]): boolean {
   switch (pattern) {
     case PATTERN.none:
       return true;
@@ -122,14 +145,14 @@ function patternMatches(pattern, cards) {
 }
 
 /** Card-count condition: 1..6 means exactly that many; 7 and up means "more than". */
-function countMatches(code, count) {
+function countMatches(code: number, count: number): boolean {
   if (!code) return true;
   if (code <= 6) return count === code + 1;
   return count > code - 5;
 }
 
 /** Total condition: an exact total, or a lower or upper bound. */
-function totalMatches(code, total) {
+function totalMatches(code: number, total: number): boolean {
   if (!code) return true;
   if (code <= 29) return total === code + 1;
   if (code <= 53) return total > code - 28;
@@ -137,7 +160,7 @@ function totalMatches(code, total) {
 }
 
 /** Suit condition, including colour and "identical cards" tests. */
-function suitMatches(code, cards) {
+function suitMatches(code: number, cards: readonly CardId[]): boolean {
   if (!code || cards.length === 0) return true;
   const suits = cards.map(suitOf);
   switch (code) {
@@ -159,7 +182,7 @@ function suitMatches(code, cards) {
 }
 
 /** Whether the cards contain each required rank (0 means "no requirement"). */
-function exactRanksMatch(required, cards) {
+function exactRanksMatch(required: readonly number[], cards: readonly CardId[]): boolean {
   const available = cards.map(rankOf);
   for (const wanted of required) {
     if (!wanted) continue;
@@ -175,7 +198,7 @@ function exactRanksMatch(required, cards) {
  * card id modulo 13 here rather than its rank, so a king (13) can never be
  * asked for by name; `ANY_TEN` means any ten-valued card.
  */
-function namedCardMatches(wanted, card) {
+function namedCardMatches(wanted: number, card: CardId | undefined): boolean {
   if (!wanted) return true;
   if (card === undefined) return false;
   if (wanted === ANY_TEN) return valueOf(card) === 10;
@@ -183,18 +206,14 @@ function namedCardMatches(wanted, card) {
 }
 
 /** Totals of a set of cards, with aces counted as 1 or 11 per the rule. */
-function totalOf(cards, acesCountOne) {
+function totalOf(cards: readonly CardId[], acesCountOne: boolean): number {
   const values = cards.map(valueOf);
   if (acesCountOne) return values.reduce((a, b) => a + b, 0);
   return handTotals(values).total;
 }
 
-/**
- * Whether one rule's card conditions match.
- * @param {object} rule
- * @param {object} context {playerHandCards, dealerHandCards, won, doubled, split, firstTwoCardsOnly}
- */
-export function ruleMatches(rule, context) {
+/** Whether one rule's card conditions match. */
+export function ruleMatches(rule: SideBetRule | undefined, context: SideBetContext): boolean {
   if (!rule?.enabled) return false;
   const { playerHandCards, dealerHandCards, won, doubled, split, firstTwoCardsOnly = false } = context;
   if (rule.winRequired && !won) return false;
@@ -234,7 +253,17 @@ export function ruleMatches(rule, context) {
  * Normally the whole hand; the cards the rule picked out where the pattern code
  * says so; the first two only where the game says so.
  */
-function playerConditionCards({ pattern, playerHandCards, selected, firstTwoCardsOnly }) {
+function playerConditionCards({
+  pattern,
+  playerHandCards,
+  selected,
+  firstTwoCardsOnly,
+}: {
+  pattern: number;
+  playerHandCards: readonly CardId[];
+  selected: readonly CardId[];
+  firstTwoCardsOnly: boolean;
+}): readonly CardId[] {
   if (pattern === PATTERN.selection) return selected;
   if (firstTwoCardsOnly) return playerHandCards.slice(0, 2);
   return playerHandCards;
@@ -244,7 +273,7 @@ function playerConditionCards({ pattern, playerHandCards, selected, firstTwoCard
  * Whether a rule is allowed to run at the current count. Only side-bet rules
  * other than the one the player actually bet on are gated this way.
  */
-export function allowedAtCount(rule, trueCount) {
+export function allowedAtCount(rule: SideBetRule, trueCount: number): boolean {
   const threshold = rule.trueCountThreshold;
   if (threshold <= -99 || threshold >= 99) return true;
   return rule.aboveThreshold ? threshold > trueCount : threshold <= trueCount;
@@ -253,14 +282,20 @@ export function allowedAtCount(rule, trueCount) {
 /**
  * Evaluates the side bet on one spot. Rules from the game's side-bet index on
  * are tried in order and the first match pays, unless the game accumulates.
- * @param {object} o
- * @param {import('../../settings/side-bet-games.ts').SideBetGame} o.game
- * @param {number} o.ruleIndex   The spot's rule index, from sideBetSpots().
- * @param {number} o.stake
- * @param {object} o.context     As for ruleMatches, plus `trueCount`.
- * @returns {{payout: number, multiplier: number, name: string}|null} null when the side bet loses.
+ * Null when the side bet loses.
  */
-export function evaluateSideBet({ game, ruleIndex, stake, context }) {
+export function evaluateSideBet({
+  game,
+  ruleIndex,
+  stake,
+  context,
+}: {
+  game: SideBetGame;
+  /** The spot's rule index, from sideBetSpots(). */
+  ruleIndex: number;
+  stake: number;
+  context: SideBetContext;
+}): { payout: number; multiplier: number; name: string } | null {
   if (stake <= 0) return null;
   const start = Math.max(0, game.forcedSideBet - 1);
   // A game with two separate side bets (Over/Under, Red/Black) pays only the
@@ -284,15 +319,16 @@ export function evaluateSideBet({ game, ruleIndex, stake, context }) {
   return { payout: total, multiplier: payout / stake, name: game.name };
 }
 
-/**
- * Bonus paid on the main hand's own bet (the Spanish 21 rules).
- * @param {object} o
- * @param {object} o.game
- * @param {number} o.bet
- * @param {object} o.context  As for ruleMatches, plus `playerTotal`, `dealerTotal` and `dealerBlackjack`.
- * @returns {{payout: number, multiplier: number}|null}
- */
-export function evaluateHandBonus({ game, bet, context }) {
+/** Bonus paid on the main hand's own bet (the Spanish 21 rules). */
+export function evaluateHandBonus({
+  game,
+  bet,
+  context,
+}: {
+  game: SideBetGame;
+  bet: number;
+  context: SideBetContext;
+}): { payout: number; multiplier: number } | null {
   const sideBetStart = Math.max(0, game.forcedSideBet - 1);
   /** Payouts are in tenths of the bet. */
   let tenths = 0;
@@ -315,7 +351,13 @@ export function evaluateHandBonus({ game, bet, context }) {
  * "A player 21 always wins": pays even money (double after doubling) when the
  * hand would not otherwise have won, and nothing when it already won.
  */
-function twentyOneAlwaysWinsTenths({ won, doubled, dealerTotal = 0, playerTotal = 0, dealerBlackjack = false }) {
+function twentyOneAlwaysWinsTenths({
+  won,
+  doubled,
+  dealerTotal = 0,
+  playerTotal = 0,
+  dealerBlackjack = false,
+}: SideBetContext): number {
   if (!won || dealerBlackjack) return doubled ? 20 : 10;
   if (dealerTotal > 21 || playerTotal > dealerTotal) return 0;
   return doubled ? 20 : 10;
@@ -324,12 +366,11 @@ function twentyOneAlwaysWinsTenths({ won, doubled, dealerTotal = 0, playerTotal 
 /**
  * The side-bet spots a game offers: the enabled side-bet rules, each with the
  * label shown on the table.
- * @returns {{ruleIndex: number, id: string, maxMultipleOfBet: number, maxAmount: number}[]}
  */
-export function sideBetSpots(game) {
+export function sideBetSpots(game: SideBetGame | null): SideBetSpot[] {
   if (!game) return [];
   const start = Math.max(0, game.forcedSideBet - 1);
-  const spots = [];
+  const spots: SideBetSpot[] = [];
   for (let i = start; i < game.rules.length; i++) {
     const rule = game.rules[i];
     if (!rule.enabled) continue;

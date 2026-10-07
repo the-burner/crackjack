@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The betting overlay shown between rounds: a dark
 // panel over the felt with one tile per bet the player's ramp allows, and the
 // side buttons for side bets, the bet editor, shuffling, the bankroll, a Foul
@@ -8,38 +7,51 @@ import { h } from '../../ui/dom.ts';
 import { button } from '../../ui/components.ts';
 import { cssVar } from '../../ui/theme.ts';
 import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, TILE_GAP, COLUMNS, ROWS } from './bet-grid.ts';
+import type { BetCell, GridGeometry } from './bet-grid.ts';
 import { setupCanvas } from '../../ui/card-sprites.ts';
+import { money } from '../../core/money.ts';
+import type { Ramp } from '../../settings/bet-ramp.ts';
 
 const MIN_TILE_HEIGHT = 38;
 const MAX_TILE_HEIGHT = 62;
 
-/**
- * @param {object} handlers
- * @param {(bet: {amount: number, hands: number, label: string}) => void} handlers.onBet
- * @param {() => void} handlers.onSideBet          Open the side-bet picker.
- * @param {() => boolean} handlers.sideBetsAvailable
- * @param {() => void} [handlers.onNoSideBet]      No side bet is configured.
- * @param {() => void} handlers.onCustomize
- * @param {() => void} handlers.onShuffle
- * @param {() => void} handlers.onResetBank
- * @param {() => void} handlers.onFoul
- * @param {() => void} handlers.onLastError
- */
-export function createBetOverlay(handlers) {
-  let source = { ramp: { minCount: 0, rows: [{ chips: 1, hands: 1 }] }, chipValue: 1 };
-  let cells = [];
-  let previousLabel = null;
+export interface BetOverlayHandlers {
+  onBet: (bet: BetCell) => void;
+  /** Open the side-bet picker. */
+  onSideBet: () => void;
+  sideBetsAvailable: () => boolean;
+  /** No side bet is configured. */
+  onNoSideBet?: () => void;
+  onCustomize: () => void;
+  onShuffle: () => void;
+  onResetBank: () => void;
+  onFoul: () => void;
+  onLastError: () => void;
+}
+
+/** Where the tiles come from: a betting.ramp value and the chip value. */
+interface BetSource {
+  ramp: Ramp;
+  chipValue: number;
+}
+
+export type BetOverlay = ReturnType<typeof createBetOverlay>;
+
+export function createBetOverlay(handlers: BetOverlayHandlers) {
+  let source: BetSource = { ramp: { minCount: 0, rows: [{ chips: 1, hands: 1 }] }, chipValue: 1 };
+  let cells: BetCell[] = [];
+  let previousLabel: string | null = null;
   let heading = 'Place your bets.';
   let foulOffered = false;
   /** Label of the side bet chosen for the next round, if any. */
   let sideBetLabel = '';
   /** A one-off message shown instead of the heading. */
   let message = '';
-  let geometry = null;
+  let geometry: GridGeometry | null = null;
 
   const title = h('div', { class: 'bet-overlay__title' });
   const canvas = h('canvas', { class: 'bet-overlay__grid' });
-  const tile = (label, icon, onClick, action) =>
+  const tile = (label: string, icon: string, onClick: () => void, action: string) =>
     button(label, { variant: 'nav', icon, onClick, 'data-action': action });
   const foulButton = tile('Foul', 'minus', handlers.onFoul, 'foul');
   const buttons = h(
@@ -100,6 +112,7 @@ export function createBetOverlay(handlers) {
   }
 
   canvas.addEventListener('click', event => {
+    if (!geometry) return;
     const box = canvas.getBoundingClientRect();
     const index = cellIndexAt({ x: event.clientX - box.left - offsetX, y: event.clientY - box.top }, geometry);
     if (index < 0 || index >= cells.length) return;
@@ -115,14 +128,17 @@ export function createBetOverlay(handlers) {
 
     /**
      * Shows the overlay between rounds.
-     * @param {object} o
-     * @param {object} o.ramp             A betting.ramp value.
-     * @param {number} o.chipValue
-     * @param {string|null} [o.previous]  Label of the last bet, highlighted.
-     * @param {number} [o.change]         Won or lost since the last round.
-     * @param {boolean} [o.foul]          Whether a Foul claim is possible.
+     * @param previous  Label of the last bet, highlighted.
+     * @param change  Won or lost since the last round.
+     * @param foul  Whether a Foul claim is possible.
      */
-    show({ ramp, chipValue, previous = null, change = 0, foul = false }) {
+    show({
+      ramp,
+      chipValue,
+      previous = null,
+      change = 0,
+      foul = false,
+    }: BetSource & { previous?: string | null; change?: number; foul?: boolean }) {
       source = { ramp, chipValue };
       cells = betCells(source);
       previousLabel = previous;
@@ -136,20 +152,20 @@ export function createBetOverlay(handlers) {
     },
 
     /** Rebuilds the tiles from a changed ramp or chip value. */
-    setSource({ ramp, chipValue }) {
+    setSource({ ramp, chipValue }: BetSource) {
       source = { ramp, chipValue };
       cells = betCells(source);
       if (!el.hidden) draw();
     },
 
     /** Shows a message in place of the heading (a rejected bet, a Foul result). */
-    setMessage(text) {
+    setMessage(text: string) {
       message = text;
       title.textContent = titleText();
     },
 
     /** Notes the side bet waiting for the next round, so redraws keep showing it. */
-    setSideBet(label) {
+    setSideBet(label: string) {
       sideBetLabel = label;
       message = '';
       title.textContent = titleText();
@@ -165,5 +181,3 @@ export function createBetOverlay(handlers) {
     },
   };
 }
-
-const money = amount => `$${Number.isInteger(amount) ? amount.toLocaleString('en-US') : amount.toFixed(2)}`;

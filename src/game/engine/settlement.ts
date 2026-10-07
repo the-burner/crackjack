@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Settling a hand against the dealer: what it pays and what to call the result.
 //
 // Money model: a hand's stake (bet + double + insurance + side bets) leaves the
@@ -7,6 +6,8 @@
 // returns nothing.
 
 import { blackjackPremium, roundPremium, charlieWin, isSuited678, sevensKind } from './rules.ts';
+import type { Rules } from './rules.ts';
+import type { Hand } from './hand.ts';
 
 export const RESULT = {
   win: 'Win',
@@ -16,28 +17,33 @@ export const RESULT = {
   blackjack: '21',
   surrender: 'Surrender',
   bonus: 'Bonus',
-};
+} as const;
+export type Result = (typeof RESULT)[keyof typeof RESULT];
 
-/**
- * @typedef {object} Settlement
- * @property {number} payout       Amount returned to the bankroll.
- * @property {string} result       A RESULT value, shown next to the hand.
- * @property {number} net          payout minus the amount staked on this hand.
- */
+export interface Settlement {
+  /** Amount returned to the bankroll. */
+  payout: number;
+  /** Shown next to the hand. */
+  result: Result;
+  /** payout minus the amount staked on this hand. */
+  net: number;
+}
 
-/**
- * Settles one player hand.
- * @param {object} o
- * @param {object} o.rules
- * @param {import('./hand.ts').Hand} o.hand
- * @param {import('./hand.ts').Hand} o.dealer
- * @param {boolean} o.dealerBlackjack
- * @returns {Settlement}
- */
-export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
+/** Settles one player hand. */
+export function settleHand({
+  rules,
+  hand,
+  dealer,
+  dealerBlackjack,
+}: {
+  rules: Rules;
+  hand: Hand;
+  dealer: Hand;
+  dealerBlackjack: boolean;
+}): Settlement {
   const stake = hand.bet + hand.doubleBet + hand.insuranceBet;
   const insurancePayout = settleInsurance({ hand, dealerBlackjack });
-  const finish = (payout, result) => ({
+  const finish = (payout: number, result: Result): Settlement => ({
     payout: payout + insurancePayout,
     result,
     net: payout + insurancePayout - stake,
@@ -94,16 +100,17 @@ export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
 }
 
 /** Insurance pays 2:1 when the dealer has blackjack; otherwise the stake is lost. */
-function settleInsurance({ hand, dealerBlackjack }) {
+function settleInsurance({ hand, dealerBlackjack }: { hand: Hand; dealerBlackjack: boolean }): number {
   if (!hand.insuranceBet) return 0;
   return dealerBlackjack ? hand.insuranceBet * 3 : 0;
 }
 
-/**
- * A bonus that wins on the player's cards alone.
- * @returns {{multiplier: number, name: string}|null} multiplier is the profit as a multiple of the wager.
- */
-export function handBonus(rules, hand, { dealerTotal = 0 } = {}) {
+/** A bonus that wins on the player's cards alone; multiplier is the profit as a multiple of the wager. */
+export function handBonus(
+  rules: Rules,
+  hand: Hand,
+  { dealerTotal = 0 }: { dealerTotal?: number } = {},
+): { multiplier: number; name: string } | null {
   const b = rules.bonuses;
   const n = hand.cardCount;
   const twentyOne = hand.total === 21 && !hand.busted();
