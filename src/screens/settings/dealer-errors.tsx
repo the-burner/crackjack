@@ -2,14 +2,14 @@
 // non-random dealing bias.
 
 import { reactScreen } from '@/react/screen';
-import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
-import type { SettingCheck } from '@/react/settings-form';
+import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import { SettingSwitches } from '@/components/settings-controls';
+import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
 
 const NOTE = 'The dealer can be made to deal cards non-randomly or make errors. Catching errors is important.';
 
-const BIASES: readonly SelectOption<SettingValues['dealerErrors.dealingBias']>[] = [
+const BIASES: readonly Option<SettingValues['dealerErrors.dealingBias']>[] = [
   { value: 'none', label: 'No bias' },
   { value: 'positiveCounts', label: 'Positive counts' },
   { value: 'negativeCounts', label: 'Negative counts' },
@@ -33,13 +33,13 @@ export function DealerErrors() {
   return (
     <SettingsScreen title="Errs/Biases" help="settings.dealerErrors" note={NOTE}>
       <SettingsGroup>
-        <SettingSelect setting="dealerErrors.dealingBias" options={BIASES} />
+        <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingChecks items={ERRORS} />
+        <SettingSwitches items={ERRORS} />
       </SettingsGroup>
     </SettingsScreen>
   );
 }
 
-export const dealerErrorsScreen = reactScreen(DealerErrors, { className: 'settings' });
+export const dealerErrorsScreen = reactScreen(DealerErrors);

@@ -88,8 +88,10 @@ function SettingSwitch({ item, disabled }: { item: SettingCheck; disabled?: bool
   const checked = item.value === undefined ? Boolean(settings.get(item.key)) : settings.get(item.key) === item.value;
   return (
     <SettingRow label={item.label} htmlFor={id}>
+      {/* Named directly: Base UI's switch does not take its name from the label. */}
       <Switch
         id={id}
+        aria-label={item.label}
         checked={checked}
         disabled={disabled}
         onCheckedChange={on =>
@@ -234,7 +236,7 @@ export function SettingSlider({ label, setting }: { label: string; setting: Numb
           aria-label={label}
           min={min}
           max={max}
-          key={value}
+          key={`box-${value}`}
           defaultValue={value}
           onBlur={event => {
             const n = Math.round(Number(event.currentTarget.value));
@@ -248,8 +250,9 @@ export function SettingSlider({ label, setting }: { label: string; setting: Numb
         />
         {/* Moves freely while dragged; the stored value is written on release. */}
         <Slider
-          key={value}
+          key={`slider-${value}`}
           aria-label={label}
+          thumbLabel={label}
           min={min}
           max={max}
           defaultValue={[value]}

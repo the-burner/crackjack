@@ -6,7 +6,21 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { seedRandom, visibleOneOf } from './support/app';
 import type { SavedSettings } from './support/app';
-import { tapBetTile } from './support/table';
+import {
+  bankroll,
+  barButton,
+  betGrid as grid,
+  betOverlay as overlay,
+  betTitle,
+  dialog,
+  felt,
+  overlayButton,
+  playButton as action,
+  tableCanvas,
+  tableScreen,
+  tableToast,
+  tapBetTile,
+} from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
@@ -51,14 +65,14 @@ async function openTable(
   }, settings);
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
-  await expect(page.locator('.bet-overlay')).toBeVisible();
-  return page.locator('.game-table');
+  await expect(overlay(page)).toBeVisible();
+  return tableScreen(page);
 }
 
-const bankroll = (page: Page) => page.locator('.table__bankroll');
-const overlay = (page: Page) => page.locator('.bet-overlay');
-const grid = (page: Page) => page.locator('.bet-overlay__grid');
-const action = (page: Page, name: string) => page.locator(`.table__actions [data-action="${name}"]`);
+const statsRows = (page: Page) => page.locator('[data-screen="game.stats"]').getByRole('row');
+const yes = (page: Page) => dialog(page).getByRole('button', { name: 'Yes' });
+const chips = (page: Page) => page.locator('[data-screen="game.betSelect"]').getByRole('group', { name: 'Chips' });
+const chip = (page: Page, n: number) => chips(page).getByRole('button', { name: String(n), exact: true });
 const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender'];
 
 /**
@@ -66,14 +80,14 @@ const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender'];
  * reports which actions the table offered along the way.
  */
 async function playRound(page: Page, { prefer = ['stand'], seen = new Set<string>() } = {}) {
-  const dialog = page.locator('.dialog-overlay');
-  const insure = page.locator('[data-action="pass"]');
+  const asked = dialog(page);
+  const insure = action(page, 'pass');
   for (let step = 0; step < 60; step++) {
     // Until the table wants something: the cards may still be coming.
-    await expect(visibleOneOf(dialog, overlay(page), insure, ...ACTIONS.map(name => action(page, name)))).toBeVisible();
+    await expect(visibleOneOf(asked, overlay(page), insure, ...ACTIONS.map(name => action(page, name)))).toBeVisible();
     // The dealer queries an obviously bad play once; say OK and press again.
-    if (await dialog.isVisible()) {
-      await dialog.locator('button').first().click();
+    if (await asked.isVisible()) {
+      await asked.getByRole('button').first().click();
       continue;
     }
     if (await overlay(page).isVisible()) return seen;
@@ -104,7 +118,7 @@ test.describe('the table', () => {
     await expect(bankroll(page)).toHaveText('$995.00');
     await playRound(page);
     await expect(overlay(page)).toBeVisible();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('Place your bets.');
+    await expect(betTitle(page)).toContainText('Place your bets.');
   });
 
   test('plays several rounds, hitting, standing, doubling and splitting', async ({ page }) => {
@@ -132,13 +146,13 @@ test.describe('the table', () => {
       await expect(action(page, name)).toBeHidden();
     }
     // A swipe is dropped as well: no "Cannot hit" complaint, and no card dealt.
-    const box = (await page.locator('.table__felt').boundingBox())!;
+    const box = (await felt(page).boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 120, { steps: 4 });
     await page.mouse.up();
     // The table may be showing a dealing message, but never a refused action.
-    await expect(page.locator('.toast')).toHaveCount(0);
+    await expect(tableToast(page)).toHaveCount(0);
     // Once the timeline finishes, the player is asked to act for the first time.
     await expect(action(page, 'stand')).toBeVisible({ timeout: 30000 });
     await expect(bankroll(page)).toHaveText('$995.00');
@@ -146,7 +160,7 @@ test.describe('the table', () => {
 
   test('renders the table in portrait and in landscape', async ({ page }) => {
     await openTable(page, { size: PORTRAIT });
-    const canvas = page.locator('.table__canvas');
+    const canvas = tableCanvas(page);
     const portrait = (await canvas.boundingBox())!;
     expect(portrait.height).toBeGreaterThan(portrait.width);
 
@@ -165,64 +179,64 @@ test.describe('the table', () => {
     await tapBetTile(page);
     await playRound(page);
 
-    await page.locator('[data-action="stats"]').click();
-    const rows = page.locator('.stats-table tr');
+    await barButton(page, 'Stats').click();
+    const rows = statsRows(page);
     await expect(rows.filter({ hasText: 'Rounds Played' })).toContainText('1');
     await expect(rows.filter({ hasText: 'Total Initial Bets' })).toContainText('$5');
     await expect(rows.filter({ hasText: 'Bankroll High' })).toBeVisible();
     await expect(rows.filter({ hasText: 'Play Correct' })).toContainText('%');
 
-    await page.locator('[data-action="reset-stats"]').click();
-    await page.locator('.dialog__buttons button', { hasText: 'Yes' }).click();
+    await page.getByRole('button', { name: 'Reset Stats' }).click();
+    await yes(page).click();
     await expect(rows.filter({ hasText: 'Rounds Played' })).toContainText('0');
 
-    await page.locator('[data-screen="game.stats"] [data-action="back"]').click();
+    await page.locator('[data-screen="game.stats"]').getByRole('button', { name: 'Back' }).click();
     await expect(overlay(page)).toBeVisible();
   });
 
   test('turns the in-table readouts on from the statistics screen', async ({ page }) => {
     await openTable(page);
-    await expect(page.locator('.table__counts')).toHaveText('');
-    await page.locator('[data-action="stats"]').click();
-    await page.locator('.check', { hasText: 'Display Running Count' }).click();
-    await page.locator('[data-screen="game.stats"] [data-action="back"]').click();
+    await expect(page.getByTestId('counts')).toHaveText('');
+    await barButton(page, 'Stats').click();
+    await page.getByRole('switch', { name: 'Display Running Count' }).click();
+    await page.locator('[data-screen="game.stats"]').getByRole('button', { name: 'Back' }).click();
     await tapBetTile(page);
     await playRound(page);
-    await expect(page.locator('.table__counts')).toContainText('RC:');
+    await expect(page.getByTestId('counts')).toContainText('RC:');
   });
 
   test('offers the betting overlay buttons, and Foul only when the dealer makes mistakes', async ({ page }) => {
     await openTable(page);
-    for (const name of ['side-bet', 'reset-bank', 'shuffle', 'customize', 'last-error']) {
-      await expect(overlay(page).locator(`[data-action="${name}"]`)).toBeVisible();
+    for (const name of ['Side Bet', 'Reset Bank', 'Shuffle', 'Customize', 'Last Error']) {
+      await expect(overlayButton(page, name)).toBeVisible();
     }
-    await expect(overlay(page).locator('[data-action="foul"]')).toBeHidden();
+    await expect(overlayButton(page, 'Foul')).toBeHidden();
   });
 
   test('offers a Foul claim when the dealer makes mistakes', async ({ page }) => {
     await openTable(page, { settings: { 'dealerErrors.loseOnPush': true } });
-    const foul = overlay(page).locator('[data-action="foul"]');
+    const foul = overlayButton(page, 'Foul');
     await expect(foul).toBeVisible();
     await foul.click();
-    await expect(overlay(page).locator('.bet-overlay__title')).toHaveText('No dealer errors');
+    await expect(betTitle(page)).toHaveText('No dealer errors');
   });
 
   test('shuffles on request and resets the bankroll', async ({ page }) => {
     await openTable(page);
-    await overlay(page).locator('[data-action="shuffle"]').click();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('Shuffled');
+    await overlayButton(page, 'Shuffle').click();
+    await expect(betTitle(page)).toContainText('Shuffled');
 
     await tapBetTile(page);
     await playRound(page);
-    await overlay(page).locator('[data-action="reset-bank"]').click();
-    await page.locator('.dialog__buttons button', { hasText: 'Yes' }).click();
+    await overlayButton(page, 'Reset Bank').click();
+    await yes(page).click();
     await expect(bankroll(page)).toHaveText('$1,000.00');
   });
 
   test('says there is no error to review before one has been made', async ({ page }) => {
     await openTable(page);
-    await page.locator('[data-action="error"]').click();
-    await expect(page.locator('.toast')).toHaveText('No play errors yet');
+    await barButton(page, 'Error').click();
+    await expect(tableToast(page)).toHaveText('No play errors yet');
   });
 
   test('hands the chips back when the player leaves in the middle of a round', async ({ page }) => {
@@ -231,7 +245,7 @@ test.describe('the table', () => {
     // until the player has a hand in progress.
     let inProgress = false;
     const stand = action(page, 'stand');
-    const pass = page.locator('[data-action="pass"]');
+    const pass = action(page, 'pass');
     for (let round = 0; round < 10 && !inProgress; round++) {
       await tapBetTile(page);
       for (let wait = 0; wait < 100; wait++) {
@@ -251,7 +265,7 @@ test.describe('the table', () => {
     const money = (n: number) =>
       `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     await expect(bankroll(page)).toHaveText(money(before - 5));
-    await page.locator('.table__bar [data-action="back"]').click();
+    await barButton(page, 'Back').click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
     const saved = await page.evaluate(
       () => JSON.parse(localStorage.getItem('cj.bankroll') ?? 'null')?.state.value ?? null,
@@ -264,7 +278,7 @@ test.describe('the table', () => {
     await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 } });
     await tapBetTile(page);
     const hit = action(page, 'hit');
-    const result = page.locator('.table__chip .table__result');
+    const result = page.getByTestId('seat-chip').getByTestId('seat-result');
     await expect(hit).toBeVisible({ timeout: 30000 });
     // Hit until the hand is over. A hit hides the buttons until its card has landed.
     for (let i = 0; i < 12 && (await hit.isVisible()); i++) {
@@ -288,31 +302,29 @@ test.describe('the table', () => {
       },
     });
     await tapBetTile(page);
-    const toast = page.locator('.toast');
+    const toast = tableToast(page);
     await expect(toast).toBeVisible();
     // Still dealing: the player has not been asked to act yet.
     await expect(action(page, 'stand')).toBeHidden();
-    await expect(toast).toHaveClass(/toast--error/);
+    await expect(toast).toHaveAttribute('data-type', 'error');
     const box = await toast.boundingBox();
     expect(box!.y).toBeLessThan(page.viewportSize()!.height / 2);
     // The table's own messages do not replace it while it is up.
     await page.clock.runFor(600);
-    await expect(toast).toHaveClass(/toast--error/);
+    await expect(toast).toHaveAttribute('data-type', 'error');
   });
 
   test('plays with the action buttons hidden, using swipes', async ({ page }) => {
     await openTable(page, { settings: { 'display.hideActionButtons': undefined } });
     await tapBetTile(page);
     await expect(action(page, 'stand')).toBeHidden();
-    const felt = page.locator('.table__felt');
-    const box = (await felt.boundingBox())!;
+    const box = (await felt(page).boundingBox())!;
     const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     // Swipe left to stand until the bets are asked for again. A swipe while the
     // cards are moving is dropped, so it is tried again until one lands.
     await expect(async () => {
       if (await overlay(page).isVisible()) return;
-      const dialog = page.locator('.dialog-overlay');
-      if (await dialog.isVisible()) await dialog.locator('button').first().click();
+      if (await dialog(page).isVisible()) await dialog(page).getByRole('button').first().click();
       await page.mouse.move(centre.x, centre.y);
       await page.mouse.down();
       await page.mouse.move(centre.x - 120, centre.y, { steps: 4 });
@@ -325,12 +337,12 @@ test.describe('the table', () => {
   test('places a side bet and pays it when it wins', async ({ page }) => {
     // Lucky Ladies pays when the player's first two cards total 20.
     await openTable(page, { settings: { 'bonuses.game': 8 } });
-    await overlay(page).locator('[data-action="side-bet"]').click();
-    await expect(page.locator('.bet-select')).toBeVisible();
-    await expect(page.locator('.bet-select__chips .btn')).toHaveCount(18);
+    await overlayButton(page, 'Side Bet').click();
+    await expect(page.locator('[data-screen="game.betSelect"]')).toBeVisible();
+    await expect(chips(page).getByRole('button')).toHaveCount(18);
     // Lucky Ladies allows a side bet of at most one times the main bet.
-    await page.locator('.bet-select__chips [data-chips="1"]').click();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('side bet');
+    await chip(page, 1).click();
+    await expect(betTitle(page)).toContainText('side bet');
 
     // The stake leaves the bankroll with the main bet.
     const before = await bankroll(page).textContent();
@@ -342,13 +354,11 @@ test.describe('the table', () => {
 
   test('refuses a side bet larger than its multiple of the main bet', async ({ page }) => {
     await openTable(page, { settings: { 'bonuses.game': 8 } });
-    await overlay(page).locator('[data-action="side-bet"]').click();
-    await page.locator('.bet-select__chips [data-chips="2"]').click();
+    await overlayButton(page, 'Side Bet').click();
+    await chip(page, 2).click();
     // The smallest main bet is one chip, and Lucky Ladies allows only one times it.
     await grid(page).click({ position: { x: 25, y: 25 } });
     await expect(overlay(page)).toBeVisible();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText(
-      'cannot be greater than 1 times the main bet',
-    );
+    await expect(betTitle(page)).toContainText('cannot be greater than 1 times the main bet');
   });
 });

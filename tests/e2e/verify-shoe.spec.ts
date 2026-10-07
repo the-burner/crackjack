@@ -7,60 +7,73 @@ import type { Page } from '@playwright/test';
 import type { Frame } from './globals.d';
 import { seedRandom, visibleOneOf } from './support/app';
 import type { SavedSettings } from './support/app';
-import { readoutRunningCount as readout, statsRunningCount as statsCount, tapBetTile } from './support/table';
+import {
+  betOverlay,
+  betTitle,
+  dialog as openDialog,
+  overlayButton,
+  playButton,
+  readoutRunningCount as readout,
+  SELECTOR,
+  statsRunningCount as statsCount,
+  tapBetTile,
+} from './support/table';
 
 /** Opens the table with a seeded deal and the frame, overlay and chip logs on. */
 async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: SavedSettings; seed?: number } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedRandom(page, seed);
-  await page.addInitScript(overrides => {
-    window.__cjRecordFrames = true;
-    // When the betting menu shows and hides.
-    window.__cjOverlay = [];
-    new MutationObserver(() => {
-      const el = document.querySelector<HTMLElement>('.bet-overlay');
-      const visible = Boolean(el && !el.hidden);
-      const log = window.__cjOverlay;
-      if (log.at(-1)?.visible !== visible) log.push({ t: performance.now(), visible });
-    }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
-    // Seat 1's chip label and the bankroll, as painted, sampled once per animation frame.
-    window.__cjChip = [];
-    const sample = () => {
-      const text = document.querySelector('.table__chip[data-seat="1"]')?.textContent ?? null;
-      const bank = document.querySelector('.table__bankroll')?.textContent ?? null;
-      const last = window.__cjChip.at(-1);
-      if (last?.text !== text || last?.bank !== bank) window.__cjChip.push({ t: performance.now(), text, bank });
+  await page.addInitScript(
+    ({ overrides, sel }) => {
+      window.__cjRecordFrames = true;
+      // When the betting menu shows and hides.
+      window.__cjOverlay = [];
+      new MutationObserver(() => {
+        const el = document.querySelector<HTMLElement>(sel.overlay);
+        const visible = Boolean(el && !el.hidden);
+        const log = window.__cjOverlay;
+        if (log.at(-1)?.visible !== visible) log.push({ t: performance.now(), visible });
+      }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
+      // Seat 1's chip label and the bankroll, as painted, sampled once per animation frame.
+      window.__cjChip = [];
+      const sample = () => {
+        const text = document.querySelector(`${sel.chip}[data-seat="1"]`)?.textContent ?? null;
+        const bank = document.querySelector(sel.bankroll)?.textContent ?? null;
+        const last = window.__cjChip.at(-1);
+        if (last?.text !== text || last?.bank !== bank) window.__cjChip.push({ t: performance.now(), text, bank });
+        requestAnimationFrame(sample);
+      };
       requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-    localStorage.clear();
-    localStorage.setItem(
-      'cj.settings',
-      JSON.stringify({
-        'mechanics.dealerSpeed': 99,
-        'mechanics.otherPlayerSpeed': 99,
-        'mechanics.payoffSpeed': 99,
-        'table.startingBankroll': 1000,
-        'table.seatCount': 1,
-        'table.computerSeats': [false, false, false, false, false, false],
-        'betting.chipValue': 5,
-        'betting.warnOnError': false,
-        'strategy.warnOnError': false,
-        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
-        'rules.surrender': 'none',
-        'display.hideActionButtons': false,
-        'display.showRunningCount': true,
-        ...overrides,
-      }),
-    );
-  }, settings);
+      localStorage.clear();
+      localStorage.setItem(
+        'cj.settings',
+        JSON.stringify({
+          'mechanics.dealerSpeed': 99,
+          'mechanics.otherPlayerSpeed': 99,
+          'mechanics.payoffSpeed': 99,
+          'table.startingBankroll': 1000,
+          'table.seatCount': 1,
+          'table.computerSeats': [false, false, false, false, false, false],
+          'betting.chipValue': 5,
+          'betting.warnOnError': false,
+          'strategy.warnOnError': false,
+          'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+          'rules.surrender': 'none',
+          'display.hideActionButtons': false,
+          'display.showRunningCount': true,
+          ...overrides,
+        }),
+      );
+    },
+    { overrides: settings, sel: SELECTOR },
+  );
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
-  await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 20000 });
+  await expect(betOverlay(page)).toBeVisible({ timeout: 20000 });
 }
 
-const overlay = (page: Page) => page.locator('.bet-overlay');
-const action = (page: Page, name: string) => page.locator(`.table__actions [data-action="${name}"]`);
+const overlay = betOverlay;
+const action = playButton;
 const frames = (page: Page) => page.evaluate(() => window.__cjFrames ?? []);
 const overlayLog = (page: Page) => page.evaluate(() => window.__cjOverlay);
 const clearLogs = (page: Page) =>
@@ -111,7 +124,7 @@ async function playRound(
 ) {
   await clearLogs(page);
   await tapBetTile(page);
-  const dialog = page.locator('.dialog-overlay');
+  const dialog = openDialog(page);
   for (let step = 0; step < 300; step++) {
     // Until the table wants something: the cards may still be coming.
     await expect(
@@ -122,7 +135,7 @@ async function playRound(
       ),
     ).toBeVisible();
     if (await dialog.isVisible()) {
-      await dialog.locator('button').first().click();
+      await dialog.getByRole('button').first().click();
       continue;
     }
     if (await overlay(page).isVisible()) return frames(page);
@@ -283,8 +296,8 @@ test.describe('the Shuffle button', () => {
     await openTable(page, { settings: { 'table.burnCards': 1, 'table.showBurnCards': true } });
     await playRound(page);
     await clearLogs(page);
-    await overlay(page).locator('[data-action="shuffle"]').click();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('Shuffled');
+    await overlayButton(page, 'Shuffle').click();
+    await expect(betTitle(page)).toContainText('Shuffled');
     await expect.poll(async () => (await frames(page)).some(f => f.burns.length === 1 && f.burns[0].faceUp)).toBe(true);
     const log = await frames(page);
     const shown = findFrom(log, 0, f => f.burns.length === 1 && f.burns[0].faceUp);

@@ -49,9 +49,9 @@ describe('custom properties', () => {
       'src/game/table/bet-grid.ts',
       'src/drills/shared/answer-grid.ts',
       'src/game/table/renderer.ts',
-      'src/drills/full/screen.ts',
-      'src/drills/depth/screen.ts',
-      'src/drills/count/screen.ts',
+      'src/drills/full/controller.ts',
+      'src/drills/depth/controller.ts',
+      'src/drills/count/controller.ts',
       'src/game/screens/table.ts',
       'src/ui/theme.ts',
     ]) {
@@ -155,9 +155,9 @@ describe('canvas colours', () => {
     'src/game/table/bet-grid.ts',
     'src/drills/shared/answer-grid.ts',
     'src/drills/shared/discard-tray.ts',
-    'src/drills/full/screen.ts',
-    'src/drills/depth/screen.ts',
-    'src/drills/count/screen.ts',
+    'src/drills/full/controller.ts',
+    'src/drills/depth/controller.ts',
+    'src/drills/count/controller.ts',
   ];
 
   for (const file of FILES_WITH_CANVAS) {

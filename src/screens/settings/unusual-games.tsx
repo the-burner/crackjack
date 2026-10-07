@@ -1,9 +1,8 @@
 // Unusual Games: the side-bet / bonus game selector.
 
 import { useSettings } from '@/react/app-context';
-import { Select } from '@/react/components';
 import { reactScreen } from '@/react/screen';
-import { SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import { OptionSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { applyGameChange } from '@/settings/rules-logic';
 
@@ -15,19 +14,19 @@ export function UnusualGames() {
   const settings = useSettings();
   return (
     <SettingsScreen title="Unusual Games" help="settings.unusualGames">
-      <SettingsGroup>
-        <Select
-          name="bonuses.game"
-          options={GAMES}
-          value={settings.get('bonuses.game')}
-          onChange={gameId => settings.update(applyGameChange(key => settings.get(key), gameId))}
-        />
-        <div className="settings-prose">
-          <p>{NOTE}</p>
-        </div>
-      </SettingsGroup>
+      <div className="space-y-2">
+        <SettingsGroup>
+          <OptionSelect
+            label="Game"
+            options={GAMES}
+            value={settings.get('bonuses.game')}
+            onChange={gameId => settings.update(applyGameChange(key => settings.get(key), gameId))}
+          />
+        </SettingsGroup>
+        <p className="px-1 text-sm text-muted-foreground">{NOTE}</p>
+      </div>
     </SettingsScreen>
   );
 }
 
-export const unusualGamesScreen = reactScreen(UnusualGames, { className: 'settings' });
+export const unusualGamesScreen = reactScreen(UnusualGames);

@@ -1,8 +1,9 @@
 // Rule Variations: the less common rules.
 
 import { reactScreen } from '@/react/screen';
-import { SettingChecks, SettingsGroup, SettingsScreen } from '@/react/settings-form';
-import type { SettingCheck } from '@/react/settings-form';
+import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import { SettingSwitches } from '@/components/settings-controls';
+import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'You will find less common rule variations on this screen.';
 
@@ -31,13 +32,13 @@ export function RuleVariations() {
   return (
     <SettingsScreen title="Rule Variations" help="settings.ruleVariations" note={NOTE}>
       <SettingsGroup>
-        <SettingChecks items={DOUBLING} />
+        <SettingSwitches items={DOUBLING} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingChecks items={SPLITTING} />
+        <SettingSwitches items={SPLITTING} />
       </SettingsGroup>
     </SettingsScreen>
   );
 }
 
-export const ruleVariationsScreen = reactScreen(RuleVariations, { className: 'settings' });
+export const ruleVariationsScreen = reactScreen(RuleVariations);

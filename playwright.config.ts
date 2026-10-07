@@ -1,8 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/** Every test runs on an iPhone 13 profile in both engines the app meets, and on an iPad in WebKit. */
-const iPhone = devices['iPhone 13'];
-const iPad = devices['iPad Pro 11'];
+/**
+ * The devices the app is built for, each upright and on its side, in WebKit
+ * (Safari's engine, which every browser on iPhone and iPad uses).
+ */
+const iPhone = devices['iPhone 15 Pro'];
+const iPhoneLandscape = devices['iPhone 15 Pro landscape'];
+/** iPad (A16), the 11th generation. */
+const iPad = devices['iPad (gen 11)'];
+const iPadLandscape = devices['iPad (gen 11) landscape'];
 
 /**
  * Most tests run against the dev server, whose unbundled modules they can
@@ -17,14 +23,14 @@ export default defineConfig({
   testMatch: ['e2e/**/*.spec.ts'],
   fullyParallel: true,
   reporter: 'list',
-  use: { ...iPhone, baseURL: DEV },
+  use: { baseURL: DEV },
   projects: [
-    { name: 'chromium', grepInvert: /@build/, use: { browserName: 'chromium' } },
-    // WebKit is Safari's engine, so it is the closest check on what the iPhone runs.
-    { name: 'webkit', grepInvert: /@build/, use: { browserName: 'webkit' } },
+    { name: 'iphone', grepInvert: /@build/, use: { ...iPhone, browserName: 'webkit' } },
+    { name: 'iphone-landscape', grepInvert: /@build/, use: { ...iPhoneLandscape, browserName: 'webkit' } },
     { name: 'ipad', grepInvert: /@build/, use: { ...iPad, browserName: 'webkit' } },
-    // Chromium only: Playwright's WebKit build crashes when offline.
-    { name: 'build', grep: /@build/, use: { browserName: 'chromium', baseURL: BUILD } },
+    { name: 'ipad-landscape', grepInvert: /@build/, use: { ...iPadLandscape, browserName: 'webkit' } },
+    // Chromium: Playwright's WebKit build crashes when offline. The service worker is engine-independent.
+    { name: 'build', grep: /@build/, use: { ...iPhone, browserName: 'chromium', baseURL: BUILD } },
   ],
   webServer: [
     {

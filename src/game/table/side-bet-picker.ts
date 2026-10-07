@@ -1,7 +1,7 @@
 // Choosing the side bets for the next round: the bet picker opens once per
 // side-bet spot, since a game may offer two.
 
-import { alert } from '@/ui/dialogs';
+import { alert } from '@/components/dialogs';
 import { money } from '@/core/money';
 import type { App } from '@/app/app';
 import type { SideBetSpot } from '@/game/engine/side-bets';

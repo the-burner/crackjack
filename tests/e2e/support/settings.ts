@@ -11,15 +11,16 @@ export async function openFromHub(page: Page, button: string, screen: string): P
 }
 
 /**
- * Answers the open dialog with `text` (or just OK when text is null) and waits
- * for that dialog to go away; another may take its place.
+ * Answers the open dialog with `text` (or just its confirming button when text
+ * is null) and waits for that dialog to go away; another may take its place.
  */
 export async function answerDialog(page: Page, text: string | null = null): Promise<void> {
-  const overlay = page.locator('.dialog-overlay').first();
-  await expect(overlay).toBeVisible();
-  const handle = await overlay.elementHandle();
-  if (text !== null) await overlay.locator('.dialog__input').fill(text);
-  await overlay.getByRole('button').first().click();
+  const dialog = page.getByRole('alertdialog').first();
+  await expect(dialog).toBeVisible();
+  const handle = await dialog.elementHandle();
+  if (text !== null) await dialog.getByRole('spinbutton').or(dialog.getByRole('textbox')).fill(text);
+  // The confirming button comes last.
+  await dialog.getByRole('button').last().click();
   await page.waitForFunction(el => !el?.isConnected, handle);
 }
 

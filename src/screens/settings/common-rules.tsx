@@ -1,11 +1,11 @@
 // Common Rules.
 
 import { reactScreen } from '@/react/screen';
-import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
-import type { SettingCheck } from '@/react/settings-form';
+import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import { SettingSwitches } from '@/components/settings-controls';
+import type { Option, SettingCheck } from '@/components/settings-controls';
 import { TABLE_LIMITS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
 
 const NOTE = 'Common rule variations are set using this screen.';
 
@@ -18,7 +18,7 @@ const CHECKS: readonly SettingCheck[] = [
   { label: 'Dealer BJ wins all', key: 'rules.dealerBlackjackWinsAll' },
 ];
 
-const HARD_DOUBLES: readonly SelectOption<SettingValues['rules.hardDoubles']>[] = [
+const HARD_DOUBLES: readonly Option<SettingValues['rules.hardDoubles']>[] = [
   { value: 'none', label: 'No hard doubles' },
   { value: '10-11', label: 'Double 10-11' },
   { value: '9-11', label: 'Double 9-11' },
@@ -26,19 +26,19 @@ const HARD_DOUBLES: readonly SelectOption<SettingValues['rules.hardDoubles']>[] 
   { value: 'any', label: 'Any hard doubles' },
 ];
 
-const SOFT_DOUBLES: readonly SelectOption<SettingValues['rules.softDoubles']>[] = [
+const SOFT_DOUBLES: readonly Option<SettingValues['rules.softDoubles']>[] = [
   { value: 'none', label: 'No soft doubles' },
   { value: 'a8a9', label: 'Soft double A8 or A9 only' },
   { value: 'any', label: 'Any soft doubles' },
 ];
 
-const INSURANCE: readonly SelectOption<SettingValues['rules.insurance']>[] = [
+const INSURANCE: readonly Option<SettingValues['rules.insurance']>[] = [
   { value: 'none', label: 'No Insurance' },
   { value: 'normal', label: 'Insurance' },
   { value: 'blackjackOnly', label: 'Insure BJ only' },
 ];
 
-const SURRENDER: readonly SelectOption<SettingValues['rules.surrender']>[] = [
+const SURRENDER: readonly Option<SettingValues['rules.surrender']>[] = [
   { value: 'none', label: 'No Surrender' },
   { value: 'late', label: 'Late Surrender (common)' },
   { value: 'early', label: 'Early Surrender (rare)' },
@@ -46,23 +46,23 @@ const SURRENDER: readonly SelectOption<SettingValues['rules.surrender']>[] = [
   { value: 'macao', label: 'Macao Surrender' },
 ];
 
-const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
+const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `$${min} to $${max}` }));
 
 export function CommonRules() {
   return (
     <SettingsScreen title="Common Rules" help="settings.commonRules" note={NOTE}>
       <SettingsGroup>
-        <SettingChecks items={CHECKS} />
+        <SettingSwitches items={CHECKS} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSelect setting="rules.hardDoubles" options={HARD_DOUBLES} />
-        <SettingSelect setting="rules.softDoubles" options={SOFT_DOUBLES} />
-        <SettingSelect setting="rules.insurance" options={INSURANCE} />
-        <SettingSelect setting="rules.surrender" options={SURRENDER} />
-        <SettingSelect setting="table.limits" options={LIMITS} />
+        <SettingSelect label="Hard doubles" setting="rules.hardDoubles" options={HARD_DOUBLES} />
+        <SettingSelect label="Soft doubles" setting="rules.softDoubles" options={SOFT_DOUBLES} />
+        <SettingSelect label="Insurance" setting="rules.insurance" options={INSURANCE} />
+        <SettingSelect label="Surrender" setting="rules.surrender" options={SURRENDER} />
+        <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
       </SettingsGroup>
     </SettingsScreen>
   );
 }
 
-export const commonRulesScreen = reactScreen(CommonRules, { className: 'settings' });
+export const commonRulesScreen = reactScreen(CommonRules);

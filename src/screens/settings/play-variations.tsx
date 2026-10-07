@@ -1,8 +1,9 @@
 // Play Variations: dealer behavior and unusual rules.
 
 import { reactScreen } from '@/react/screen';
-import { SettingChecks, SettingsGroup, SettingsScreen } from '@/react/settings-form';
-import type { SettingCheck } from '@/react/settings-form';
+import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import { SettingSwitches } from '@/components/settings-controls';
+import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'Dealer behavior and unusual rules.';
 
@@ -29,13 +30,13 @@ export function PlayVariations() {
   return (
     <SettingsScreen title="Play Variations" help="settings.playVariations" note={NOTE}>
       <SettingsGroup>
-        <SettingChecks items={DEALER} />
+        <SettingSwitches items={DEALER} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingChecks items={HANDS} />
+        <SettingSwitches items={HANDS} />
       </SettingsGroup>
     </SettingsScreen>
   );
 }
 
-export const playVariationsScreen = reactScreen(PlayVariations, { className: 'settings' });
+export const playVariationsScreen = reactScreen(PlayVariations);

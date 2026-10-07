@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { openWithSettings as open } from './support/app';
-import { DRILLS, emptyMask, launchDrill, statsText } from './support/drills';
+import { DRILLS, countdownOf, emptyMask, launchDrill, statsText } from './support/drills';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -52,7 +52,7 @@ test('the index test refuses a hand that has no index of its own', async ({ page
     'strategy.system': 30,
   });
   const screen = await launch(page);
-  await expect(screen.locator('.drill__message')).toContainText('no tests configured');
+  await expect(screen.getByRole('status')).toContainText('no tests configured');
   expect(await statsText(screen)).toContain('Hands: 0');
 });
 
@@ -65,10 +65,10 @@ test('the random count straddles zero for a balanced system', async ({ page }) =
     'drills.flash.testMode': 'errorsAtEnd',
   });
   const screen = await launch(page);
-  const hit = screen.locator('[data-action="hit"]');
+  const hit = screen.getByRole('button', { name: 'Hit', exact: true });
   const counts: number[] = [];
   for (let hand = 0; hand < 40; hand++) {
-    counts.push(Number((await screen.locator('.drill__count').innerText()).replace('Count: ', '')));
+    counts.push(Number((await screen.locator('[data-slot="count-panel"]').innerText()).replace('Count: ', '')));
     await hit.click();
   }
   const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
@@ -78,7 +78,7 @@ test('the random count straddles zero for a balanced system', async ({ page }) =
 test('pause is off once the drill has finished', async ({ page }) => {
   await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd' });
   const screen = await launch(page);
-  for (let hand = 0; hand < 10; hand++) await screen.locator('[data-action="stand"]').click();
+  for (let hand = 0; hand < 10; hand++) await screen.getByRole('button', { name: 'Stand', exact: true }).click();
   expect(await statsText(screen)).toContain('Hands: 10');
 
   await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
@@ -96,12 +96,12 @@ test('the clock stops while the strategy table covers the drill', async ({ page 
     'drills.flash.timePerHand': false,
   });
   const screen = await launch(page);
-  await screen.locator('[data-action="hit"]').click();
-  await page.locator('.dialog').getByRole('button', { name: 'Table' }).click();
+  await screen.getByRole('button', { name: 'Hit', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Table' }).click();
   await expect(page.locator('[data-screen="strategy.tables"]')).toBeVisible();
   await page.clock.runFor(4000);
   await page.locator('[data-screen="strategy.tables"] [data-action="back"]').click();
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+  await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
   expect(await statsText(screen)).toMatch(/Time: 00:00:0[0-2]/);
 });
 
@@ -114,7 +114,7 @@ test('no tests mode neither grades the index test nor records an error', async (
     'drills.flash.seconds': 60,
   });
   const screen = await launch(page);
-  const grid = screen.locator('canvas.drill__answers');
+  const grid = screen.getByRole('img', { name: 'Answer grid' });
   const box = (await grid.boundingBox())!;
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 6; column++) {
@@ -154,7 +154,7 @@ test('the index test grid leaves the cards on screen in landscape', async ({ pag
     await page.setViewportSize(size);
     const screen = page.locator('[data-screen="drills.flash"]');
     if (!(await screen.count())) await launch(page);
-    const display = (await screen.locator('.drill__display').boundingBox())!;
+    const display = (await screen.locator('[data-slot="drill-display"]').boundingBox())!;
     expect(display.y + display.height, `${size.width}x${size.height}`).toBeLessThanOrEqual(size.height);
   }
 });
@@ -175,7 +175,7 @@ test('the closing text is set in the app font', async ({ page }) => {
   });
   await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd' });
   const screen = await launch(page);
-  for (let hand = 0; hand < 10; hand++) await screen.locator('[data-action="stand"]').click();
+  for (let hand = 0; hand < 10; hand++) await screen.getByRole('button', { name: 'Stand', exact: true }).click();
 
   const font = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--font').trim());
   const used = await page.evaluate(() => window.canvasFonts.filter(f => f.startsWith('40px')));

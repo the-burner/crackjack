@@ -1,8 +1,8 @@
 // The settings hub: navigation to every option screen.
 
 import { useApp } from '@/react/app-context';
-import { Button, StandardScreen } from '@/react/components';
 import { reactScreen } from '@/react/screen';
+import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
 
 const NOTE = 'The playing strategy and true count settings are also used by the drills.';
 
@@ -40,24 +40,23 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, string])
 export function SettingsHub() {
   const app = useApp();
   return (
-    <StandardScreen title="Options" help="settings">
-      <div className="settings-cols settings-hub">
+    <ScreenLayout title="Options" help="settings">
+      <div className="mx-auto grid max-w-4xl items-start gap-4 md:grid-cols-2">
         {SECTIONS.map(([title, screens], i) => (
-          <div key={title} className="section">
-            <h2 className="section__title">{title}</h2>
-            <div className="settings-group">
+          <div key={title} className="space-y-2">
+            <Section title={title}>
               {screens.map(([label, screen]) => (
-                <Button key={screen} icon="arrow-r" block className="list-row" onClick={() => app.open(screen)}>
+                <ListButton key={screen} onClick={() => app.open(screen)}>
                   {label}
-                </Button>
+                </ListButton>
               ))}
-            </div>
-            {i === 1 && <p className="section__footer">{NOTE}</p>}
+            </Section>
+            {i === 1 && <p className="px-1 text-sm text-muted-foreground">{NOTE}</p>}
           </div>
         ))}
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
-export const settingsHubScreen = reactScreen(SettingsHub, { className: 'settings' });
+export const settingsHubScreen = reactScreen(SettingsHub);

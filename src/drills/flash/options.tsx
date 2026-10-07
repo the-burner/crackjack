@@ -1,56 +1,53 @@
 // Flash Drills: Options.
 
 import type { App } from '@/app/app';
+import { toast } from 'sonner';
 import { useApp, useSettings } from '@/react/app-context';
-import { Button, CheckList, Select } from '@/react/components';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ListButton, Section } from '@/components/screen-layout';
+import { OptionSelect, SettingNumber, SettingSelect } from '@/components/settings-controls';
+import type { Option } from '@/components/settings-controls';
+import { alert, confirm } from '@/components/dialogs';
 import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
-import { alert, confirm } from '@/ui/dialogs';
-import { toast } from '@/ui/toast';
 import {
   DrillOptionsScreen,
-  Group,
-  OptionCheck,
   OptionDuration,
-  OptionNumber,
-  OptionSelect,
-  Pair,
-  Section,
+  OptionSwitch,
   COUNT_DOWN_HALT_OPTION,
 } from '@/drills/shared/options-screen';
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic';
 
-type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
+type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
 const HANDS_OPTIONS: Options<'drills.flash.hands'> = [
-  { value: 'default', label: 'Hands: Default Hands' },
-  { value: 'illustrious18', label: 'Hands: Illustrious 18' },
-  { value: 'withIndices', label: 'Hands: Hands with Indices' },
-  { value: 'drillErrors', label: 'Hands: Drill Errors' },
-  { value: 'custom', label: 'Hands: Custom' },
-  { value: 'roundRobin', label: 'Hands: Round Robin' },
+  { value: 'default', label: 'Default Hands' },
+  { value: 'illustrious18', label: 'Illustrious 18' },
+  { value: 'withIndices', label: 'Hands with Indices' },
+  { value: 'drillErrors', label: 'Drill Errors' },
+  { value: 'custom', label: 'Custom' },
+  { value: 'roundRobin', label: 'Round Robin' },
 ];
 
 const COUNT_OPTIONS: Options<'drills.flash.countMode'> = [
-  { value: 'zero', label: 'Count: Always Zero' },
-  { value: 'random', label: 'Count: Random' },
-  { value: 'fixed', label: 'Count: Set Count to:' },
-  { value: 'indexTest', label: 'Count: Index Test' },
+  { value: 'zero', label: 'Always Zero' },
+  { value: 'random', label: 'Random' },
+  { value: 'fixed', label: 'Set Count' },
+  { value: 'indexTest', label: 'Index Test' },
 ];
 
 const CARDS_OPTIONS: Options<'drills.flash.maxCards'> = [
-  { value: 2, label: 'Cards: Two' },
-  { value: 3, label: 'Cards: Two or Three' },
-  { value: 4, label: 'Cards: Two to Four' },
-  { value: 5, label: 'Cards: Two to Five' },
+  { value: 2, label: 'Two' },
+  { value: 3, label: 'Two or Three' },
+  { value: 4, label: 'Two to Four' },
+  { value: 5, label: 'Two to Five' },
 ];
 
 const TEST_MODE_OPTIONS: Options<'drills.flash.testMode'> = [
-  { value: 'warn', label: 'Test Mode: Warn on error' },
-  { value: 'errorsAtEnd', label: 'Test Mode: Number of errors only at end' },
-  { value: 'none', label: 'Test Mode: No tests (quick drill)' },
+  { value: 'warn', label: 'Warn on error' },
+  { value: 'errorsAtEnd', label: 'Number of errors only at end' },
+  { value: 'none', label: 'No tests (quick drill)' },
 ];
 
 const DECK_NAMES = ['Single', 'Double', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
@@ -68,9 +65,9 @@ const SITUATION_ITEMS = SITUATIONS.map(flag => ({ flag, label: SITUATION_LABELS[
  * out. Infinite: until stopped, with the time counting up.
  */
 const FLASH_TIMER_OPTIONS: Options<'drills.flash.timerMode'> = [
-  { value: 'auto', label: 'Timer Mode: Rounds' },
+  { value: 'auto', label: 'Rounds' },
   COUNT_DOWN_HALT_OPTION,
-  { value: 'infinite', label: 'Timer Mode: Infinite' },
+  { value: 'infinite', label: 'Infinite' },
 ];
 
 /** Timer modes in which each hand may have a time limit. */
@@ -89,106 +86,103 @@ export function FlashOptions() {
   return (
     <DrillOptionsScreen title="Flash Options" help="drills.flash.options" onLaunch={() => launch(app)}>
       <Section title="Drill">
-        <Group>
-          <OptionSelect setting="drills.flash.maxCards" options={CARDS_OPTIONS} />
-          <Select
-            name="drills.flash.decks"
-            options={DECK_OPTIONS}
-            value={decks}
-            onChange={value =>
-              settings.update({
-                'drills.flash.decks': Number.parseInt(value, 10),
-                'drills.flash.spanishDecks': value.endsWith('s'),
-              })
-            }
-          />
-          <Pair>
-            <OptionSelect
-              setting="drills.flash.hands"
-              options={HANDS_OPTIONS}
-              // Choosing Drill Errors shows what the list holds.
-              onChange={value => {
-                if (value === 'drillErrors' && hands !== 'drillErrors') toast(drillErrorsSummary(app));
-              }}
-            />
-            {/* Picks the custom hands; only shown when the hand list is Custom. */}
-            <Button
-              hidden={hands !== 'custom'}
-              onClick={() =>
-                app.open('strategy.tables', {
-                  mode: 'editMask',
-                  maskKey: 'drills.flash.customHands',
-                  decks: settings.get('drills.flash.decks'),
-                  title: 'Custom Hands',
-                })
-              }
-            >
-              Select
-            </Button>
-          </Pair>
-          <Pair>
-            <OptionSelect setting="drills.flash.countMode" options={COUNT_OPTIONS} />
-            {/* The set count; only Count: Set Count to: uses it. */}
-            <OptionNumber
-              setting="drills.flash.fixedCount"
-              prompt="Count"
-              hidden={settings.get('drills.flash.countMode') !== 'fixed'}
-            />
-          </Pair>
-          <OptionSelect setting="drills.flash.testMode" options={TEST_MODE_OPTIONS} />
-          {/* Only Warn on error shows error pop-ups, so only it can make them non-blocking. */}
-          <OptionCheck
-            label="Non-blocking error pop-ups"
-            setting="drills.flash.nonBlockingErrors"
-            hidden={settings.get('drills.flash.testMode') !== 'warn'}
-          />
-        </Group>
+        <SettingSelect label="Cards" setting="drills.flash.maxCards" options={CARDS_OPTIONS} />
+        {/* One select writes the deck count and whether the decks are Spanish. */}
+        <OptionSelect
+          label="Decks"
+          options={DECK_OPTIONS}
+          value={decks}
+          onChange={value =>
+            settings.update({
+              'drills.flash.decks': Number.parseInt(value, 10),
+              'drills.flash.spanishDecks': value.endsWith('s'),
+            })
+          }
+        />
+        <SettingSelect
+          label="Hands"
+          setting="drills.flash.hands"
+          options={HANDS_OPTIONS}
+          onChange={value => {
+            settings.set('drills.flash.hands', value);
+            // Choosing Drill Errors shows what the list holds.
+            if (value === 'drillErrors' && hands !== 'drillErrors') toast(drillErrorsSummary(app));
+          }}
+        />
+        {/* Picks the custom hands; only shown when the hand list is Custom. */}
+        <ListButton
+          hidden={hands !== 'custom'}
+          onClick={() =>
+            app.open('strategy.tables', {
+              mode: 'editMask',
+              maskKey: 'drills.flash.customHands',
+              decks: settings.get('drills.flash.decks'),
+              title: 'Custom Hands',
+            })
+          }
+        >
+          Select custom hands
+        </ListButton>
+        <SettingSelect label="Count" setting="drills.flash.countMode" options={COUNT_OPTIONS} />
+        {/* The set count; only Count: Set Count uses it. */}
+        <SettingNumber
+          label="Set count to"
+          setting="drills.flash.fixedCount"
+          prompt="Count"
+          hidden={settings.get('drills.flash.countMode') !== 'fixed'}
+        />
+        <SettingSelect label="Test mode" setting="drills.flash.testMode" options={TEST_MODE_OPTIONS} />
+        {/* Only Warn on error shows error pop-ups, so only it can make them non-blocking. */}
+        <OptionSwitch
+          label="Non-blocking error pop-ups"
+          setting="drills.flash.nonBlockingErrors"
+          hidden={settings.get('drills.flash.testMode') !== 'warn'}
+        />
       </Section>
       <Section title="Situations">
-        <CheckList
-          chips
-          items={SITUATION_ITEMS.map(({ flag, label }) => ({
-            label,
-            checked: situations[flag],
-            onChange: on => settings.set('drills.flash.situations', { ...situations, [flag]: on }),
-          }))}
-        />
+        <ToggleGroup
+          multiple
+          variant="outline"
+          aria-label="Situations"
+          className="w-full flex-wrap p-3"
+          value={SITUATIONS.filter(flag => situations[flag])}
+          onValueChange={on =>
+            settings.set('drills.flash.situations', {
+              ...situations,
+              ...Object.fromEntries(SITUATIONS.map(flag => [flag, on.includes(flag)])),
+            })
+          }
+        >
+          {SITUATION_ITEMS.map(({ flag, label }) => (
+            <ToggleGroupItem key={flag} value={flag}>
+              {label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </Section>
       {/* Rounds and Infinite may time each hand; Count Down & Halt times the whole drill. */}
       <Section title="Timer">
-        <Group>
-          <Pair>
-            <OptionSelect setting="drills.flash.timerMode" options={FLASH_TIMER_OPTIONS} />
-            <OptionNumber setting="drills.flash.handsPerDrill" prompt="Rounds" hidden={mode !== 'auto'} />
-          </Pair>
-          <OptionCheck label="Time limit per hand" setting="drills.flash.timePerHand" hidden={!handsCanBeTimed} />
-          <OptionDuration label="Time per hand" setting="drills.flash.seconds" hidden={!handsTimed} />
-          {/* Progressive Speed shortens the time per hand, so it goes with it. */}
-          <OptionCheck label="Progressive Speed" setting="drills.flash.progressiveSpeed" hidden={!handsTimed} />
-          <OptionDuration label="Drill time" setting="drills.flash.drillSeconds" hidden={mode !== 'countDownHalt'} />
-        </Group>
+        <SettingSelect label="Timer mode" setting="drills.flash.timerMode" options={FLASH_TIMER_OPTIONS} />
+        <SettingNumber label="Rounds" setting="drills.flash.handsPerDrill" hidden={mode !== 'auto'} />
+        <OptionSwitch label="Time limit per hand" setting="drills.flash.timePerHand" hidden={!handsCanBeTimed} />
+        <OptionDuration label="Time per hand" setting="drills.flash.seconds" hidden={!handsTimed} />
+        {/* Progressive Speed shortens the time per hand, so it goes with it. */}
+        <OptionSwitch label="Progressive Speed" setting="drills.flash.progressiveSpeed" hidden={!handsTimed} />
+        <OptionDuration label="Drill time" setting="drills.flash.drillSeconds" hidden={mode !== 'countDownHalt'} />
       </Section>
       <Section title="Error History">
-        <Group>
-          <Button
-            icon="arrow-r"
-            block
-            className="list-row"
-            onClick={() => app.open('drills.flash.errors')}
-            data-action="error-history"
-          >
-            Error history
-          </Button>
-          <Button icon="back" onClick={() => clearErrors(app)}>
-            Clear error history
-          </Button>
-        </Group>
+        <ListButton onClick={() => app.open('drills.flash.errors')} data-action="error-history">
+          Error history
+        </ListButton>
+        <ListButton chevron={false} onClick={() => clearErrors(app)}>
+          Clear error history
+        </ListButton>
       </Section>
     </DrillOptionsScreen>
   );
 }
 
-export const flashOptionsScreen = reactScreen(FlashOptions, { className: 'drill-options' });
+export const flashOptionsScreen = reactScreen(FlashOptions);
 
 async function clearErrors(app: App) {
   if (!(await confirm('Delete the record of all drill errors?'))) return;

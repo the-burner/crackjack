@@ -6,6 +6,16 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { Frame } from './globals.d';
 import { seedRandom } from './support/app';
+import {
+  betGrid,
+  betOverlay,
+  betTitle,
+  overlayButton,
+  playButton,
+  readout,
+  SELECTOR,
+  statsRunningCount,
+} from './support/table';
 import type { SavedSettings } from './support/app';
 import type { PillLook, Rect, TableLogEntry } from './support/types';
 
@@ -19,7 +29,7 @@ const TWO_HUMAN = [false, false, true, true, false, false];
 const pauseFor = (speed: number) => Math.round(((101 - speed) / 120) * 1000);
 
 /** Logs, from page load, every seat label, bankroll, readout and pop-up change. */
-function recorder() {
+function recorder(sel: typeof SELECTOR) {
   window.__cjRecordFrames = true;
   const log: TableLogEntry[] = (window.__cjLog = []);
   const frameCount = () => window.__cjFrames?.length ?? 0;
@@ -33,7 +43,7 @@ function recorder() {
   const pillLook = (pill: HTMLElement): PillLook => {
     const c = getComputedStyle(pill);
     const chip = pill.parentElement!;
-    const felt = document.querySelector('.table__felt')!;
+    const felt = document.querySelector(sel.felt)!;
     const range = document.createRange();
     range.selectNodeContents(pill);
     const rect = (r: DOMRect): Rect => ({
@@ -50,7 +60,7 @@ function recorder() {
         family: c.fontFamily,
         size: c.fontSize,
         weight: c.fontWeight,
-        shadow: c.boxShadow,
+        shadow: c.boxShadow === 'none' ? 'none' : 'shadow',
         background: c.backgroundColor,
         color: c.color,
       },
@@ -66,8 +76,8 @@ function recorder() {
   const scan = () => {
     const t = performance.now();
     const f = frameCount();
-    for (const chip of document.querySelectorAll<HTMLElement>('.table__chip')) {
-      const pill = chip.querySelector<HTMLElement>('.table__result');
+    for (const chip of document.querySelectorAll<HTMLElement>(sel.chip)) {
+      const pill = chip.querySelector<HTMLElement>(sel.result);
       const state = {
         pill: pill ? pill.textContent : null,
         tone: pill?.dataset.tone ?? null,
@@ -76,27 +86,27 @@ function recorder() {
       if (!changed(`chip${chip.dataset.seat}`, JSON.stringify(state))) continue;
       log.push({ kind: 'chip', t, f, seat: Number(chip.dataset.seat), ...state, look: pill ? pillLook(pill) : null });
     }
-    const offered = [...document.querySelectorAll<HTMLElement>('.table__actions [data-action]')]
+    const offered = [...document.querySelectorAll<HTMLElement>(sel.actions)]
       .filter(el => !el.hidden)
       .map(el => el.dataset.action)
       .join(',');
     if (changed('actions', offered)) log.push({ kind: 'actions', t, f, text: offered });
     for (const [kind, selector] of [
-      ['bankroll', '.table__bankroll'],
-      ['counts', '.table__counts'],
+      ['bankroll', sel.bankroll],
+      ['counts', sel.counts],
     ] as const) {
       const el = document.querySelector(selector);
       const text = el?.textContent ?? '';
       if (el && changed(kind, text)) log.push({ kind, t, f, text });
     }
-    for (const el of document.querySelectorAll('.toast')) {
+    for (const el of document.querySelectorAll<HTMLElement>(sel.toast)) {
       if (!toasts.has(el)) {
         const entry: TableLogEntry = {
           kind: 'toast',
           t,
           f,
           text: el.textContent ?? '',
-          className: el.className,
+          className: el.dataset.type,
           leaving: null,
           removed: null,
         };
@@ -104,7 +114,7 @@ function recorder() {
         log.push(entry);
       }
       const entry = toasts.get(el)!;
-      if (entry.leaving === null && el.classList.contains('is-leaving')) entry.leaving = t;
+      if (entry.leaving === null && el.dataset.removed === 'true') entry.leaving = t;
     }
     for (const [el, entry] of toasts) if (entry.removed === null && !el.isConnected) entry.removed = t;
   };
@@ -113,7 +123,7 @@ function recorder() {
     childList: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ['class', 'hidden'],
+    attributeFilter: ['class', 'hidden', 'data-removed'],
   });
 }
 
@@ -142,7 +152,7 @@ async function openTable(
 ) {
   await page.setViewportSize(size);
   await seedRandom(page, seed);
-  await page.addInitScript(recorder);
+  await page.addInitScript(recorder, SELECTOR);
   await page.addInitScript(
     overrides => {
       localStorage.clear();
@@ -170,11 +180,11 @@ async function openTable(
   await page.goto('/index.html');
   if (sound) await recordSounds(page);
   await page.locator('[data-action="play"]').click();
-  await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 15000 });
+  await expect(betOverlay(page)).toBeVisible({ timeout: 15000 });
 }
 
-const overlay = (page: Page) => page.locator('.bet-overlay');
-const actionButton = (page: Page, name: string) => page.locator(`.table__actions [data-action="${name}"]`);
+const overlay = betOverlay;
+const actionButton = playButton;
 const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender', 'insure', 'pass'];
 
 /** A choice, given the actions on offer and the cards of the hand in play; null waits. */
@@ -222,22 +232,25 @@ async function playRound(page: Page, choose: Policy = POLICY.stand, { timeout = 
     if (window.__cjPlays) window.__cjPlays.length = 0;
     if (window.__cjAudio) window.__cjAudio.length = 0;
   });
-  await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+  await betGrid(page).click({ position: { x: 25, y: 25 } });
   await expect(overlay(page)).toBeHidden();
   const end = Date.now() + timeout;
   while (Date.now() < end) {
     if (await overlay(page).isVisible()) break;
     // Read every button at once, so a step finishing mid-read cannot hide one.
-    const { offered, cards } = await page.evaluate(names => {
-      const last = window.__cjFrames?.at(-1);
-      return {
-        offered: names.filter(name => {
-          const el = document.querySelector<HTMLElement>(`.table__actions [data-action="${name}"]`);
-          return el && !el.hidden && el.offsetParent !== null;
-        }),
-        cards: last?.hands.find(hand => hand.key === last.pointer?.hand)?.cards ?? [],
-      };
-    }, ACTIONS);
+    const { offered, cards } = await page.evaluate(
+      ({ names, sel }) => {
+        const last = window.__cjFrames?.at(-1);
+        return {
+          offered: names.filter(name => {
+            const el = document.querySelector<HTMLElement>(`${sel.actions}[data-action="${name}"]`);
+            return el && !el.hidden && el.offsetParent !== null;
+          }),
+          cards: last?.hands.find(hand => hand.key === last.pointer?.hand)?.cards ?? [],
+        };
+      },
+      { names: ACTIONS, sel: SELECTOR },
+    );
     const pick = offered.length ? choose(offered, cards) : null;
     if (pick)
       await actionButton(page, pick)
@@ -246,16 +259,16 @@ async function playRound(page: Page, choose: Policy = POLICY.stand, { timeout = 
     // Nothing to do yet: wait until the buttons on offer change, or betting opens.
     else
       await page.waitForFunction(
-        ({ names, before }) => {
-          const bets = document.querySelector('.bet-overlay')?.getBoundingClientRect();
+        ({ names, before, sel }) => {
+          const bets = document.querySelector(sel.overlay)?.getBoundingClientRect();
           if (bets && bets.width > 0 && bets.height > 0) return true;
           const now = names.filter(name => {
-            const el = document.querySelector<HTMLElement>(`.table__actions [data-action="${name}"]`);
+            const el = document.querySelector<HTMLElement>(`${sel.actions}[data-action="${name}"]`);
             return el && !el.hidden && el.offsetParent !== null;
           });
           return now.join() !== before;
         },
-        { names: ACTIONS, before: offered.join() },
+        { names: ACTIONS, before: offered.join(), sel: SELECTOR },
         { timeout: Math.max(1, end - Date.now()) },
       );
   }
@@ -511,26 +524,34 @@ test.describe('the result label', () => {
       const { log } = await playRound(page);
       const pills = log.filter(e => e.kind === 'chip' && e.pill !== null);
       expect(new Set(pills.map(e => e.tone))).toEqual(new Set(['win', 'lose', 'push']));
-      const popUps = await page.evaluate(async () => {
-        const url = '/src/ui/toast.ts';
-        const { toast }: typeof import('@/ui/toast') = await import(url);
+      const popUps = await page.evaluate(async sel => {
+        const url = '/src/components/game/table-toast.tsx';
+        const { tableToast }: typeof import('@/components/game/table-toast') = await import(url);
         const out: Record<string, PillLook['style']> = {};
         for (const tone of ['good', 'error', 'plain'] as const) {
-          const el = toast('x', { tone });
-          const c = getComputedStyle(el);
+          tableToast(tone, { tone, ms: 60000 });
+          let el: HTMLElement | undefined;
+          for (let i = 0; i < 100 && !el; i++) {
+            await new Promise(requestAnimationFrame);
+            el = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-removed="true"])`)].find(
+              li => li.textContent === tone,
+            );
+          }
+          // The box from the pop-up, the type from its text.
+          const c = getComputedStyle(el!);
+          const t = getComputedStyle(el!.querySelector('[data-title]')!);
           out[tone] = {
             radius: c.borderTopLeftRadius,
-            family: c.fontFamily,
-            size: c.fontSize,
-            weight: c.fontWeight,
-            shadow: c.boxShadow,
+            family: t.fontFamily,
+            size: t.fontSize,
+            weight: t.fontWeight,
+            shadow: c.boxShadow === 'none' ? 'none' : 'shadow',
             background: c.backgroundColor,
-            color: c.color,
+            color: t.color,
           };
-          el.remove();
         }
         return out;
-      });
+      }, SELECTOR);
       const toneOf: Record<string, string> = { win: 'good', lose: 'error', push: 'plain' };
       for (const entry of pills) {
         const look = entry.look!;
@@ -639,7 +660,7 @@ test.describe('the turn pointer', () => {
       window.__cjFrames = [];
       window.__cjLog.length = 0;
     });
-    await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+    await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(1500);
     const { frames, log } = await page.evaluate(() => ({ frames: window.__cjFrames, log: window.__cjLog }));
@@ -678,7 +699,7 @@ test.describe('the turn pointer', () => {
       await route.continue();
     });
     await openTable(page, { seed: 7 });
-    await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+    await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
     await expect
       .poll(() => page.evaluate(() => window.__cjFrames.at(-1).pointer?.hand ?? null), { timeout: 5000 })
@@ -707,7 +728,7 @@ test.describe('split hands', () => {
   const columns = page =>
     page.evaluate(async () => {
       const { tableLayout } = await import('/src/game/table/layout.ts');
-      const felt = document.querySelector('.table__felt');
+      const felt = document.querySelector('[data-testid="felt"]');
       const layout = tableLayout({
         width: Math.max(200, Math.round(felt.clientWidth)),
         height: Math.max(200, Math.round(felt.clientHeight)),
@@ -777,15 +798,6 @@ test.describe('split hands at the payoff', () => {
 // --- 8. the count readout ---------------------------------------------------
 
 test.describe('the count readout', () => {
-  async function statsRunningCount(page) {
-    await page.locator('.table__bar [data-action="stats"]').click();
-    await expect(page.locator('[data-screen="game.stats"]')).toBeVisible();
-    const row = page.locator('tr', { has: page.getByText('Running Count', { exact: true }) });
-    const text = (await row.locator('td').last().textContent()).trim();
-    await page.locator('[data-screen="game.stats"] [data-action="back"]').click();
-    await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
-    return text;
-  }
   const rc = text => text.match(/RC: (-?[\d.]+)/)?.[1] ?? null;
 
   test('counts card by card during the deal, and matches the Stats screen after every round', async ({ page }) => {
@@ -803,7 +815,7 @@ test.describe('the count readout', () => {
         expect(values.length, `readout during the deal: ${values}`).toBeGreaterThanOrEqual(3);
         expect(changes.at(-1).t - changes[0].t).toBeGreaterThanOrEqual(pauseFor(speed));
       }
-      const shown = rc(await page.locator('.table__counts').textContent());
+      const shown = rc(await readout(page).textContent());
       expect(shown, `round ${round}`).toBe(await statsRunningCount(page));
     }
   });
@@ -903,7 +915,7 @@ test.describe('sounds', () => {
         'dealerErrors.shouldHaveBusted': true,
       },
     });
-    const foul = page.locator('.bet-overlay [data-action="foul"]');
+    const foul = overlayButton(page, 'Foul');
     const claim = async () => {
       await page.evaluate(() => {
         window.__cjPlays.length = 0;
@@ -921,7 +933,7 @@ test.describe('sounds', () => {
     for (let round = 0; round < 40 && !caught; round++) {
       await playRound(page, POLICY.hitTo17);
       const heard = await claim();
-      if ((await page.locator('.bet-overlay__title').textContent()).includes('caught')) caught = heard;
+      if ((await betTitle(page).textContent()).includes('caught')) caught = heard;
     }
     expect(caught, 'a dealer error was made and caught').not.toBeNull();
     expect(caught).toEqual({ sounds: ['card'], audio: ['click.mp3'] });

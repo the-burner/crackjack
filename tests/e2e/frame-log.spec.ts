@@ -3,6 +3,7 @@
 
 import { test, expect } from '@playwright/test';
 import { seedRandom } from './support/app';
+import { betGrid, betOverlay, playButton } from './support/table';
 
 test('records each frame the table draws, when a test asks it to', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -25,8 +26,8 @@ test('records each frame the table draws, when a test asks it to', async ({ page
   });
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
-  await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
-  await expect(page.locator('.table__actions [data-action="stand"]')).toBeVisible({ timeout: 30000 });
+  await betGrid(page).click({ position: { x: 25, y: 25 } });
+  await expect(playButton(page, 'stand')).toBeVisible({ timeout: 30000 });
 
   // The pointer image may still be arriving; it must be drawn within a moment.
   await expect
@@ -50,6 +51,6 @@ test('records each frame the table draws, when a test asks it to', async ({ page
 test('records nothing unless asked', async ({ page }) => {
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
-  await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 10000 });
+  await expect(betOverlay(page)).toBeVisible({ timeout: 10000 });
   expect(await page.evaluate(() => window.__cjFrames)).toBeUndefined();
 });

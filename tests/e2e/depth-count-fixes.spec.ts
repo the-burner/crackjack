@@ -3,8 +3,8 @@
 // outlive Pause or Restart, and the end of a shoe must show its last cards.
 import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { openWithSettings as open } from './support/app';
-import { DRILLS, launchDrill as launch, statsText } from './support/drills';
+import { openWithSettings as open, seedRandom } from './support/app';
+import { DRILLS, countdownOf, launchDrill as launch, statsText } from './support/drills';
 
 const DEPTH = DRILLS.depth;
 const COUNT = DRILLS.count;
@@ -54,10 +54,11 @@ const feltAtCentre = (canvas: Locator) =>
 const answerThen = (page: Page, label: string) =>
   page.evaluate(name => {
     const screen = document.querySelector('[data-screen="drills.depth"]')!;
-    const answers = screen.querySelector('canvas.drill__answers')!;
+    const answers = screen.querySelector('canvas[aria-label="Answer grid"]')!;
     const box = answers.getBoundingClientRect();
     answers.dispatchEvent(
       new MouseEvent('click', {
+        bubbles: true,
         clientX: box.left + box.width * 0.5,
         clientY: box.top + box.height * 0.5,
       }),
@@ -81,7 +82,7 @@ test.describe('depth drill', () => {
     await page.clock.install();
     await open(page, TWO_DECK_DEPTH);
     const screen = await launch(page, DEPTH);
-    const tray = screen.locator('canvas.drill__tray');
+    const tray = screen.getByRole('img', { name: 'Discard tray' });
     expect(await nonFeltPixels(tray)).toBeGreaterThan(0);
 
     await answerThen(page, 'Pause');
@@ -97,9 +98,9 @@ test.describe('depth drill', () => {
     const screen = await launch(page, DEPTH);
 
     await answerThen(page, 'Restart');
-    await expect(screen.locator('.drill__countdown')).toBeVisible();
+    await expect(countdownOf(screen)).toBeVisible();
     await page.clock.runFor(400);
-    expect(await nonFeltPixels(screen.locator('canvas.drill__tray'))).toBe(0);
+    expect(await nonFeltPixels(screen.getByRole('img', { name: 'Discard tray' }))).toBe(0);
   });
 
   test('counts one test for two quick taps on the right answer', async ({ page }) => {
@@ -108,7 +109,7 @@ test.describe('depth drill', () => {
     const screen = await launch(page, DEPTH);
     expect(await statsText(screen)).toContain('Tests: 1');
 
-    await screen.locator('canvas.drill__answers').dblclick({ position: await rightCell(screen) });
+    await screen.getByRole('img', { name: 'Answer grid' }).dblclick({ position: await rightCell(screen) });
     // Past the pause after an answer, by which a second advance would have come.
     await page.clock.runFor(400);
     expect(await statsText(screen)).toContain('Tests: 2');
@@ -125,18 +126,21 @@ test.describe('depth drill', () => {
       'drills.depth.seconds': 60,
     });
     const screen = await launch(page, DEPTH);
-    await expect(screen.locator('.drill__message')).toHaveText('No tests can be shown with these options.');
+    await expect(screen.getByRole('status')).toHaveText('No tests can be shown with these options.');
   });
 });
 
 /** The middle of the only answer cell of a two-deck full-resolution grid. */
 async function rightCell(screen: Locator) {
-  const box = (await screen.locator('canvas.drill__answers').boundingBox())!;
+  const box = (await screen.getByRole('img', { name: 'Answer grid' }).boundingBox())!;
   return { x: box.width * 0.5, y: box.height * 0.5 };
 }
 
 test.describe('count drill', () => {
   test('covers the cards for a test too deep for a tray photo', async ({ page }) => {
+    // A shoe whose last test comes in its last quarter deck, past the last photo
+    // (unseeded, one shoe in five or so tests last at a depth that has a photo).
+    await seedRandom(page, 7);
     await open(page, {
       'drills.count.decks': 8,
       'drills.count.trayStyle': 'eightDeckFront',
@@ -153,9 +157,9 @@ test.describe('count drill', () => {
     // be shown with it - least of all the cards it is about.
     const run = await screen.evaluate(async el => {
       const next = [...el.querySelectorAll('button')].find(b => b.textContent?.trim() === 'Next')!;
-      const answers = el.querySelector('canvas.drill__answers')!;
-      const wrap = el.querySelector<HTMLElement>('.drill__answers-wrap')!;
-      const cards = el.querySelector('canvas.drill__cards')!;
+      const answers = el.querySelector('canvas[aria-label="Answer grid"]')!;
+      const wrap = el.querySelector<HTMLElement>('[data-slot="answer-grid"]')!;
+      const cards = el.querySelector<HTMLCanvasElement>('canvas[aria-label="Cards"]')!;
       const sleep = (ms: number) =>
         new Promise(resolve => {
           setTimeout(resolve, ms);
@@ -179,6 +183,8 @@ test.describe('count drill', () => {
         if (wrap.hidden) {
           if (next.hidden) break;
           next.click();
+          // The screen shows the deal once React has rendered it.
+          await sleep(0);
           continue;
         }
         tests += 1;
@@ -189,6 +195,7 @@ test.describe('count drill', () => {
           for (let column = 0; column < 6; column++) {
             answers.dispatchEvent(
               new MouseEvent('click', {
+                bubbles: true,
                 clientX: box.left + (box.width / 6) * (column + 0.5),
                 clientY: box.top + (box.height / 3) * (row + 0.5),
               }),
@@ -215,7 +222,7 @@ test.describe('count drill', () => {
     });
     const screen = await launch(page, COUNT);
     const next = screen.getByRole('button', { name: 'Next' });
-    const cards = screen.locator('canvas.drill__cards');
+    const cards = screen.getByRole('img', { name: 'Cards' });
 
     // Seventeen flashes of three leave one card of the deck to come.
     for (let flash = 0; flash < 17; flash++) await next.click();
@@ -243,7 +250,7 @@ test.describe('count drill', () => {
       'drills.count.alarmSeconds': 1799,
     });
     const screen = await launch(page, COUNT);
-    const cards = screen.locator('canvas.drill__cards');
+    const cards = screen.getByRole('img', { name: 'Cards' });
 
     // The flashed cards cover the middle of the felt, where the warning goes.
     await expect.poll(() => feltAtCentre(cards)).toBeLessThan(10);
@@ -268,13 +275,14 @@ const recordDeals = (page: Page) =>
 /** Taps every cell of a count grid twice in one tick, so the right one is among them. */
 const tapEveryCellTwice = (page: Page) =>
   page.evaluate(() => {
-    const answers = document.querySelector('[data-screen="drills.count"] canvas.drill__answers')!;
+    const answers = document.querySelector('[data-screen="drills.count"] canvas[aria-label="Answer grid"]')!;
     const box = answers.getBoundingClientRect();
     for (let pass = 0; pass < 2; pass++) {
       for (let row = 0; row < 3; row++) {
         for (let column = 0; column < 6; column++) {
           answers.dispatchEvent(
             new MouseEvent('click', {
+              bubbles: true,
               clientX: box.left + (box.width / 6) * (column + 0.5),
               clientY: box.top + (box.height / 3) * (row + 0.5),
             }),
@@ -299,11 +307,11 @@ test.describe('count drill answers', () => {
     const next = screen.getByRole('button', { name: 'Next' });
     await next.click();
     await next.click();
-    await expect(screen.locator('.drill__answers-wrap')).toBeVisible();
+    await expect(screen.getByRole('img', { name: 'Answer grid' })).toBeVisible();
 
     await tapEveryCellTwice(page);
     // One card comes, then the player deals the next test by hand.
-    await expect(screen.locator('.drill__answers-wrap')).toBeHidden();
+    await expect(screen.getByRole('img', { name: 'Answer grid' })).toBeHidden();
     await expect(next).toBeVisible();
     expect(await page.evaluate(() => window.__cjDeals.length)).toBe(2);
   });
@@ -320,11 +328,11 @@ test.describe('count drill answers', () => {
       'drills.count.alarmSeconds': 1799,
     });
     const screen = await launch(page, COUNT);
-    await expect(screen.locator('.drill__answers-wrap')).toBeVisible();
+    await expect(screen.getByRole('img', { name: 'Answer grid' })).toBeVisible();
     await tapEveryCellTwice(page);
     await screen.getByRole('button', { name: 'Restart' }).click();
     await recordDeals(page);
-    await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+    await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
     await page.clock.runFor(2000);
     const deals = await page.evaluate(() => window.__cjDeals);
     const gaps = deals.slice(1).map((t, i) => t - deals[i]);
@@ -344,6 +352,6 @@ test('a finished drill offers no Pause', async ({ page }) => {
     'drills.depth.seconds': 60,
   });
   const screen = await launch(page, DEPTH);
-  await expect(screen.locator('.drill__message')).toHaveText('No tests can be shown with these options.');
+  await expect(screen.getByRole('status')).toHaveText('No tests can be shown with these options.');
   await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
 });

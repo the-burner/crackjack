@@ -4,7 +4,17 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { seedRandom, visibleOneOf } from './support/app';
 import type { SavedSettings } from './support/app';
-import { readoutRunningCount as feltCount, statsRunningCount } from './support/table';
+import {
+  betGrid as grid,
+  betOverlay,
+  betTitle,
+  playButton,
+  results,
+  SELECTOR,
+  tableScreen,
+  readoutRunningCount as feltCount,
+  statsRunningCount,
+} from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
 
@@ -42,17 +52,21 @@ async function openTable(
   }, settings);
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
-  await expect(page.locator('.bet-overlay')).toBeVisible();
+  await expect(betOverlay(page)).toBeVisible();
 }
 
-const grid = (page: Page) => page.locator('.bet-overlay__grid');
+const betSelect = (page: Page) => page.locator('[data-screen="game.betSelect"]');
+const chip = (page: Page, n: number) =>
+  betSelect(page)
+    .getByRole('group', { name: 'Chips' })
+    .getByRole('button', { name: String(n), exact: true });
 
 /** Plays one round out, however it ends. */
 async function playRound(page: Page) {
   await grid(page).click({ position: { x: 25, y: 25 } });
-  const stand = page.locator('.table__actions [data-action="stand"]');
-  const pass = page.locator('.table__actions [data-action="pass"]');
-  const overlay = page.locator('.bet-overlay');
+  const stand = playButton(page, 'stand');
+  const pass = playButton(page, 'pass');
+  const overlay = betOverlay(page);
   for (let i = 0; i < 25; i++) {
     await expect(visibleOneOf(stand, pass, overlay)).toBeVisible();
     if (await stand.isVisible()) {
@@ -88,17 +102,17 @@ test.describe('the count the table shows', () => {
 test.describe('a game with two side-bet spots', () => {
   test('asks for each spot in turn and records both', async ({ page }) => {
     await openTable(page, { settings: { 'bonuses.game': 11 } });
-    await page.locator('.bet-overlay [data-action="side-bet"]').click();
-    await expect(page.locator('.bet-select')).toBeVisible();
-    await expect(page.locator('.bet-select .topbar__title')).toContainText('U side bet');
-    await page.locator('.bet-select__chips [data-chips="1"]').click();
+    await betOverlay(page).getByRole('button', { name: 'Side Bet' }).click();
+    await expect(betSelect(page)).toBeVisible();
+    await expect(betSelect(page).getByRole('heading', { level: 1 })).toContainText('U side bet');
+    await chip(page, 1).click();
     // The second spot is asked for next, not the first one again.
-    await expect(page.locator('.bet-select')).toBeVisible();
-    await expect(page.locator('.bet-select .topbar__title')).toContainText('O side bet');
-    await page.locator('.bet-select__chips [data-chips="1"]').click();
-    await expect(page.locator('.bet-overlay')).toBeVisible();
-    await expect(page.locator('.bet-overlay__title')).toContainText('U side bet');
-    await expect(page.locator('.bet-overlay__title')).toContainText('O side bet');
+    await expect(betSelect(page)).toBeVisible();
+    await expect(betSelect(page).getByRole('heading', { level: 1 })).toContainText('O side bet');
+    await chip(page, 1).click();
+    await expect(betOverlay(page)).toBeVisible();
+    await expect(betTitle(page)).toContainText('U side bet');
+    await expect(betTitle(page)).toContainText('O side bet');
   });
 });
 
@@ -110,17 +124,17 @@ test.describe('the action buttons', () => {
     test.fixme(`stay clear of every seat's bet at ${seats} seats`, async ({ page }) => {
       await openTable(page, { settings: { 'table.seatCount': seats } });
       await grid(page).click({ position: { x: 25, y: 25 } });
-      await expect(page.locator('.table__actions [data-action="stand"]')).toBeVisible({ timeout: 30000 });
-      const covered = await page.evaluate(() => {
+      await expect(playButton(page, 'stand')).toBeVisible({ timeout: 30000 });
+      const covered = await page.evaluate(sel => {
         const hits = (a: DOMRect, b: DOMRect) =>
           !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
-        const buttons = [...document.querySelectorAll<HTMLElement>('.table__actions .btn')]
+        const buttons = [...document.querySelectorAll<HTMLElement>(sel.actions)]
           .filter(el => !el.hidden)
           .map(el => el.getBoundingClientRect());
-        return [...document.querySelectorAll<HTMLElement>('.table__chip')]
+        return [...document.querySelectorAll<HTMLElement>(sel.chip)]
           .filter(chip => buttons.some(box => hits(chip.getBoundingClientRect(), box)))
           .map(chip => chip.dataset.seat);
-      });
+      }, SELECTOR);
       expect(covered).toEqual([]);
     });
   }
@@ -134,10 +148,10 @@ test.describe('the result shown on a seat at the payoff', () => {
     test(`looks like the app’s other pop-ups in ${name}`, async ({ page }) => {
       await openTable(page, { settings: { 'mechanics.payoffSpeed': 1 }, size });
       await grid(page).click({ position: { x: 25, y: 25 } });
-      const stand = page.locator('.table__actions [data-action="stand"]');
-      const pass = page.locator('.table__actions [data-action="pass"]');
+      const stand = playButton(page, 'stand');
+      const pass = playButton(page, 'pass');
       for (let i = 0; i < 25; i++) {
-        await expect(visibleOneOf(stand, pass, page.locator('.table__result'))).toBeVisible({ timeout: 30000 });
+        await expect(visibleOneOf(stand, pass, results(page))).toBeVisible({ timeout: 30000 });
         if (await stand.isVisible()) {
           await stand.click();
           continue;
@@ -146,26 +160,35 @@ test.describe('the result shown on a seat at the payoff', () => {
           await pass.click();
           continue;
         }
-        if (await page.locator('.table__result').count()) break;
+        if (await results(page).count()) break;
       }
-      const result = page.locator('.table__result').first();
+      const result = results(page).first();
       await expect(result).toBeVisible({ timeout: 30000 });
 
-      const compare = await page.evaluate(async () => {
-        const el = document.querySelector<HTMLElement>('.table__result')!;
+      const compare = await page.evaluate(async sel => {
+        const el = document.querySelector<HTMLElement>(sel.result)!;
         const tone = el.dataset.tone;
-        const url = '/src/ui/toast.ts';
-        const { toast }: typeof import('@/ui/toast') = await import(url);
-        const pop = toast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain' });
-        const pick = (node: Element) => {
-          const c = getComputedStyle(node);
+        const url = '/src/components/game/table-toast.tsx';
+        const { tableToast }: typeof import('@/components/game/table-toast') = await import(url);
+        tableToast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain', ms: 60000 });
+        let pop: HTMLElement | undefined;
+        for (let i = 0; i < 100 && !pop; i++) {
+          await new Promise(requestAnimationFrame);
+          pop = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-removed="true"])`)].find(
+            li => li.textContent === 'x',
+          );
+        }
+        // The box from the pop-up, the type from its text.
+        const pick = (box: Element, text: Element) => {
+          const c = getComputedStyle(box);
+          const t = getComputedStyle(text);
           return {
             radius: c.borderTopLeftRadius,
             shadow: c.boxShadow !== 'none',
-            weight: c.fontWeight,
-            size: c.fontSize,
+            weight: t.fontWeight,
+            size: t.fontSize,
             background: c.backgroundColor,
-            color: c.color,
+            color: t.color,
           };
         };
         const box = el.getBoundingClientRect();
@@ -173,17 +196,15 @@ test.describe('the result shown on a seat at the payoff', () => {
         const clipped =
           getComputedStyle(holder).overflow !== 'visible' &&
           (box.height > holder.clientHeight + 0.5 || box.width > holder.clientWidth + 0.5);
-        const out = {
+        return {
           tone,
-          result: pick(el),
-          popUp: pick(pop),
+          result: pick(el, el),
+          popUp: pick(pop!, pop!.querySelector('[data-title]')!),
           chipWidth: holder.getBoundingClientRect().width,
           width: box.width,
           clipped,
         };
-        pop.remove();
-        return out;
-      });
+      }, SELECTOR);
       // A pill sized to its text, like the pop-ups, not a slab filling the seat.
       expect(compare.result).toEqual(compare.popUp);
       expect(compare.width).toBeLessThan(compare.chipWidth);
@@ -211,11 +232,11 @@ test.describe('opening the table', () => {
     });
     await page.goto('/index.html');
     await page.locator('[data-action="play"]').click();
-    await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
+    await expect(tableScreen(page)).toBeVisible();
     // The burn is still being shown, so the betting menu must not be up yet.
     await page.clock.runFor(400);
-    await expect(page.locator('.bet-overlay')).toBeHidden();
+    await expect(betOverlay(page)).toBeHidden();
     // Then it goes into the tray and betting opens.
-    await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 10000 });
+    await expect(betOverlay(page)).toBeVisible({ timeout: 10000 });
   });
 });

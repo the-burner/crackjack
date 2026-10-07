@@ -2,7 +2,7 @@
 // the grid, and the short pause before the next test.
 
 import type { AnswerGrid, GridCell } from './answer-grid';
-import type { DrillShell } from './drill-screen';
+import type { DrillShell } from './drill-shell';
 import { gradeAnswer } from './scoring';
 import type { Verdict } from './scoring';
 
@@ -31,22 +31,28 @@ export class AnswerPause {
   }
 }
 
+/** A click on a grid's canvas (`currentTarget`). */
+export interface GridTap {
+  clientX: number;
+  clientY: number;
+  currentTarget: Element;
+}
+
 /** The grid cell under a click on the grid's canvas, or null. */
-export function cellAtEvent(grid: AnswerGrid, canvas: HTMLCanvasElement, event: MouseEvent): GridCell | null {
-  const box = canvas.getBoundingClientRect();
+export function cellAtEvent(grid: AnswerGrid, event: GridTap): GridCell | null {
+  const box = event.currentTarget.getBoundingClientRect();
   return grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
 }
 
 export interface GridAnswersOptions {
   shell: DrillShell;
-  canvas: HTMLCanvasElement;
   redraw: () => void;
   /** Clock timers a tap on a cell calls off. */
   timers: readonly string[];
 }
 
 /** Grading for a drill whose answers are given on an answer grid (Depth, Count, Full). */
-export function gridAnswers({ shell, canvas, redraw, timers }: GridAnswersOptions) {
+export function gridAnswers({ shell, redraw, timers }: GridAnswersOptions) {
   const wrong = () => {
     shell.score.recordError();
     shell.app.sound.play('error');
@@ -57,8 +63,8 @@ export function gridAnswers({ shell, canvas, redraw, timers }: GridAnswersOption
      * is marked with the right one beside it, and a wrong one is an error.
      * @returns the verdict, or null when the tap was on no cell.
      */
-    tap(event: MouseEvent, grid: AnswerGrid, correct: number, tolerance: number): Verdict | null {
-      const cell = cellAtEvent(grid, canvas, event);
+    tap(event: GridTap, grid: AnswerGrid, correct: number, tolerance: number): Verdict | null {
+      const cell = cellAtEvent(grid, event);
       if (!cell) return null;
       for (const name of timers) shell.clock?.cancel(name);
       const verdict = gradeAnswer(cell.value, correct, tolerance);

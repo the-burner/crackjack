@@ -1,25 +1,29 @@
-// The options screen every drill has: a column of controls bound to the
-// drill's settings and the green "Launch the Drill" button. The playing
-// strategy and true count settings the drills use are set from Settings on the
-// home screen.
+// The options screen every drill has: groups of controls bound to the drill's
+// settings and the "Launch the Drill" button. The playing strategy and true
+// count settings the drills use are set from Settings on the home screen.
 //
 // Controls follow settings that other screens write too (the custom-hand
 // editor, the tray-style correction made at launch): useSettings() re-renders
 // the screen on every change.
 
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
+import { PlayIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { ScreenLayout } from '@/components/screen-layout';
+import { SettingRow, SettingSlider } from '@/components/settings-controls';
+import { DurationDialog } from '@/components/drills/duration-dialog';
 import { useSettings } from '@/react/app-context';
-import { Button, CheckList, Field, Select, Slider, StandardScreen, ValueButton } from '@/react/components';
 import type { AppSchema, SettingKey, SettingValues } from '@/settings/schema';
 import type { NumberDef } from '@/settings/store';
-import type { SelectOption } from '@/ui/components';
-import { pickDuration, tenthsColumns } from '@/ui/time-wheel';
+import { tenthsColumns } from '@/ui/time-wheel';
 import { clockTime } from './format';
 
 type BoolKey = { [K in SettingKey]: SettingValues[K] extends boolean ? K : never }[SettingKey];
 type IntKey = { [K in SettingKey]: AppSchema[K] extends NumberDef ? K : never }[SettingKey];
 
-/** The title bar, the controls, then the launch button. Build it with `{ className: 'drill-options' }`. */
+/** The title bar, the groups of controls, then the launch button. */
 export function DrillOptionsScreen({
   title,
   help,
@@ -32,103 +36,45 @@ export function DrillOptionsScreen({
   children: ReactNode;
 }) {
   return (
-    <StandardScreen title={title} help={help}>
-      <div className="column">
+    <ScreenLayout title={title} help={help}>
+      <div className="mx-auto grid max-w-4xl items-start gap-4 md:grid-cols-2">
         {children}
-        <Button variant="primary" icon="gear" iconPos="bottom" block onClick={onLaunch} data-action="launch">
+        <Button size="lg" className="h-12 text-base md:col-span-2" onClick={onLaunch} data-action="launch">
           Launch the Drill
+          <PlayIcon />
         </Button>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
-/** A group of controls kept together. */
-export const Group = ({ children }: { children: ReactNode }) => <div className="drill-options__group">{children}</div>;
+/** A switch for a boolean setting. */
+export function OptionSwitch({ label, setting, hidden }: { label: string; setting: BoolKey; hidden?: boolean }) {
+  const settings = useSettings();
+  const id = useId();
+  return (
+    <SettingRow label={label} htmlFor={id} hidden={hidden}>
+      {/* Named directly: Base UI only finds the label after a later render. */}
+      <Switch
+        id={id}
+        aria-label={label}
+        checked={settings.get(setting)}
+        onCheckedChange={on => settings.set(setting, on)}
+      />
+    </SettingRow>
+  );
+}
 
-/** A label on the left and a control on the right. */
-export const Row = ({ label, hidden, children }: { label: string; hidden?: boolean; children: ReactNode }) => (
-  <Field label={label} inline hidden={hidden}>
-    {children}
-  </Field>
-);
-
-/** A label over one or more cards, keeping them together (as on the settings screens). */
-export const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <div className="section">
-    <h2 className="section__title">{title}</h2>
-    {children}
+/** A labelled slider over the schema's range. */
+export const OptionSlider = ({ label, setting, hidden }: { label: string; setting: IntKey; hidden?: boolean }) => (
+  <div hidden={hidden}>
+    <SettingSlider label={label} setting={setting} />
   </div>
 );
-
-/** A select and a small button side by side. */
-export const Pair = ({ children }: { children: ReactNode }) => <div className="drill-options__pair">{children}</div>;
-
-/** A label on the left and a value on the right, as on the settings screens. */
-export const ValueRow = ({ label, hidden, children }: { label: string; hidden?: boolean; children: ReactNode }) => (
-  <div className="settings-row" hidden={hidden}>
-    <span className="label">{label}</span>
-    {children}
-  </div>
-);
-
-/** A select bound to a setting. `onChange` runs after the write. */
-export function OptionSelect<K extends SettingKey>({
-  setting,
-  options,
-  hidden,
-  onChange,
-}: {
-  setting: K;
-  options: readonly SelectOption<SettingValues[K]>[];
-  hidden?: boolean;
-  onChange?: (value: SettingValues[K]) => void;
-}) {
-  const settings = useSettings();
-  return (
-    <Select
-      name={setting}
-      hidden={hidden}
-      options={options}
-      value={settings.get(setting)}
-      onChange={value => {
-        settings.set(setting, value);
-        onChange?.(value);
-      }}
-    />
-  );
-}
-
-/** One checkbox for a boolean setting. */
-export function OptionCheck({ label, setting, hidden }: { label: string; setting: BoolKey; hidden?: boolean }) {
-  const settings = useSettings();
-  return (
-    <CheckList
-      hidden={hidden}
-      items={[{ label, checked: settings.get(setting), onChange: on => settings.set(setting, on) }]}
-    />
-  );
-}
-
-/** A button showing a number; tapping it prompts for a new one within the schema's range. */
-export function OptionNumber({ setting, prompt, hidden }: { setting: IntKey; prompt: string; hidden?: boolean }) {
-  const settings = useSettings();
-  const { min, max } = settings.schema[setting];
-  return (
-    <ValueButton
-      hidden={hidden}
-      value={settings.get(setting)}
-      onChange={value => settings.set(setting, value)}
-      prompt={prompt}
-      min={min}
-      max={max}
-    />
-  );
-}
 
 /**
  * A row showing a duration setting as hh:mm:ss (or, with `tenths`, a value
- * in tenths of a second as "0.8 s"); tapping it opens the wheels.
+ * in tenths of a second as "0.8 s"); tapping it opens the duration dialog.
  */
 export function OptionDuration({
   label,
@@ -142,42 +88,34 @@ export function OptionDuration({
   hidden?: boolean;
 }) {
   const settings = useSettings();
+  const id = useId();
+  const [open, setOpen] = useState(false);
   const { min, max = Infinity } = settings.schema[setting];
   const value = settings.get(setting);
   return (
-    <ValueRow label={label} hidden={hidden}>
+    <SettingRow label={label} htmlFor={id} hidden={hidden}>
       <Button
-        className="value-btn"
+        id={id}
+        variant="outline"
+        className="min-w-24 tabular-nums"
         aria-label={label}
-        onClick={async () => {
-          const picked = await pickDuration({
-            title: label,
-            value: settings.get(setting),
-            min,
-            max,
-            columns: tenths ? tenthsColumns(max) : undefined,
-          });
-          if (picked !== null) settings.set(setting, picked);
-        }}
+        onClick={() => setOpen(true)}
       >
         {tenths ? `${(value / 10).toFixed(1)} s` : clockTime(value)}
       </Button>
-    </ValueRow>
-  );
-}
-
-/** An unlabelled slider bound to a setting, over the schema's range. */
-export function OptionSlider({ setting }: { setting: IntKey }) {
-  const settings = useSettings();
-  const { min = 0, max = 100 } = settings.schema[setting];
-  return (
-    <Slider
-      label=""
-      value={settings.get(setting)}
-      onChange={value => settings.set(setting, value)}
-      min={min}
-      max={max}
-    />
+      <DurationDialog
+        title={label}
+        value={value}
+        min={min}
+        max={max}
+        columns={tenths ? tenthsColumns(max) : undefined}
+        open={open}
+        onClose={picked => {
+          setOpen(false);
+          if (picked !== null) settings.set(setting, picked);
+        }}
+      />
+    </SettingRow>
   );
 }
 
@@ -188,12 +126,12 @@ export const DECK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8].map(value => ({
 }));
 
 /** The timer mode every drill offers besides its own timed mode: stop when the drill time runs out. */
-export const COUNT_DOWN_HALT_OPTION = { value: 'countDownHalt', label: 'Timer Mode: Count Down & Halt' } as const;
+export const COUNT_DOWN_HALT_OPTION = { value: 'countDownHalt', label: 'Count Down & Halt' } as const;
 
 export const ACCURACY_OPTIONS = [
-  { value: 0, label: 'Accuracy: Exact' },
-  { value: 1, label: 'Accuracy: ±1' },
-  { value: 2, label: 'Accuracy: ±2' },
+  { value: 0, label: 'Exact' },
+  { value: 1, label: '±1' },
+  { value: 2, label: '±2' },
 ];
 
 export const TRAY_OPTIONS = [
@@ -202,16 +140,16 @@ export const TRAY_OPTIONS = [
   { value: 'doubleDeckFront', label: 'Double-deck tray, front' },
   { value: 'sixDeckRear', label: 'Six-deck tray, rear' },
   { value: 'doubleDeckRear', label: 'Double-deck tray, rear' },
-];
+] as const;
 
 export const BIAS_OPTIONS = [
-  { value: 'none', label: 'Bias: None' },
-  { value: 'negative', label: 'Bias: Negative' },
-  { value: 'positive', label: 'Bias: Positive' },
+  { value: 'none', label: 'None' },
+  { value: 'negative', label: 'Negative' },
+  { value: 'positive', label: 'Positive' },
 ] as const;
 
 export const END_WARNING_OPTIONS = [
-  { value: 'none', label: 'End warning: None' },
-  { value: 'oneCardLeft', label: 'End warning: one card left' },
-  { value: 'twoCardsLeft', label: 'End warning: two cards left' },
+  { value: 'none', label: 'None' },
+  { value: 'oneCardLeft', label: 'One card left' },
+  { value: 'twoCardsLeft', label: 'Two cards left' },
 ] as const;

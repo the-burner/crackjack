@@ -3,13 +3,17 @@
 // what the table itself shows.
 
 import { useReducer } from 'react';
+import { useStore } from 'zustand';
+import { RefreshCwIcon } from 'lucide-react';
 import { money } from '@/core/money';
-import { useSettings } from '@/react/app-context';
-import { Button, StandardScreen } from '@/react/components';
+import { useApp, useSettings } from '@/react/app-context';
 import { reactScreen, useOnShow } from '@/react/screen';
-import { SettingChecks } from '@/react/settings-form';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
+import { ScreenLayout, Section } from '@/components/screen-layout';
+import { SettingSwitches } from '@/components/settings-controls';
+import { confirm } from '@/components/dialogs';
 import type { SettingReader } from '@/settings/schema';
-import { confirm } from '@/ui/dialogs';
 import type { GameSession } from '@/game/session';
 
 /** The in-table readouts, in display order. */
@@ -20,10 +24,10 @@ const DISPLAY_OPTIONS = [
   { key: 'display.showTrueCount', label: 'Display True Count' },
 ] as const;
 
-type StatRow = { label: string; value: string | number; head?: boolean };
+type StatRow = { label: string; value?: string | number; head?: boolean };
 
-/** A section heading row, shown across both columns. */
-const section = (name: string): StatRow => ({ label: name, value: name, head: true });
+/** A section heading row, across both columns. */
+const section = (name: string): StatRow => ({ label: name, head: true });
 const row = (label: string, value: string | number): StatRow => ({ label, value });
 
 /** The table's rows for `session`, or a placeholder without one. */
@@ -64,8 +68,10 @@ function statRows(session: GameSession | undefined, get: SettingReader): StatRow
 }
 
 export function GameStats({ params: { session } }: { params: { session?: GameSession } }) {
+  const app = useApp();
   const settings = useSettings();
-  // The session changes while the table covers this screen.
+  // Re-rendered whenever the session saves its figures; the counts are read when shown.
+  useStore(app.gameStats, state => state.value);
   const [, refresh] = useReducer((n: number) => n + 1, 0);
   useOnShow(refresh);
 
@@ -76,28 +82,43 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
   }
 
   return (
-    <StandardScreen title="Statistics" help="game.stats">
-      <div className="column column--wide">
-        <table className="stats-table">
-          <tbody>
-            {statRows(session, key => settings.get(key)).map(({ label, value, head }, i) => (
-              <tr key={i} className={head ? 'stats-table__head' : undefined}>
-                <th>{label}</th>
-                <td>{String(value)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Button block icon="refresh" onClick={resetStats} data-action="reset-stats">
+    <ScreenLayout title="Statistics" help="game.stats">
+      <div className="mx-auto flex max-w-xl flex-col gap-4">
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <Table>
+            <TableBody>
+              {statRows(session, key => settings.get(key)).map(({ label, value, head }, i) =>
+                head ? (
+                  <TableRow key={i} className="bg-muted hover:bg-muted">
+                    <TableHead colSpan={2} scope="colgroup" className="font-semibold text-foreground">
+                      {label}
+                    </TableHead>
+                  </TableRow>
+                ) : (
+                  <TableRow key={i}>
+                    <TableHead scope="row" className="font-normal text-foreground">
+                      {label}
+                    </TableHead>
+                    <TableCell className="text-right tabular-nums">{String(value)}</TableCell>
+                  </TableRow>
+                ),
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <Button variant="secondary" size="lg" onClick={resetStats} data-action="reset-stats">
+          <RefreshCwIcon data-icon="inline-start" />
           Reset Stats
         </Button>
-        <SettingChecks items={DISPLAY_OPTIONS} />
+        <Section title="Display">
+          <SettingSwitches items={DISPLAY_OPTIONS} />
+        </Section>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
-export const gameStatsScreen = reactScreen(GameStats, { className: 'game-stats' });
+export const gameStatsScreen = reactScreen(GameStats);
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;

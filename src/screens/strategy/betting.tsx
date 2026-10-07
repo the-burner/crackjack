@@ -5,9 +5,13 @@ import { useState } from 'react';
 import { reactScreen, useOnShow } from '@/react/screen';
 import type { ScreenProps } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
-import { Button, CheckList, Select, StandardScreen, ValueButton } from '@/react/components';
-import { SettingsGroup } from '@/react/settings-form';
-import { promptNumber } from '@/ui/dialogs';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScreenLayout } from '@/components/screen-layout';
+import { OptionSelect, SettingsGroup } from '@/components/settings-controls';
+import { NumberRow, SwitchRow } from '@/components/settings/controls';
+import { promptNumber } from '@/components/dialogs';
 import {
   CHIP_CHOICES,
   HAND_CHOICES,
@@ -36,73 +40,75 @@ export function Betting() {
   const ramp = normalizeRamp(settings.get('betting.ramp'));
   const showCounts = settings.get('betting.warnOnError');
   const counts = countLabels(ramp, { showCounts });
+  const openRow = (row: number) => app.open('settings.betting.select', { row });
 
   return (
-    <StandardScreen title="Allowed Bets" help="settings.betting">
-      <div className="column">
-        <p className="note settings-note">
+    <ScreenLayout title="Allowed Bets" help="settings.betting">
+      <div className="mx-auto flex max-w-md flex-col gap-4">
+        <p className="text-center text-sm text-muted-foreground">
           Enter the number of different bets in the table and then click on a table cell to enter a new bet.
         </p>
         <SettingsGroup>
-          <CheckList
-            items={[
-              {
-                label: 'Warning on Betting Error',
-                checked: showCounts,
-                onChange: on => settings.set('betting.warnOnError', on),
-              },
-            ]}
+          <SwitchRow
+            label="Warning on Betting Error"
+            checked={showCounts}
+            onCheckedChange={on => settings.set('betting.warnOnError', on)}
           />
-          <div className="tc-row">
-            <span className="label">Chip Value:</span>
-            <Select
-              label="Chip Value:"
-              options={CHIP_OPTIONS}
-              value={settings.get('betting.chipValue')}
-              onChange={value => settings.set('betting.chipValue', value)}
-            />
-          </div>
-          <div className="tc-row">
-            <span className="label">Number of bets:</span>
-            <ValueButton
-              value={ramp.rows.length}
-              onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
-              prompt="Number of different bets in table"
-              min={MIN_ROWS}
-              max={MAX_ROWS}
-            />
-          </div>
-          <div className="tc-row" hidden={!showCounts}>
-            <span className="label">Minimum bet count:</span>
-            <ValueButton
-              value={ramp.minCount}
-              onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
-              prompt="Start Count"
-              min={-99}
-              max={99}
-            />
-          </div>
+          <OptionSelect
+            label="Chip Value"
+            options={CHIP_OPTIONS}
+            value={settings.get('betting.chipValue')}
+            onChange={value => settings.set('betting.chipValue', value)}
+          />
+          <NumberRow
+            label="Number of bets"
+            value={ramp.rows.length}
+            onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
+            prompt="Number of different bets in table"
+            min={MIN_ROWS}
+            max={MAX_ROWS}
+          />
+          <NumberRow
+            label="Minimum bet count"
+            value={ramp.minCount}
+            onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
+            prompt="Start Count"
+            min={-99}
+            max={99}
+            hidden={!showCounts}
+          />
         </SettingsGroup>
-        <div>
-          <table className="strategy-grid bet-table">
-            <thead>
-              <tr>
-                <th>Count</th>
-                <th>Hands x Chips</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <Table aria-label="Bets" className="text-base tabular-nums">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[35%] text-center">Count</TableHead>
+                <TableHead className="text-center">Hands x Chips</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {ramp.rows.map((row, i) => (
-                <tr key={i} data-row={i} onClick={() => app.open('settings.betting.select', { row: i })}>
-                  <td>{counts[i]}</td>
-                  <td>{formatRow(row)}</td>
-                </tr>
+                <TableRow
+                  key={i}
+                  tabIndex={0}
+                  className="cursor-pointer"
+                  onClick={() => openRow(i)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openRow(i);
+                    }
+                  }}
+                >
+                  <TableCell className="text-center">{counts[i]}</TableCell>
+                  <TableCell className="text-center">{formatRow(row)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
@@ -132,52 +138,51 @@ export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>)
   }
 
   return (
-    <StandardScreen title="Allowed Bets" help="settings.betting">
-      <div className="bet-pad">
-        <div className="note">
+    <ScreenLayout title="Allowed Bets" help="settings.betting">
+      <div className="mx-auto flex max-w-md flex-col gap-4">
+        <p className="text-sm text-muted-foreground">
           In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the
           number of spots at the top first. You can also enter a custom bet at the bottom.
-        </div>
-        <div className="bet-pad__row" role="group" aria-label="Spots">
+        </p>
+        <ToggleGroup
+          variant="outline"
+          aria-label="Spots"
+          className="grid w-full grid-cols-6 gap-1.5"
+          value={[String(hands)]}
+          onValueChange={(value: string[]) => {
+            // Tapping the chosen number again keeps it.
+            if (value.length) setHands(Number(value[0]));
+          }}
+        >
           {HAND_CHOICES.map(n => (
-            <button
+            <ToggleGroupItem
               key={n}
-              type="button"
-              className={n === hands ? 'tile tile--hands is-on' : 'tile tile--hands'}
-              data-hands={n}
-              onClick={() => setHands(n)}
+              value={String(n)}
+              className="h-11 aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
             >
               {n === 1 ? '1' : `${n}x`}
-            </button>
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Chips">
+          {CHIP_CHOICES.map(n => (
+            <Button
+              key={n}
+              variant="outline"
+              className="h-11 tabular-nums"
+              disabled={n > maxChipsForHands(hands)}
+              onClick={() => choose(n)}
+            >
+              {String(n)}
+            </Button>
           ))}
         </div>
-        <div className="bet-pad__chips" role="group" aria-label="Chips">
-          {chunk(CHIP_CHOICES, HAND_CHOICES.length).map((cells, i) => (
-            <div key={i} className="bet-pad__row">
-              {cells.map(n => (
-                <button
-                  key={n}
-                  type="button"
-                  className="tile tile--chips"
-                  data-chips={n}
-                  disabled={n > maxChipsForHands(hands)}
-                  onClick={() => choose(n)}
-                >
-                  {String(n)}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-        <Button block onClick={() => customBet()} data-action="custom-bet">
+        <Button variant="secondary" className="w-full" onClick={() => customBet()} data-action="custom-bet">
           Custom Bet
         </Button>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
 export const betSelectScreen = reactScreen(BetSelect);
-
-const chunk = <T,>(items: readonly T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));

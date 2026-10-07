@@ -1,12 +1,12 @@
 // Count drills: cards are flashed, then a discard tray and a grid of counts.
+// The run and the drawing; the screen component renders around it.
 
-import { h } from '@/ui/dom';
-import { button } from '@/ui/components';
 import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
 import { cssVar } from '@/ui/theme';
-import type { App, Screen } from '@/app/app';
+import type { App } from '@/app/app';
 import type { CardId } from '@/core/cards';
-import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import { DrillShell, drillClockFor, snapshotOf } from '@/drills/shared/drill-shell';
+import type { DrillShellView } from '@/drills/shared/drill-shell';
 import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { DrillShoe } from '@/drills/shared/shoe';
@@ -15,6 +15,7 @@ import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '@/drills/
 import { drawGridIn } from '@/drills/shared/answer-grid';
 import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
+import type { GridTap } from '@/drills/shared/grid-answers';
 import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '@/drills/shared/end-warning';
 import { loadTrayImage, drawTray, trayImage } from '@/drills/shared/discard-tray';
 import type { TrayPhoto } from '@/drills/shared/discard-tray';
@@ -38,7 +39,22 @@ interface Flash {
   layout: FlashLayout;
 }
 
-export function countScreen(app: App): Screen {
+export interface CountElements {
+  display: HTMLElement;
+  canvas: HTMLCanvasElement;
+  gridCanvas: HTMLCanvasElement;
+  gridWrap: HTMLElement;
+}
+
+export interface CountView {
+  shell: DrillShellView;
+  /** The answer grid is up (a test, not paused). */
+  gridShown: boolean;
+  /** The player deals with Next. */
+  nextShown: boolean;
+}
+
+export function createCountDrill(app: App) {
   const s = app.settings;
   const options = {
     drill: s.get('drills.count.drill'),
@@ -68,17 +84,7 @@ export function countScreen(app: App): Screen {
   const maxCards = maxFlashSize(options.cardsPerFlash);
   const inHalfSteps = halfSteps(options.drill, options.strategy);
 
-  const canvas = h('canvas', { class: 'drill__cards' });
-  const gridCanvas = h('canvas', { class: 'drill__answers' });
-  const gridWrap = h('div', { class: 'drill__answers-wrap' }, gridCanvas);
-  const nextButton = button('Next', {
-    icon: 'forward',
-    hidden: true,
-    onClick: () => {
-      if (!shell.paused) dealFlash();
-    },
-  });
-
+  let els: CountElements | null = null;
   let run = -1;
   let shoe: DrillShoe | null = null;
   /** Cards still to deal before the next test. */
@@ -93,27 +99,22 @@ export function countScreen(app: App): Screen {
   let askingTrueCount = false;
   let notice = '';
   let done = false;
+  let nextShown = false;
   /** A correct answer came in while paused: deal again on resume. */
   let resumePending = false;
   /** The wait between a right answer and the next deal, so it can be called off. */
   const advanceTimer = new AnswerPause();
 
-  const shell = drillShell(app, {
-    title: 'Count Drills',
-    help: 'drills.count',
+  const shell = new DrillShell(app, {
     countLabel: 'Tests',
-    className: 'drill--count drill--grid',
     pausable: true,
     onStart: start,
     onStop: stop,
-    onLayout: draw,
     onPause: pause,
     onResume: resume,
   });
-  shell.setDisplay(canvas);
-  shell.controls.append(nextButton);
-  shell.body.append(gridWrap);
-  const answers = gridAnswers({ shell, canvas: gridCanvas, redraw: draw, timers: ['test'] });
+  const changed = () => shell.changed();
+  const answers = gridAnswers({ shell, redraw: changed, timers: ['test'] });
 
   const dealSpeed = () => progressiveSpeed(options.dealSeconds, run, options.progressive);
 
@@ -132,7 +133,7 @@ export function countScreen(app: App): Screen {
       trueCountSettings: options.trueCountSettings,
     });
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
-    nextButton.hidden = auto;
+    nextShown = !auto;
     const clock = drillClockFor(shell, {
       mode: options.timerMode,
       limit: options.alarmSeconds,
@@ -143,18 +144,18 @@ export function countScreen(app: App): Screen {
       dealFlash();
       clock.every('deal', dealSpeed(), dealFlash);
     } else {
-      draw();
+      changed();
     }
   }
 
   function stop() {
     shell.clock?.stop();
     advanceTimer.cancel();
-    nextButton.hidden = true;
+    nextShown = false;
     grid = null;
     tray = null;
     flash = null;
-    draw();
+    changed();
   }
 
   function dealFlash() {
@@ -190,7 +191,7 @@ export function countScreen(app: App): Screen {
       rotated: flashRotated(options.orientation, Math.random),
       layout: flashLayout(options.positions, Math.random),
     };
-    draw();
+    changed();
   }
 
   function startTest() {
@@ -214,11 +215,10 @@ export function countScreen(app: App): Screen {
     if (shoe.dealt > 1) flash = null;
     if (tray) {
       trayPicture = loadTrayImage(tray.src);
-      if (!trayPicture.complete) trayPicture.addEventListener('load', draw, { once: true });
+      if (!trayPicture.complete) trayPicture.addEventListener('load', changed, { once: true });
     }
     shell.score.beginTest();
-    nextButton.hidden = true;
-    draw();
+    nextShown = false;
     shell.updateStats(shell.clock);
     if (timedTests) shell.clock?.after('test', options.testSeconds, timeout);
   }
@@ -227,7 +227,7 @@ export function countScreen(app: App): Screen {
     if (grid) answers.timeout(grid, correctIndex);
   }
 
-  function tap(event: MouseEvent) {
+  function tap(event: GridTap) {
     // Once the answer is in, further taps are ignored until the next deal.
     if (!grid || done || shell.paused || advanceTimer.pending) return;
     if (answers.tap(event, grid, correctIndex, options.accuracy) !== 'correct') return;
@@ -247,15 +247,16 @@ export function countScreen(app: App): Screen {
     grid = null;
     tray = null;
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
-    nextButton.hidden = auto;
+    nextShown = !auto;
     dealFlash();
     if (auto && !done) shell.clock?.every('deal', dealSpeed(), dealFlash);
+    changed();
   }
 
   /** Stops dealing and the test clock, and covers the cards. */
   function pause() {
     shell.clock?.pause();
-    draw();
+    changed();
   }
 
   function resume() {
@@ -270,7 +271,7 @@ export function countScreen(app: App): Screen {
     } else if (auto) {
       shell.clock?.every('deal', dealSpeed(), dealFlash);
     }
-    draw();
+    changed();
   }
 
   function finishShoe() {
@@ -280,12 +281,23 @@ export function countScreen(app: App): Screen {
     tray = null;
     flash = null;
     shell.finish();
-    draw();
+  }
+
+  /** Next, or a tap on the cards in the deal-by-hand modes. */
+  function next() {
+    if (!shell.paused) dealFlash();
+  }
+
+  function tapCards() {
+    // In the count-down modes the player deals by tapping the cards as well.
+    if (!auto && !grid) dealFlash();
   }
 
   function draw() {
-    const width = shell.display.clientWidth;
-    const height = shell.display.clientHeight;
+    if (!els) return;
+    const { display, canvas, gridCanvas, gridWrap } = els;
+    const width = display.clientWidth;
+    const height = display.clientHeight;
     if (width > 2 && height > 2) {
       const ctx = setupCanvas(canvas, width, height);
       ctx.fillStyle = cssVar('--felt', '#008000');
@@ -309,7 +321,6 @@ export function countScreen(app: App): Screen {
         ctx.fillText(notice, width / 2, height / 2);
       }
     }
-    gridWrap.hidden = !grid || shell.paused;
     if (grid && !shell.paused) drawGridIn(grid, gridCanvas, gridWrap);
   }
 
@@ -334,13 +345,28 @@ export function countScreen(app: App): Screen {
     ctx.restore();
   }
 
-  gridCanvas.addEventListener('click', tap);
-  // In the count-down modes the player deals by tapping the cards as well.
-  canvas.addEventListener('click', () => {
-    if (!auto && !grid) dealFlash();
-  });
+  loadCardImages().then(changed);
 
-  loadCardImages().then(draw);
-
-  return shell.screen({ redraw: draw });
+  return {
+    shell,
+    subscribe: shell.subscribe,
+    getSnapshot: snapshotOf(shell, (): CountView => ({
+      shell: shell.getSnapshot(),
+      gridShown: !!grid && !shell.paused,
+      nextShown,
+    })),
+    /** The elements to draw in, from the screen; returns the detach. */
+    attach(elements: CountElements) {
+      els = elements;
+      return () => {
+        els = null;
+      };
+    },
+    draw,
+    tap,
+    next,
+    tapCards,
+  };
 }
+
+export type CountDrill = ReturnType<typeof createCountDrill>;

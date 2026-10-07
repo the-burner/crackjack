@@ -1,21 +1,21 @@
 // Basic Setup: seats, shoe, burn cards and bankroll.
 
+import { RefreshCwIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { useApp, useSettings } from '@/react/app-context';
-import { Button, CheckList } from '@/react/components';
 import { reactScreen } from '@/react/screen';
-import { SettingNumber, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { SettingNumber, SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import type { Option } from '@/components/settings-controls';
 import { DECKS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
-import { toast } from '@/ui/toast';
-
-/** Storage key holding the current bankroll, which the game screen restores. */
 
 const NOTE =
   'Set the basic configuation on this screen. Seats can have computer players ' +
   'or can be available for you to play. You can bet in any number of the available seats.';
 
-const SEAT_COUNTS: readonly SelectOption<SettingValues['table.seatCount']>[] = [
+const SEAT_COUNTS: readonly Option<SettingValues['table.seatCount']>[] = [
   { value: 1, label: 'One Seat' },
   { value: 2, label: 'Two Seats' },
   { value: 4, label: 'Four Seats' },
@@ -35,7 +35,7 @@ const DECK_LABELS = [
 
 const DECK_OPTIONS = DECKS.map((decks, i) => ({ value: decks, label: DECK_LABELS[i] }));
 
-const SHUFFLE_MODES: readonly SelectOption<SettingValues['table.shuffleMode']>[] = [
+const SHUFFLE_MODES: readonly Option<SettingValues['table.shuffleMode']>[] = [
   { value: 'cutCard', label: 'Shuffle after a Cut Card' },
   { value: 'rounds', label: 'Shuffle after Fixed Rounds' },
 ];
@@ -55,12 +55,17 @@ export function Setup() {
   return (
     <SettingsScreen title="Basic Setup" help="settings.setup" note={NOTE}>
       <SettingsGroup>
-        <SettingSelect setting="table.seatCount" options={SEAT_COUNTS} />
-        <p className="note settings-note">Below, highlighted seats are computer players. Click to change.</p>
-        <SeatPicker />
+        <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
+        <div className="space-y-2 px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Below, highlighted seats are computer players. Click to change.
+          </p>
+          <SeatPicker />
+        </div>
       </SettingsGroup>
       <SettingsGroup>
         <SettingSelect
+          label="Decks"
           setting="table.decks"
           options={DECK_OPTIONS}
           onChange={value => {
@@ -72,6 +77,7 @@ export function Setup() {
           }}
         />
         <SettingSelect
+          label="Shuffle"
           setting="table.shuffleMode"
           options={SHUFFLE_MODES}
           onChange={value => settings.set('table.shuffleMode', value)}
@@ -86,16 +92,19 @@ export function Setup() {
         <SettingNumber label="Rounds:" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />
         <SettingNumber label="Burn Cards:" setting="table.burnCards" prompt="Burn Cards" />
         <SettingNumber label="Starting Bankroll:" setting="table.startingBankroll" prompt="Starting Bankroll" />
-        <Button
-          icon="refresh"
-          block
-          onClick={() => {
-            app.bankroll.setState({ value: settings.get('table.startingBankroll') });
-            toast('Bankroll refreshed');
-          }}
-        >
-          Refresh Bankroll
-        </Button>
+        <div className="px-4 py-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              app.bankroll.setState({ value: settings.get('table.startingBankroll') });
+              toast('Bankroll refreshed');
+            }}
+          >
+            <RefreshCwIcon />
+            Refresh Bankroll
+          </Button>
+        </div>
       </SettingsGroup>
     </SettingsScreen>
   );
@@ -105,19 +114,32 @@ export function Setup() {
 function SeatPicker() {
   const settings = useSettings();
   const seats = settings.get('table.computerSeats');
-  const items = [];
-  for (let seat = MAX_SEATS; seat >= 1; seat -= 1) {
-    items.push({
-      label: `#${seat}`,
-      checked: Boolean(seats[seat - 1]),
-      onChange: (computer: boolean) => {
+  const order = Array.from({ length: MAX_SEATS }, (_, i) => MAX_SEATS - i);
+  return (
+    <ToggleGroup
+      multiple
+      variant="outline"
+      spacing={0}
+      aria-label="Computer players"
+      className="w-full"
+      value={order.filter(seat => seats[seat - 1]).map(String)}
+      onValueChange={(value: string[]) => {
         const next = settings.get('table.computerSeats').slice();
-        next[seat - 1] = computer;
+        for (const seat of order) next[seat - 1] = value.includes(String(seat));
         settings.set('table.computerSeats', next);
-      },
-    });
-  }
-  return <CheckList horizontal items={items} />;
+      }}
+    >
+      {order.map(seat => (
+        <ToggleGroupItem
+          key={seat}
+          value={String(seat)}
+          className="flex-1 aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90"
+        >
+          {`#${seat}`}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  );
 }
 
-export const setupScreen = reactScreen(Setup, { className: 'settings' });
+export const setupScreen = reactScreen(Setup);

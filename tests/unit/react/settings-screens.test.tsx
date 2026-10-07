@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Setup } from '@/screens/settings/setup';
 import { CommonRules } from '@/screens/settings/common-rules';
@@ -11,17 +12,22 @@ import { Home } from '@/screens/home';
 import { Help } from '@/screens/help';
 import { createTestApp, renderScreen } from '../../support/render';
 
-vi.mock('@/ui/dialogs', async importOriginal => ({
-  ...(await importOriginal<typeof import('@/ui/dialogs')>()),
-  confirm: vi.fn(async () => true),
-}));
+const { toast } = vi.hoisted(() => ({ toast: vi.fn() }));
+vi.mock('sonner', () => ({ toast }));
 
 vi.mock('@/data/help', async importOriginal => {
   const { HELP } = await importOriginal<typeof import('@/data/help')>();
   return { HELP: { ...HELP, 'test.links': '<p><a href="https://example.com">site</a></p>' } };
 });
 
-const checkbox = (name: string) => screen.getByRole('checkbox', { name });
+const toggle = (name: string) => screen.getByRole('switch', { name });
+const select = (name: string) => screen.getByRole('combobox', { name });
+
+/** Opens a select and picks one of its options. */
+async function choose(user: UserEvent, name: string, option: string) {
+  await user.click(select(name));
+  await user.click(await screen.findByRole('option', { name: option }));
+}
 
 describe('Basic Setup', () => {
   it('fewer decks pull the cut card back inside the shoe', async () => {
@@ -29,10 +35,11 @@ describe('Basic Setup', () => {
     const app = createTestApp();
     app.settings.set('table.cardsBehindCutCard', 300);
     renderScreen(<Setup />, { app });
-    await user.selectOptions(screen.getByDisplayValue('Six Decks'), 'Double Deck');
+    expect(select('Decks')).toHaveTextContent('Six Decks');
+    await choose(user, 'Decks', 'Double Deck');
     expect(app.settings.get('table.decks')).toBe(2);
     expect(app.settings.get('table.cardsBehindCutCard')).toBe(103);
-    expect(screen.getByRole('button', { name: '103' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Shuffle Point/Cards: 103' })).toBeVisible();
   });
 
   it('shows the cut card row or the rounds row by shuffle mode', async () => {
@@ -40,7 +47,8 @@ describe('Basic Setup', () => {
     renderScreen(<Setup />);
     expect(screen.getByText('Shuffle Point/Cards:')).toBeVisible();
     expect(screen.getByText('Rounds:')).not.toBeVisible();
-    await user.selectOptions(screen.getByDisplayValue('Shuffle after a Cut Card'), 'Shuffle after Fixed Rounds');
+    expect(select('Shuffle')).toHaveTextContent('Shuffle after a Cut Card');
+    await choose(user, 'Shuffle', 'Shuffle after Fixed Rounds');
     expect(screen.getByText('Shuffle Point/Cards:')).not.toBeVisible();
     expect(screen.getByText('Rounds:')).toBeVisible();
   });
@@ -48,13 +56,13 @@ describe('Basic Setup', () => {
   it('seats run 6..1 and toggle computer players', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Setup />);
-    const seats = ['#6', '#5', '#4', '#3', '#2', '#1'].map(checkbox);
-    expect(screen.getAllByRole('checkbox')).toEqual(seats);
-    await user.click(checkbox('#3'));
+    const picker = within(screen.getByRole('group', { name: 'Computer players' }));
+    expect(picker.getAllByRole('button').map(b => b.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
+    await user.click(picker.getByRole('button', { name: '#3' }));
     expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, false, false, false]);
-    expect(checkbox('#3')).toBeChecked();
-    // eslint-disable-next-line testing-library/no-node-access -- the row's look comes from its class
-    expect(checkbox('#3').closest('label')).toHaveClass('is-on');
+    expect(picker.getByRole('button', { name: '#3' })).toHaveAttribute('aria-pressed', 'true');
+    expect(picker.getByRole('button', { name: '#1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(picker.getByRole('button', { name: '#2' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('Refresh Bankroll stores the starting bankroll', async () => {
@@ -64,6 +72,7 @@ describe('Basic Setup', () => {
     renderScreen(<Setup />, { app });
     await user.click(screen.getByRole('button', { name: 'Refresh Bankroll' }));
     expect(app.bankroll.getState().value).toBe(500);
+    expect(toast).toHaveBeenCalledWith('Bankroll refreshed');
   });
 });
 
@@ -71,21 +80,19 @@ describe('rule interactions', () => {
   it('unchecking peek on ace unchecks peek on ten', async () => {
     const user = userEvent.setup();
     renderScreen(<PlayVariations />);
-    expect(checkbox('Dealer peeks on ten')).toBeChecked();
-    await user.click(checkbox('Dealer peeks on ace'));
-    expect(checkbox('Dealer peeks on ten')).not.toBeChecked();
-    // eslint-disable-next-line testing-library/no-node-access -- the row's look comes from its class
-    expect(checkbox('Dealer peeks on ten').closest('label')).not.toHaveClass('is-on');
+    expect(toggle('Dealer peeks on ten')).toBeChecked();
+    await user.click(toggle('Dealer peeks on ace'));
+    expect(toggle('Dealer peeks on ten')).not.toBeChecked();
   });
 
   it('the blackjack payout rows are one setting', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Bonuses />);
-    await user.click(checkbox('Blackjack pays 2:1'));
-    await user.click(checkbox('No Blackjack bonus'));
+    await user.click(toggle('Blackjack pays 2:1'));
+    await user.click(toggle('No Blackjack bonus'));
     expect(app.settings.get('rules.blackjackPayout')).toBe('1:1');
-    expect(checkbox('Blackjack pays 2:1')).not.toBeChecked();
-    await user.click(checkbox('No Blackjack bonus'));
+    expect(toggle('Blackjack pays 2:1')).not.toBeChecked();
+    await user.click(toggle('No Blackjack bonus'));
     expect(app.settings.get('rules.blackjackPayout')).toBe('3:2');
   });
 
@@ -93,14 +100,15 @@ describe('rule interactions', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     const view = renderScreen(<UnusualGames />, { app });
-    await user.selectOptions(screen.getByDisplayValue('Standard Blackjack'), 'Double Exposure');
+    expect(select('Game')).toHaveTextContent('Standard Blackjack');
+    await choose(user, 'Game', 'Double Exposure');
     expect(app.settings.get('rules.insurance')).toBe('none');
     view.unmount();
     renderScreen(<CommonRules />, { app });
-    const insurance = screen.getByDisplayValue('No Insurance');
-    await user.selectOptions(insurance, 'Insurance');
+    expect(select('Insurance')).toHaveTextContent('No Insurance');
+    await choose(user, 'Insurance', 'Insurance');
     expect(app.settings.get('rules.insurance')).toBe('none');
-    expect(insurance).toHaveDisplayValue('No Insurance');
+    expect(select('Insurance')).toHaveTextContent('No Insurance');
   });
 });
 
@@ -130,6 +138,7 @@ describe('navigation screens', () => {
     const link = screen.getByRole('link', { name: 'site' });
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener');
+    expect(screen.getByRole('heading', { level: 1, name: 'Links' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Help' })).not.toBeInTheDocument();
     unmount();
     renderScreen(<Help params={{ topic: 'nothing' }} />);

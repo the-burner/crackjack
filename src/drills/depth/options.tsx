@@ -2,22 +2,17 @@
 
 import type { App } from '@/app/app';
 import { useApp, useSettings } from '@/react/app-context';
+import { Section } from '@/components/screen-layout';
+import { SettingNumber, SettingSelect } from '@/components/settings-controls';
+import type { Option } from '@/components/settings-controls';
+import { alert } from '@/components/dialogs';
 import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
-import { alert } from '@/ui/dialogs';
 import {
   DrillOptionsScreen,
-  Group,
-  OptionCheck,
   OptionDuration,
-  OptionNumber,
-  OptionSelect,
   OptionSlider,
-  Pair,
-  Row,
-  Section,
-  ValueRow,
+  OptionSwitch,
   DECK_OPTIONS,
   COUNT_DOWN_HALT_OPTION,
   ACCURACY_OPTIONS,
@@ -25,22 +20,22 @@ import {
 } from '@/drills/shared/options-screen';
 import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic';
 
-type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
+type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
 const DRILL_OPTIONS: Options<'drills.depth.drill'> = (
   ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'] as const
-).map(value => ({ value, label: `Drill: ${DRILL_LABELS[value]}` }));
+).map(value => ({ value, label: DRILL_LABELS[value] }));
 
 /** Rounds: a set number of tests, each timed. Count Down & Halt: until the drill time runs out. */
 const DEPTH_TIMER_OPTIONS: Options<'drills.depth.timerMode'> = [
-  { value: 'auto', label: 'Timer Mode: Rounds' },
+  { value: 'auto', label: 'Rounds' },
   COUNT_DOWN_HALT_OPTION,
 ];
 
 const RESOLUTION_OPTIONS: Options<'drills.depth.resolution'> = [
-  { value: 'full', label: 'Resolution: Full Deck' },
-  { value: 'half', label: 'Resolution: Half Deck' },
-  { value: 'quarter', label: 'Resolution: Quarter Deck' },
+  { value: 'full', label: 'Full Deck' },
+  { value: 'half', label: 'Half Deck' },
+  { value: 'quarter', label: 'Quarter Deck' },
 ];
 
 export function DepthOptions() {
@@ -52,47 +47,43 @@ export function DepthOptions() {
   return (
     <DrillOptionsScreen title="Depth Options" help="drills.depth.options" onLaunch={() => launch(app)}>
       <Section title="Drill">
-        <Group>
-          <OptionSelect setting="drills.depth.drill" options={DRILL_OPTIONS} />
-          <OptionSelect setting="drills.depth.accuracy" options={ACCURACY_OPTIONS} />
-          <OptionSelect setting="drills.depth.resolution" options={RESOLUTION_OPTIONS} />
-          <OptionSelect setting="drills.depth.decks" options={DECK_OPTIONS} />
-          <OptionSelect setting="drills.depth.trayStyle" options={TRAY_OPTIONS} />
-          <Row label="Thickness:">
-            <OptionSlider setting="drills.depth.cardThickness" />
-          </Row>
-        </Group>
+        <SettingSelect label="Drill" setting="drills.depth.drill" options={DRILL_OPTIONS} />
+        <SettingSelect label="Accuracy" setting="drills.depth.accuracy" options={ACCURACY_OPTIONS} />
+        <SettingSelect label="Resolution" setting="drills.depth.resolution" options={RESOLUTION_OPTIONS} />
+        <SettingSelect label="Decks" setting="drills.depth.decks" options={DECK_OPTIONS} />
+        <SettingSelect label="Tray style" setting="drills.depth.trayStyle" options={TRAY_OPTIONS} />
+        <OptionSlider label="Thickness" setting="drills.depth.cardThickness" />
       </Section>
-      {/* One card for the drill-specific settings: the count range feeds the TC
-          Conversion drills, "in tray" the others. Its label follows what it holds. */}
+      {/* One group for the drill-specific settings: the count range feeds the TC
+          Conversion drills, "in tray" the others. Its title follows what it holds. */}
       <Section title={trueCount ? 'Count Range' : 'Answers'}>
-        <Group>
-          <ValueRow label="Minimum count" hidden={!trueCount}>
-            <OptionNumber setting="drills.depth.countRangeMin" prompt="Minimum Count" />
-          </ValueRow>
-          <ValueRow label="Maximum count" hidden={!trueCount}>
-            <OptionNumber setting="drills.depth.countRangeMax" prompt="Maximum Count" />
-          </ValueRow>
-          <OptionCheck label="Decks or Aces in Tray" setting="drills.depth.askCardsInTray" hidden={trueCount} />
-        </Group>
+        <SettingNumber
+          label="Minimum count"
+          setting="drills.depth.countRangeMin"
+          prompt="Minimum Count"
+          hidden={!trueCount}
+        />
+        <SettingNumber
+          label="Maximum count"
+          setting="drills.depth.countRangeMax"
+          prompt="Maximum Count"
+          hidden={!trueCount}
+        />
+        <OptionSwitch label="Decks or Aces in Tray" setting="drills.depth.askCardsInTray" hidden={trueCount} />
       </Section>
       {/* Rounds times each test; Count Down & Halt times the whole drill. */}
       <Section title="Timer">
-        <Group>
-          <Pair>
-            <OptionSelect setting="drills.depth.timerMode" options={DEPTH_TIMER_OPTIONS} />
-            <OptionNumber setting="drills.depth.testsPerDrill" prompt="Rounds" hidden={!rounds} />
-          </Pair>
-          <OptionDuration label="Time per test" setting="drills.depth.seconds" hidden={!rounds} />
-          <OptionCheck label="Progressive Speed" setting="drills.depth.progressiveSpeed" hidden={!rounds} />
-          <OptionDuration label="Drill time" setting="drills.depth.drillSeconds" hidden={rounds} />
-        </Group>
+        <SettingSelect label="Timer mode" setting="drills.depth.timerMode" options={DEPTH_TIMER_OPTIONS} />
+        <SettingNumber label="Rounds" setting="drills.depth.testsPerDrill" hidden={!rounds} />
+        <OptionDuration label="Time per test" setting="drills.depth.seconds" hidden={!rounds} />
+        <OptionSwitch label="Progressive Speed" setting="drills.depth.progressiveSpeed" hidden={!rounds} />
+        <OptionDuration label="Drill time" setting="drills.depth.drillSeconds" hidden={rounds} />
       </Section>
     </DrillOptionsScreen>
   );
 }
 
-export const depthOptionsScreen = reactScreen(DepthOptions, { className: 'drill-options' });
+export const depthOptionsScreen = reactScreen(DepthOptions);
 
 /** Checks the options, correcting the tray style and resolution if need be. */
 async function launch(app: App) {

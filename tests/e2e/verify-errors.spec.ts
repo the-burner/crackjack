@@ -9,6 +9,17 @@
 // it has cards, so each test deals exactly the hands it describes.
 
 import { test, expect } from '@playwright/test';
+import {
+  bankroll,
+  barButton,
+  betGrid,
+  betOverlay,
+  overlayButton,
+  playButton,
+  readout,
+  statValue,
+  tableToast,
+} from './support/table';
 
 /** Card ids are suit * 13 + rank; spades by default. */
 const card = (rank, suit = 0) => suit * 13 + rank;
@@ -75,7 +86,7 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
       window.__cjResults = [];
       window.__cjRecordFrames = true;
       new MutationObserver(() => {
-        for (const pill of document.querySelectorAll('.table__chip .table__result')) {
+        for (const pill of document.querySelectorAll('[data-testid="seat-chip"] [data-testid="seat-result"]')) {
           if (pill.dataset.seen) continue;
           pill.dataset.seen = '1';
           window.__cjResults.push({ text: pill.textContent, t: performance.now() });
@@ -120,10 +131,12 @@ async function stackTheShoe(page) {
   });
 }
 
-const overlay = page => page.locator('.bet-overlay');
-const bankroll = page => page.locator('.table__bankroll');
-const action = (page, name) => page.locator(`.table__actions [data-action="${name}"]`);
-const foul = page => page.locator('.bet-overlay [data-action="foul"]');
+const overlay = betOverlay;
+const action = playButton;
+const foul = page => overlayButton(page, 'Foul');
+const statsScreen = page => page.locator('[data-screen="game.stats"]');
+const statsTable = page => statsScreen(page).getByRole('table');
+const closeStats = page => statsScreen(page).getByRole('button', { name: 'Back', exact: true }).click();
 
 /**
  * Plays one round from stacked cards. With one seat the deal is player,
@@ -139,7 +152,7 @@ async function playRound(page, { cards, actions = ['stand'], tile = 0, insure = 
   });
   await tapTile(page, tile);
   if (insure !== null) {
-    const answer = page.locator(`[data-action="${insure ? 'insure' : 'pass'}"]`);
+    const answer = playButton(page, insure ? 'insure' : 'pass');
     await expect(answer).toBeVisible();
     await answer.click();
   }
@@ -151,7 +164,7 @@ async function playRound(page, { cards, actions = ['stand'], tile = 0, insure = 
 }
 
 async function tapTile(page, index) {
-  const grid = page.locator('.bet-overlay__grid');
+  const grid = betGrid(page);
   const box = await grid.boundingBox();
   await grid.click({ position: { x: 25 + (index * box.width) / 6, y: 25 } });
   await expect(overlay(page)).toBeHidden();
@@ -180,15 +193,11 @@ async function callFoul(page) {
 }
 
 async function openStats(page) {
-  await page.locator('.table__bar [data-action="stats"]').click();
-  await expect(page.locator('.stats-table')).toBeVisible();
+  await barButton(page, 'Stats').click();
+  await expect(statsTable(page)).toBeVisible();
 }
 
-const stat = (page, label) =>
-  page
-    .locator('.stats-table tr:not(.stats-table__head)')
-    .filter({ has: page.locator('th', { hasText: new RegExp(`^${label}$`) }) })
-    .locator('td');
+const stat = statValue;
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -228,7 +237,7 @@ test.describe('busted a good hand', () => {
     expect(await roundResults(page)).toEqual(['Bust']);
     await expect(bankroll(page)).toHaveText('$990.00');
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,010.00');
   });
 
@@ -238,7 +247,7 @@ test.describe('busted a good hand', () => {
     await playRound(page, { cards: [card(5), card(10), card(6), card(K), card(9)], actions: ['hit'] });
     expect(await roundResults(page)).toEqual(['Bust']);
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,000.00');
   });
 
@@ -249,7 +258,7 @@ test.describe('busted a good hand', () => {
     expect(await roundResults(page)).toEqual(['Bust']);
     await expect(bankroll(page)).toHaveText('$990.00');
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$990.00');
   });
 
@@ -307,7 +316,7 @@ test.describe('stood on 16', () => {
     expect(await dealerCards(page)).toEqual([card(2), card(3), card(4), card(7)]);
     expect(await roundResults(page)).toEqual(['Lose']);
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
   });
 
   test('the dealer stops on a four-card soft 16', async ({ page }) => {
@@ -316,7 +325,7 @@ test.describe('stood on 16', () => {
     await playRound(page, { cards: [...player12(card(2), card(A)), card(2, 1), card(A, 1), card(5)] });
     expect(await dealerCards(page)).toEqual([card(2), card(A), card(2, 1), card(A, 1)]);
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
   });
 
   test('the dealer never stands on a two-card 10-6', async ({ page }) => {
@@ -324,7 +333,7 @@ test.describe('stood on 16', () => {
     await playRound(page, { cards: [...player12(card(10, 1), card(6)), card(5)] });
     expect(await dealerCards(page)).toEqual([card(10, 1), card(6), card(5)]);
     await callFoul(page);
-    await expect(page.locator('.toast--error')).toHaveText('No dealer errors');
+    await expect(tableToast(page, 'error')).toHaveText('No dealer errors');
   });
 
   test('the dealer never stands on a three-card 16', async ({ page }) => {
@@ -357,7 +366,7 @@ test.describe('should have busted', () => {
     expect(await roundResults(page)).toEqual(['Lose']);
     await expect(bankroll(page)).toHaveText('$990.00');
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,010.00');
   });
 
@@ -399,15 +408,15 @@ test.describe('blackjack mispaid', () => {
     await playRound(page, { cards: natural, actions: [] });
     await expect(bankroll(page)).toHaveText('$1,010.00');
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,015.00');
   });
 
   test('a winning side bet is not part of the shortfall', async ({ page }) => {
     // Royal Match pays 3:1 on a suited first two cards.
     await openTable(page, { settings: { ...settings, 'bonuses.game': 15 } });
-    await page.locator('.bet-overlay [data-action="side-bet"]').click();
-    await page.locator('[data-chips="1"]').click();
+    await overlayButton(page, 'Side Bet').click();
+    await page.getByRole('group', { name: 'Chips' }).getByRole('button', { name: '1', exact: true }).click();
     await expect(overlay(page)).toBeVisible();
     await playRound(page, { cards: natural, actions: [] });
     // $980 after the bets. Paid in full: $25 for the natural and $40 for the side bet,
@@ -419,8 +428,8 @@ test.describe('blackjack mispaid', () => {
 
   test('a missed blackjack mispay with a winning side bet reports only the premium', async ({ page }) => {
     await openTable(page, { settings: { ...settings, 'bonuses.game': 15 } });
-    await page.locator('.bet-overlay [data-action="side-bet"]').click();
-    await page.locator('[data-chips="1"]').click();
+    await overlayButton(page, 'Side Bet').click();
+    await page.getByRole('group', { name: 'Chips' }).getByRole('button', { name: '1', exact: true }).click();
     await expect(overlay(page)).toBeVisible();
     await playRound(page, { cards: natural, actions: [] });
     await page.evaluate(
@@ -430,7 +439,7 @@ test.describe('blackjack mispaid', () => {
       [card(10, 1), card(7, 1), card(9, 1), card(K, 1)],
     );
     await tapTile(page, 0);
-    await expect(page.locator('.toast--error')).toHaveText('You missed a dealer error, BJ Mispaid, costing $5');
+    await expect(tableToast(page, 'error')).toHaveText('You missed a dealer error, BJ Mispaid, costing $5');
   });
 });
 
@@ -449,7 +458,7 @@ test.describe('insurance mispaid', () => {
     // Paid properly, the $5 insurance returns $15 and the bankroll is back at $1,000.
     await expect(bankroll(page)).toHaveText('$995.00');
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,000.00');
   });
 
@@ -459,7 +468,7 @@ test.describe('insurance mispaid', () => {
     await playRound(page, { cards: [card(A, 1), card(A), card(K, 1), card(K)], actions: [], insure: true });
     await expect(bankroll(page)).toHaveText('$1,010.00');
     await callFoul(page);
-    await expect(page.locator('.toast--error')).toHaveText('No dealer errors');
+    await expect(tableToast(page, 'error')).toHaveText('No dealer errors');
   });
 
   test('insurance is paid in full when blackjacks pay even money', async ({ page }) => {
@@ -467,7 +476,7 @@ test.describe('insurance mispaid', () => {
     await playRound(page, { cards: [card(10), card(A), card(8), card(K)], actions: [], insure: true });
     await expect(bankroll(page)).toHaveText('$1,000.00');
     await callFoul(page);
-    await expect(page.locator('.toast--error')).toHaveText('No dealer errors');
+    await expect(tableToast(page, 'error')).toHaveText('No dealer errors');
   });
 });
 
@@ -481,7 +490,7 @@ test.describe('calling Foul', () => {
     await playRound(page, { cards: busted20, actions: ['hit'] });
     const before = await soundCount(page);
     await callFoul(page);
-    await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+    await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
     await expect(bankroll(page)).toHaveText('$1,010.00');
     const heard = await soundsSince(page, before);
     expect(heard).toContain('click.mp3');
@@ -497,7 +506,7 @@ test.describe('calling Foul', () => {
     await expect(bankroll(page)).toHaveText('$1,010.00');
     const before = await soundCount(page);
     await callFoul(page);
-    await expect(page.locator('.toast--error')).toHaveText('No dealer errors');
+    await expect(tableToast(page, 'error')).toHaveText('No dealer errors');
     await expect(bankroll(page)).toHaveText('$1,010.00');
     expect(await soundsSince(page, before)).toContain('buzz.mp3');
   });
@@ -513,9 +522,7 @@ test.describe('calling Foul', () => {
       [card(10, 1), card(7, 1), card(9, 1), card(K, 1)],
     );
     await tapTile(page, 0);
-    await expect(page.locator('.toast--error')).toHaveText(
-      'You missed a dealer error, Busted a good hand, costing $20',
-    );
+    await expect(tableToast(page, 'error')).toHaveText('You missed a dealer error, Busted a good hand, costing $20');
     // Nothing is refunded: the $10 bet is out on the new round.
     await expect(bankroll(page)).toHaveText('$980.00');
   });
@@ -529,10 +536,10 @@ test('the Stats screen counts correct calls, false calls and missed errors', asy
   // Caught.
   await playRound(page, { cards: busted20, actions: ['hit'] });
   await callFoul(page);
-  await expect(page.locator('.toast--good')).toBeVisible();
+  await expect(tableToast(page, 'good')).toBeVisible();
   // A false call straight after.
   await foul(page).click();
-  await expect(page.locator('.toast--error')).toHaveText('No dealer errors');
+  await expect(tableToast(page, 'error')).toHaveText('No dealer errors');
   // Missed: the next round starts without a call.
   await playRound(page, { cards: [card(5, 1), card(10, 1), card(6, 1), card(7, 1), card(9, 1)], actions: ['hit'] });
   await playRound(page, { cards: [card(10, 2), card(7, 2), card(9, 2), card(K, 2)] });
@@ -590,7 +597,7 @@ test('bet accuracy is floored and play accuracy rounded, on the Stats screen and
   await playRound(page, { cards: round(1) });
   // The wrong bet ($20) and the wrong play (hitting 17).
   await playRound(page, { cards: [...round(2), card(9, 3)], tile: 1, actions: ['hit'] });
-  await expect(page.locator('.table__counts')).toHaveText('Bets: 66%, Plays: 67%');
+  await expect(readout(page)).toHaveText('Bets: 66%, Plays: 67%');
   await openStats(page);
   await expect(stat(page, 'Bet Correct')).toHaveText('66%');
   await expect(stat(page, 'Play Correct')).toHaveText('67%');
@@ -642,17 +649,17 @@ test.describe('saved statistics', () => {
     };
     await openTable(page, { settings: { 'dealerErrors.bustOn21OrLess': true }, storage: { gameStats: old } });
     await openStats(page);
-    await expect(page.locator('.stats-table')).not.toContainText('NaN');
+    await expect(statsTable(page)).not.toContainText('NaN');
     await expect(stat(page, 'Rounds Played')).toHaveText('3');
     await expect(stat(page, 'Dealer Error Correct')).toHaveText('100%');
     await expect(stat(page, 'Dealer Errors Missed')).toHaveText('0');
 
     // A false call on top of the old session counts normally.
-    await page.locator('.game-stats [data-action="back"]').click();
+    await closeStats(page);
     await expect(overlay(page)).toBeVisible();
     await foul(page).click();
     await openStats(page);
-    await expect(page.locator('.stats-table')).not.toContainText('NaN');
+    await expect(statsTable(page)).not.toContainText('NaN');
     await expect(stat(page, 'Dealer Error Correct')).toHaveText('0%');
     await expect(stat(page, 'Dealer Errors Missed')).toHaveText('1');
   });
@@ -666,7 +673,7 @@ test('a dealer that stood on 16 by mistake always counts as an error', async ({ 
   await playRound(page, { cards: [card(10), card(2), card(2, 1), card(3), card(4), card(7), card(5)] });
   expect(await dealerCards(page)).toEqual([card(2), card(3), card(4), card(7)]);
   await callFoul(page);
-  await expect(page.locator('.toast--good')).toHaveText('You caught a dealer error');
+  await expect(tableToast(page, 'good')).toHaveText('You caught a dealer error');
 });
 
 test('a hand that lost to a dealer standing on 16 costs only its bet', async ({ page }) => {
@@ -685,7 +692,7 @@ test('the bankroll figures count a payoff mistake and its Foul refund', async ({
   await playRound(page, { cards: [card(A), card(9), card(K), card(8)], actions: [] });
   await openStats(page);
   await expect(stat(page, 'Bankroll High')).toHaveText('$1,010');
-  await page.locator('.game-stats [data-action="back"]').click();
+  await closeStats(page);
   await callFoul(page);
   await openStats(page);
   await expect(stat(page, 'Bankroll High')).toHaveText('$1,015');
@@ -702,22 +709,21 @@ test('the insurance offer waits while another screen covers the table', async ({
     [card(10), card(A), card(8), card(9)],
   );
   await tapTile(page, 0);
-  await expect(page.locator('[data-action="pass"]')).toBeVisible();
+  await expect(playButton(page, 'pass')).toBeVisible();
   await openStats(page);
   // Longer than the offer lasts with the table showing.
   await page.clock.fastForward(10000);
-  await page.locator('.game-stats [data-action="back"]').click();
-  await expect(page.locator('[data-action="pass"]')).toBeVisible();
+  await closeStats(page);
+  await expect(playButton(page, 'pass')).toBeVisible();
 });
 
 test('Customize changes the bets offered as soon as the table is back', async ({ page }) => {
   await openTable(page);
-  await page.locator('.bet-overlay [data-action="customize"]').click();
-  await page
-    .locator('[data-screen="settings.betting"] .tc-row', { hasText: 'Chip Value' })
-    .locator('select')
-    .selectOption({ label: '$25' });
-  await page.locator('[data-screen="settings.betting"] [data-action="back"]').click();
+  await overlayButton(page, 'Customize').click();
+  const betting = page.locator('[data-screen="settings.betting"]');
+  await betting.getByRole('combobox', { name: 'Chip Value', exact: true }).click();
+  await page.getByRole('option', { name: '$25', exact: true }).click();
+  await betting.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(overlay(page)).toBeVisible();
   // One chip is now $25: the lost hand costs that.
   await playRound(page, { cards: [card(10), card(10, 1), card(9), card(K)] });

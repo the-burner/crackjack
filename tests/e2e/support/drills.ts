@@ -29,11 +29,17 @@ export async function launchDrill(page: Page, drill: Drill): Promise<Locator> {
   await options.locator('[data-action="launch"]').click();
   const screen = page.locator(`[data-screen="${drill.play}"]`);
   await expect(screen).toBeVisible();
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+  await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
   return screen;
 }
 
-export const statsText = (screen: Locator): Promise<string> => screen.locator('.drill__stats').innerText();
+export const statsText = (screen: Locator): Promise<string> => statsOf(screen).innerText();
+
+/** A play screen's stats panel. */
+export const statsOf = (screen: Locator): Locator => screen.getByRole('table', { name: 'Stats' });
+
+/** The "2, 1" countdown over a play screen. */
+export const countdownOf = (screen: Locator): Locator => screen.getByRole('timer', { name: 'Countdown' });
 
 /** How many near-white pixels a canvas holds, i.e. whether cards are on it. */
 export const whitePixels = (canvas: Locator): Promise<number> =>

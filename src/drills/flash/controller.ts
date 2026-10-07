@@ -1,23 +1,24 @@
 // Flash drills: a hand and a count are flashed and the player picks the play.
+// The run and the drawing; the screen component renders around it.
 
-import { h } from '@/ui/dom';
-import { button } from '@/ui/components';
-import { confirm } from '@/ui/dialogs';
-import { toast } from '@/ui/toast';
+import { toast } from 'sonner';
+import { confirm } from '@/components/dialogs';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/ui/card-sprites';
 import { doubleTapDetector } from '@/ui/double-tap';
 import { cssVar } from '@/ui/theme';
 import { valueName } from '@/core/cards';
 import { ACTION } from '@/core/strategy/advisor';
 import type { Action, PlayAdvice } from '@/core/strategy/advisor';
-import type { App, Screen } from '@/app/app';
-import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import type { App } from '@/app/app';
+import { DrillShell, drillClockFor, snapshotOf } from '@/drills/shared/drill-shell';
+import type { DrillShellView } from '@/drills/shared/drill-shell';
 import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { countGrid, countWindow, INITIAL_WINDOW } from '@/drills/shared/count-grid';
 import { drawGridIn } from '@/drills/shared/answer-grid';
 import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, cellAtEvent } from '@/drills/shared/grid-answers';
+import type { GridTap } from '@/drills/shared/grid-answers';
 import {
   buildHandList,
   dealHand,
@@ -42,25 +43,42 @@ interface HeldHand {
   answered: boolean;
 }
 
-/** The answer buttons, in two rows, with their swipe hints. */
-const ANSWER_BUTTONS: readonly (readonly { action: Action; label: string; icon: string }[])[] = [
-  [
-    { action: ACTION.double, label: 'Double', icon: 'arrow-u' },
-    { action: ACTION.split, label: 'Split', icon: 'arrow-r' },
-    { action: ACTION.surrender, label: 'Surrender', icon: 'delete' },
-  ],
-  [
-    { action: ACTION.hit, label: 'Hit', icon: 'arrow-d' },
-    { action: ACTION.stand, label: 'Stand', icon: 'arrow-l' },
-  ],
-];
-
 /** Hands whose own index is too far outside the grid are skipped in the index test. */
 const MAX_REDEALS = 200;
 /** Shorter drags than this are taps, not swipes. */
 const MIN_SWIPE_PIXELS = 10;
+/** One pop-up at a time: a new one replaces the last. */
+const TOAST_ID = 'flash-drill';
 
-export function flashScreen(app: App): Screen {
+/** A pointer on the cards. */
+export interface CardsPointer {
+  clientX: number;
+  clientY: number;
+  timeStamp: number;
+}
+
+export interface FlashElements {
+  display: HTMLElement;
+  canvas: HTMLCanvasElement;
+  /** The index test's grid; the other drills have none. */
+  grid: { canvas: HTMLCanvasElement; wrap: HTMLElement } | null;
+}
+
+export interface FlashView {
+  shell: DrillShellView;
+  /** The index test asks on a grid instead of the buttons. */
+  indexTest: boolean;
+  /** The answer buttons are up (not in the index test or with No Tests). */
+  buttonsShown: boolean;
+  /** Which answer buttons the chosen situations allow. */
+  visible: Record<Action, boolean>;
+  /** The answer marked as the right one, after a wrong one. */
+  correct: Action | null;
+  /** The count panel's text, or null when no hand is up. */
+  countPanel: string | null;
+}
+
+export function createFlashDrill(app: App) {
   const s = app.settings;
   const options = {
     hands: s.get('drills.flash.hands'),
@@ -89,28 +107,7 @@ export function flashScreen(app: App): Screen {
   // The Drill-Errors list is about mistakes, so splitting is always a legal answer.
   const situations = { ...options.situations, split: options.situations.split || options.hands === 'drillErrors' };
 
-  const canvas = h('canvas', { class: 'drill__cards' });
-  const countPanel = h('div', { class: 'drill__count' });
-  const grid = h('canvas', { class: 'drill__answers' });
-  const gridWrap = h('div', { class: 'drill__answers-wrap' }, grid);
-  const answerButtons = ANSWER_BUTTONS.flat().map(b => {
-    const el = button(b.label, { icon: b.icon, iconPos: 'bottom', onClick: () => answer(b.action) });
-    el.dataset.action = b.label.toLowerCase();
-    return { el, action: b.action };
-  });
-  let next = 0;
-  const answers = h(
-    'div',
-    { class: 'drill__buttons' },
-    ANSWER_BUTTONS.map(row =>
-      h(
-        'div',
-        { class: 'drill__answer-row' },
-        row.map(() => answerButtons[next++].el),
-      ),
-    ),
-  );
-
+  let els: FlashElements | null = null;
   let run = -1;
   let list: Entry[] = [];
   /** Deals the Round Robin list in order; null for the other hand lists. */
@@ -129,29 +126,24 @@ export function flashScreen(app: App): Screen {
   let gridWindow = INITIAL_WINDOW;
   let answerGrid: AnswerGrid | null = null;
   let finished = false;
+  let correct: Action | null = null;
   /** The wait between a right index answer and the next hand, so it can be called off. */
   const advanceTimer = new AnswerPause();
   /** A pause called off that wait: move on when play resumes. */
   let advanceOnResume = false;
 
-  const shell = drillShell(app, {
-    title: 'Flash Drills',
-    help: 'drills.flash',
+  const shell = new DrillShell(app, {
     countLabel: 'Hands',
-    className: 'drill--flash',
     pausable: true,
     accuracyText: score => (warn ? `Accuracy: ${score.accuracy}%` : silent ? 'No Tests' : 'Displayed at end'),
     countText: score =>
       options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`,
     onStart: start,
     onStop: stop,
-    onLayout: draw,
     onPause: pause,
     onResume: resume,
   });
-  shell.setDisplay(canvas, countPanel);
-  shell.body.append(indexTest ? gridWrap : answers);
-  showButtons();
+  const changed = () => shell.changed();
 
   /** Rounds and Infinite can time each hand; Count Down & Halt times the whole drill. */
   const timedHands =
@@ -194,8 +186,7 @@ export function flashScreen(app: App): Screen {
     answered = false;
     pending = false;
     hand = null;
-    showButtons();
-    draw();
+    changed();
   }
 
   /** Deals the next hand, or resumes `again`, a hand a pause interrupted. */
@@ -232,8 +223,7 @@ export function flashScreen(app: App): Screen {
       gridWindow = countWindow(index, gridWindow);
       answerGrid = countGrid(gridWindow);
     }
-    highlight(null);
-    draw();
+    correct = null;
     shell.updateStats(shell.clock);
     // A hand only times out when the drill gives each hand a time limit.
     if (timedHands) shell.clock?.after('hand', speed(), timeout);
@@ -253,11 +243,12 @@ export function flashScreen(app: App): Screen {
     recordError(null);
     if (indexTest) {
       if (answerGrid && index !== null) answerGrid.mark(answerGrid.cellFor(index), 'correct');
-      draw();
+      changed();
     } else if (nonBlocking) {
-      toast('Out of time', { position: 'top', tone: 'error' });
+      toast.error('Out of time', { id: TOAST_ID });
     } else if (warn) {
-      highlight(play?.action ?? null);
+      correct = play?.action ?? null;
+      changed();
     } else {
       advance();
     }
@@ -283,9 +274,10 @@ export function flashScreen(app: App): Screen {
     }
     if (!answered) recordError(action);
     if (nonBlocking) {
-      toast(`${ACTION_LABELS[action]} is incorrect`, { position: 'top', tone: 'error' });
+      toast.error(`${ACTION_LABELS[action]} is incorrect`, { id: TOAST_ID });
     } else if (warn) {
-      highlight(play.action);
+      correct = play.action;
+      changed();
       explain(action, play, hand);
     } else {
       advance();
@@ -293,10 +285,10 @@ export function flashScreen(app: App): Screen {
   }
 
   /** Grades a tap on the index-test grid. */
-  function gridTap(event: MouseEvent) {
+  function gridTap(event: GridTap) {
     // Once the answer is in, further taps are ignored until the next hand.
     if (!hand || finished || !answerGrid || advanceTimer.pending) return;
-    const cell = cellAtEvent(answerGrid, grid, event);
+    const cell = cellAtEvent(answerGrid, event);
     if (!cell) return;
     shell.clock?.cancel('hand');
     if (silent) {
@@ -305,7 +297,7 @@ export function flashScreen(app: App): Screen {
     }
     if (cell.value === index) {
       answerGrid.mark(cell, 'correct');
-      draw();
+      changed();
       app.sound.play('correct');
       advanceTimer.start(advance);
       return;
@@ -313,7 +305,7 @@ export function flashScreen(app: App): Screen {
     if (!answered) recordError(null);
     answerGrid.mark(cell, 'wrong');
     if (warn && index !== null) answerGrid.mark(answerGrid.cellFor(index), 'correct');
-    draw();
+    changed();
   }
 
   function illegalPress(hand: FlashHand, action: Action): string | null {
@@ -345,7 +337,7 @@ export function flashScreen(app: App): Screen {
     pending = false;
     if (robin?.endsRound) {
       rounds += 1;
-      toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });
+      toast.success(`Round ${rounds} done`, { id: TOAST_ID });
     }
     if (options.timerMode === TIMER_MODE.auto && shell.score.tests >= options.handsPerDrill) finish();
     else nextHand();
@@ -357,14 +349,9 @@ export function flashScreen(app: App): Screen {
     if (pending) shell.score.discardTest();
     shell.finish();
     shell.updateStats(shell.clock);
-    draw();
   }
 
   const resultText = () => (silent ? 'Done' : `Accuracy: ${shell.score.accuracy}%`);
-
-  function highlight(action: Action | null) {
-    for (const b of answerButtons) b.el.classList.toggle('is-correct', b.action === action);
-  }
 
   /** Offers the strategy explanation for a wrong answer, with the clock frozen. */
   async function explain(action: Action, play: PlayAdvice, hand: FlashHand) {
@@ -399,7 +386,7 @@ export function flashScreen(app: App): Screen {
     // Kept for the resume, so the hand is neither skipped nor counted twice.
     held = hand && !advanceOnResume ? { hand, count, answered } : null;
     hand = null;
-    draw();
+    changed();
   }
 
   function resume() {
@@ -424,16 +411,12 @@ export function flashScreen(app: App): Screen {
     };
   }
 
-  function showButtons() {
-    const visible = visibleActions();
-    answers.hidden = silent || indexTest;
-    for (const b of answerButtons) b.el.hidden = !visible[b.action];
-  }
-
-  /** Redraws the cards, the count panel and (in the index test) the grid. */
+  /** Redraws the cards and (in the index test) the grid. */
   function draw() {
-    const width = shell.display.clientWidth;
-    const height = shell.display.clientHeight;
+    if (!els) return;
+    const { display, canvas, grid } = els;
+    const width = display.clientWidth;
+    const height = display.clientHeight;
     if (width < 2 || height < 2) return;
     const ctx = setupCanvas(canvas, width, height);
     ctx.fillStyle = cssVar('--felt', '#008000');
@@ -446,18 +429,18 @@ export function flashScreen(app: App): Screen {
       ctx.textBaseline = 'middle';
       ctx.fillText(resultText(), width / 2, height / 2);
     }
-    countPanel.hidden = !hand;
-    if (hand) countPanel.textContent = indexTest ? SITUATION_LABELS[hand.kind] : `Count: ${count}`;
-    if (indexTest && answerGrid) {
-      fitGrid();
-      drawGridIn(answerGrid, grid, gridWrap);
+    if (indexTest && answerGrid && grid) {
+      fitGrid(grid.wrap);
+      drawGridIn(answerGrid, grid.canvas, grid.wrap);
     }
   }
 
   /** Trims the 2:1 grid when its shape would push the cards off the bottom. */
-  function fitGrid() {
+  function fitGrid(gridWrap: HTMLElement) {
+    const body = gridWrap.parentElement;
+    if (!body) return;
     gridWrap.style.maxHeight = '';
-    const over = shell.body.scrollHeight - shell.body.clientHeight;
+    const over = body.scrollHeight - body.clientHeight;
     if (over > 0) gridWrap.style.maxHeight = `${Math.max(0, gridWrap.clientHeight - over)}px`;
   }
 
@@ -478,13 +461,15 @@ export function flashScreen(app: App): Screen {
     );
   }
 
-  grid.addEventListener('click', gridTap);
   let swipeFrom: { x: number; y: number } | null = null;
   const doubleTap = doubleTapDetector();
-  canvas.addEventListener('pointerdown', event => {
+
+  function pointerDown(event: CardsPointer) {
     swipeFrom = { x: event.clientX, y: event.clientY };
-  });
-  canvas.addEventListener('pointerup', event => {
+  }
+
+  /** A swipe is an answer (see `swipeAction`); a double tap is Surrender. */
+  function pointerUp(event: CardsPointer) {
     if (!swipeFrom || indexTest || silent) return;
     const dx = event.clientX - swipeFrom.x;
     const dy = event.clientY - swipeFrom.y;
@@ -494,12 +479,37 @@ export function flashScreen(app: App): Screen {
       return;
     }
     answer(swipeAction(dx, dy));
-  });
+  }
 
-  loadCardImages().then(draw);
+  loadCardImages().then(changed);
 
-  return shell.screen({ redraw: draw });
+  return {
+    shell,
+    subscribe: shell.subscribe,
+    getSnapshot: snapshotOf(shell, (): FlashView => ({
+      shell: shell.getSnapshot(),
+      indexTest,
+      buttonsShown: !silent && !indexTest,
+      visible: visibleActions(),
+      correct,
+      countPanel: hand ? (indexTest ? SITUATION_LABELS[hand.kind] : `Count: ${count}`) : null,
+    })),
+    /** The elements to draw in, from the screen; returns the detach. */
+    attach(elements: FlashElements) {
+      els = elements;
+      return () => {
+        els = null;
+      };
+    },
+    draw,
+    answer,
+    gridTap,
+    pointerDown,
+    pointerUp,
+  };
 }
+
+export type FlashDrill = ReturnType<typeof createFlashDrill>;
 
 /**
  * The action a swipe stands for: down = hit, left = stand, up = double,

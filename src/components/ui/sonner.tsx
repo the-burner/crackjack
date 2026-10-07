@@ -22,11 +22,14 @@ const Toaster = ({ dark = false, ...props }: ToasterProps & { dark?: boolean }) 
           '--border-radius': 'var(--radius)',
         } as React.CSSProperties
       }
+      // Toasts are passing notices: they never take a tap from the control under them.
       toastOptions={{
         classNames: {
-          toast: 'cn-toast',
+          toast: 'cn-toast pointer-events-none',
         },
       }}
+      // Success and error toasts in green and red.
+      richColors
       {...props}
     />
   );

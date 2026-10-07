@@ -15,8 +15,17 @@ async function openHub(page: Page, { fresh = false } = {}) {
   await expect(page.locator('[data-screen="settings"]')).toBeVisible();
 }
 
-const select = (screen: Locator, key: string) => screen.locator(`select[name="${key}"]`);
-const check = (screen: Locator, label: string) => screen.getByRole('checkbox', { name: label });
+const select = (screen: Locator, name: string) => screen.getByRole('combobox', { name, exact: true });
+const check = (screen: Locator, label: string) => screen.getByRole('switch', { name: label });
+
+/** What a select shows, ignoring its arrow. */
+const chosen = (text: string) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+
+/** Opens a select and picks one of its options. */
+async function choose(screen: Locator, name: string, option: string) {
+  await select(screen, name).click();
+  await screen.page().getByRole('option', { name: option, exact: true }).click();
+}
 
 /** One case per option screen: a change to make and the state it must keep. */
 const CASES: {
@@ -29,10 +38,10 @@ const CASES: {
     button: 'Basic Setup',
     screen: 'settings.setup',
     async change(el) {
-      await select(el, 'table.decks').selectOption({ label: 'Double Deck' });
+      await choose(el, 'Decks', 'Double Deck');
     },
     async verify(el) {
-      await expect(select(el, 'table.decks')).toHaveValue('Double Deck');
+      await expect(select(el, 'Decks')).toHaveText(chosen('Double Deck'));
     },
   },
   {
@@ -40,11 +49,11 @@ const CASES: {
     screen: 'settings.commonRules',
     async change(el) {
       await check(el, 'Cards dealt face down').check();
-      await select(el, 'rules.surrender').selectOption({ label: 'Late Surrender (common)' });
+      await choose(el, 'Surrender', 'Late Surrender (common)');
     },
     async verify(el) {
       await expect(check(el, 'Cards dealt face down')).toBeChecked();
-      await expect(select(el, 'rules.surrender')).toHaveValue('Late Surrender (common)');
+      await expect(select(el, 'Surrender')).toHaveText(chosen('Late Surrender (common)'));
     },
   },
   {
@@ -91,21 +100,21 @@ const CASES: {
     button: 'Unusual Games',
     screen: 'settings.unusualGames',
     async change(el) {
-      await select(el, 'bonuses.game').selectOption({ label: 'Lucky Ladies' });
+      await choose(el, 'Game', 'Lucky Ladies');
     },
     async verify(el) {
-      await expect(select(el, 'bonuses.game')).toHaveValue('Lucky Ladies');
+      await expect(select(el, 'Game')).toHaveText(chosen('Lucky Ladies'));
     },
   },
   {
     button: 'Dealer Errs/Biases',
     screen: 'settings.dealerErrors',
     async change(el) {
-      await select(el, 'dealerErrors.dealingBias').selectOption({ label: 'Repeat errors' });
+      await choose(el, 'Dealing bias', 'Repeat errors');
       await check(el, 'Lose on a push').check();
     },
     async verify(el) {
-      await expect(select(el, 'dealerErrors.dealingBias')).toHaveValue('Repeat errors');
+      await expect(select(el, 'Dealing bias')).toHaveText(chosen('Repeat errors'));
       await expect(check(el, 'Lose on a push')).toBeChecked();
     },
   },
@@ -114,21 +123,21 @@ const CASES: {
     screen: 'settings.peeking',
     async change(el) {
       await check(el, 'Peek when dealer peeks').check();
-      await select(el, 'peeking.percent').selectOption({ label: '50%' });
+      await choose(el, 'Percent of the time', '50%');
     },
     async verify(el) {
       await expect(check(el, 'Peek when dealer peeks')).toBeChecked();
-      await expect(select(el, 'peeking.percent')).toHaveValue('50%');
+      await expect(select(el, 'Percent of the time')).toHaveText(chosen('50%'));
     },
   },
   {
     button: 'Appearance & Customization',
     screen: 'settings.appearance',
     async change(el) {
-      await select(el, 'display.theme').selectOption({ label: 'Catppuccin Latte' });
+      await choose(el, 'Theme', 'Catppuccin Latte');
     },
     async verify(el) {
-      await expect(select(el, 'display.theme')).toHaveValue('Catppuccin Latte');
+      await expect(select(el, 'Theme')).toHaveText(chosen('Catppuccin Latte'));
       await expect(el.page().locator('html')).toHaveAttribute('data-theme', 'latte');
     },
   },
@@ -182,11 +191,11 @@ test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
 test('Double Exposure applies its rule bundle', async ({ page }) => {
   await openHub(page, { fresh: true });
   const games = await openFromHub(page, 'Unusual Games', 'settings.unusualGames');
-  await select(games, 'bonuses.game').selectOption({ label: 'Double Exposure' });
+  await choose(games, 'Game', 'Double Exposure');
   await games.locator('[data-action="back"]').click();
 
   const rules = await openFromHub(page, 'Common Rules', 'settings.commonRules');
-  await expect(select(rules, 'rules.insurance')).toHaveValue('No Insurance');
+  await expect(select(rules, 'Insurance')).toHaveText(chosen('No Insurance'));
   await rules.locator('[data-action="back"]').click();
 
   const play = await openFromHub(page, 'Play Variations', 'settings.playVariations');
@@ -207,22 +216,23 @@ test('Play Blackjack keeps the saved seat count and opens the table', async ({ p
 test('going back closes an open dialog, not the screen behind it', async ({ page }) => {
   await openHub(page, { fresh: true });
   const el = await openFromHub(page, 'Basic Setup', 'settings.setup');
-  await el.locator('.value-btn').first().click();
-  await expect(page.locator('.dialog-overlay')).toBeVisible();
+  const burnCards = el.getByRole('button', { name: /^Burn Cards: / });
+  await burnCards.click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
 
   await page.goBack();
-  await expect(page.locator('.dialog-overlay')).toHaveCount(0);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
   // The screen is still there and still works.
   await expect(el).toBeVisible();
-  await el.locator('.value-btn').first().click();
-  await expect(page.locator('.dialog-overlay')).toBeVisible();
+  await burnCards.click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
 });
 
 test('a slider value can be typed into its number box', async ({ page }) => {
   await openHub(page, { fresh: true });
   const el = await openFromHub(page, 'Speed/Mechanics', 'settings.mechanics');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
-  const range = el.locator('.slider').filter({ hasText: 'Dealer Speed' }).locator('input[type="range"]');
+  const range = el.getByRole('group', { name: 'Dealer Speed' }).getByRole('slider');
   const saved = () =>
     page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').state.values['mechanics.dealerSpeed']);
 
@@ -242,11 +252,15 @@ test('a slider value can be typed into its number box', async ({ page }) => {
   await box.press('Enter');
   await expect(box).toHaveValue('100');
 
-  // The box is vertically centred: its text box and the input share a midline.
+  // The box is vertically centred: equal padding above and below its text.
   const metrics = await box.evaluate(input => {
     const style = getComputedStyle(input);
-    return { height: input.getBoundingClientRect().height, lineHeight: style.lineHeight, paddingTop: style.paddingTop };
+    return {
+      height: input.getBoundingClientRect().height,
+      paddingTop: style.paddingTop,
+      paddingBottom: style.paddingBottom,
+    };
   });
   expect(metrics.height).toBe(32);
-  expect(metrics.paddingTop).toBe('0px');
+  expect(metrics.paddingTop).toBe(metrics.paddingBottom);
 });

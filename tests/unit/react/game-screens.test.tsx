@@ -15,7 +15,7 @@ function stat(label: string): string | null {
 describe('statistics screen', () => {
   it('shows a placeholder without a session', () => {
     renderScreen(<GameStats params={{}} />);
-    expect(screen.getAllByRole('row').map(row => row.textContent)).toEqual(['CountsCounts', 'No session-']);
+    expect(screen.getAllByRole('row').map(row => row.textContent)).toEqual(['Counts', 'No session-']);
   });
 
   it('shows the session, money as the app shows it, and re-reads it when shown', () => {
@@ -36,8 +36,8 @@ describe('statistics screen', () => {
   it('the display switches write their settings', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<GameStats params={{}} />);
-    expect(screen.getAllByRole('checkbox')).toHaveLength(4);
-    await user.click(screen.getByRole('checkbox', { name: 'Display True Count' }));
+    expect(screen.getAllByRole('switch')).toHaveLength(4);
+    await user.click(screen.getByRole('switch', { name: 'Display True Count' }));
     expect(app.settings.get('display.showTrueCount')).toBe(true);
   });
 });
@@ -55,8 +55,8 @@ describe('bet picker', () => {
     expect(chip(200)).toBeEnabled();
     const two = spots('2x');
     await user.click(two);
-    expect(two).toHaveClass('is-on');
-    expect(spots('1')).not.toHaveClass('is-on');
+    expect(two).toHaveAttribute('aria-pressed', 'true');
+    expect(spots('1')).toHaveAttribute('aria-pressed', 'false');
     expect(chip(100)).toBeEnabled();
     expect(chip(200)).toBeDisabled();
     await user.click(chip(3));

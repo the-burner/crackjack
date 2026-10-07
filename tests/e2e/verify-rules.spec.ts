@@ -10,6 +10,17 @@
 // With one human seat the deal order is: player, dealer up, player, hole card.
 
 import { test, expect } from '@playwright/test';
+import {
+  bankroll,
+  betGrid,
+  betOverlay,
+  betTitle,
+  dialog,
+  overlayButton,
+  playButton,
+  seatChip,
+  tableToast,
+} from './support/table';
 
 const RANKS = 'A23456789TJQK';
 const SUITS = 'schd';
@@ -91,12 +102,18 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
       document.addEventListener('DOMContentLoaded', () => {
         new MutationObserver(records => {
           for (const r of records) {
-            if (r.type === 'attributes' && r.target.matches?.('.table__actions [data-action]') && !r.target.hidden) {
+            if (
+              r.type === 'attributes' &&
+              r.target.matches?.('[data-testid="table-actions"] [data-action]') &&
+              !r.target.hidden
+            ) {
               window.__cjOffered.push(r.target.dataset.action);
             }
             for (const node of r.addedNodes ?? []) {
-              if (node.classList?.contains('toast'))
-                window.__cjToasts.push({ text: node.textContent, className: node.className });
+              const pops = node.matches?.('[data-sonner-toast]')
+                ? [node]
+                : [...(node.querySelectorAll?.('[data-sonner-toast]') ?? [])];
+              for (const pop of pops) window.__cjToasts.push({ text: pop.textContent, type: pop.dataset.type });
             }
           }
         }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
@@ -120,17 +137,16 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
   await expect(overlay(page)).toBeVisible({ timeout: 10000 });
 }
 
-const overlay = page => page.locator('.bet-overlay');
-const overlayTitle = page => page.locator('.bet-overlay__title');
-const bankroll = page => page.locator('.table__bankroll');
-const action = (page, name) => page.locator(`.table__actions [data-action="${name}"]`);
-const insure = page => page.locator('[data-action="insure"]');
-const pass = page => page.locator('[data-action="pass"]');
+const overlay = betOverlay;
+const overlayTitle = betTitle;
+const action = playButton;
+const insure = page => playButton(page, 'insure');
+const pass = page => playButton(page, 'pass');
 const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender'];
 
 /** Taps the first bet tile and waits for the deal to start. */
 async function bet(page) {
-  await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+  await betGrid(page).click({ position: { x: 25, y: 25 } });
   await expect(overlay(page)).toBeHidden();
 }
 
@@ -531,11 +547,15 @@ test.describe('10. suited 6-7-8 pays 2:1 if it wins', () => {
 test.describe('11. side bets', () => {
   /** Picks a side bet of `chips` chips for each spot the game asks about. */
   async function sideBets(page, chips, titles = []) {
-    await overlay(page).locator('[data-action="side-bet"]').click();
+    await overlayButton(page, 'Side Bet').click();
+    const picker = page.locator('[data-screen="game.betSelect"]');
     for (const [index, amount] of chips.entries()) {
-      await expect(page.locator('.bet-select')).toBeVisible();
-      if (titles[index]) await expect(page.locator('.bet-select .topbar__title')).toHaveText(titles[index]);
-      await page.locator(`.bet-select__chips [data-chips="${amount}"]`).click();
+      await expect(picker).toBeVisible();
+      if (titles[index]) await expect(picker.getByRole('heading', { level: 1 })).toHaveText(titles[index]);
+      await picker
+        .getByRole('group', { name: 'Chips' })
+        .getByRole('button', { name: String(amount), exact: true })
+        .click();
     }
     await expect(overlay(page)).toBeVisible();
   }
@@ -546,7 +566,7 @@ test.describe('11. side bets', () => {
     await expect(overlayTitle(page)).toContainText('U side bet $5');
     await expect(overlayTitle(page)).toContainText('O side bet $5');
     await bet(page);
-    await expect(page.locator('.table__chip[data-seat="1"]')).toHaveText('$25, SB:$10');
+    await expect(seatChip(page, 1)).toHaveText('$25, SB:$10');
     await expect(bankroll(page)).toHaveText('$965.00');
   });
 
@@ -554,7 +574,7 @@ test.describe('11. side bets', () => {
     // Lucky Ladies allows 1x: $50 on a $25 bet.
     await openTable(page, { settings: { 'bonuses.game': 8 } });
     await sideBets(page, [10]);
-    await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+    await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(overlay(page)).toBeVisible();
     await expect(overlayTitle(page)).toHaveText('Side bet cannot be greater than 1 times the main bet.');
     await expect(bankroll(page)).toHaveText('$1,000.00');
@@ -570,7 +590,7 @@ test.describe('11. side bets', () => {
       },
     });
     await sideBets(page, [10]);
-    await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
+    await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(overlay(page)).toBeVisible();
     await expect(overlayTitle(page)).toHaveText('Not enough in the bankroll for that bet.');
     await expect(bankroll(page)).toHaveText('$100.00');
@@ -580,7 +600,7 @@ test.describe('11. side bets', () => {
     await openTable(page, { settings: { 'bonuses.game': 8 }, stack: deal(['Ts', '7s'], D17) });
     await sideBets(page, [1]);
     await bet(page);
-    await expect(page.locator('.table__chip[data-seat="1"]')).toHaveText('$25, SB:$5');
+    await expect(seatChip(page, 1)).toHaveText('$25, SB:$5');
     await expect(bankroll(page)).toHaveText('$970.00');
   });
 });
@@ -669,10 +689,10 @@ test.describe('13. "Are you sure?" on an obviously bad play', () => {
     await clearSounds(page);
     await action(page, name).click();
     await expect.poll(async () => (await toasts(page)).filter(t => t.text === question).length).toBe(asked + 1);
-    const pop = page.locator('.toast', { hasText: question });
+    const pop = tableToast(page).filter({ hasText: question });
     await expect(pop).toBeVisible();
-    await expect(pop).toHaveClass(/toast--top/);
-    await expect(page.locator('.dialog-overlay')).toHaveCount(0);
+    await expect(pop).toHaveAttribute('data-y-position', 'top');
+    await expect(dialog(page)).toHaveCount(0);
     expect(await sounds(page)).toEqual(['card']);
     expect(await settle(page)).toBe('act');
     expect((await lastFrame(page)).hands[0].cards.length).toBe(before);

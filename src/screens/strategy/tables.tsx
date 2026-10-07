@@ -7,7 +7,11 @@ import { useState } from 'react';
 import { reactScreen } from '@/react/screen';
 import type { ScreenProps } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
-import { CheckList, Select, StandardScreen } from '@/react/components';
+import { cn } from 'cn';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScreenLayout } from '@/components/screen-layout';
+import { SettingsGroup } from '@/components/settings-controls';
+import { SwitchRow } from '@/components/settings/controls';
 import { strategyOptions } from '@/settings/strategies';
 import {
   TABLE_VIEWS,
@@ -98,11 +102,10 @@ export function StrategyTables({ params }: ScreenProps<TablesParams>) {
     const counts = countsTables(strategy);
     content = (
       <>
-        <div className="tables__scroll">
+        <div className="overflow-x-auto">
           <CountsViewTables counts={counts} />
         </div>
-        <div className="tables__below" hidden />
-        <div className="tables__hint">{editingMask ? 'These tables have no mask.' : counts.rule}</div>
+        <Hint>{editingMask ? 'These tables have no mask.' : counts.rule}</Hint>
       </>
     );
   } else {
@@ -115,7 +118,7 @@ export function StrategyTables({ params }: ScreenProps<TablesParams>) {
     }
     content = (
       <>
-        <div className="tables__scroll">
+        <div className="overflow-x-auto">
           <TableGrid
             strategy={strategy}
             view={view}
@@ -133,57 +136,80 @@ export function StrategyTables({ params }: ScreenProps<TablesParams>) {
             }
           />
         </div>
-        <div className="tables__below">
-          <div className="tables__legend" hidden={showErrors}>
+        <div className="flex items-start gap-1.5">
+          <ul aria-label="Legend" className="flex w-28 shrink-0 flex-col" hidden={showErrors}>
             {view.legend.map((label, i) =>
               label === null ? null : (
-                <div
+                <li
                   key={i}
-                  className="tables__legend-box"
+                  className="flex min-h-7.5 items-center justify-center border border-(--grid-mark) px-1 py-0.5 text-center text-xs font-semibold"
                   style={{ backgroundColor: themed(LEGEND_COLORS[i]), color: themed(LEGEND_TEXT_COLORS[i]) }}
                 >
                   {label}
-                </div>
+                </li>
               ),
             )}
-          </div>
-          <div className="tables__specialty">
+          </ul>
+          <div className="min-w-0 flex-1">
             <SpecialtyList strategy={strategy} view={view} />
           </div>
         </div>
-        <div className="tables__hint">
-          {editingMask ? `${selected} of ${rowCount(view, { extended }) * BASE_COLUMNS} cells selected` : ''}
-        </div>
+        <Hint>{editingMask ? `${selected} of ${rowCount(view, { extended }) * BASE_COLUMNS} cells selected` : ''}</Hint>
       </>
     );
   }
 
+  const views = TABLE_VIEWS.map(v => ({ value: v.key, label: v.label }));
   return (
-    <StandardScreen title={title} help="strategy.tables">
-      <div className="column column--wide">
-        <div className="tables__head">
-          <div className="tables__name">{strategy.name}</div>
+    <ScreenLayout title={title} help="strategy.tables">
+      <div className="mx-auto flex max-w-3xl flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 truncate rounded-lg border bg-card px-2 py-1.5 text-center text-sm">
+            {strategy.name}
+          </p>
           <Select
-            mini
-            options={TABLE_VIEWS.map(v => ({ value: v.key, label: v.label }))}
             value={view.key}
-            onChange={key => setView(viewByKey(key))}
-          />
+            onValueChange={key => {
+              if (key !== null) setView(viewByKey(key));
+            }}
+            items={views}
+          >
+            <SelectTrigger aria-label="Table" className="w-[48%]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {views.map(v => (
+                <SelectItem key={v.value} value={v.value}>
+                  {v.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {content}
-        <CheckList
-          items={[
-            {
-              label: 'Shade error counts',
-              checked: showErrors,
-              onChange: on => setTallies(on ? app.errorTallies.load() : null),
-            },
-          ]}
-        />
+        <SettingsGroup>
+          <SwitchRow
+            label="Shade error counts"
+            checked={showErrors}
+            onCheckedChange={on => setTallies(on ? app.errorTallies.load() : null)}
+          />
+        </SettingsGroup>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
+
+const Hint = ({ children }: { children: string }) => (
+  <p className="min-h-5 text-center text-xs text-muted-foreground">{children}</p>
+);
+
+/** The chart's look: a slate header and ridged cell borders, in the theme's grid colours. */
+const GRID = 'w-full table-fixed border-collapse text-xs font-semibold tabular-nums';
+const HEAD =
+  'border-2 [border-style:ridge] border-(--grid-border) bg-(--grid-head-bg) px-px py-1 text-center text-(--grid-head-text)';
+const CELL =
+  'overflow-hidden border-2 [border-style:ridge] border-(--grid-border) px-px py-1 text-center text-(--grid-text)';
+const LABEL = cn(CELL, 'bg-(--grid-label-bg)');
 
 function TableGrid({
   strategy,
@@ -205,19 +231,21 @@ function TableGrid({
   const labels = rowLabels(view, { extended, earlySurrender: strategy.earlySurrender });
   const heads = columnLabels({ extended });
   return (
-    <table className={`grid tables__grid${onCell ? ' tables__grid--editable' : ''}`}>
+    <table aria-label={view.label} className={GRID}>
       <thead>
         <tr>
-          <th style={{ width: '11%' }} />
+          <th className={cn(HEAD, 'w-[11%]')} />
           {heads.map((label, i) => (
-            <th key={i}>{label}</th>
+            <th key={i} className={HEAD}>
+              {label}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody>
         {labels.map((label, row) => (
           <tr key={row}>
-            <td className="grid__label">{label}</td>
+            <td className={LABEL}>{label}</td>
             {heads.map((_, column) => {
               const cell = gridCell({
                 value: table[row][column],
@@ -229,9 +257,16 @@ function TableGrid({
               return (
                 <td
                   key={column}
-                  className={marked ? 'grid__cell--marked' : undefined}
+                  className={cn(
+                    CELL,
+                    onCell && 'cursor-pointer',
+                    // The cell the game's Error button points at blinks its outline.
+                    marked &&
+                      'animate-[marked-cell_1.4s_steps(1,end)_infinite] outline-3 -outline-offset-3 outline-(--grid-mark)',
+                  )}
                   data-row={row}
                   data-col={column}
+                  data-marked={marked || undefined}
                   style={{ backgroundColor: themed(cell.background), color: themed(cell.color) }}
                   onClick={onCell ? () => onCell(row, column) : undefined}
                 >
@@ -251,16 +286,16 @@ function SpecialtyList({ strategy, view }: { strategy: Strategy; view: TableGrid
   const columns = extended ? EXTENDED_COLUMNS : BASE_COLUMNS;
   const plays = specialtyPlays(strategy.tables[view.table], view, { extended, columns });
   return (
-    <table className="strategy-grid">
+    <table className={GRID}>
       <thead>
         <tr>
-          <th>Specialty Plays</th>
+          <th className={HEAD}>Specialty Plays</th>
         </tr>
       </thead>
       <tbody>
         {(plays.length ? plays : ['none']).map((text, i) => (
           <tr key={i}>
-            <td className="grid__label">{text}</td>
+            <td className={cn(LABEL, 'pl-1.5 text-left')}>{text}</td>
           </tr>
         ))}
       </tbody>
@@ -272,38 +307,38 @@ function SpecialtyList({ strategy, view }: { strategy: Strategy; view: TableGrid
 function CountsViewTables({ counts }: { counts: CountsTables }) {
   const tables = [counts.pointValues, counts.startingCount, counts.insuranceDecks, counts.insuranceHands];
   return (
-    <div className="tables__counts">
+    <div className="mx-auto flex max-w-125 flex-col gap-2.5">
       {tables.map((t, i) =>
         t ? (
-          <div key={i}>
-            <div className="tables__caption">{t.caption}</div>
-            <table className="strategy-grid">
-              <thead>
-                <tr>
-                  {t.rows[0].label !== undefined ? <th /> : null}
-                  {t.columns.map((c, j) => (
-                    <th key={j}>{c}</th>
+          <table key={i} className={GRID}>
+            <caption className="pb-0.5 text-sm font-semibold">{t.caption}</caption>
+            <thead>
+              <tr>
+                {t.rows[0].label !== undefined ? <th className={HEAD} /> : null}
+                {t.columns.map((c, j) => (
+                  <th key={j} className={HEAD}>
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {t.rows.map((r, j) => (
+                <tr key={j}>
+                  {r.label !== undefined ? <td className={LABEL}>{r.label}</td> : null}
+                  {r.values.map((v, k) => (
+                    <td key={k} className={LABEL}>
+                      {v}
+                    </td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {t.rows.map((r, j) => (
-                  <tr key={j}>
-                    {r.label !== undefined ? <td className="grid__label">{r.label}</td> : null}
-                    {r.values.map((v, k) => (
-                      <td key={k} className="grid__label">
-                        {v}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         ) : null,
       )}
     </div>
   );
 }
 
-export const strategyTablesScreen = reactScreen(StrategyTables, { className: 'tables' });
+export const strategyTablesScreen = reactScreen(StrategyTables);

@@ -3,10 +3,11 @@
 
 import { useState } from 'react';
 import { useApp } from '@/react/app-context';
-import { Button, StandardScreen } from '@/react/components';
 import { reactScreen } from '@/react/screen';
+import { Button } from '@/components/ui/button';
+import { ScreenLayout } from '@/components/screen-layout';
+import { promptNumber } from '@/components/dialogs';
 import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '@/settings/bet-ramp';
-import { promptNumber } from '@/ui/dialogs';
 
 const HELP_TEXT =
   'Tap the number of chips to bet. To play more than one spot, ' +
@@ -48,16 +49,19 @@ export function BetSelect({
     pick(amount / chipValue, amount);
   }
 
+  const tile = 'h-11 text-base tabular-nums';
   return (
-    <StandardScreen title={heading} help="game.betSelect">
-      <div className="column bet-select__body">
-        <p className="note">{HELP_TEXT}</p>
+    <ScreenLayout title={heading} help="game.betSelect">
+      <div className="mx-auto flex max-w-xl flex-col gap-4">
+        <p className="text-center text-sm text-muted-foreground">{HELP_TEXT}</p>
         {!sideBet && (
-          <div className="bet-select__hands" role="group" aria-label="Spots">
+          <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Spots">
             {HAND_CHOICES.map(count => (
               <Button
                 key={count}
-                className={`tile tile--hands${count === hands ? ' is-on' : ''}`}
+                variant={count === hands ? 'default' : 'outline'}
+                className={tile}
+                aria-pressed={count === hands}
                 onClick={() => setHands(count)}
                 data-hands={String(count)}
               >
@@ -66,11 +70,12 @@ export function BetSelect({
             ))}
           </div>
         )}
-        <div className="bet-select__chips" role="group" aria-label="Chips">
+        <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Chips">
           {CHIP_CHOICES.map(chips => (
             <Button
               key={chips}
-              className="tile tile--chips"
+              variant="secondary"
+              className={tile}
               disabled={chips > most}
               onClick={() => pick(chips, chips * chipValue)}
               data-chips={String(chips)}
@@ -79,13 +84,13 @@ export function BetSelect({
             </Button>
           ))}
         </div>
-        <Button block onClick={custom} data-action="custom">
+        <Button variant="secondary" size="lg" onClick={custom} data-action="custom">
           Custom Bet
         </Button>
-        <p className="note">{`One chip is $${chipValue}. Chips x spots may not exceed ${MAX_CHIPS}.`}</p>
+        <p className="text-center text-sm text-muted-foreground">{`One chip is $${chipValue}. Chips x spots may not exceed ${MAX_CHIPS}.`}</p>
       </div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
-export const betSelectScreen = reactScreen(BetSelect, { className: 'bet-select' });
+export const betSelectScreen = reactScreen(BetSelect);

@@ -1,12 +1,13 @@
 // Full table drills: a whole table of hands at once, then a count to give.
+// The run and the drawing; the screen component renders around it.
 
-import { h } from '@/ui/dom';
 import { seededRandom } from '@/core/random';
 import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
 import { cssVar } from '@/ui/theme';
-import type { App, Screen } from '@/app/app';
+import type { App } from '@/app/app';
 import type { CardId } from '@/core/cards';
-import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import { DrillShell, drillClockFor, snapshotOf } from '@/drills/shared/drill-shell';
+import type { DrillShellView } from '@/drills/shared/drill-shell';
 import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { DrillShoe } from '@/drills/shared/shoe';
@@ -15,6 +16,7 @@ import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '@/drills/
 import { drawGridIn } from '@/drills/shared/answer-grid';
 import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
+import type { GridTap } from '@/drills/shared/grid-answers';
 import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '@/drills/shared/end-warning';
 import { halfSteps, answerIndex } from '@/drills/count/logic';
 import {
@@ -55,9 +57,26 @@ interface Table {
   color: TableColor;
 }
 
-const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
+export const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
 
-export function fullScreen(app: App): Screen {
+export interface FullElements {
+  /** The whole screen: upright, it is covered. */
+  root: HTMLElement;
+  display: HTMLElement;
+  canvas: HTMLCanvasElement;
+  gridCanvas: HTMLCanvasElement;
+  gridWrap: HTMLElement;
+}
+
+export interface FullView {
+  shell: DrillShellView;
+  /** The turn-sideways cover is up. */
+  covered: boolean;
+  /** The answer grid is up (a test, not paused). */
+  gridShown: boolean;
+}
+
+export function createFullDrill(app: App) {
   const s = app.settings;
   const options = {
     drill: s.get('drills.full.drill'),
@@ -82,11 +101,7 @@ export function fullScreen(app: App): Screen {
   const questionDrill = () => fullQuestionDrill(options.drill, askingRunningCount);
   const inHalfSteps = () => halfSteps(questionDrill(), options.strategy);
 
-  const canvas = h('canvas', { class: 'drill__cards' });
-  const gridCanvas = h('canvas', { class: 'drill__answers' });
-  const gridWrap = h('div', { class: 'drill__answers-wrap' }, gridCanvas);
-  const cover = h('div', { class: 'drill__cover', hidden: true }, ROTATE_MESSAGE);
-
+  let els: FullElements | null = null;
   let run = -1;
   /** One shoe normally, two for the Two Tables drill. */
   let shoes: DrillShoe[] = [];
@@ -115,22 +130,17 @@ export function fullScreen(app: App): Screen {
   let hideAt = 0;
   let testEndsAt = 0;
 
-  const shell = drillShell(app, {
-    title: 'Full Table Drills',
-    help: 'drills.full',
+  const shell = new DrillShell(app, {
     countLabel: 'Tests',
-    className: 'drill--full',
     pausable: true,
     onStart: start,
     onStop: stop,
-    onLayout: layout,
     onPause: pause,
     onResume: resume,
+    onShow: layout,
   });
-  shell.setDisplay(canvas);
-  shell.body.append(gridWrap);
-  shell.el.append(cover);
-  const answers = gridAnswers({ shell, canvas: gridCanvas, redraw: render, timers: ['test', 'hide'] });
+  const render = () => shell.changed();
+  const answers = gridAnswers({ shell, redraw: render, timers: ['test', 'hide'] });
 
   /** How long the cards stay up; with Progressive Speed, 10% less on each Restart. */
   const flashSeconds = () => progressiveSpeed(options.flashSpeed, run, options.progressive);
@@ -345,7 +355,7 @@ export function fullScreen(app: App): Screen {
     if (grid) answers.timeout(grid, correctIndex);
   }
 
-  function tap(event: MouseEvent) {
+  function tap(event: GridTap) {
     if (!grid || done || answered || shell.paused) return;
     if (answers.tap(event, grid, correctIndex, options.accuracy) !== 'correct') return;
     if (askingRunningCount) {
@@ -384,9 +394,10 @@ export function fullScreen(app: App): Screen {
     shell.updateStats(shell.clock);
   }
 
+  /** Covers the table while the screen is upright, pausing the run. */
   function layout() {
-    const portrait = shell.el.clientHeight > shell.el.clientWidth;
-    cover.hidden = !portrait;
+    if (!els) return;
+    const portrait = els.root.clientHeight > els.root.clientWidth;
     // The clock may not exist yet: the cover can go up before the run begins.
     if (portrait && !pausedByCover) {
       pausedByCover = true;
@@ -435,9 +446,11 @@ export function fullScreen(app: App): Screen {
   }
 
   /** Redraws the table and the answer grid. */
-  function render() {
-    const width = shell.display.clientWidth;
-    const height = shell.display.clientHeight;
+  function draw() {
+    if (!els) return;
+    const { display, canvas, gridCanvas, gridWrap } = els;
+    const width = display.clientWidth;
+    const height = display.clientHeight;
     if (width > 2 && height > 2) {
       const table = tables.find(t => t) ?? null;
       const shown = twoTables ? tables[TWO_TABLE_PHASES[phase].table] : table;
@@ -454,7 +467,6 @@ export function fullScreen(app: App): Screen {
         ctx.fillText(notice, width / 2, height / 2);
       }
     }
-    gridWrap.hidden = !grid || shell.paused;
     if (grid && !shell.paused) drawGridIn(grid, gridCanvas, gridWrap);
   }
 
@@ -475,8 +487,28 @@ export function fullScreen(app: App): Screen {
     }
   }
 
-  gridCanvas.addEventListener('click', tap);
   loadCardImages().then(render);
 
-  return shell.screen({ redraw: layout, onFirstShow: layout });
+  return {
+    shell,
+    subscribe: shell.subscribe,
+    getSnapshot: snapshotOf(shell, (): FullView => ({
+      shell: shell.getSnapshot(),
+      covered: pausedByCover,
+      gridShown: !!grid && !shell.paused,
+    })),
+    /** The elements to draw in, from the screen; returns the detach. */
+    attach(elements: FullElements) {
+      els = elements;
+      return () => {
+        els = null;
+      };
+    },
+    draw,
+    /** The screen changed size: covers or uncovers, then redraws. */
+    layout,
+    tap,
+  };
 }
+
+export type FullDrill = ReturnType<typeof createFullDrill>;

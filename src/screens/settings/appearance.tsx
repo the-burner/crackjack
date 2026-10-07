@@ -1,20 +1,17 @@
 // Appearance and Customization: the colour theme.
 
-import { Field } from '@/react/components';
 import { reactScreen } from '@/react/screen';
-import { SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { THEMES } from '@/ui/theme';
 
 export function Appearance() {
   return (
     <SettingsScreen title="Appearance" help="settings.appearance">
       <SettingsGroup>
-        <Field label="Theme">
-          <SettingSelect setting="display.theme" options={THEMES} />
-        </Field>
+        <SettingSelect label="Theme" setting="display.theme" options={THEMES} />
       </SettingsGroup>
     </SettingsScreen>
   );
 }
 
-export const appearanceScreen = reactScreen(Appearance, { className: 'settings' });
+export const appearanceScreen = reactScreen(Appearance);

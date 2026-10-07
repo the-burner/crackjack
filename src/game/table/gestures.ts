@@ -62,7 +62,7 @@ export function attachSwipes(
     const dy = event.clientY - start.y;
     start = null;
     if (Math.hypot(dx, dy) < MIN_SWIPE) {
-      if (event.target instanceof Element && event.target.closest('button, .bet-overlay')) return;
+      if (event.target instanceof Element && event.target.closest('button, [data-slot="bet-overlay"]')) return;
       if (doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })) onSwipe('surrender', event);
       return;
     }

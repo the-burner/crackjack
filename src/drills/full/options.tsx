@@ -1,16 +1,15 @@
 // Full Table Drills: Options.
 
 import { useApp, useSettings } from '@/react/app-context';
+import { Section } from '@/components/screen-layout';
+import { SettingSelect } from '@/components/settings-controls';
+import type { Option } from '@/components/settings-controls';
 import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
-import type { SelectOption } from '@/ui/components';
 import {
   DrillOptionsScreen,
-  Group,
-  OptionCheck,
   OptionDuration,
-  OptionSelect,
-  Section,
+  OptionSwitch,
   COUNT_DOWN_HALT_OPTION,
   DECK_OPTIONS,
   ACCURACY_OPTIONS,
@@ -19,16 +18,16 @@ import {
 } from '@/drills/shared/options-screen';
 import { FULL_DRILL_LABELS } from './logic';
 
-type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
+type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
 const DRILL_OPTIONS: Options<'drills.full.drill'> = (
   ['runningCount', 'acesLeft', 'acesDealt', 'tenSideCount', 'twoTables'] as const
-).map(value => ({ value, label: `Drill: ${FULL_DRILL_LABELS[value]}` }));
+).map(value => ({ value, label: FULL_DRILL_LABELS[value] }));
 
 const HANDS_OPTIONS: Options<'drills.full.handStyle'> = [
-  { value: 'twoToFourCards', label: 'Hands: 2-4 Card Hands' },
-  { value: 'firstTwoCards', label: 'Hands: First Two Cards' },
-  { value: 'scattered', label: 'Hands: Scattered Cards' },
+  { value: 'twoToFourCards', label: '2-4 Card Hands' },
+  { value: 'firstTwoCards', label: 'First Two Cards' },
+  { value: 'scattered', label: 'Scattered Cards' },
 ];
 
 const PLAYERS_OPTIONS: Options<'drills.full.players'> = [
@@ -38,10 +37,7 @@ const PLAYERS_OPTIONS: Options<'drills.full.players'> = [
 ];
 
 /** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
-const MODE_OPTIONS: Options<'drills.full.timerMode'> = [
-  { value: 'auto', label: 'Timer Mode: Shoe' },
-  COUNT_DOWN_HALT_OPTION,
-];
+const MODE_OPTIONS: Options<'drills.full.timerMode'> = [{ value: 'auto', label: 'Shoe' }, COUNT_DOWN_HALT_OPTION];
 
 export function FullOptions() {
   const app = useApp();
@@ -54,40 +50,37 @@ export function FullOptions() {
   return (
     <DrillOptionsScreen title="Full Table Options" help="drills.full.options" onLaunch={() => app.open('drills.full')}>
       <Section title="Drill">
-        <Group>
-          <OptionSelect setting="drills.full.drill" options={DRILL_OPTIONS} />
-          <OptionSelect setting="drills.full.accuracy" options={ACCURACY_OPTIONS} />
-          {/* Two Counts adds the running count, which the Running Count drill already asks for. */}
-          <OptionCheck
-            label="Two Counts"
-            setting="drills.full.twoCounts"
-            hidden={twoTables || drill === 'runningCount'}
-          />
-          {/* Two Tables always deals complete hands, asks only running counts and never warns. */}
-          <OptionSelect setting="drills.full.handStyle" options={HANDS_OPTIONS} hidden={twoTables} />
-          <OptionSelect setting="drills.full.players" options={PLAYERS_OPTIONS} />
-          <OptionSelect setting="drills.full.decks" options={DECK_OPTIONS} />
-          <OptionSelect setting="drills.full.bias" options={BIAS_OPTIONS} />
-          {/* Shoe mode warns near the end of the shoe. */}
-          <OptionSelect
-            setting="drills.full.endWarning"
-            options={END_WARNING_OPTIONS}
-            hidden={twoTables || !autoMode}
-          />
-        </Group>
+        <SettingSelect label="Drill" setting="drills.full.drill" options={DRILL_OPTIONS} />
+        <SettingSelect label="Accuracy" setting="drills.full.accuracy" options={ACCURACY_OPTIONS} />
+        {/* Two Counts adds the running count, which the Running Count drill already asks for. */}
+        <OptionSwitch
+          label="Two Counts"
+          setting="drills.full.twoCounts"
+          hidden={twoTables || drill === 'runningCount'}
+        />
+        {/* Two Tables always deals complete hands, asks only running counts and never warns. */}
+        <SettingSelect label="Hands" setting="drills.full.handStyle" options={HANDS_OPTIONS} hidden={twoTables} />
+        <SettingSelect label="Players" setting="drills.full.players" options={PLAYERS_OPTIONS} />
+        <SettingSelect label="Decks" setting="drills.full.decks" options={DECK_OPTIONS} />
+        <SettingSelect label="Bias" setting="drills.full.bias" options={BIAS_OPTIONS} />
+        {/* Shoe mode warns near the end of the shoe. */}
+        <SettingSelect
+          label="End warning"
+          setting="drills.full.endWarning"
+          options={END_WARNING_OPTIONS}
+          hidden={twoTables || !autoMode}
+        />
       </Section>
       {/* Shoe mode times each test; Count Down & Halt times the whole drill. */}
       <Section title="Timer">
-        <Group>
-          <OptionSelect setting="drills.full.timerMode" options={MODE_OPTIONS} />
-          <OptionDuration label="Time per test" setting="drills.full.testSeconds" hidden={!autoMode} />
-          <OptionDuration label="Drill time" setting="drills.full.alarmSeconds" hidden={autoMode} />
-          <OptionDuration label="Flash speed" setting="drills.full.flashSpeed" />
-          <OptionCheck label="Progressive Speed" setting="drills.full.progressiveSpeed" />
-        </Group>
+        <SettingSelect label="Timer mode" setting="drills.full.timerMode" options={MODE_OPTIONS} />
+        <OptionDuration label="Time per test" setting="drills.full.testSeconds" hidden={!autoMode} />
+        <OptionDuration label="Drill time" setting="drills.full.alarmSeconds" hidden={autoMode} />
+        <OptionDuration label="Flash speed" setting="drills.full.flashSpeed" />
+        <OptionSwitch label="Progressive Speed" setting="drills.full.progressiveSpeed" />
       </Section>
     </DrillOptionsScreen>
   );
 }
 
-export const fullOptionsScreen = reactScreen(FullOptions, { className: 'drill-options' });
+export const fullOptionsScreen = reactScreen(FullOptions);
