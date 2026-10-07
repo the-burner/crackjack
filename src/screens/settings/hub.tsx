@@ -1,12 +1,13 @@
 // The settings hub: navigation to every option screen.
 
-import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
+import type { ScreenName } from '@/app/paths';
 
 const NOTE = 'The playing strategy and true count settings are also used by the drills.';
 
-const SECTIONS: readonly (readonly [string, readonly (readonly [string, string])[]])[] = [
+const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenName])[]])[] = [
   [
     'Table and Rules',
     [
@@ -38,7 +39,7 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, string])
 ];
 
 export function SettingsHub() {
-  const app = useApp();
+  const navigate = useNavigate();
   return (
     <ScreenLayout title="Options" help="settings">
       <div className="mx-auto grid max-w-4xl items-start gap-4 md:grid-cols-2">
@@ -46,7 +47,7 @@ export function SettingsHub() {
           <div key={title} className="space-y-2">
             <Section title={title}>
               {screens.map(([label, screen]) => (
-                <ListButton key={screen} onClick={() => app.open(screen)}>
+                <ListButton key={screen} onClick={() => navigate(PATHS[screen])}>
                   {label}
                 </ListButton>
               ))}
@@ -58,5 +59,3 @@ export function SettingsHub() {
     </ScreenLayout>
   );
 }
-
-export const settingsHubScreen = reactScreen(SettingsHub);

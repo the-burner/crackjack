@@ -3,11 +3,11 @@
 
 import { useState } from 'react';
 import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { Button } from '@/components/ui/button';
 import { ScreenLayout } from '@/components/screen-layout';
 import { promptNumber } from '@/components/dialogs';
 import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '@/settings/bet-ramp';
+import { useGoBack } from '@/app/navigation';
 
 const HELP_TEXT =
   'Tap the number of chips to bet. To play more than one spot, ' +
@@ -32,6 +32,7 @@ export function BetSelect({
   params: BetSelectParams;
 }) {
   const app = useApp();
+  const goBack = useGoBack();
   const chipValue = chipParam ?? app.settings.get('betting.chipValue');
   const sideBet = mode === 'sideBet';
   const heading = title ?? (sideBet ? 'Side Bet' : 'Allowed Bets');
@@ -40,7 +41,7 @@ export function BetSelect({
 
   function pick(chips: number, amount: number) {
     const moved = onPick?.({ chips, hands: sideBet ? 1 : hands, amount });
-    if (moved !== true) app.back();
+    if (moved !== true) goBack();
   }
 
   async function custom() {
@@ -92,5 +93,3 @@ export function BetSelect({
     </ScreenLayout>
   );
 }
-
-export const betSelectScreen = reactScreen(BetSelect);

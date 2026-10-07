@@ -1,6 +1,5 @@
 // Common Rules.
 
-import { reactScreen } from '@/react/screen';
 import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { SettingSwitches } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
@@ -64,5 +63,3 @@ export function CommonRules() {
     </SettingsScreen>
   );
 }
-
-export const commonRulesScreen = reactScreen(CommonRules);

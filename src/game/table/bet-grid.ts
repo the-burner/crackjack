@@ -3,7 +3,7 @@
 
 import { normalizeRamp } from '@/settings/bet-ramp';
 import type { Ramp } from '@/settings/bet-ramp';
-import { cssVar } from '@/ui/theme';
+import { cssVar } from '@/lib/theme';
 
 export const COLUMNS = 6;
 export const ROWS = 3;

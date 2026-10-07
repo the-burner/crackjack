@@ -3,6 +3,7 @@
 // <DialogHost /> mounted once at the root.
 
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
 import { create } from 'zustand';
 import {
   AlertDialog,
@@ -15,7 +16,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { registerOverlay } from '@/ui/overlays';
 
 const APP_TITLE = 'Crackjack';
 
@@ -75,9 +75,18 @@ export async function promptNumber(
   return Math.min(max, Math.max(min, n));
 }
 
-/** Shows the dialogs asked for, one at a time. */
+/** Shows the dialogs asked for, one at a time. Leaving the screen (Back) cancels them. */
 export function DialogHost() {
   const request = useDialogs(state => state.queue[0]);
+  const { key } = useLocation();
+  const shownAt = useRef(key);
+  useEffect(() => {
+    if (shownAt.current === key) return;
+    shownAt.current = key;
+    const { queue } = useDialogs.getState();
+    useDialogs.setState({ queue: [] });
+    for (const asked of queue) asked.resolve(asked.input ? null : false);
+  }, [key]);
   return request ? <RequestDialog key={useDialogs.getState().queue.length} request={request} /> : null;
 }
 
@@ -91,12 +100,6 @@ function RequestDialog({ request }: { request: Request }) {
     if (request.input) request.resolve(ok ? text : null);
     else request.resolve(ok);
   }
-  const dismiss = useRef(() => close(false));
-  useEffect(() => {
-    dismiss.current = () => close(false);
-  });
-  // A back request dismisses the dialog as cancelling would.
-  useEffect(() => registerOverlay(() => dismiss.current()), []);
   return (
     <AlertDialog open onOpenChange={open => !open && close(false)}>
       <AlertDialogContent>

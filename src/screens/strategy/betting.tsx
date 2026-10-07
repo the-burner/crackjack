@@ -2,8 +2,7 @@
 // may make, optionally tied to the count so betting errors can be flagged.
 
 import { useState } from 'react';
-import { reactScreen, useOnShow } from '@/react/screen';
-import type { ScreenProps } from '@/react/screen';
+import { useOnShow } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +11,8 @@ import { ScreenLayout } from '@/components/screen-layout';
 import { OptionSelect, SettingsGroup } from '@/components/settings-controls';
 import { NumberRow, SwitchRow } from '@/components/settings/controls';
 import { promptNumber } from '@/components/dialogs';
+import { useNavigate } from 'react-router';
+import { useGoBack } from '@/app/navigation';
 import {
   CHIP_CHOICES,
   HAND_CHOICES,
@@ -29,7 +30,7 @@ import {
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
 
 export function Betting() {
-  const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   // A ramp saved out of range is shown tidied, so keep the tidied one.
   useOnShow(() => {
@@ -40,7 +41,8 @@ export function Betting() {
   const ramp = normalizeRamp(settings.get('betting.ramp'));
   const showCounts = settings.get('betting.warnOnError');
   const counts = countLabels(ramp, { showCounts });
-  const openRow = (row: number) => app.open('settings.betting.select', { row });
+  // The row picker sits under this screen, wherever it was opened from.
+  const openRow = (row: number) => navigate(String(row));
 
   return (
     <ScreenLayout title="Allowed Bets" help="settings.betting">
@@ -112,20 +114,19 @@ export function Betting() {
   );
 }
 
-export const bettingScreen = reactScreen(Betting);
-
 export type BetSelectParams = { row?: number };
 
 /** Picks the number of hands and chips for one row of the bet table. */
-export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>) {
+export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) {
   const app = useApp();
+  const goBack = useGoBack();
   const { settings } = app;
   const [current] = useState(() => normalizeRamp(settings.get('betting.ramp')));
   const [hands, setHands] = useState(current.rows[row]?.hands ?? 1);
 
   function choose(chips: number) {
     settings.set('betting.ramp', setRow(normalizeRamp(settings.get('betting.ramp')), row, { chips, hands }));
-    app.back();
+    goBack();
   }
 
   async function customBet() {
@@ -184,5 +185,3 @@ export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>)
     </ScreenLayout>
   );
 }
-
-export const betSelectScreen = reactScreen(BetSelect);

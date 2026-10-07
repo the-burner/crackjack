@@ -4,8 +4,8 @@
 // A grid is a list of cells; each cell has a label, a position (row, column)
 // and the answer it stands for. Cells with no label are gaps.
 
-import { setupCanvas } from '@/ui/card-sprites';
-import { cssVar } from '@/ui/theme';
+import { setupCanvas } from '@/lib/card-sprites';
+import { cssVar } from '@/lib/theme';
 
 export type CellState = 'idle' | 'correct' | 'close' | 'wrong';
 

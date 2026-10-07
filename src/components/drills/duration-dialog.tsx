@@ -1,14 +1,13 @@
 // Duration picker: a dialog with a number box per unit (hours, minutes,
 // seconds, or seconds and tenths), kept within the setting's range.
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { registerOverlay } from '@/ui/overlays';
-import { durationColumns, joinDuration, splitDuration } from '@/ui/time-wheel';
-import type { DurationColumn } from '@/ui/time-wheel';
+import { durationColumns, joinDuration, splitDuration } from '@/drills/shared/duration';
+import type { DurationColumn } from '@/drills/shared/duration';
 
 export function DurationDialog({
   title,
@@ -54,12 +53,6 @@ function DurationForm({
 }) {
   const id = useId();
   const [fields, setFields] = useState(() => splitDuration(Math.min(max, value), columns).map(String));
-  const cancel = useRef(() => onClose(null));
-  useEffect(() => {
-    cancel.current = () => onClose(null);
-  });
-  // A back request cancels, as with the other dialogs.
-  useEffect(() => registerOverlay(() => cancel.current()), []);
   const done = () => {
     const values = fields.map((text, i) => {
       const n = Math.round(Number(text));

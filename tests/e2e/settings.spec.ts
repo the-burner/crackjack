@@ -204,7 +204,7 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
 
 test('Play Blackjack keeps the saved seat count and opens the table', async ({ page }) => {
   await openHub(page, { fresh: true });
-  await page.evaluate(() => window.app.router.home());
+  await page.goto('/index.html#/');
   await page.locator('[data-screen="home"] [data-action="play"]').click();
   await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
   const saved = await page.evaluate(
@@ -213,16 +213,15 @@ test('Play Blackjack keeps the saved seat count and opens the table', async ({ p
   expect(saved ?? 4).toBe(4);
 });
 
-test('going back closes an open dialog, not the screen behind it', async ({ page }) => {
+test('Escape closes an open dialog and leaves the screen working', async ({ page }) => {
   await openHub(page, { fresh: true });
   const el = await openFromHub(page, 'Basic Setup', 'settings.setup');
   const burnCards = el.getByRole('button', { name: /^Burn Cards: / });
   await burnCards.click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
 
-  await page.goBack();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
-  // The screen is still there and still works.
   await expect(el).toBeVisible();
   await burnCards.click();
   await expect(page.getByRole('alertdialog')).toBeVisible();

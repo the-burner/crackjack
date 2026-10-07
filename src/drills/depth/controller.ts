@@ -1,8 +1,8 @@
 // Depth drills: a photo of a discard tray, and a grid of depths to pick from.
 // The run and the drawing; the screen component renders around it.
 
-import { setupCanvas } from '@/ui/card-sprites';
-import { cssVar } from '@/ui/theme';
+import { setupCanvas } from '@/lib/card-sprites';
+import { cssVar } from '@/lib/theme';
 import { DrillShell, drillClockFor, snapshotOf } from '@/drills/shared/drill-shell';
 import type { DrillShellView } from '@/drills/shared/drill-shell';
 import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';

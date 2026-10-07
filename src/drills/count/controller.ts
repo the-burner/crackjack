@@ -1,8 +1,8 @@
 // Count drills: cards are flashed, then a discard tray and a grid of counts.
 // The run and the drawing; the screen component renders around it.
 
-import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
-import { cssVar } from '@/ui/theme';
+import { setupCanvas, drawCard, loadCardImages } from '@/lib/card-sprites';
+import { cssVar } from '@/lib/theme';
 import type { App } from '@/app/app';
 import type { CardId } from '@/core/cards';
 import { DrillShell, drillClockFor, snapshotOf } from '@/drills/shared/drill-shell';

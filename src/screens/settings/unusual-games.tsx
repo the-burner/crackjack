@@ -1,7 +1,6 @@
 // Unusual Games: the side-bet / bonus game selector.
 
 import { useSettings } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { OptionSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { applyGameChange } from '@/settings/rules-logic';
@@ -28,5 +27,3 @@ export function UnusualGames() {
     </SettingsScreen>
   );
 }
-
-export const unusualGamesScreen = reactScreen(UnusualGames);

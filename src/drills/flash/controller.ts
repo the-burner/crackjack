@@ -3,9 +3,9 @@
 
 import { toast } from 'sonner';
 import { confirm } from '@/components/dialogs';
-import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/ui/card-sprites';
-import { doubleTapDetector } from '@/ui/double-tap';
-import { cssVar } from '@/ui/theme';
+import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/lib/card-sprites';
+import { doubleTapDetector } from '@/lib/double-tap';
+import { cssVar } from '@/lib/theme';
 import { valueName } from '@/core/cards';
 import { ACTION } from '@/core/strategy/advisor';
 import type { Action, PlayAdvice } from '@/core/strategy/advisor';
@@ -35,6 +35,7 @@ import {
   SITUATION_LABELS,
 } from './logic';
 import type { Entry, FlashHand } from './logic';
+import type { TablesParams } from '@/screens/strategy/tables';
 
 /** A hand a pause interrupted, with what the player had already done. */
 interface HeldHand {
@@ -78,7 +79,8 @@ export interface FlashView {
   countPanel: string | null;
 }
 
-export function createFlashDrill(app: App) {
+/** `openTable` shows the strategy table over the drill (its explanation of a wrong answer). */
+export function createFlashDrill(app: App, { openTable }: { openTable: (params: TablesParams) => void }) {
   const s = app.settings;
   const options = {
     hands: s.get('drills.flash.hands'),
@@ -367,7 +369,7 @@ export function createFlashDrill(app: App) {
     // itself; a clock that is already paused would be left running behind it.
     shell.clock?.resume();
     if (!show) return;
-    app.open('strategy.tables', {
+    openTable({
       decks: options.decks,
       title: cell ? SITUATION_LABELS[cell.table] : 'Tables',
       view: cell?.table,

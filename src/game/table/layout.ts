@@ -5,7 +5,7 @@
 // up and to the right, split hands step to the left, the dealer's hand sits
 // above the middle, the discard tray is top left and the shoe top right.
 
-import { cardWidthFor, CARD_ASPECT } from '@/ui/card-sprites';
+import { cardWidthFor, CARD_ASPECT } from '@/lib/card-sprites';
 import { parseHandKey } from '@/game/engine/hand';
 import type { HandKey } from '@/game/engine/hand';
 import { MAX_CARDS_PER_HAND } from '@/game/engine/rules';

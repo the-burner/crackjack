@@ -19,6 +19,13 @@ const Toaster = ({ dark = false, ...props }: ToasterProps & { dark?: boolean }) 
           '--normal-bg': 'var(--popover)',
           '--normal-text': 'var(--popover-foreground)',
           '--normal-border': 'var(--border)',
+          // Success and error in the app's own tones, which every theme sets (and the seat results share).
+          '--success-bg': 'var(--tile-good)',
+          '--success-text': 'var(--tile-mark-text)',
+          '--success-border': 'var(--tile-good)',
+          '--error-bg': 'var(--tile-bad)',
+          '--error-text': 'var(--tile-mark-text)',
+          '--error-border': 'var(--tile-bad)',
           '--border-radius': 'var(--radius)',
         } as React.CSSProperties
       }

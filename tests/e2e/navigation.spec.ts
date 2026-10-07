@@ -1,5 +1,5 @@
-// The browser's back and forward moves (the phone's edge swipes) against the
-// screen stack, in both engines.
+// The browser's back and forward moves (the phone's edge swipes) through the
+// screens' URLs.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
@@ -34,7 +34,7 @@ test('going back closes one screen at a time and never leaves the app', async ({
   await expect(page.locator('[data-screen="home"]')).toBeVisible();
   expect(await showing(page)).toBe('home');
   // The app is still the page it was, not a reload or a different document.
-  expect(await page.evaluate(() => typeof window.app?.router?.open)).toBe('function');
+  expect(await page.evaluate(() => typeof window.app?.router?.navigate)).toBe('function');
 });
 
 test('going forward reopens the screen that was closed', async ({ page }) => {
@@ -58,22 +58,16 @@ test('going forward reopens the screen that was closed', async ({ page }) => {
   expect(await showing(page)).toBe('settings.setup');
 });
 
-test("a history entry that is not the app's own is left alone", async ({ page }) => {
-  await stackThree(page);
-  // The router moves only by traversing the history, so asking for none means nothing happens later either.
-  const traversals = await page.evaluate(() => {
-    const asked: string[] = [];
-    const moves = history as unknown as Record<string, (...args: unknown[]) => void>;
-    for (const name of ['back', 'forward', 'go', 'pushState', 'replaceState']) {
-      const move = moves[name].bind(history);
-      moves[name] = (...args) => {
-        asked.push(name);
-        move(...args);
-      };
-    }
-    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-    return asked;
-  });
-  expect(traversals).toEqual([]);
-  expect(await showing(page)).toBe('settings.setup');
+test('a link to a screen opens it, and Back goes up to the screen above it', async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.goto('/index.html#/settings/setup');
+  await expect(page.locator('[data-screen="settings.setup"]')).toBeVisible();
+  // Opened straight here, there is no history to go back through.
+  await page.locator('[data-screen="settings.setup"]').getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator('[data-screen="settings"]')).toBeVisible();
+});
+
+test('an unknown link goes home', async ({ page }) => {
+  await page.goto('/index.html#/no/such/screen');
+  await expect(page.locator('[data-screen="home"]')).toBeVisible();
 });

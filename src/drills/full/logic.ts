@@ -4,7 +4,7 @@
 import { valueOf } from '@/core/cards';
 import type { CardId } from '@/core/cards';
 import type { Random } from '@/core/random';
-import { CARD_ASPECT } from '@/ui/card-sprites';
+import { CARD_ASPECT } from '@/lib/card-sprites';
 import type { DrillCounts } from '@/drills/shared/count-answers';
 
 export { isAceCountDrill } from '@/drills/shared/count-answers';

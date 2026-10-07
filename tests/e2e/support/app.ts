@@ -24,7 +24,11 @@ export async function seedRandom(page: Page, seed: number): Promise<void> {
     let a = start;
     const libraryRandom = Math.random;
     Math.random = () => {
-      if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
+      // The nearest caller decides: an app frame before any library frame.
+      const stack = new Error().stack ?? '';
+      const app = stack.indexOf('/src/');
+      const library = stack.indexOf('/node_modules/');
+      if (app < 0 || (library >= 0 && library < app)) return libraryRandom();
       a = (a + 0x6d2b79f5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;

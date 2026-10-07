@@ -4,7 +4,6 @@ import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { StepForwardIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
 import { createCountDrill } from './controller';
 
@@ -63,5 +62,3 @@ export function CountDrill() {
     </DrillScreen>
   );
 }
-
-export const countScreen = reactScreen(CountDrill, { className: 'bg-(--felt)' });

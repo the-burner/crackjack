@@ -3,7 +3,7 @@
 
 import { alert } from '@/components/dialogs';
 import { money } from '@/core/money';
-import type { App } from '@/app/app';
+import type { BetSelectParams } from '@/game/screens/bet-select';
 import type { SideBetSpot } from '@/game/engine/side-bets';
 
 /** Side-bet amounts by spot id. */
@@ -16,23 +16,27 @@ export const sideBetLabel = (sideBets: SideBets): string =>
     .join(', ');
 
 /**
+ * @param open  Shows the picker for spot `index` (replacing the one showing when `replace`).
  * @param chipValue  Read as each picker opens.
  * @param onChange  Runs with the side bets after each pick.
  */
 export function createSideBetPicker({
-  app,
+  open,
   chipValue,
   onChange,
 }: {
-  app: App;
+  open: (index: number, replace: boolean) => void;
   chipValue: () => number;
   onChange: (sideBets: SideBets) => void;
 }) {
   /** Side-bet amounts chosen for the next round, by spot label. */
   let pending: SideBets = {};
+  /** The spots being chosen for. */
+  let spots: SideBetSpot[] = [];
 
-  function params(spots: SideBetSpot[], index: number) {
+  function params(index: number): BetSelectParams | null {
     const spot = spots[index];
+    if (!spot) return null;
     return {
       mode: 'sideBet',
       title: spots.length > 1 ? `${spot.id} side bet` : undefined,
@@ -49,7 +53,7 @@ export function createSideBetPicker({
         onChange(pending);
         if (!spots[index + 1]) return false;
         // Swap this picker for the next spot's, so Back still lands on the table.
-        app.router.replace('game.betSelect', params(spots, index + 1));
+        open(index + 1, true);
         return true;
       },
     };
@@ -68,13 +72,17 @@ export function createSideBetPicker({
       return taken;
     },
 
+    /** What the picker for spot `index` shows, or null when there is no such spot. */
+    paramsFor: params,
+
     /** Picks the amount to put on each side-bet spot for the next round. */
-    choose(spots: SideBetSpot[]) {
-      if (spots.length === 0) {
+    choose(offered: SideBetSpot[]) {
+      if (offered.length === 0) {
         alert('The selected game has no side bet.');
         return;
       }
-      app.open('game.betSelect', params(spots, 0));
+      spots = offered;
+      open(0, false);
     },
   };
 }

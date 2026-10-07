@@ -1,0 +1,68 @@
+/*
+ * The app's colours and shapes as custom properties. These are the Classic
+ * theme's values (the original look); themes.css maps them onto Catppuccin
+ * Latte and Mocha. shadcn's tokens (index.css) and the canvas drawing
+ * (cssVar() in lib/theme.ts) read them.
+ */
+:root {
+  --chrome: #a11b2e;
+  --page-bg: #ffe0c0;
+  --text: #000;
+  --warning: #c00000;
+  --nav-bg: #0000ff;
+  --primary-bg: #008000;
+  --primary-text: #fff;
+  --btn-bg: #f6f6f6;
+  --btn-bg-active: #e8e8e8;
+  --btn-text: #333;
+  --input-border: var(--separator);
+  --focus: #38c;
+  --dialog-bg: #fff;
+  --felt: #008000;
+  --felt-alt: #000080;
+  --felt-text: #fff;
+  --bar-text: var(--table-text);
+  --felt-accent: #ffff00;
+  --tile-bg: #0000c4;
+  --tile-text: #fff;
+  --tile-good: #00ff00;
+  --tile-close: #ffff00;
+  --tile-bad: #ff0000;
+  --tile-previous: #dc780c;
+  --tile-mark-text: #000;
+  --answer-correct: #0000c0;
+  --group-bg: #fff;
+  --separator: rgba(0, 0, 0, 0.12);
+  --text-secondary: #555;
+  --logo-crack: var(--chrome);
+  --logo-jack: var(--nav-bg);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: light;
+  --radius: 12px;
+  --radius-s: 8px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --table-bg: #004000;
+  --felt-fallback: #044f36;
+  --bet-circle: rgb(230, 205, 127);
+  --table-strip: #000;
+  --table-text: #fff;
+  --table-accent: #ffff00;
+  --bankroll-negative: #ff8080;
+  --text-shadow: #000;
+  --bet-overlay-bg: rgba(0, 0, 0, 0.65);
+  --grid-head-bg: #93a5bb;
+  --grid-head-text: #fff;
+  --grid-border: #9bb3cd;
+  --grid-text: #000;
+  --grid-label-bg: #f0f0f0;
+  --grid-mark: #000;
+  --grid-mark-alt: #fff;
+  --chart-action: #00ff00;
+  --chart-opposite: #ff0000;
+  --chart-index: #00ffff;
+  --chart-below: #0000ff;
+  --chart-unselected: #c0c0c0;
+  --chart-no-errors: #404040;
+  --chart-text: #000;
+  --chart-text-alt: #fff;
+}

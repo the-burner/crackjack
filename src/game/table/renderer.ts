@@ -4,11 +4,11 @@
 // The felt, rail and circles never change while the layout holds still, so they
 // are built once into a background buffer and copied in front of every frame.
 
-import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
+import { setupCanvas, drawCard, loadCardImages } from '@/lib/card-sprites';
 import { cardSlot, RAIL_SIZE } from './layout';
 import type { Point, TableLayout } from './layout';
 import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage } from './photos';
-import { cssVar } from '@/ui/theme';
+import { cssVar } from '@/lib/theme';
 import { DEALER_KEY } from './table-state';
 import type { BurnCard, ShownHand } from './table-state';
 import type { HandKey } from '@/game/engine/hand';

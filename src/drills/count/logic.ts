@@ -5,7 +5,7 @@
 import { randomInt } from '@/core/random';
 import type { Random } from '@/core/random';
 import type { Strategy } from '@/core/strategy/strategy-tables';
-import { CARD_ASPECT } from '@/ui/card-sprites';
+import { CARD_ASPECT } from '@/lib/card-sprites';
 import { isAceNeutral } from '@/drills/shared/count-answers';
 import type { DrillCounts } from '@/drills/shared/count-answers';
 

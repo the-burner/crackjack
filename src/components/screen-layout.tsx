@@ -5,7 +5,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/react/app-context';
+import { useGoBack } from '@/app/navigation';
+import { openHelp } from '@/app/help';
 
 export type ScreenLayoutProps = {
   title: string;
@@ -20,13 +21,13 @@ export type ScreenLayoutProps = {
 };
 
 export function ScreenLayout({ title, help, back = true, actions, className, children }: ScreenLayoutProps) {
-  const app = useApp();
+  const goBack = useGoBack();
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
       <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b px-1">
         <div>
           {back && (
-            <Button variant="ghost" onClick={() => app.back()} data-action="back">
+            <Button variant="ghost" onClick={goBack} data-action="back">
               <ChevronLeftIcon />
               Back
             </Button>
@@ -36,7 +37,7 @@ export function ScreenLayout({ title, help, back = true, actions, className, chi
         <div className="flex items-center justify-end">
           {actions}
           {help && (
-            <Button variant="ghost" onClick={() => app.help(help, title || 'Crackjack')} data-action="help">
+            <Button variant="ghost" onClick={() => openHelp(help, title || 'Crackjack')} data-action="help">
               Help
             </Button>
           )}

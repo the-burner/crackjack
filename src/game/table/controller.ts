@@ -35,6 +35,7 @@ import { obviouslyBad, areYouSure } from './bad-plays';
 import { dealerErrorsOn, enabledErrors, missedMessage } from '@/game/dealer-errors';
 import { betError } from '@/game/bet-validation';
 import { blackjackUnknown, withDealerError, createDealerErrorRound } from '@/game/dealer-error-round';
+import type { TablesParams } from '@/screens/strategy/tables';
 
 /** The insurance offer passes itself after this long. */
 const INSURANCE_MS = 5000;
@@ -87,18 +88,83 @@ export interface TableSnapshot {
   overlay: BetOverlayView;
 }
 
+type TableSession = ReturnType<typeof createTableSession>;
 export type TableController = ReturnType<typeof createTableController>;
 
-export function createTableController(
-  app: App,
-  { notify, confirm }: { notify: Notify; confirm: (message: string) => Promise<boolean> },
-) {
+/** Where the table's buttons lead; the screen supplies them from the router. */
+export type TableNav = {
+  stats(): void;
+  lastError(params: TablesParams): void;
+  customize(): void;
+  /** The side-bet picker for spot `index`, replacing the one showing when `replace`. */
+  sideBet(index: number, replace: boolean): void;
+  back(): void;
+  help(): void;
+};
+
+type TableOptions = { notify: Notify; confirm: (message: string) => Promise<boolean>; nav: TableNav };
+
+/**
+ * The table, built the first time it takes over its felt rather than when the
+ * screen renders: a new session shuffles its shoe, which must happen once
+ * however often React renders (StrictMode renders twice). Until then the
+ * snapshot is null.
+ */
+export function createTableController(app: App, options: TableOptions) {
+  let table: TableSession | null = null;
+  /** Listeners that subscribed before the table was built. */
+  const waiting = new Set<() => void>();
+  const live = (): TableSession => {
+    if (!table) throw new Error('The table has no felt yet');
+    return table;
+  };
+  return {
+    subscribe(listener: () => void) {
+      if (table) return table.subscribe(listener);
+      waiting.add(listener);
+      return () => waiting.delete(listener);
+    },
+    getSnapshot: (): TableSnapshot | null => table?.getSnapshot() ?? null,
+    /** Takes over the felt; again after destroy() too, as StrictMode remounts. */
+    attach(felt: HTMLElement, canvas: HTMLCanvasElement) {
+      if (!table) {
+        table = createTableSession(app, options);
+        for (const listener of waiting) table.subscribe(listener);
+        waiting.clear();
+      }
+      table.attach(felt, canvas);
+    },
+    get session() {
+      return live().session;
+    },
+    play: (...args: Parameters<TableSession['play']>) => live().play(...args),
+    answerInsurance: (...args: Parameters<TableSession['answerInsurance']>) => live().answerInsurance(...args),
+    placeBet: (...args: Parameters<TableSession['placeBet']>) => live().placeBet(...args),
+    chooseSideBet: () => live().chooseSideBet(),
+    shuffleNow: () => live().shuffleNow(),
+    resetBank: () => live().resetBank(),
+    claimDealerError: () => live().claimDealerError(),
+    openStats: () => live().openStats(),
+    openLastError: () => live().openLastError(),
+    customize: options.nav.customize,
+    back: options.nav.back,
+    help: options.nav.help,
+    sideBetParams: (index: number) => live().sideBetParams(index),
+    open: () => table?.open() ?? (() => {}),
+    onShow: () => table?.onShow(),
+    onHide: () => table?.onHide(),
+    destroy: () => table?.destroy(),
+  };
+}
+
+function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   const { settings } = app;
   const session = new GameSession(app);
   const state = createTableState({ decks: session.table.decks });
 
   let felt: HTMLElement | null = null;
   let renderer: ReturnType<typeof createTableRenderer> | null = null;
+  let rendererCanvas: HTMLCanvasElement | null = null;
   let detachSwipes = () => {};
   let layout: TableLayout | null = null;
   /** The bankroll before the last bet was placed, for the "you won" line. */
@@ -173,7 +239,7 @@ export function createTableController(
   }
 
   const sideBetPicker = createSideBetPicker({
-    app,
+    open: nav.sideBet,
     chipValue: () => settings.get('betting.chipValue'),
     onChange: sideBets => setSideBet(sideBetLabel(sideBets)),
   });
@@ -548,7 +614,7 @@ export function createTableController(
 
   function openStats() {
     if (animator.busy) return;
-    app.open('game.stats', { session });
+    nav.stats();
   }
 
   function openLastError() {
@@ -558,7 +624,7 @@ export function createTableController(
       showError('No play errors yet', 'plain');
       return;
     }
-    app.open('strategy.tables', {
+    nav.lastError({
       title: 'Last Error',
       view: error.table,
       highlight: { row: error.row, column: error.column },
@@ -581,6 +647,15 @@ export function createTableController(
 
   const observer = new ResizeObserver(() => relayout());
 
+  /** The opening shuffle and burn waiting for the table to be drawable, if any. */
+  let opening: { cancelled: boolean } | null = null;
+  function cancelOpening() {
+    if (!opening) return;
+    opening.cancelled = true;
+    opening = null;
+    openBettingWhenIdle = false;
+  }
+
   return {
     session,
 
@@ -594,9 +669,15 @@ export function createTableController(
     getSnapshot: (): TableSnapshot => snapshot,
 
     /** Gives the table its felt (for size and gestures) and the canvas to draw on. */
+    /** Takes over the felt; again after destroy() too, as React's StrictMode remounts. */
     attach(feltEl: HTMLElement, canvas: HTMLCanvasElement) {
+      alive = true;
       felt = feltEl;
-      renderer = createTableRenderer(canvas);
+      // The same canvas keeps its renderer, and the images it has loaded.
+      if (canvas !== rendererCanvas) {
+        renderer = createTableRenderer(canvas);
+        rendererCanvas = canvas;
+      }
       detachSwipes = attachSwipes(feltEl, onSwipe, { insurance: () => session.state === STATE.insurance });
     },
 
@@ -609,9 +690,11 @@ export function createTableController(
     claimDealerError,
     openStats,
     openLastError,
-    customize: () => app.open('settings.betting'),
-    back: () => app.back(),
-    help: () => app.help('game.table', 'Blackjack'),
+    customize: nav.customize,
+    back: nav.back,
+    help: nav.help,
+    /** What the side-bet picker for spot `index` shows. */
+    sideBetParams: (index: number) => sideBetPicker.paramsFor(index),
 
     onShow() {
       if (!felt || !renderer) return;
@@ -625,16 +708,28 @@ export function createTableController(
         setBetSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
         emit();
       } else if (!animator.busy) armTimers();
-      if (!overlay.visible && session.state === STATE.betting) {
-        state.setBankroll(session.bankroll);
-        updateReadout();
-        // The shoe's shuffle and burn play out before betting opens, once the
-        // felt, cards and pointer can be drawn, so nothing appears half-made.
-        openBettingWhenIdle = true;
-        ready.then(() => {
-          if (alive) queue(session.game.takeEvents());
-        });
-      }
+    },
+
+    /**
+     * Plays the new shoe's shuffle and burn, then opens betting, once the felt,
+     * cards and pointer can be drawn, so nothing appears half-made. Returns a
+     * function calling it off (before it starts), for an effect's cleanup.
+     */
+    open(): () => void {
+      if (!renderer || overlay.visible || session.state !== STATE.betting || opening) return () => {};
+      state.setBankroll(session.bankroll);
+      updateReadout();
+      const token = { cancelled: false };
+      opening = token;
+      openBettingWhenIdle = true;
+      renderer.whenReady().then(() => {
+        if (token.cancelled || !alive) return;
+        opening = null;
+        queue(session.game.takeEvents());
+      });
+      return () => {
+        if (opening === token) cancelOpening();
+      };
     },
 
     onHide() {
@@ -647,6 +742,7 @@ export function createTableController(
     },
 
     destroy() {
+      cancelOpening();
       alive = false;
       releaseWakeLock?.();
       releaseWakeLock = null;

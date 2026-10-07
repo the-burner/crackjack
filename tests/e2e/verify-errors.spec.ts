@@ -72,8 +72,11 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
       // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
       const libraryRandom = Math.random;
       Math.random = () => {
-        if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
+        // The nearest caller decides: an app frame before any library frame.
         const stack = new Error().stack ?? '';
+        const app = stack.indexOf('/src/');
+        const library = stack.indexOf('/node_modules/');
+        if (app < 0 || (library >= 0 && library < app)) return libraryRandom();
         if (stack.includes('dealer-errors.ts')) {
           const name = Object.keys(window.__cjRolls).find(fn => stack.includes(fn));
           return name ? window.__cjRolls[name] : 0;
@@ -624,11 +627,9 @@ test.describe('saved statistics', () => {
     const before = await Promise.all(labels.map(label => stat(page, label).textContent()));
     expect(before).toEqual(['1', '$10', '$10', '$10', '$1,010', '50%', '1']);
 
+    // The URL keeps the screen: the reload opens the Stats screen of a fresh table.
     await page.reload();
-    await stackTheShoe(page);
-    await page.locator('[data-action="play"]').click();
-    await expect(overlay(page)).toBeVisible();
-    await openStats(page);
+    await expect(page.locator('[data-screen="game.stats"]')).toBeVisible();
     const after = await Promise.all(labels.map(label => stat(page, label).textContent()));
     expect(after).toEqual(before);
   });

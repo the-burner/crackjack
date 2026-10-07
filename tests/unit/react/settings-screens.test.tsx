@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { UserEvent } from '@testing-library/user-event';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Setup } from '@/screens/settings/setup';
 import { CommonRules } from '@/screens/settings/common-rules';
@@ -9,7 +9,8 @@ import { Bonuses } from '@/screens/settings/bonuses';
 import { UnusualGames } from '@/screens/settings/unusual-games';
 import { SettingsHub } from '@/screens/settings/hub';
 import { Home } from '@/screens/home';
-import { Help } from '@/screens/help';
+import { HelpSheet } from '@/screens/help';
+import { openHelp } from '@/app/help';
 import { createTestApp, renderScreen } from '../../support/render';
 
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }));
@@ -115,10 +116,10 @@ describe('rule interactions', () => {
 describe('navigation screens', () => {
   it('the hub opens each option screen', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<SettingsHub />);
+    const { location } = renderScreen(<SettingsHub />);
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: 'Common Rules' }));
-    expect(app.open).toHaveBeenCalledWith('settings.commonRules');
+    expect(location().pathname).toBe('/settings/common-rules');
   });
 
   it('Reset Defaults asks, then resets', async () => {
@@ -134,14 +135,14 @@ describe('navigation screens', () => {
   });
 
   it('help opens its links outside the app, and says when there is none', () => {
-    const { unmount } = renderScreen(<Help params={{ topic: 'test.links', title: 'Links' }} />);
-    const link = screen.getByRole('link', { name: 'site' });
+    renderScreen(<HelpSheet />);
+    act(() => openHelp('test.links', 'Links'));
+    const sheet = screen.getByRole('dialog');
+    const link = within(sheet).getByRole('link', { name: 'site' });
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener');
-    expect(screen.getByRole('heading', { level: 1, name: 'Links' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Help' })).not.toBeInTheDocument();
-    unmount();
-    renderScreen(<Help params={{ topic: 'nothing' }} />);
-    expect(screen.getByText(/No help is available/)).toBeInTheDocument();
+    expect(within(sheet).getByRole('heading', { name: 'Links' })).toBeInTheDocument();
+    act(() => openHelp('nothing'));
+    expect(within(screen.getByRole('dialog')).getByText(/No help is available/)).toBeInTheDocument();
   });
 });

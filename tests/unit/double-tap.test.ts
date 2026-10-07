@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { doubleTapDetector, DOUBLE_TAP_MS, DOUBLE_TAP_DISTANCE } from '@/ui/double-tap';
+import { doubleTapDetector, DOUBLE_TAP_MS, DOUBLE_TAP_DISTANCE } from '@/lib/double-tap';
 
 describe('doubleTapDetector', () => {
   it('reports the second of two quick, close taps', () => {

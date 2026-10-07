@@ -4,8 +4,6 @@
 // it in a 6 x 10 x 10 boolean mask held in a setting.
 
 import { useState } from 'react';
-import { reactScreen } from '@/react/screen';
-import type { ScreenProps } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
 import { cn } from 'cn';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -67,7 +65,7 @@ export type TablesParams = {
   highlight?: { row: number; column: number } | null;
 };
 
-export function StrategyTables({ params }: ScreenProps<TablesParams>) {
+export function StrategyTables({ params }: { params: TablesParams }) {
   const app = useApp();
   const settings = useSettings();
   const { mode = 'view', maskKey = null, title = 'Tables', highlight = null } = params;
@@ -340,5 +338,3 @@ function CountsViewTables({ counts }: { counts: CountsTables }) {
     </div>
   );
 }
-
-export const strategyTablesScreen = reactScreen(StrategyTables);

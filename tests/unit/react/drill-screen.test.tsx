@@ -42,7 +42,8 @@ function setup() {
   const hooks = drillHooks();
   const hold = vi.spyOn(app.wakeLock, 'hold');
   const utils = renderScreen(<TestDrill app={app} hooks={hooks} />, { app });
-  const hide = () => act(() => utils.lifecycle.hide.forEach(fn => fn()));
+  // Another screen (the help sheet here) covers it, then goes.
+  const hide = utils.cover;
   const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
   return { ...utils, hooks, hold, hide, wait };
 }
@@ -69,9 +70,8 @@ afterEach(() => {
 
 describe('DrillScreen', () => {
   it('counts down "2, 1" before the run starts, with Pause off until then', async () => {
-    const { show, hooks, wait } = setup();
-    expect(countdown()).not.toBeInTheDocument();
-    show();
+    const { hooks, wait } = setup();
+    // Shown as it opens.
     expect(countdown()).toHaveTextContent('2');
     expect(pauseButton()).toBeDisabled();
     await wait(1000);
@@ -182,10 +182,10 @@ describe('DrillScreen', () => {
   });
 
   it('goes back and opens its help from the title bar', () => {
-    const { app } = setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(app.back).toHaveBeenCalledTimes(1);
+    const { location, help } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Help' }));
-    expect(app.help).toHaveBeenCalledWith('drills.count', 'Test Drill');
+    expect(help()).toEqual({ topic: 'drills.count', title: 'Test Drill' });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(location().pathname).toBe('/');
   });
 });

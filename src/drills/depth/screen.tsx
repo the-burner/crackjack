@@ -2,7 +2,6 @@
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
 import { createDepthDrill } from './controller';
 
@@ -53,5 +52,3 @@ export function DepthDrill() {
     </DrillScreen>
   );
 }
-
-export const depthScreen = reactScreen(DepthDrill, { className: 'bg-(--felt)' });

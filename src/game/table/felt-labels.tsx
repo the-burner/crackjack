@@ -45,7 +45,15 @@ function ResultPill({ result, tone }: Pick<SeatLabel, 'result' | 'tone'>) {
   const Icon = tone === 'win' ? CircleCheckIcon : tone === 'lose' ? OctagonXIcon : null;
   return (
     <span
-      className="inline-flex flex-none animate-in items-center gap-1.5 rounded-(--radius) bg-popover px-3 py-1.5 font-sans text-[13px] font-medium whitespace-nowrap text-popover-foreground shadow-lg duration-200 fade-in slide-in-from-bottom-1 [text-shadow:none]"
+      className={cn(
+        'inline-flex flex-none animate-in items-center gap-1.5 rounded-(--radius) px-3 py-1.5 font-sans text-[13px] font-medium whitespace-nowrap shadow-lg duration-200 fade-in slide-in-from-bottom-1 [text-shadow:none]',
+        // The pop-ups' tones: a win and a loss as success and error toasts.
+        tone === 'win'
+          ? 'bg-(--tile-good) text-(--tile-mark-text)'
+          : tone === 'lose'
+            ? 'bg-(--tile-bad) text-(--tile-mark-text)'
+            : 'bg-popover text-popover-foreground',
+      )}
       data-testid="seat-result"
       data-tone={tone}
     >

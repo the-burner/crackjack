@@ -8,7 +8,6 @@ import { ListButton, Section } from '@/components/screen-layout';
 import { OptionSelect, SettingNumber, SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { alert, confirm } from '@/components/dialogs';
-import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
@@ -18,6 +17,8 @@ import {
 } from '@/drills/shared/options-screen';
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic';
+import { useNavigate } from 'react-router';
+import { PATHS, tablesSearch } from '@/app/paths';
 
 type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
@@ -75,6 +76,7 @@ const TIMED_HAND_MODES: readonly SettingValues['drills.flash.timerMode'][] = ['a
 
 export function FlashOptions() {
   const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   const mode = settings.get('drills.flash.timerMode');
   const hands = settings.get('drills.flash.hands');
@@ -84,7 +86,11 @@ export function FlashOptions() {
   const decks = `${settings.get('drills.flash.decks')}${settings.get('drills.flash.spanishDecks') ? 's' : ''}`;
 
   return (
-    <DrillOptionsScreen title="Flash Options" help="drills.flash.options" onLaunch={() => launch(app)}>
+    <DrillOptionsScreen
+      title="Flash Options"
+      help="drills.flash.options"
+      onLaunch={() => launch(app, () => navigate(PATHS['drills.flash']))}
+    >
       <Section title="Drill">
         <SettingSelect label="Cards" setting="drills.flash.maxCards" options={CARDS_OPTIONS} />
         {/* One select writes the deck count and whether the decks are Spanish. */}
@@ -113,12 +119,15 @@ export function FlashOptions() {
         <ListButton
           hidden={hands !== 'custom'}
           onClick={() =>
-            app.open('strategy.tables', {
-              mode: 'editMask',
-              maskKey: 'drills.flash.customHands',
-              decks: settings.get('drills.flash.decks'),
-              title: 'Custom Hands',
-            })
+            navigate(
+              PATHS['strategy.tables'] +
+                tablesSearch({
+                  mode: 'editMask',
+                  maskKey: 'drills.flash.customHands',
+                  decks: settings.get('drills.flash.decks'),
+                  title: 'Custom Hands',
+                }),
+            )
           }
         >
           Select custom hands
@@ -171,7 +180,7 @@ export function FlashOptions() {
         <OptionDuration label="Drill time" setting="drills.flash.drillSeconds" hidden={mode !== 'countDownHalt'} />
       </Section>
       <Section title="Error History">
-        <ListButton onClick={() => app.open('drills.flash.errors')} data-action="error-history">
+        <ListButton onClick={() => navigate(PATHS['drills.flash.errors'])} data-action="error-history">
           Error history
         </ListButton>
         <ListButton chevron={false} onClick={() => clearErrors(app)}>
@@ -181,8 +190,6 @@ export function FlashOptions() {
     </DrillOptionsScreen>
   );
 }
-
-export const flashOptionsScreen = reactScreen(FlashOptions);
 
 async function clearErrors(app: App) {
   if (!(await confirm('Delete the record of all drill errors?'))) return;
@@ -198,8 +205,8 @@ function drillErrorsSummary(app: App): string {
     : 'No errors have been recorded yet.';
 }
 
-/** Checks the options and opens the drill. */
-async function launch(app: App) {
+/** Checks the options, then opens the drill with `open`. */
+async function launch(app: App, open: () => void) {
   const s = app.settings;
   const situations = s.get('drills.flash.situations');
   if (!SITUATIONS.some(key => situations[key])) {
@@ -226,5 +233,5 @@ async function launch(app: App) {
     await alert(error);
     return;
   }
-  app.open('drills.flash');
+  open();
 }

@@ -155,7 +155,8 @@ test('the index test grid leaves the cards on screen in landscape', async ({ pag
     const screen = page.locator('[data-screen="drills.flash"]');
     if (!(await screen.count())) await launch(page);
     const display = (await screen.locator('[data-slot="drill-display"]').boundingBox())!;
-    expect(display.y + display.height, `${size.width}x${size.height}`).toBeLessThanOrEqual(size.height);
+    // Half a pixel for rounding at the iPad's devicePixelRatio of 2.5.
+    expect(display.y + display.height, `${size.width}x${size.height}`).toBeLessThanOrEqual(size.height + 0.5);
   }
 });
 

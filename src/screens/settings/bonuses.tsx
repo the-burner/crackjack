@@ -1,6 +1,5 @@
 // Bonuses: blackjack payouts and oddball bonus payouts.
 
-import { reactScreen } from '@/react/screen';
 import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { SettingSwitches } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
@@ -43,5 +42,3 @@ export function Bonuses() {
     </SettingsScreen>
   );
 }
-
-export const bonusesScreen = reactScreen(Bonuses);

@@ -6,7 +6,6 @@ import { Section } from '@/components/screen-layout';
 import { SettingNumber, SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { alert } from '@/components/dialogs';
-import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
@@ -19,6 +18,8 @@ import {
   TRAY_OPTIONS,
 } from '@/drills/shared/options-screen';
 import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
 
 type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
@@ -40,12 +41,17 @@ const RESOLUTION_OPTIONS: Options<'drills.depth.resolution'> = [
 
 export function DepthOptions() {
   const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   const rounds = settings.get('drills.depth.timerMode') === 'auto';
   const trueCount = isTrueCountDrill(settings.get('drills.depth.drill'));
 
   return (
-    <DrillOptionsScreen title="Depth Options" help="drills.depth.options" onLaunch={() => launch(app)}>
+    <DrillOptionsScreen
+      title="Depth Options"
+      help="drills.depth.options"
+      onLaunch={() => launch(app, () => navigate(PATHS['drills.depth']))}
+    >
       <Section title="Drill">
         <SettingSelect label="Drill" setting="drills.depth.drill" options={DRILL_OPTIONS} />
         <SettingSelect label="Accuracy" setting="drills.depth.accuracy" options={ACCURACY_OPTIONS} />
@@ -83,10 +89,9 @@ export function DepthOptions() {
   );
 }
 
-export const depthOptionsScreen = reactScreen(DepthOptions);
-
 /** Checks the options, correcting the tray style and resolution if need be. */
-async function launch(app: App) {
+/** Checks the options, then opens the drill with `open`. */
+async function launch(app: App, open: () => void) {
   const s = app.settings;
   const decks = s.get('drills.depth.decks');
   const style = s.get('drills.depth.trayStyle');
@@ -111,5 +116,5 @@ async function launch(app: App) {
       return;
     }
   }
-  app.open('drills.depth');
+  open();
 }

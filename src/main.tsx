@@ -1,56 +1,53 @@
-// Entry point: creates the app, registers screens and shows the home screen.
+// Entry point: renders the app's routes and registers the service worker.
 
 import './index.css';
 
-import { createApp } from './app/app';
-import type { App } from './app/app';
-import { registerScreens } from './screens/index';
-import { applyTheme } from './ui/theme';
-import { toast } from './ui/toast';
-import { confirm } from './ui/dialogs';
-import { registerSW } from 'virtual:pwa-register';
-import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router';
+import { toast } from 'sonner';
+import { registerSW } from 'virtual:pwa-register';
+import { createServices } from '@/app/app';
+import type { App } from '@/app/app';
+import { router } from '@/app/routes';
+import { confirm } from '@/components/dialogs';
 import { AppContext } from '@/react/app-context';
-import { OverlayRoot } from '@/components/overlay-root';
+import { applyTheme } from '@/lib/theme';
 
 declare global {
   interface Window {
-    /** The running app, for debugging and the browser tests. */
-    app: App;
+    /** The running app and its router, for debugging and the browser tests. */
+    app: App & { router: typeof router };
   }
 }
 
-const root = document.getElementById('app');
-if (!root) throw new Error('index.html has no #app element');
-const app = createApp(root);
+const app = createServices();
 applyTheme(app.settings.get('display.theme'));
 app.settings.subscribe((key, value) => {
   if (key === 'display.theme') applyTheme(value);
 });
-registerScreens(app.router);
-app.router.open('home');
 
-// Dialogs and toasts, above every screen.
-createRoot(document.body.appendChild(document.createElement('div'))).render(
+const root = document.getElementById('app');
+if (!root) throw new Error('index.html has no #app element');
+createRoot(root).render(
   <StrictMode>
     <AppContext.Provider value={app}>
-      <OverlayRoot />
+      <RouterProvider router={router} />
     </AppContext.Provider>
   </StrictMode>,
 );
 
 // Storage can be blocked or full; the app still runs, but says so once.
-app.storage.onWriteError = () => toast('Out of storage: this change will not be saved.', { tone: 'error' });
-if (!app.storage.persistent) toast('Storage is blocked: settings will not be saved.', { tone: 'error' });
+app.storage.onWriteError = () => toast.error('Out of storage: this change will not be saved.');
+if (!app.storage.persistent) toast.error('Storage is blocked: settings will not be saved.');
 
 const updateServiceWorker = registerSW({
   async onNeedRefresh() {
     if (await confirm('A new version of Crackjack is ready.', { title: 'Update', yes: 'Reload', no: 'Later' }))
-      updateServiceWorker(true);
+      void updateServiceWorker(true);
   },
   onRegisterError: err => console.warn('Service worker registration failed:', err),
 });
-navigator.storage?.persist?.();
+void navigator.storage?.persist?.();
 
-window.app = app;
+window.app = { ...app, router };

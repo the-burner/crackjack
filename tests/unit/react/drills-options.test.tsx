@@ -30,18 +30,18 @@ const numberButton = (label: string) => screen.getByRole('button', { name: new R
 describe('drill options screens', () => {
   it('share the shell: title bar, sections and the launch button last', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<FullOptions />);
+    const { location } = renderScreen(<FullOptions />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Full Table Options');
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual(['Drill', 'Timer']);
     const launch = screen.getByRole('button', { name: 'Launch the Drill' });
     expect(screen.getAllByRole('button').at(-1)).toBe(launch);
     await user.click(launch);
-    expect(app.open).toHaveBeenCalledWith('drills.full');
+    expect(location().pathname).toBe('/drills/full/play');
   });
 
   it('flash shows the set count, custom hands and the per-hand timer only where they apply', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<FlashOptions />);
+    const { app, location } = renderScreen(<FlashOptions />);
     expect(toggle('Non-blocking error pop-ups')).toBeVisible();
     await choose(user, 'Test mode', 'Number of errors only at end');
     expect(toggle('Non-blocking error pop-ups')).not.toBeVisible();
@@ -56,7 +56,8 @@ describe('drill options screens', () => {
     expect(screen.getByText('Select custom hands')).not.toBeVisible();
     await choose(user, 'Hands', 'Custom');
     await user.click(screen.getByRole('button', { name: 'Select custom hands' }));
-    expect(app.open).toHaveBeenCalledWith('strategy.tables', expect.objectContaining({ mode: 'editMask' }));
+    expect(location().pathname).toBe('/strategy/tables');
+    expect(location().search).toContain('mode=editMask');
 
     // Count Down & Halt is the default.
     expect(toggle('Time limit per hand')).not.toBeVisible();
@@ -116,7 +117,7 @@ describe('drill options screens', () => {
 
   it('flash refuses to launch without a situation', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<FlashOptions />);
+    const { app, location } = renderScreen(<FlashOptions />);
     act(() =>
       app.settings.set('drills.flash.situations', {
         ...app.settings.get('drills.flash.situations'),
@@ -126,18 +127,18 @@ describe('drill options screens', () => {
     await user.click(screen.getByRole('button', { name: 'Launch the Drill' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('No situations have been selected.');
     await user.click(screen.getByRole('button', { name: 'OK' }));
-    expect(app.open).not.toHaveBeenCalled();
+    expect(location().pathname).toBe('/screen');
   });
 
   it('flash clears the error history after confirming', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<FlashOptions />);
+    const { app, location } = renderScreen(<FlashOptions />);
     app.errorTallies.record('hardStand', 6, 8);
     await user.click(screen.getByRole('button', { name: 'Clear error history' }));
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
     expect(app.errorTallies.cells()).toHaveLength(0);
     await user.click(screen.getByRole('button', { name: 'Error history' }));
-    expect(app.open).toHaveBeenCalledWith('drills.flash.errors');
+    expect(location().pathname).toBe('/drills/flash/errors');
   });
 
   it('flash follows settings written by other screens', () => {
@@ -168,13 +169,13 @@ describe('drill options screens', () => {
 
   it('depth corrects the tray style at launch', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<DepthOptions />);
+    const { app, location } = renderScreen(<DepthOptions />);
     act(() => app.settings.update({ 'drills.depth.decks': 6, 'drills.depth.trayStyle': 'doubleDeckFront' }));
     await user.click(screen.getByRole('button', { name: 'Launch the Drill' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('only holds 2 decks');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     expect(select('Tray style')).toHaveTextContent('Six-deck tray, front');
-    expect(app.open).not.toHaveBeenCalled();
+    expect(location().pathname).toBe('/screen');
   });
 
   it('count hides what no tests, dealing by hand or a single card leave unused', async () => {
@@ -268,12 +269,11 @@ describe('drill options screens', () => {
 });
 
 describe('flash error history', () => {
-  it('says when nothing has been recorded, and re-reads the tallies when shown', () => {
-    const { app, show } = renderScreen(<FlashErrors />);
+  it('says when nothing has been recorded, and follows the tallies as they change', () => {
+    const { app } = renderScreen(<FlashErrors />);
     expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
-    app.errorTallies.record('hardStand', 6, 8);
-    show();
+    act(() => app.errorTallies.record('hardStand', 6, 8));
     expect(screen.getByText('Total errors')).toBeInTheDocument();
     // The one error is all of its situation's and its hand's.
     expect(screen.getByText('Hard H/S')).toBeInTheDocument();

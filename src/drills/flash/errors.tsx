@@ -1,10 +1,9 @@
 // Flash Drills: Error History - which hands and situations the recorded
 // strategy errors come from, and each one's share of all errors.
 
-import { useReducer } from 'react';
+import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
 import { ScreenLayout, Section } from '@/components/screen-layout';
-import { reactScreen, useOnShow } from '@/react/screen';
 import { errorSummary, describeEntry, percent } from './logic';
 
 /** One statistic: a label, the count and share on the right, and a bar under them. */
@@ -29,9 +28,8 @@ const ValueRow = ({ label, value }: { label: string; value: string }) => (
 
 export function FlashErrors() {
   const app = useApp();
-  // The tallies change while the drills cover this screen.
-  const [, refresh] = useReducer((n: number) => n + 1, 0);
-  useOnShow(refresh);
+  // Read live: the drills record errors while this screen exists.
+  useStore(app.errorTallies.store, state => state.value);
   const { total, hands, situations } = errorSummary(app.errorTallies.cells());
 
   return (
@@ -62,5 +60,3 @@ export function FlashErrors() {
     </ScreenLayout>
   );
 }
-
-export const flashErrorsScreen = reactScreen(FlashErrors);

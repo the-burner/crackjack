@@ -7,7 +7,7 @@ import { useStore } from 'zustand';
 import { RefreshCwIcon } from 'lucide-react';
 import { money } from '@/core/money';
 import { useApp, useSettings } from '@/react/app-context';
-import { reactScreen, useOnShow } from '@/react/screen';
+import { useOnShow } from '@/react/screen';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { ScreenLayout, Section } from '@/components/screen-layout';
@@ -117,8 +117,6 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
     </ScreenLayout>
   );
 }
-
-export const gameStatsScreen = reactScreen(GameStats);
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;

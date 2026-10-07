@@ -1,22 +1,26 @@
 # Architecture
 
 Crackjack is a static, offline-first web app in strict TypeScript, built with
-Vite: `index.html` loads `src/main.ts`, and `npm run build` bundles it, with the
-files in `public/`, into `dist/`. Menu and settings screens are React
-components; the canvas screens (the drills and the table) are imperative.
-Everything else (tests, tools, docs) is for development only.
+Vite: `index.html` loads `src/main.tsx`, and `npm run build` bundles it, with the
+files in `public/`, into `dist/`. The UI is React 19 with React Router (hash
+routes), Zustand stores, Tailwind CSS v4 and shadcn/ui components; the canvas
+drawing (cards, trays, the table) is plain TypeScript that React drives through
+refs. Everything else (tests, tools, docs) is for development only.
 
 ## Layout
 
 ```
-index.html       the page; loads src/main.ts
+index.html       the page; loads src/main.tsx
 public/          copied into the build as-is
   manifest.webmanifest  install manifest (name, icons, colours)
   assets/        images and sounds (cards, table, trays, shoe, sounds, icons)
 src/
-  main.ts        entry point: creates the app, registers screens, opens Home
+  main.tsx       entry point: creates the services, renders the router
   sw.ts          service worker source: offline precache, built to dist/sw.js
-  app/           createApp() / createServices() and the screen router
+  index.css      Tailwind, the theme tokens mapped for shadcn, base styles
+  app/           routes.tsx (every screen's route), paths.ts (screen URLs by
+                 name), navigation (useGoBack), the help sheet's store, and
+                 createServices()
   core/          pure logic shared by everything, no DOM
     cards.ts       card ids, ranks, suits, hand totals
     counting.ts    running count, true count, side counts, decks remaining
@@ -28,15 +32,18 @@ src/
                  bet ramp, side-bet game decoding)
   services/      namespaced localStorage, sound effects (Web Audio),
                  strategy-error tallies, the screen wake lock
-  ui/            DOM helpers, imperative components, dialogs, the standard
-                 screen layout, card sprites, the stylesheets, and the colour
-                 themes (theme.ts; Classic in :root, Catppuccin in themes.css)
-  react/         reactScreen(), useApp()/useSettings(), the controls as React
-                 components, and settings-bound controls
+  components/    ui/ (shadcn components), the screen layout, settings-bound
+                 controls, promise dialogs, and area components
+  lib/           framework-free helpers: card sprites and setupCanvas(),
+                 theme (cssVar), install hint, double tap, the wordmark
+  styles/        tokens.css (colours, Classic values) and themes.css
+                 (Catppuccin Latte and Mocha)
+  react/         useApp()/useSetting()/useSettings(), useOnShow/useOnHide
   screens/       (React) Home and Help, the settings screens (settings/) and
                  the strategy, true count and betting screens (strategy/)
   drills/        the four drills; shared/ holds what they have in common
-    <drill>/       logic.ts (pure), options.tsx (React) and screen.ts (canvas)
+    <drill>/       logic.ts (pure), controller.ts (a run's timing and
+                   drawing), screen.tsx and options.tsx (React)
   game/
     engine/        the round as a pure state machine: hands, shoe, rules,
                    settlement, side bets, and the GameEvent union (events.ts)
@@ -46,15 +53,15 @@ src/
     dealer-errors.ts  the deliberate dealer mistakes and Foul claims
     dealer-error-round.ts  a round's dealer error, from pick to claim
     bet-validation.ts  table limits, affordability, side-bet multiples
-    table/         drawing and animating the table, the betting overlay,
-                   gestures, controls and labels
-    screens/       the table (canvas), the bet picker and statistics (React)
+    table/         the table controller, drawing and animating the table,
+                   the betting overlay, gestures, controls and labels
+    screens/       the table, the bet picker and statistics
   data/          bundled data: strategy files, side-bet games, help text
 tests/
-  unit/          Vitest tests for src/ (react/ ones run in jsdom)
+  unit/          Vitest tests for src/ (.tsx ones run in jsdom)
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
-  support/       the fixture loader
+  support/       the fixture loader and renderScreen() for component tests
 tools/           certs.ts (HTTPS certificates for serving to a phone),
                  bundle-import.ts, which bundles strategies and side-bet games
                  from their export codes, and logo.ts
@@ -63,10 +70,11 @@ docs/            this document
 
 ## How the pieces fit
 
-`createApp()` builds the shared services — `app.settings`, `app.storage`,
-`app.strategies`, `app.sound`, `app.errorTallies` — and a router. Every screen
-receives `app`, reads and writes settings through it, and opens other screens
-by name with `app.open(name, params)`.
+`createServices()` builds the shared services — `app.settings`, `app.storage`,
+`app.strategies`, `app.sound`, `app.errorTallies`, `app.bankroll`,
+`app.gameStats` — provided to every component through `AppContext`
+(`useApp()`). Screens are routes in `app/routes.tsx`; they navigate with
+`useNavigate()` and the URLs in `PATHS`, and go back with `useGoBack()`.
 
 The drills and the game both get their strategy from
 `app.strategies.current(app.settings, decks)`, so the Playing Strategy and True
@@ -77,7 +85,9 @@ The game is split three ways. The **engine** knows the rules and nothing else:
 events that happened (a card dealt, a hand settled, ...). The **session** wraps
 the engine with what lasts between rounds. The **table screen** animates the
 engine's events at the user's speed settings and refuses input until the
-animation is done.
+animation is done. Its state lives in a table controller that the React screen
+reads with `useSyncExternalStore`; Stats, the last error and the bet pickers are
+child routes shown over it, so the round underneath stays as it is.
 
 ## Conventions
 
@@ -85,24 +95,28 @@ animation is done.
   is a pure module (`core/`, `settings/`, `game/engine/`, `game/*.ts`,
   `drills/*/logic.ts`) and is unit tested. Screens only render state and turn
   input into calls.
-- **Screens** are factories `(app, params) => ({ el, onShow?, onHide?, destroy?, onBack? })`
-  registered by name (`app.open(name, params)`, `app.back()`). React screens are
-  built with `reactScreen(Component, { className })`: the first render happens
-  before the factory returns, `useOnShow`/`useOnHide`/`useOnBack` receive the
-  router's lifecycle, and `useSettings()` re-renders on any settings change.
-  Imperative screens use `standardScreen()` and `ui/components.ts`; both
-  component sets render the same markup, so the stylesheets serve both.
+- **Screens** are React components with a route, wrapped in `ScreenLayout`
+  (title bar with Back and Help, scrolling body). `useOnShow`/`useOnHide` fire
+  when a child route or the help sheet covers or uncovers a screen. Canvas
+  screens keep their run in a controller that survives StrictMode's double
+  mount: nothing stateful in render, and effects' cleanups call off what they
+  started.
+- **UI**: shadcn/ui components, Tailwind classes over the theme tokens,
+  lucide-react icons, sonner toasts, and `alert()`/`confirm()`/`prompt()` from
+  `components/dialogs.tsx`. Colours are never hard-coded: Classic values in
+  `styles/tokens.css`, Latte and Mocha in `themes.css`, all meeting WCAG AA.
 - **Settings** are declared once in `settings/schema.ts` (dotted keys, typed,
-  with defaults); `app.settings.get/set` are typed per key. They are saved as
-  `{ version, values }`, and `migrate()` in `settings/store.ts` reads older
-  shapes. State that is not a preference (bankroll, statistics) is stored
-  through `app.storage` under its own key. All keys are prefixed `cj.`.
+  with defaults); `app.settings.get/set` are typed per key and `useSetting(key)`
+  re-renders on that key. They are a persisted Zustand store, and `migrate()`
+  in `settings/store.ts` reads older shapes. State that is not a preference
+  (bankroll, statistics, tallies) is its own persisted store. All keys are
+  prefixed `cj.`.
 - **Randomness** is injected: functions take a `random` function returning
   [0, 1), so tests can pass `seededRandom(seed)`.
 - **Card ids** are 1..52 (`suit * 13 + rank`, rank 1..13, suits spades, clubs,
   hearts, diamonds — the row order of `public/assets/cards/cards.png`).
 - **Canvas drawing** scales the backing store by `devicePixelRatio`
-  (`setupCanvas()` in `ui/card-sprites.ts`).
+  (`setupCanvas()` in `lib/card-sprites.ts`).
 - **Help** text for a screen lives in `data/help.ts` under the screen's name.
 - **Types**: strict TypeScript with no `any` or suppressions; erasable syntax
   only (no enums), so Node runs the tools and Vitest the tests directly.
@@ -117,17 +131,20 @@ animation is done.
   running and true counts, the strategy table viewer's cells, the drills' hand
   lists, answer grids and tray photos. They pin the rebuild's behavior to the
   original's.
-- `npm run test:e2e` drives the running app in a mobile browser: every screen,
-  playing rounds at the table, and running each drill. It runs on the Vite dev
-  server, so tests can import and patch the app's modules in the page; the
-  tests tagged `@build` (offline use) run on the production build instead.
+- Component tests render screens with Testing Library (`renderScreen()` in
+  `tests/support/render.tsx`, inside a memory router) and assert on roles.
+- `npm run test:e2e` drives the running app in WebKit as an iPhone 15 Pro and an
+  iPad (A16), upright and sideways: every screen, playing rounds at the table,
+  and running each drill. It runs on the Vite dev server, so tests can import
+  and patch the app's modules in the page; the tests tagged `@build` (offline
+  use) run on the production build instead.
 - CI (`.github/workflows/ci.yml`) runs lint, the type check, and both suites.
 
 ## Offline
 
 `src/sw.ts` is built by vite-plugin-pwa (`injectManifest`), which writes the
 list of built files into it, so every build precaches exactly what it ships.
-A new build installs in the background and waits; `main.ts` then asks whether
+A new build installs in the background and waits; `main.tsx` then asks whether
 to reload, and on Reload the new worker takes over. Offline navigations to any
 other URL are redirected to `index.html`, so relative asset paths resolve.
 

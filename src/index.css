@@ -1,14 +1,6 @@
-/* The old stylesheets sit above Tailwind's base styles and below its utilities, until the screens using them are gone. */
-@layer theme, base, legacy, components, utilities;
 @import 'tailwindcss';
-@import './ui/styles/app.css' layer(legacy);
-@import './ui/styles/icons.css' layer(legacy);
-@import './ui/styles/screens.css' layer(legacy);
-@import './ui/styles/settings.css' layer(legacy);
-@import './ui/styles/strategy.css' layer(legacy);
-@import './ui/styles/drills.css' layer(legacy);
-@import './ui/styles/game.css' layer(legacy);
-@import './ui/styles/themes.css' layer(legacy);
+@import './styles/tokens.css';
+@import './styles/themes.css';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
@@ -71,7 +63,33 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+  html,
   body {
-    @apply bg-background text-foreground;
+    /* On the root too, so the area an over-swipe reveals is the page colour. */
+    @apply bg-background font-sans text-foreground antialiased;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+}
+
+/* The strategy grid's marked cell blinks between two outline colours. */
+@keyframes marked-cell {
+  50% {
+    outline-color: var(--grid-mark-alt);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

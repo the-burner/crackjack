@@ -68,7 +68,11 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
       // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
       const libraryRandom = Math.random;
       Math.random = () => {
-        if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
+        // The nearest caller decides: an app frame before any library frame.
+        const stack = new Error().stack ?? '';
+        const app = stack.indexOf('/src/');
+        const library = stack.indexOf('/node_modules/');
+        if (app < 0 || (library >= 0 && library < app)) return libraryRandom();
         if (queue.length) {
           const want = queue.shift();
           let before = 0;

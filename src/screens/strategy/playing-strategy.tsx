@@ -3,7 +3,6 @@
 // display.
 
 import { Grid3x3Icon } from 'lucide-react';
-import { reactScreen } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { ListButton, ScreenLayout } from '@/components/screen-layout';
@@ -14,6 +13,8 @@ import { SettingSwitches } from '@/components/settings-controls';
 import { applyIndexRangeChange } from '@/settings/rules-logic';
 import { INDEX_SETS } from '@/core/strategy/strategy-tables';
 import type { IndexSet } from '@/core/strategy/strategy-tables';
+import { useNavigate } from 'react-router';
+import { PATHS, tablesSearch } from '@/app/paths';
 
 const INDEX_SET_LABELS: Record<IndexSet, string> = {
   all: 'All Indices',
@@ -38,6 +39,7 @@ const RULE_CHECKS: SettingCheck[] = [
 
 export function PlayingStrategy() {
   const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   const writeRange = (key: 'strategy.indexRangeMin' | 'strategy.indexRangeMax', value: number) =>
     settings.update(applyIndexRangeChange(k => settings.get(k), key, value));
@@ -60,7 +62,11 @@ export function PlayingStrategy() {
             onChange={value => settings.set('strategy.indexSet', value)}
           />
           <ListButton
-            onClick={() => app.open('strategy.tables', { mode: 'editMask', maskKey: 'strategy.customIndexMask' })}
+            onClick={() =>
+              navigate(
+                PATHS['strategy.tables'] + tablesSearch({ mode: 'editMask', maskKey: 'strategy.customIndexMask' }),
+              )
+            }
             data-action="select-indices"
           >
             Select Custom Indices
@@ -105,7 +111,7 @@ export function PlayingStrategy() {
         <Button
           size="lg"
           className="h-12 md:col-span-2"
-          onClick={() => app.open('strategy.tables', { mode: 'view' })}
+          onClick={() => navigate(PATHS['strategy.tables'] + tablesSearch({ mode: 'view' }))}
           data-action="display-tables"
         >
           <Grid3x3Icon />
@@ -115,5 +121,3 @@ export function PlayingStrategy() {
     </ScreenLayout>
   );
 }
-
-export const playingStrategyScreen = reactScreen(PlayingStrategy);

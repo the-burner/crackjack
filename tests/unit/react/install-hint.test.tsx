@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Home } from '@/screens/home';
-import { installHintWanted } from '@/ui/install-hint';
+import { installHintWanted } from '@/lib/install-hint';
 import { renderScreen } from '../../support/render';
 
 /** iOS Safari's navigator.standalone; undefined everywhere else. */

@@ -1,6 +1,5 @@
 // Speed/Mechanics: the three speed sliders and the operational switches.
 
-import { reactScreen } from '@/react/screen';
 import { SettingSlider, SettingSwitches, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
 
@@ -30,5 +29,3 @@ export function Mechanics() {
     </SettingsScreen>
   );
 }
-
-export const mechanicsScreen = reactScreen(Mechanics);

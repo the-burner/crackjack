@@ -375,16 +375,16 @@ test.describe('depth drill', () => {
     await open(page);
     await page.getByRole('button', { name: 'Depth Drills' }).click();
     const options = page.locator('[data-screen="drills.depth.options"]');
-    const visible = (name: string) => options.getByRole('button', { name, exact: true }).isVisible();
+    const button = (name: string) => options.getByRole('button', { name, exact: true });
 
     // Count Down & Halt: a drill time, no rounds or per-test time.
-    expect(await visible('Drill time')).toBe(true);
-    expect(await visible('Time per test')).toBe(false);
+    await expect(button('Drill time')).toBeVisible();
+    await expect(button('Time per test')).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Progressive Speed' })).toBeHidden();
 
     await choose(options, 'Timer mode', 'Rounds');
-    expect(await visible('Time per test')).toBe(true);
-    expect(await visible('Drill time')).toBe(false);
+    await expect(button('Time per test')).toBeVisible();
+    await expect(button('Drill time')).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Progressive Speed' })).toBeVisible();
 
     // The count range is for the TC drills; "in tray" for the others.
@@ -510,7 +510,8 @@ test('a drill stops while another screen covers it, and counts down on return', 
   // The clock did not run on behind the help screen.
   expect(await time()).toBe(before);
 
-  await page.locator('[data-screen="help"] [data-action="back"]').click();
+  // Closing the help sheet uncovers the drill.
+  await page.keyboard.press('Escape');
   await expect(countdownOf(screen)).toBeVisible();
   await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
   await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();

@@ -1,7 +1,6 @@
 // Dealer Errs/Biases: deliberate dealer mistakes and a
 // non-random dealing bias.
 
-import { reactScreen } from '@/react/screen';
 import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { SettingSwitches } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
@@ -41,5 +40,3 @@ export function DealerErrors() {
     </SettingsScreen>
   );
 }
-
-export const dealerErrorsScreen = reactScreen(DealerErrors);

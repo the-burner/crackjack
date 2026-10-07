@@ -3,7 +3,6 @@
 import { RefreshCwIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp, useSettings } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { SettingNumber, SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
@@ -141,5 +140,3 @@ function SeatPicker() {
     </ToggleGroup>
   );
 }
-
-export const setupScreen = reactScreen(Setup);

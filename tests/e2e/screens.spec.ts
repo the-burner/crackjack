@@ -5,6 +5,8 @@ import { test, expect } from '@playwright/test';
 import { barButton, betOverlay, overlayButton } from './support/table';
 import type { Page } from '@playwright/test';
 import type { SettingKey } from '@/settings/schema';
+import { PATHS } from '@/app/paths';
+import type { ScreenName } from '@/app/paths';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -38,9 +40,12 @@ const showing = (page: Page, name: string) => page.locator(`[data-screen="${name
  * and drills.spec.js.
  */
 /** The router keeps its factories to itself. */
-const registeredScreens = () => [
-  ...(window.app.router as unknown as { factories: Map<string, unknown> }).factories.keys(),
-];
+/** Every screen: those with a URL of their own, and those under another screen's. */
+const ALL_SCREENS = [...Object.keys(PATHS), 'settings.betting.select', 'game.betSelect', 'game.stats', 'help'];
+
+/** The URL that opens a screen directly. */
+const urlOf = (name: string) =>
+  name === 'settings.betting.select' ? '/settings/betting/0' : PATHS[name as ScreenName];
 
 const SCREENS = [
   { name: 'settings', title: 'Options', control: 'role=button[name="Basic Setup"]' },
@@ -64,7 +69,6 @@ const SCREENS = [
   { name: 'drills.count.options', title: 'Count Options', control: '[data-action="launch"]' },
   { name: 'drills.full.options', title: 'Full Table Options', control: '[data-action="launch"]' },
   { name: 'drills.flash.errors', title: 'Error History', control: 'main p' },
-  { name: 'game.betSelect', title: 'Allowed Bets', control: '[role="group"][aria-label="Chips"]' },
 ];
 
 const DRIVEN_ELSEWHERE = [
@@ -72,23 +76,23 @@ const DRIVEN_ELSEWHERE = [
   'help',
   'game.table',
   'game.stats',
+  'game.betSelect',
   'drills.flash',
   'drills.depth',
   'drills.count',
   'drills.full',
 ];
 
-test('every registered screen is either opened here or driven through the UI', async ({ page }) => {
-  await openApp(page);
-  const registered = await page.evaluate(registeredScreens);
-  expect(registered.sort()).toEqual([...SCREENS.map(s => s.name), ...DRIVEN_ELSEWHERE].sort());
+test('every screen is either opened here or driven through the UI', () => {
+  expect([...ALL_SCREENS].sort()).toEqual([...SCREENS.map(s => s.name), ...DRIVEN_ELSEWHERE].sort());
 });
 
 for (const { name, title, control } of SCREENS) {
   test(`the ${name} screen renders without logging an error`, async ({ page }) => {
     const errors = watchErrors(page);
     await openApp(page);
-    await page.evaluate(screen => window.app.open(screen), name);
+    // Its URL, as a bookmark or a reload would open it.
+    await page.goto(`/index.html#${urlOf(name)}`);
 
     const el = showing(page, name);
     await expect(el.getByRole('heading', { level: 1 })).toHaveText(title);
@@ -108,10 +112,14 @@ test('every screen with a Help button has help text behind it', async ({ page })
   expect(topics.length).toBeGreaterThan(20);
 
   for (const topic of topics) {
-    await page.evaluate(t => window.app.help(t, 'Help'), topic);
-    const el = showing(page, 'help');
-    await expect(el.getByRole('main')).not.toContainText('No help is available');
-    await expect(el.locator('h2, h3, p').first()).toBeVisible();
+    await page.evaluate(async t => {
+      const url = '/src/app/help.ts';
+      const { openHelp }: typeof import('@/app/help') = await import(url);
+      openHelp(t, 'Help');
+    }, topic);
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).not.toContainText('No help is available');
+    await expect(sheet.locator('h2, h3, p').first()).toBeVisible();
   }
   expectNoErrors(errors);
 });
@@ -123,8 +131,7 @@ test('every screen a Help button names is a screen the app registers', async ({ 
     const { HELP }: typeof import('@/data/help') = await import(help);
     return Object.keys(HELP);
   });
-  const registered = await page.evaluate(registeredScreens);
-  expect(topics.filter(topic => !registered.includes(topic))).toEqual([]);
+  expect(topics.filter(topic => !ALL_SCREENS.includes(topic))).toEqual([]);
 });
 
 /** Opens one screen from the settings hub, the way the user does. */
@@ -183,8 +190,9 @@ test('the two peek modes exclude each other and survive a reload', async ({ page
   await expect(holeCard).not.toBeChecked();
   expect(await saved(page, 'peeking.mode')).toBe('whenDealerPeeks');
 
+  // The URL keeps the screen across the reload.
   await page.reload();
-  el = await openFromHub(page, 'Peeking', 'settings.peeking');
+  el = showing(page, 'settings.peeking');
   await expect(el.getByRole('switch', { name: 'Peek when dealer peeks' })).toBeChecked();
   await expect(el.getByRole('switch', { name: 'Peek at dealer down card' })).not.toBeChecked();
 

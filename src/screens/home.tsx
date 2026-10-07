@@ -6,13 +6,14 @@ import { ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
-import { reactScreen } from '@/react/screen';
 import type { App } from '@/app/app';
 import { toast } from 'sonner';
 import { alert, confirm } from '@/components/dialogs';
 import { openTable } from '@/game/launch';
-import { WORDMARK_SVG } from '@/ui/wordmark';
-import { currentNavigator, installHintWanted } from '@/ui/install-hint';
+import { WORDMARK_SVG } from '@/lib/wordmark';
+import { currentNavigator, installHintWanted } from '@/lib/install-hint';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
 
 export const APP_VERSION = '3.0.0';
 
@@ -25,6 +26,7 @@ const DRILLS = [
 
 export function Home() {
   const app = useApp();
+  const navigate = useNavigate();
   const dismissed = useStore(app.installHintDismissed, state => state.value);
   const installHint = installHintWanted(currentNavigator(), dismissed);
   const dismissInstallHint = () => app.installHintDismissed.setState({ value: true });
@@ -45,7 +47,12 @@ export function Home() {
             </CardContent>
           </Card>
         )}
-        <Button size="lg" className="h-12 text-base" onClick={() => openTable(app)} data-action="play">
+        <Button
+          size="lg"
+          className="h-12 text-base"
+          onClick={() => openTable(app, () => navigate(PATHS['game.table']))}
+          data-action="play"
+        >
           Play Blackjack
           <ChevronRightIcon />
         </Button>
@@ -57,7 +64,7 @@ export function Home() {
                 key={screen}
                 type="button"
                 className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted active:bg-muted"
-                onClick={() => app.open(screen)}
+                onClick={() => navigate(PATHS[screen])}
               >
                 <span className="font-medium">{name}</span>
                 <span className="text-sm text-muted-foreground">{detail}</span>
@@ -66,7 +73,7 @@ export function Home() {
           </div>
         </section>
         <Section>
-          <ListButton onClick={() => app.open('settings')} data-action="settings">
+          <ListButton onClick={() => navigate(PATHS.settings)} data-action="settings">
             Settings
           </ListButton>
           <ListButton chevron={false} onClick={() => resetDefaults(app)}>
@@ -99,5 +106,3 @@ function screenInfo() {
   ];
   return alert(`${info.join('\n')}`);
 }
-
-export const homeScreen = reactScreen(Home);

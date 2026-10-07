@@ -1,5 +1,5 @@
-// Boot and back-button behaviour that only a real browser can show: damaged or
-// unavailable storage, and a dialog over the home screen.
+// Boot and dialog behaviour that only a real browser can show: damaged or
+// unavailable storage, and dialogs against Back.
 import { test, expect } from '@playwright/test';
 
 test.use({ serviceWorkers: 'block' });
@@ -22,20 +22,31 @@ test('boots without localStorage, saying that settings will not be saved', async
   });
   await page.goto('/index.html');
   await expect(page.locator('[data-screen="home"]')).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('will not be saved');
+  await expect(page.getByText('Storage is blocked: settings will not be saved.')).toBeVisible();
 });
 
-test('back dismisses a dialog on the home screen instead of leaving the app', async ({ page }) => {
+test('Escape closes a dialog as its cancelling button would', async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'Reset Defaults' }).click();
-  await expect(page.locator('.dialog')).toBeVisible();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page.locator('[data-screen="home"]')).toBeVisible();
+});
+
+test('going back with a dialog open closes the dialog with its screen', async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.goto('/index.html');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Basic Setup' }).click();
+  await page.getByRole('button', { name: /^Burn Cards: / }).click();
+  await expect(page.getByRole('alertdialog')).toBeVisible();
 
   await page.goBack();
-  await expect(page.locator('.dialog')).toHaveCount(0);
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
-  // The app is still the page it was, not unloaded.
-  expect(await page.evaluate(() => typeof window.app?.router?.open)).toBe('function');
+  await expect(page.locator('[data-screen="settings"]')).toBeVisible();
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
 
 test.describe('the installed app offline', { tag: '@build' }, () => {
@@ -63,8 +74,8 @@ test('a dialog dismissed by its own button leaves the back button working', asyn
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'Screen Info' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click();
-  await expect(page.locator('.dialog')).toHaveCount(0);
+  await page.getByRole('alertdialog').getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('[data-screen="settings"]')).toBeVisible();

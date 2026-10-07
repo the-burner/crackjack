@@ -26,13 +26,14 @@ test('runs offline after the first visit', { tag: '@build' }, async ({ page, con
   await page.locator('[data-screen="home"] button', { hasText: 'Depth Drills' }).click();
   await page.locator('[data-screen="drills.depth.options"] button', { hasText: 'Launch the Drill' }).click();
   await expect(page.locator('[data-screen="drills.depth"]')).toBeVisible();
-  await page.evaluate(() => window.app.router.home());
+  await page.evaluate(() => window.app.router.navigate('/'));
   await page.locator('[data-action="play"]').click();
   await expect(betOverlay(page)).toBeVisible();
 
   const failed: string[] = [];
   page.on('requestfailed', request => failed.push(request.url()));
+  // The route is in the URL, so the reload comes back to the table.
   await page.reload();
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
+  await expect(betOverlay(page)).toBeVisible();
   expect(failed).toEqual([]);
 });

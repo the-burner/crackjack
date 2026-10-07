@@ -12,6 +12,8 @@ import { useApp } from '@/react/app-context';
 import { useOnHide, useOnShow } from '@/react/screen';
 import type { DrillShell } from '@/drills/shared/drill-shell';
 import { DrillStats } from './drill-stats';
+import { useGoBack } from '@/app/navigation';
+import { openHelp } from '@/app/help';
 
 /**
  * How the parts sit: `grid` (Depth, Count) gives the display half the height
@@ -73,6 +75,8 @@ export type DrillScreenProps = {
   controls?: ReactNode;
   /** Over the whole screen below the title bar. */
   cover?: ReactNode;
+  /** A screen opened over the drill (a child route), title bar and all. */
+  above?: ReactNode;
   /** The answer area. */
   children?: ReactNode;
 };
@@ -88,9 +92,11 @@ export function DrillScreen({
   display,
   controls,
   cover,
+  above,
   children,
 }: DrillScreenProps) {
   const app = useApp();
+  const goBack = useGoBack();
   const view = useSyncExternalStore(shell.subscribe, shell.getSnapshot);
   const parts = LAYOUTS[layout];
 
@@ -118,14 +124,14 @@ export function DrillScreen({
     <div ref={rootRef} className="relative flex min-h-0 flex-1 flex-col bg-(--felt) text-(--felt-text)">
       <header className="relative z-6 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-1">
         <div>
-          <FeltButton onClick={() => app.back()} data-action="back">
+          <FeltButton onClick={goBack} data-action="back">
             <ChevronLeftIcon />
             Back
           </FeltButton>
         </div>
         <h1 className="truncate text-base font-semibold">{title}</h1>
         <div className="flex justify-end">
-          <FeltButton onClick={() => app.help(help, title)} data-action="help">
+          <FeltButton onClick={() => openHelp(help, title)} data-action="help">
             Help
           </FeltButton>
         </div>
@@ -168,6 +174,7 @@ export function DrillScreen({
         {children}
       </div>
       {cover}
+      {above && <div className="absolute inset-0 z-30 flex flex-col bg-background">{above}</div>}
     </div>
   );
 }

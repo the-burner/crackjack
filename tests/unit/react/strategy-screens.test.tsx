@@ -42,13 +42,13 @@ describe('Allowed Bets', () => {
 
   it('follows ramp changes and opens the picker for a row', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app, location } = renderScreen(<Betting />, { path: '/settings/betting' });
     expect(bodyRows()).toHaveLength(6);
     act(() => app.settings.set('betting.ramp', { minCount: 0, rows: [{ chips: 3, hands: 2 }] }));
     expect(bodyRows()).toHaveLength(1);
     expect(within(bodyRows()[0]).getAllByRole('cell')[1]).toHaveTextContent('2x3');
     await user.click(bodyRows()[0]);
-    expect(app.open).toHaveBeenCalledWith('settings.betting.select', { row: 0 });
+    expect(location().pathname).toBe('/settings/betting/0');
   });
 
   it('resizes the table from the number of bets', async () => {
@@ -71,7 +71,7 @@ describe('Allowed Bets', () => {
 describe('bet picker', () => {
   it('limits chips to the hands chosen and writes the row', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<BetSelect params={{ row: 1 }} />);
+    const { app, location } = renderScreen(<BetSelect params={{ row: 1 }} />);
     const spots = within(screen.getByRole('group', { name: 'Spots' }));
     const chips = within(screen.getByRole('group', { name: 'Chips' }));
     expect(spots.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
@@ -85,7 +85,7 @@ describe('bet picker', () => {
     expect(chips.getByRole('button', { name: '25' })).toBeEnabled();
     await user.click(chips.getByRole('button', { name: '25' }));
     expect(app.settings.get('betting.ramp').rows[1]).toEqual({ chips: 25, hands: 3 });
-    expect(app.back).toHaveBeenCalled();
+    expect(location().pathname).toBe('/');
   });
 });
 
@@ -174,13 +174,14 @@ describe('Playing Strategy', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.set('rules.dealerPeeksAce', true);
-    renderScreen(<PlayingStrategy />, { app });
+    const { location } = renderScreen(<PlayingStrategy />, { app });
     await user.click(screen.getByRole('switch', { name: 'No hole card' }));
     expect(app.settings.get('rules.noHoleCard')).toBe(true);
     expect(app.settings.get('rules.dealerPeeksAce')).toBe(false);
     act(() => app.settings.set('strategy.indexRangeMin', -4));
     expect(screen.getByRole('button', { name: 'Index range minimum: -4' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Display Tables' }));
-    expect(app.open).toHaveBeenCalledWith('strategy.tables', { mode: 'view' });
+    expect(location().pathname).toBe('/strategy/tables');
+    expect(location().search).toBe('?mode=view');
   });
 });

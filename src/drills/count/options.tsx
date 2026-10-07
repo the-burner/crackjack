@@ -6,7 +6,6 @@ import { Section } from '@/components/screen-layout';
 import { SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { alert } from '@/components/dialogs';
-import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
@@ -23,6 +22,8 @@ import {
 import { drillStrategy } from '@/drills/shared/drill-settings';
 import { trayStyleFor, TRAY_CAPACITY } from '@/drills/depth/logic';
 import { COUNT_DRILL_LABELS, aceDrillSuits, ACE_DRILLS } from './logic';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
 
 type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
@@ -75,6 +76,7 @@ const MODE_OPTIONS: Options<'drills.count.timerMode'> = [{ value: 'auto', label:
 
 export function CountOptions() {
   const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   // Settings that only matter in some set-ups.
   const autoMode = settings.get('drills.count.timerMode') === 'auto';
@@ -97,7 +99,11 @@ export function CountOptions() {
   };
 
   return (
-    <DrillOptionsScreen title="Count Options" help="drills.count.options" onLaunch={() => launch(app)}>
+    <DrillOptionsScreen
+      title="Count Options"
+      help="drills.count.options"
+      onLaunch={() => launch(app, () => navigate(PATHS['drills.count']))}
+    >
       <Section title="Drill">
         <SettingSelect label="Drill" setting="drills.count.drill" options={DRILL_OPTIONS} />
         <SettingSelect label="Test" setting="drills.count.testEvery" options={TEST_OPTIONS} />
@@ -141,9 +147,8 @@ export function CountOptions() {
   );
 }
 
-export const countOptionsScreen = reactScreen(CountOptions);
-
-async function launch(app: App) {
+/** Checks the options, then opens the drill with `open`. */
+async function launch(app: App, open: () => void) {
   const s = app.settings;
   const decks = s.get('drills.count.decks');
   const style = s.get('drills.count.trayStyle');
@@ -163,5 +168,5 @@ async function launch(app: App) {
     );
     return;
   }
-  app.open('drills.count');
+  open();
 }

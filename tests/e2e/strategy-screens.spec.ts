@@ -198,10 +198,8 @@ test.describe('Allowed Bets', () => {
 });
 
 test('opens a named table with one cell marked', async ({ page }) => {
-  await page.goto('/index.html');
-  await page.evaluate(() =>
-    window.app.open('strategy.tables', { view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }),
-  );
+  // The viewer's options are its URL's search params.
+  await page.goto('/index.html#/strategy/tables?view=split&row=2&column=3&title=Last+Error');
   const screen = page.locator('[data-screen="strategy.tables"]:not([hidden])');
   await expect(screen.getByRole('heading', { level: 1 })).toHaveText('Last Error');
   const grid = screen.getByRole('table', { name: 'Split' });

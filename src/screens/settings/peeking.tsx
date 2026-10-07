@@ -1,7 +1,6 @@
 // Peeking: seeing the dealer's hole card and the strategies
 // used once it has been seen.
 
-import { reactScreen } from '@/react/screen';
 import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
 import { SettingSwitches } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
@@ -39,5 +38,3 @@ export function Peeking() {
     </SettingsScreen>
   );
 }
-
-export const peekingScreen = reactScreen(Peeking);

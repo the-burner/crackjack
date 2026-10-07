@@ -2,7 +2,6 @@
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
 import { createFullDrill, ROTATE_MESSAGE } from './controller';
 
@@ -61,5 +60,3 @@ export function FullDrill() {
     </DrillScreen>
   );
 }
-
-export const fullScreen = reactScreen(FullDrill, { className: 'bg-(--felt)' });

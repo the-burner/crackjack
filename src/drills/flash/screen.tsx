@@ -6,11 +6,12 @@ import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, DeleteIcon }
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/react/app-context';
-import { reactScreen } from '@/react/screen';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
 import { ACTION } from '@/core/strategy/advisor';
 import type { Action } from '@/core/strategy/advisor';
 import { createFlashDrill } from './controller';
+import { useNavigate, useOutlet } from 'react-router';
+import { tablesSearch } from '@/app/paths';
 
 /** The answer buttons, in two rows, with their swipe hints. */
 const ANSWER_BUTTONS: readonly (readonly { action: Action; label: string; Icon: LucideIcon }[])[] = [
@@ -31,7 +32,12 @@ const INDEX_GRID =
 
 export function FlashDrill() {
   const app = useApp();
-  const [drill] = useState(() => createFlashDrill(app));
+  const navigate = useNavigate();
+  // The table opens over the drill (a child route), which stays as it is underneath.
+  const [drill] = useState(() =>
+    createFlashDrill(app, { openTable: params => void navigate(`table${tablesSearch(params)}`) }),
+  );
+  const above = useOutlet();
   const view = useSyncExternalStore(drill.subscribe, drill.getSnapshot);
   const display = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -49,6 +55,7 @@ export function FlashDrill() {
   return (
     <DrillScreen
       shell={drill.shell}
+      above={above}
       title="Flash Drills"
       help="drills.flash"
       layout="flash"
@@ -107,5 +114,3 @@ export function FlashDrill() {
     </DrillScreen>
   );
 }
-
-export const flashScreen = reactScreen(FlashDrill, { className: 'bg-(--felt)' });

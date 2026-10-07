@@ -1,7 +1,6 @@
 // True Count Calcs: how the running count is turned into a true
 // count. The arithmetic itself lives in core/counting.js.
 
-import { reactScreen } from '@/react/screen';
 import { useSettings } from '@/react/app-context';
 import { ScreenLayout } from '@/components/screen-layout';
 import { OptionSelect, SettingsGroup } from '@/components/settings-controls';
@@ -101,5 +100,3 @@ export function TrueCount() {
     </ScreenLayout>
   );
 }
-
-export const trueCountScreen = reactScreen(TrueCount);

@@ -1,5 +1,5 @@
-// What the stylesheets' colours actually look like once a theme has resolved
-// them: every var() chain is followed to a literal, then measured.
+// What the colour tokens actually look like once a theme has resolved them:
+// every var() chain is followed to a literal, then measured.
 //
 // The eye is the only other check on this. A theme can map a role to a colour
 // that is perfectly pleasant on its own and unreadable where it is used, and
@@ -8,19 +8,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const DIR = 'src/ui/styles/';
-/** The order index.html loads them in: equal specificity is settled by it. */
-const FILES = [
-  'app.css',
-  'icons.css',
-  'screens.css',
-  'settings.css',
-  'strategy.css',
-  'drills.css',
-  'game.css',
-  'themes.css',
-];
-const SOURCE = FILES.map(name => readFileSync(DIR + name, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''));
+/** The cascade order: tokens, then the themes over them, then shadcn's tokens mapped onto both. */
+const FILES = ['src/styles/tokens.css', 'src/styles/themes.css', 'src/index.css'];
+const SOURCE = FILES.map(file => readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''));
 
 const THEMES = ['classic', 'latte', 'mocha'];
 
@@ -46,7 +36,8 @@ function blocks(text: string) {
       else if (text[j] === '}') depth -= 1;
       j += 1;
     }
-    out.push([text.slice(i, open).trim(), text.slice(open + 1, j - 1)]);
+    // Statements such as @import end in a semicolon; the selector follows the last one.
+    out.push([(text.slice(i, open).split(';').at(-1) ?? '').trim(), text.slice(open + 1, j - 1)]);
     i = j;
   }
   return out;
@@ -76,14 +67,6 @@ function properties(theme: string) {
 }
 
 const THEME = Object.fromEntries(THEMES.map(name => [name, properties(name)]));
-
-/** The body of a rule, for the declarations a check needs to read. */
-function rule(wanted: string) {
-  for (const text of SOURCE) {
-    for (const [selector, body] of blocks(text)) if (selector === wanted) return body;
-  }
-  throw new Error(`no rule ${wanted}`);
-}
 
 /* --- Colour ---------------------------------------------------------------- */
 
@@ -279,7 +262,6 @@ describe('text on a coloured tile', () => {
           value(name, theme),
         ]),
         [`${theme} --tile-text on --tile-bg`, value('--tile-text', theme), value('--tile-bg', theme)],
-        [`${theme} --toast-error-text on --tile-bad`, value('--toast-error-text', theme), value('--tile-bad', theme)],
       ];
     });
     expect(below(CHIP, pairs)).toEqual([]);
@@ -289,11 +271,7 @@ describe('text on a coloured tile', () => {
     const pairs = THEMES.flatMap((theme): Pair[] => [
       [`${theme} plain: --page-bg on --text`, value('--page-bg', theme), value('--text', theme)],
       [`${theme} good: --tile-mark-text on --tile-good`, value('--tile-mark-text', theme), value('--tile-good', theme)],
-      [
-        `${theme} error: --toast-error-text on --tile-bad`,
-        value('--toast-error-text', theme),
-        value('--tile-bad', theme),
-      ],
+      [`${theme} error: --tile-mark-text on --tile-bad`, value('--tile-mark-text', theme), value('--tile-bad', theme)],
     ]);
     expect(below(CHIP, pairs)).toEqual([]);
   });
@@ -322,81 +300,51 @@ describe('text on a coloured tile', () => {
 });
 
 describe('the drill screens', () => {
-  it('marks the right answer legibly on a button', () => {
+  it('marks the right answer legibly on a secondary button', () => {
     const pairs = THEMES.map((theme): Pair => [
-      `${theme} --answer-correct on --btn-bg`,
+      `${theme} --answer-correct on --secondary`,
       value('--answer-correct', theme),
-      value('--btn-bg', theme),
+      value('--secondary', theme),
     ]);
     expect(below(AA, pairs)).toEqual([]);
-  });
-
-  it('writes an overdue time legibly in the stats panel', () => {
-    const pairs = THEMES.map((theme): Pair => [
-      `${theme} --warning on --panel-bg`,
-      value('--warning', theme),
-      value('--panel-bg', theme),
-    ]);
-    expect(below(AA, pairs)).toEqual([]);
-  });
-
-  /**
-   * `.btn:disabled` only fades the button, so a primary one over a felt of the
-   * same colour composites back to exactly the enabled colour.
-   */
-  it('cannot show a disabled button as an enabled primary one', () => {
-    const declarations = rule('.btn:disabled');
-    const opacity = Number(/opacity:\s*([\d.]+)/.exec(declarations)![1]);
-    const background = /(?:^|;)\s*background(?:-color)?:\s*([^;]+)/.exec(declarations)?.[1] ?? 'var(--primary-bg)';
-    const same: string[] = [];
-    for (const theme of THEMES) {
-      const felt = value('--felt', theme);
-      const faded = { ...colour(background, theme), a: opacity };
-      const ratio = contrast(over(faded, felt), value('--primary-bg', theme));
-      if (ratio < 1.5) same.push(`${theme} disabled over --felt against --primary-bg: ${show(ratio)}`);
-    }
-    expect(same).toEqual([]);
   });
 });
 
-describe('the controls', () => {
-  it('shows the knob of a switch that is on', () => {
-    // A control's own parts need 3:1, not 4.5.
-    const pairs = THEMES.map((theme): Pair => [
-      `${theme} --toggle-knob on --check-on`,
-      value('--toggle-knob', theme),
-      value('--check-on', theme),
-    ]);
+describe("shadcn's tokens", () => {
+  /** The ink and ground pairs the components put text in. */
+  const TEXT: [front: string, back: string][] = [
+    ['--foreground', '--background'],
+    ['--card-foreground', '--card'],
+    ['--muted-foreground', '--background'],
+    ['--muted-foreground', '--card'],
+    ['--popover-foreground', '--popover'],
+    ['--primary-foreground', '--primary'],
+    ['--secondary-foreground', '--secondary'],
+    ['--accent-foreground', '--accent'],
+    // An overdue time, and a destructive button's label.
+    ['--destructive', '--background'],
+    ['--destructive', '--card'],
+  ];
+
+  for (const theme of THEMES) {
+    it(`write text legibly on their grounds in ${theme}`, () => {
+      const pairs = TEXT.map(([front, back]): Pair => [
+        `${theme} ${front} on ${back}`,
+        value(front, theme),
+        value(back, theme),
+      ]);
+      expect(below(AA, pairs)).toEqual([]);
+    });
+  }
+
+  it('show the knob of a switch that is on', () => {
+    // A control's own parts need 3:1, not 4.5. The knob is --background, or
+    // --primary-foreground in the dark theme, on a --primary track.
+    const pairs = THEMES.map((theme): Pair => {
+      const knob = theme === 'mocha' ? '--primary-foreground' : '--background';
+      return [`${theme} ${knob} on --primary`, value(knob, theme), value('--primary', theme)];
+    });
     expect(below(LARGE, pairs)).toEqual([]);
-  });
-
-  /**
-   * Classic's hairline ring on a white field inside a white card is the
-   * original look, and Classic is the fidelity reference; the two themes have
-   * no such excuse, and a number field that reads as plain text is not a field.
-   */
-  it('outlines a number field inside a group card, in both themes', () => {
-    const pairs = ['latte', 'mocha'].flatMap((theme): Pair[] => [
-      [`${theme} --input-border on --group-bg`, value('--input-border', theme), value('--group-bg', theme)],
-      [`${theme} --input-border on --input-bg`, value('--input-border', theme), value('--input-bg', theme)],
-    ]);
-    expect(below(2.5, pairs)).toEqual([]);
-  });
-
-  /**
-   * Where the page is light the scrim has to darken it enough for a dialog to
-   * lift off it. A dark theme's page is already dark, and separates by shadow.
-   */
-  it('dims a light page enough for a dialog to sit on it', () => {
-    const faint: string[] = [];
-    for (const theme of THEMES) {
-      const page = value('--page-bg', theme);
-      if (luminance(page) < 0.5) continue;
-      const dimmed = over(value('--overlay', theme), page);
-      const ratio = contrast(value('--dialog-bg', theme), dimmed);
-      if (ratio < 2.5) faint.push(`${theme} --dialog-bg against the dimmed page: ${show(ratio)}`);
-    }
-    expect(faint).toEqual([]);
   });
 });
 

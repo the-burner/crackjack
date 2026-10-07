@@ -1,10 +1,9 @@
 // Full Table Drills: Options.
 
-import { useApp, useSettings } from '@/react/app-context';
+import { useSettings } from '@/react/app-context';
 import { Section } from '@/components/screen-layout';
 import { SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
-import { reactScreen } from '@/react/screen';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
@@ -17,6 +16,8 @@ import {
   END_WARNING_OPTIONS,
 } from '@/drills/shared/options-screen';
 import { FULL_DRILL_LABELS } from './logic';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
 
 type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
@@ -40,7 +41,7 @@ const PLAYERS_OPTIONS: Options<'drills.full.players'> = [
 const MODE_OPTIONS: Options<'drills.full.timerMode'> = [{ value: 'auto', label: 'Shoe' }, COUNT_DOWN_HALT_OPTION];
 
 export function FullOptions() {
-  const app = useApp();
+  const navigate = useNavigate();
   const settings = useSettings();
   // Settings that only matter in some set-ups.
   const autoMode = settings.get('drills.full.timerMode') === 'auto';
@@ -48,7 +49,11 @@ export function FullOptions() {
   const twoTables = drill === 'twoTables';
 
   return (
-    <DrillOptionsScreen title="Full Table Options" help="drills.full.options" onLaunch={() => app.open('drills.full')}>
+    <DrillOptionsScreen
+      title="Full Table Options"
+      help="drills.full.options"
+      onLaunch={() => navigate(PATHS['drills.full'])}
+    >
       <Section title="Drill">
         <SettingSelect label="Drill" setting="drills.full.drill" options={DRILL_OPTIONS} />
         <SettingSelect label="Accuracy" setting="drills.full.accuracy" options={ACCURACY_OPTIONS} />
@@ -82,5 +87,3 @@ export function FullOptions() {
     </DrillOptionsScreen>
   );
 }
-
-export const fullOptionsScreen = reactScreen(FullOptions);

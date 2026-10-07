@@ -17,7 +17,7 @@ import { DurationDialog } from '@/components/drills/duration-dialog';
 import { useSettings } from '@/react/app-context';
 import type { AppSchema, SettingKey, SettingValues } from '@/settings/schema';
 import type { NumberDef } from '@/settings/store';
-import { tenthsColumns } from '@/ui/time-wheel';
+import { tenthsColumns } from '@/drills/shared/duration';
 import { clockTime } from './format';
 
 type BoolKey = { [K in SettingKey]: SettingValues[K] extends boolean ? K : never }[SettingKey];
