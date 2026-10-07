@@ -12,6 +12,11 @@ import type { Screen, ScreenParams } from './router';
 import { dismissTopOverlay } from '@/ui/overlays';
 import { ErrorTallies } from '@/services/error-tallies';
 import { ScreenWakeLock } from '@/services/wake-lock';
+import { INSTALL_HINT_KEY } from '@/ui/install-hint';
+import { persistedStore } from '@/services/persisted-store';
+import type { PersistedStore } from '@/services/persisted-store';
+import { readBankroll, readStats } from '@/game/record';
+import type { GameStats } from '@/game/record';
 
 export type { Screen, ScreenFactory, ScreenParams } from './router';
 
@@ -24,6 +29,11 @@ export interface Services {
   errorTallies: ErrorTallies;
   /** Keeps the screen on during drills and play. */
   wakeLock: ScreenWakeLock;
+  /** The table's bankroll between visits; null before the first round. */
+  bankroll: PersistedStore<number | null>;
+  gameStats: PersistedStore<GameStats>;
+  /** The iOS install hint was dismissed. */
+  installHintDismissed: PersistedStore<boolean>;
 }
 
 /** The services plus navigation: what every screen factory receives. */
@@ -49,6 +59,9 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     sound: new Sound(settings),
     errorTallies: new ErrorTallies(storage),
     wakeLock: new ScreenWakeLock(),
+    bankroll: persistedStore(storage, 'bankroll', readBankroll),
+    gameStats: persistedStore(storage, 'gameStats', readStats),
+    installHintDismissed: persistedStore(storage, INSTALL_HINT_KEY, saved => saved === true),
   };
 }
 

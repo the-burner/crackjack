@@ -571,7 +571,7 @@ describe('GameSession', () => {
     while (session.state === 'playerAction') session.act('stand');
     expect(session.state).toBe('settled');
     expect(session.counts.runningCount).not.toBeNaN();
-    expect(app.storage.get('bankroll')).toBe(session.bankroll);
+    expect(app.bankroll.getState().value).toBe(session.bankroll);
     expect(session.stats.rounds).toBe(1);
   });
 });

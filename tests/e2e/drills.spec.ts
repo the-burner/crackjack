@@ -464,7 +464,7 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await expect(row).toHaveText('00:05:01');
   expect(
     await page.evaluate(
-      () => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').values['drills.flash.drillSeconds'],
+      () => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').state.values['drills.flash.drillSeconds'],
     ),
   ).toBe(301);
 

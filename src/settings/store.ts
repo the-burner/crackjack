@@ -1,11 +1,15 @@
-// Schema-driven settings: typed values with defaults, persisted as one object.
+// Schema-driven settings: typed values with defaults, held in a Zustand store
+// and persisted (with Zustand's persist middleware) as one object.
 
+import { createStore } from 'zustand/vanilla';
+import type { Mutate, StoreApi } from 'zustand/vanilla';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Storage } from '@/services/storage';
 
 const STORAGE_KEY = 'settings';
 
-/** Version of the saved `{ version, values }` envelope. */
-export const SETTINGS_VERSION = 1;
+/** Version of what is saved; 2 is Zustand's `{ state: { values }, version }`. */
+export const SETTINGS_VERSION = 2;
 
 /** A setting definition. */
 export interface BoolDef {
@@ -56,14 +60,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /**
  * Upgrades what was saved by version n to version n + 1, by n. Version 0 is
- * the flat object of values saved before the envelope.
+ * the flat object of values saved before any envelope, 1 the `{ version,
+ * values }` envelope, 2 Zustand's.
  */
-const MIGRATIONS: readonly ((values: Record<string, unknown>) => Record<string, unknown>)[] = [values => values];
+const MIGRATIONS: readonly ((values: Record<string, unknown>) => Record<string, unknown>)[] = [
+  values => values,
+  values => values,
+];
 
-/** The values in a saved settings object, brought up to the current version. */
+/** The values in a saved settings object of any version, brought up to the current one. */
 export function migrate(saved: unknown): Record<string, unknown> {
   if (!isRecord(saved)) return {};
-  const { version, values } = saved;
+  const { version, values, state } = saved;
+  if (Number.isInteger(version) && isRecord(state) && isRecord(state.values))
+    return upgrade(Number(version), state.values);
   if (Number.isInteger(version) && Number(version) >= 1 && isRecord(values)) return upgrade(Number(version), values);
   return upgrade(0, saved);
 }
@@ -110,18 +120,48 @@ function coerceTo(def: SettingDef, value: unknown): unknown {
   }
 }
 
+/** What the settings store holds. */
+export type SettingsState<S extends SettingsSchema> = { values: SettingsValues<S> };
+
 export class Settings<S extends SettingsSchema = SettingsSchema> {
   readonly schema: S;
   readonly storage: Storage;
+  /** The Zustand store; React components read it with `useStore`. */
+  readonly store: Mutate<StoreApi<SettingsState<S>>, [['zustand/persist', unknown]]>;
   private listeners = new Set<SettingsListener<S>>();
-  values: SettingsValues<S>;
 
   constructor(schema: S, storage: Storage) {
     this.schema = schema;
     this.storage = storage;
-    this.values = this.read();
+    this.store = createStore<SettingsState<S>>()(
+      persist(() => ({ values: this.defaults() }), {
+        name: STORAGE_KEY,
+        version: SETTINGS_VERSION,
+        // Read raw, so every saved shape (flat, envelope, Zustand's) goes through migrate().
+        storage: createJSONStorage(() => ({
+          getItem: () => {
+            const saved = storage.get(STORAGE_KEY);
+            return saved === undefined
+              ? null
+              : JSON.stringify({ state: { values: migrate(saved) }, version: SETTINGS_VERSION });
+          },
+          setItem: (_, value) => storage.set(STORAGE_KEY, JSON.parse(value)),
+          removeItem: () => storage.remove(STORAGE_KEY),
+        })),
+        // Every saved value is checked against its setting; anything else is the default.
+        merge: (saved, current) => ({ ...current, values: this.valuesFrom(isRecord(saved) ? saved.values : {}) }),
+      }),
+    );
+    this.store.subscribe((state, previous) => {
+      for (const key of this.keys()) if (!this.same(key, state.values[key], previous.values[key])) this.notify(key);
+    });
     // Another tab writing the same key would otherwise be erased by our next save.
     this.storage.watch?.(STORAGE_KEY, () => this.reload());
+  }
+
+  /** The current values (read-only: change them through set/update). */
+  get values(): SettingsValues<S> {
+    return this.store.getState().values;
   }
 
   private keys(): SettingsKey<S>[] {
@@ -132,31 +172,23 @@ export class Settings<S extends SettingsSchema = SettingsSchema> {
     if (!(key in this.schema)) throw new Error(`Unknown setting: ${key}`);
   }
 
-  /** Re-reads what another tab saved, and tells the listeners about each key that changed. */
-  reload() {
-    const before = this.values;
-    this.load();
-    for (const key of this.keys()) {
-      if (JSON.stringify(before[key]) === JSON.stringify(this.values[key])) continue;
-      this.notify(key);
-    }
+  private defaults(): SettingsValues<S> {
+    return this.valuesFrom({});
   }
 
-  load() {
-    this.values = this.read();
-  }
-
-  private read(): SettingsValues<S> {
-    const saved = migrate(this.storage.get(STORAGE_KEY));
+  /** Every setting, from `saved` where it holds a valid value, else the default. */
+  private valuesFrom(saved: unknown): SettingsValues<S> {
+    const source = isRecord(saved) ? saved : {};
     const values: Partial<SettingsValues<S>> = {};
     for (const key of this.keys()) {
-      values[key] = key in saved ? this.coerce(key, saved[key]) : structuredClone(this.schema[key].default);
+      values[key] = key in source ? this.coerce(key, source[key]) : structuredClone(this.schema[key].default);
     }
     return values as SettingsValues<S>;
   }
 
-  save() {
-    this.storage.set(STORAGE_KEY, { version: SETTINGS_VERSION, values: this.values });
+  /** Re-reads what another tab saved; the listeners hear about each key that changed. */
+  reload() {
+    void this.store.persist.rehydrate();
   }
 
   /** The value of `key`; json values are copies, so changing one means setting it back. */
@@ -180,19 +212,17 @@ export class Settings<S extends SettingsSchema = SettingsSchema> {
 
   /** Applies several values at once (one save, one notification per key). */
   update(changes: Partial<SettingsValues<S>>) {
-    const changed: SettingsKey<S>[] = [];
+    const next = { ...this.values };
+    let changed = false;
     for (const [key, value] of Object.entries(changes)) {
       this.check(key);
       const v = this.coerce(key, value);
-      if (!this.same(key, v, this.values[key])) {
-        Object.assign(this.values, { [key]: v });
-        changed.push(key);
+      if (!this.same(key, v, next[key])) {
+        Object.assign(next, { [key]: v });
+        changed = true;
       }
     }
-    if (changed.length) {
-      this.save();
-      changed.forEach(key => this.notify(key));
-    }
+    if (changed) this.store.setState({ values: next });
   }
 
   /** Restores defaults (all settings, or those under the given prefixes). */

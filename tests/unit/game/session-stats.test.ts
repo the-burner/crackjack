@@ -74,7 +74,7 @@ describe('dealer error calls', () => {
     const app = makeApp();
     const session = new GameSession(app);
     session.recordFalseFoul();
-    expect(app.storage.get('gameStats')).toMatchObject({ foulDecisions: 1, foulErrors: 1 });
+    expect(app.gameStats.getState().value).toMatchObject({ foulDecisions: 1, foulErrors: 1 });
   });
 
   it('clears the calls with the rest of the stats', () => {
@@ -101,6 +101,8 @@ describe('saved stats from an older version', () => {
       betDecisions: 2,
       betErrors: 0,
     });
+    // Saved by an older version, then read as the app starts.
+    void app.gameStats.persist.rehydrate();
     const session = new GameSession(app);
     expect(session.stats).toMatchObject({ rounds: 4, foulDecisions: 0, foulErrors: 0 });
     expect(session.accuracy().foul).toBe(100);

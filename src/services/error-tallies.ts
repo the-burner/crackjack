@@ -5,6 +5,8 @@
 import { TABLE_NAMES } from '@/core/strategy/strategy-file';
 import type { TableName } from '@/core/strategy/strategy-file';
 import type { Storage } from './storage';
+import { persistedStore } from './persisted-store';
+import type { PersistedStore } from './persisted-store';
 
 const STORAGE_KEY = 'errorTallies';
 
@@ -25,19 +27,26 @@ export const emptyTallies = (): Tallies => Object.fromEntries(TABLE_NAMES.map(na
 const isGrid = (grid: unknown): grid is number[][] =>
   Array.isArray(grid) && grid.length === 10 && grid.every(row => Array.isArray(row) && row.length === 10);
 
+/** Saved tallies; a damaged grid is thrown away rather than left to break recording. */
+function readTallies(saved: unknown): Tallies {
+  const tallies = emptyTallies();
+  if (typeof saved !== 'object' || saved === null) return tallies;
+  for (const name of TABLE_NAMES) {
+    const grid = (saved as Record<string, unknown>)[name];
+    if (isGrid(grid) && grid.every(row => row.every(Number.isFinite))) tallies[name] = grid;
+  }
+  return tallies;
+}
+
 export class ErrorTallies {
-  readonly storage: Storage;
+  readonly store: PersistedStore<Tallies>;
 
   constructor(storage: Storage) {
-    this.storage = storage;
+    this.store = persistedStore(storage, STORAGE_KEY, readTallies);
   }
 
   load(): Tallies {
-    const saved = this.storage.get(STORAGE_KEY, {});
-    const tallies = emptyTallies();
-    // A damaged grid is thrown away rather than left to break recording.
-    for (const name of TABLE_NAMES) if (isGrid(saved[name])) tallies[name] = saved[name];
-    return tallies;
+    return structuredClone(this.store.getState().value);
   }
 
   /** Records one error in `table` (a TABLE_NAMES entry) at [row][column]. */
@@ -45,11 +54,11 @@ export class ErrorTallies {
     if (row < 0 || row > 9 || column < 0 || column > 9) return;
     const tallies = this.load();
     tallies[table][row][column] += 1;
-    this.storage.set(STORAGE_KEY, tallies);
+    this.store.setState({ value: tallies });
   }
 
   clear() {
-    this.storage.remove(STORAGE_KEY);
+    this.store.setState({ value: emptyTallies() });
   }
 
   /** Cells with at least one error, most frequent first: [{table, row, column, count}]. */

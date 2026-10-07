@@ -221,7 +221,7 @@ describe('settings changed in another tab', () => {
 
     expect(settings.get('mechanics.sound')).toBe(true);
     settings.set('rules.decks', 6);
-    expect(JSON.parse(backend.getItem('cj.settings')!).values['mechanics.sound']).toBe(true);
+    expect(JSON.parse(backend.getItem('cj.settings')!).state.values['mechanics.sound']).toBe(true);
   });
 
   it('tell the listeners which keys changed', () => {
@@ -249,7 +249,13 @@ describe('saved format', () => {
     new Settings(schema, new Storage(backend)).set('rules.decks', 2);
     const saved = JSON.parse(backend.getItem('cj.settings')!);
     expect(saved.version).toBe(SETTINGS_VERSION);
-    expect(saved.values['rules.decks']).toBe(2);
+    expect(saved.state.values['rules.decks']).toBe(2);
+  });
+
+  it('reads the version 1 envelope saved before the Zustand store', () => {
+    const backend = new MemoryBackend();
+    backend.setItem('cj.settings', JSON.stringify({ version: 1, values: { 'rules.decks': 2 } }));
+    expect(new Settings(schema, new Storage(backend)).get('rules.decks')).toBe(2);
   });
 
   it('reads the flat object saved before the envelope, keeping every value', () => {

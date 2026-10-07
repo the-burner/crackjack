@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Home } from '@/screens/home';
-import { installHintWanted, INSTALL_HINT_KEY } from '@/ui/install-hint';
+import { installHintWanted } from '@/ui/install-hint';
 import { renderScreen } from '../../support/render';
 
 /** iOS Safari's navigator.standalone; undefined everywhere else. */
@@ -29,7 +29,7 @@ describe('the install hint', () => {
     expect(hint()).toHaveTextContent('To use Crackjack offline, install it');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     expect(hint()).not.toBeInTheDocument();
-    expect(app.storage.get(INSTALL_HINT_KEY)).toBe(true);
+    expect(app.installHintDismissed.getState().value).toBe(true);
     unmount();
     renderScreen(<Home />, { app });
     expect(hint()).not.toBeInTheDocument();

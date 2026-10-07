@@ -63,7 +63,7 @@ describe('Basic Setup', () => {
     app.settings.set('table.startingBankroll', 500);
     renderScreen(<Setup />, { app });
     await user.click(screen.getByRole('button', { name: 'Refresh Bankroll' }));
-    expect(app.storage.get('bankroll')).toBe(500);
+    expect(app.bankroll.getState().value).toBe(500);
   });
 });
 

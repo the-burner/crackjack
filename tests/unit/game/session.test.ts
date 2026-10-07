@@ -264,13 +264,13 @@ describe('dealer errors the screen asks for', () => {
 describe('the bankroll', () => {
   it('picks up where the last session left off', () => {
     const app = makeApp();
-    app.storage.set('bankroll', 500);
+    app.bankroll.setState({ value: 500 });
     expect(new GameSession(app).bankroll).toBe(500);
   });
 
   it('starts afresh when the table refreshes the bankroll', () => {
     const app = makeApp({ 'table.refreshBankrollOnStart': true });
-    app.storage.set('bankroll', 500);
+    app.bankroll.setState({ value: 500 });
     expect(new GameSession(app).bankroll).toBe(30000);
   });
 
@@ -281,7 +281,7 @@ describe('the bankroll', () => {
     expect(session.bankroll).not.toBe(30000);
     session.resetBankroll();
     expect(session.bankroll).toBe(30000);
-    expect(app.storage.get('bankroll')).toBe(30000);
+    expect(app.bankroll.getState().value).toBe(30000);
   });
 
   it('counts a dealer error taken after the payoff in the bankroll figures', () => {
@@ -313,7 +313,7 @@ describe('the bankroll', () => {
     const session = riggedSession([], app);
     session.adjustBankroll(50);
     expect(session.bankroll).toBe(30050);
-    expect(app.storage.get('bankroll')).toBe(30050);
+    expect(app.bankroll.getState().value).toBe(30050);
     session.adjustBankroll(-50);
     expect(session.bankroll).toBe(30000);
   });

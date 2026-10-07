@@ -22,9 +22,8 @@ import { decodeSideBetGame } from '@/settings/side-bet-games';
 import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
 import { sideBetSpots } from './engine/side-bets';
 import type { SideBetSpot } from './engine/side-bets';
-
-const BANKROLL_KEY = 'bankroll';
-const STATS_KEY = 'gameStats';
+import { emptyStats } from './record';
+import type { GameStats } from './record';
 
 const DIVISION = {
   full: TC_DIVISION.fullDeck,
@@ -34,24 +33,6 @@ const DIVISION = {
 };
 const LAST_DECK = { half: TC_LAST_DECK.halfDeck, quarter: TC_LAST_DECK.quarterDeck, exact: TC_LAST_DECK.exact };
 const ROUNDING = { round: TC_ROUNDING.round, truncate: TC_ROUNDING.truncate, floor: TC_ROUNDING.floor };
-
-/** Fresh statistics for a session. */
-const emptyStats = () => ({
-  rounds: 0,
-  totalBet: 0,
-  highBet: 0,
-  lowBet: 0,
-  highBankroll: 0,
-  lowBankroll: 0,
-  bankrollSum: 0,
-  playDecisions: 0,
-  playErrors: 0,
-  betDecisions: 0,
-  betErrors: 0,
-  foulDecisions: 0,
-  foulErrors: 0,
-});
-export type GameStats = ReturnType<typeof emptyStats>;
 
 /** The table as the session sets it up from the settings. */
 export type SessionTable = ReturnType<GameSession['tableFrom']>;
@@ -106,15 +87,13 @@ export class GameSession {
     this.strategy = app.strategies.current(this.settings, this.table.decks);
     this.sideBetGame = this.loadSideBetGame();
     this.counter = new Counter(this.strategy, this.trueCountSettings());
-    // What save() stored.
-    this.stats = { ...emptyStats(), ...(app.storage.get(STATS_KEY, {}) as Partial<GameStats>) };
+    this.stats = { ...app.gameStats.getState().value };
     this.warnings = [];
     this.lastError = null;
     this.settledRound = null;
 
     const startingBankroll = this.settings.get('table.startingBankroll');
-    // What save() stored.
-    const saved = app.storage.get(BANKROLL_KEY, null) as number | null;
+    const saved = app.bankroll.getState().value;
     const bankroll = this.settings.get('table.refreshBankrollOnStart') || saved === null ? startingBankroll : saved;
 
     this.game = new BlackjackGame({
@@ -443,8 +422,8 @@ export class GameSession {
   }
 
   save(): void {
-    this.app.storage.set(BANKROLL_KEY, this.game.bankroll);
-    this.app.storage.set(STATS_KEY, this.stats);
+    this.app.bankroll.setState({ value: this.game.bankroll });
+    this.app.gameStats.setState({ value: { ...this.stats } });
   }
 
   /** Accuracy percentages for the stats screen. */

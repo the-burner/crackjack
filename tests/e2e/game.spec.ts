@@ -245,13 +245,17 @@ test.describe('the table', () => {
       }
     }
     expect(inProgress).toBe(true);
-    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.bankroll') ?? '1000'));
+    const before = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('cj.bankroll') ?? 'null')?.state.value ?? 1000,
+    );
     const money = (n: number) =>
       `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     await expect(bankroll(page)).toHaveText(money(before - 5));
     await page.locator('.table__bar [data-action="back"]').click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.bankroll') ?? 'null'));
+    const saved = await page.evaluate(
+      () => JSON.parse(localStorage.getItem('cj.bankroll') ?? 'null')?.state.value ?? null,
+    );
     expect(saved).toBe(before);
   });
 

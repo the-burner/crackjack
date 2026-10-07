@@ -10,7 +10,6 @@ import type { SelectOption } from '@/ui/components';
 import { toast } from '@/ui/toast';
 
 /** Storage key holding the current bankroll, which the game screen restores. */
-const BANKROLL_KEY = 'bankroll';
 
 const NOTE =
   'Set the basic configuation on this screen. Seats can have computer players ' +
@@ -91,7 +90,7 @@ export function Setup() {
           icon="refresh"
           block
           onClick={() => {
-            app.storage.set(BANKROLL_KEY, settings.get('table.startingBankroll'));
+            app.bankroll.setState({ value: settings.get('table.startingBankroll') });
             toast('Bankroll refreshed');
           }}
         >

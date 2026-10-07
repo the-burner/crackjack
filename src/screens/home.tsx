@@ -1,6 +1,6 @@
 // Home screen: the four drills, the game and the settings.
 
-import { useState } from 'react';
+import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
 import { Button, StandardScreen } from '@/react/components';
 import { reactScreen } from '@/react/screen';
@@ -9,7 +9,7 @@ import { confirm, alert } from '@/ui/dialogs';
 import { toast } from '@/ui/toast';
 import { openTable } from '@/game/launch';
 import { WORDMARK_SVG } from '@/ui/wordmark';
-import { currentNavigator, installHintWanted, INSTALL_HINT_KEY } from '@/ui/install-hint';
+import { currentNavigator, installHintWanted } from '@/ui/install-hint';
 
 export const APP_VERSION = '3.0.0';
 
@@ -22,13 +22,9 @@ const DRILLS = [
 
 export function Home() {
   const app = useApp();
-  const [installHint, setInstallHint] = useState(() =>
-    installHintWanted(currentNavigator(), app.storage.get(INSTALL_HINT_KEY, false) === true),
-  );
-  const dismissInstallHint = () => {
-    app.storage.set(INSTALL_HINT_KEY, true);
-    setInstallHint(false);
-  };
+  const dismissed = useStore(app.installHintDismissed, state => state.value);
+  const installHint = installHintWanted(currentNavigator(), dismissed);
+  const dismissInstallHint = () => app.installHintDismissed.setState({ value: true });
   return (
     <StandardScreen title="" help="home" back={false}>
       <div className="column home">
