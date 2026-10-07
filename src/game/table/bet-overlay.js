@@ -134,6 +134,13 @@ export function createBetOverlay(handlers) {
       draw();
     },
 
+    /** Rebuilds the tiles from a changed ramp or chip value. */
+    setSource({ ramp, chipValue }) {
+      source = { ramp, chipValue };
+      cells = betCells(source);
+      if (!el.hidden) draw();
+    },
+
     /** Shows a message in place of the heading (a rejected bet, a Foul result). */
     setMessage(text) {
       message = text;

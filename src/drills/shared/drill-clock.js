@@ -114,6 +114,8 @@ export class DrillClock {
   /** Runs `fn` after `seconds`, replacing any previous timer with the same name. */
   after(name, seconds, fn) {
     this.cancel(name);
+    // A stopped clock's run is over; a late call must not start it again.
+    if (this.startedAt === null) return;
     this.timers.set(
       name,
       this.setTimer(() => {
@@ -135,6 +137,7 @@ export class DrillClock {
       );
     };
     this.cancel(name);
+    if (this.startedAt === null) return;
     tick();
   }
 

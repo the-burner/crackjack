@@ -92,6 +92,8 @@ export function fullScreen(app) {
   let advancePending = false;
   /** The right answer has been given, so further taps are not graded again. */
   let answered = false;
+  /** The wait between a right answer and the next round, so it can be called off. */
+  let advanceTimer = null;
   /** The run began behind the cover: deal once the device is turned. */
   let dealPending = false;
   /** Clock times (in elapsed seconds) at which the cards go away and the test ends. */
@@ -152,6 +154,8 @@ export function fullScreen(app) {
 
   function stop() {
     shell.clock?.stop();
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
     grid = null;
     tables = tables.map(() => null);
     render();
@@ -345,7 +349,10 @@ export function fullScreen(app) {
       }
       // One answer, one advance: a second tap within the pause is not graded.
       answered = true;
-      setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        advance();
+      }, PAUSE_AFTER_ANSWER_MS);
       return;
     }
     grid.mark(cell, verdict === 'close' ? 'close' : 'wrong');

@@ -316,12 +316,17 @@ export function tableScreen(app) {
     showWarnings();
     counts.textContent = countsText();
     updateControls();
-    if (session.state === STATE.insurance) startInsuranceTimer();
     if (openBettingWhenIdle) {
       openBettingWhenIdle = false;
       beginBetting();
       return;
     }
+    armTimers();
+  }
+
+  /** The insurance offer and the next round wait on timers, which run only while the table shows. */
+  function armTimers() {
+    if (session.state === STATE.insurance) startInsuranceTimer();
     if (session.state === STATE.settled && !nextRoundTimer) {
       nextRoundTimer = setTimeout(() => {
         nextRoundTimer = null;
@@ -585,8 +590,7 @@ export function tableScreen(app) {
     // A mistake made during play has cost the hand already; one made at the
     // payoff is made here: the chips never arrive.
     if (!error.alreadyPaid) {
-      session.game.bankroll -= error.amount;
-      session.save();
+      session.adjustBankroll(-error.amount);
       for (const affected of error.hands) {
         const settled = events.find(event => event.type === 'settled' && event.hand === affected.key);
         if (!settled) continue;
@@ -627,7 +631,7 @@ export function tableScreen(app) {
   function claimDealerError() {
     const { caught, refund, message, tone } = claimFoul(pendingError);
     if (caught) {
-      session.game.bankroll += refund;
+      session.adjustBankroll(refund);
       session.recordFoulCaught();
       state.setBankroll(session.bankroll);
       pendingError = null;
@@ -683,8 +687,7 @@ export function tableScreen(app) {
       .filter(hand => hand.owner === PLAYER.human)
       .reduce((sum, hand) => sum + hand.wagered, 0);
     if (staked <= 0) return;
-    session.game.bankroll += staked;
-    session.save();
+    session.adjustBankroll(staked);
   }
 
   // --- wiring ---------------------------------------------------------------
@@ -701,6 +704,10 @@ export function tableScreen(app) {
         relayout();
       });
       relayout();
+      // Customize may have changed the ramp or the chip value behind the overlay.
+      if (overlay.visible)
+        overlay.setSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
+      else if (!animator.busy) armTimers();
       if (!overlay.visible && session.state === STATE.betting) {
         state.setBankroll(session.bankroll);
         counts.textContent = countsText();
@@ -715,6 +722,9 @@ export function tableScreen(app) {
 
     onHide() {
       observer.disconnect();
+      stopInsuranceTimer();
+      clearTimeout(nextRoundTimer);
+      nextRoundTimer = null;
     },
 
     destroy() {

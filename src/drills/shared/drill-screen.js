@@ -184,6 +184,7 @@ export function drillShell(
     /** Ends the run and shows a closing message. */
     finish(text = '') {
       onStop?.(shell);
+      if (pauseButton) pauseButton.disabled = true;
       if (text) shell.setMessage(text);
     },
 

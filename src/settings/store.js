@@ -41,7 +41,17 @@ export class Settings {
     this.values = {};
     this.load();
     // Another tab writing the same key would otherwise be erased by our next save.
-    this.storage.watch?.(STORAGE_KEY, () => this.load());
+    this.storage.watch?.(STORAGE_KEY, () => this.reload());
+  }
+
+  /** Re-reads what another tab saved, and tells the listeners about each key that changed. */
+  reload() {
+    const before = this.values;
+    this.load();
+    for (const key of Object.keys(this.schema)) {
+      if (JSON.stringify(before[key]) === JSON.stringify(this.values[key])) continue;
+      this.listeners.forEach(fn => fn(key, this.values[key]));
+    }
   }
 
   load() {

@@ -263,3 +263,97 @@ test.describe('count drill', () => {
     await expect.poll(() => feltAtCentre(cards), { timeout: 7000 }).toBeGreaterThan(50);
   });
 });
+
+/** Records when each drill card is dealt, in `window.__cjDeals`. */
+const recordDeals = page =>
+  page.evaluate(async () => {
+    const { DrillShoe } = await import('/src/drills/shared/shoe.js');
+    const deal = DrillShoe.prototype.deal;
+    window.__cjDeals = [];
+    DrillShoe.prototype.deal = function recordedDeal() {
+      window.__cjDeals.push(performance.now());
+      return deal.call(this);
+    };
+  });
+
+/** Taps every cell of a count grid twice in one tick, so the right one is among them. */
+const tapEveryCellTwice = page =>
+  page.evaluate(() => {
+    const answers = document.querySelector('[data-screen="drills.count"] canvas.drill__answers');
+    const box = answers.getBoundingClientRect();
+    for (let pass = 0; pass < 2; pass++) {
+      for (let row = 0; row < 3; row++) {
+        for (let column = 0; column < 6; column++) {
+          answers.dispatchEvent(
+            new MouseEvent('click', {
+              clientX: box.left + (box.width / 6) * (column + 0.5),
+              clientY: box.top + (box.height / 3) * (row + 0.5),
+            }),
+          );
+        }
+      }
+    }
+  });
+
+test.describe('count drill answers', () => {
+  test('deals once after a right answer tapped twice', async ({ page }) => {
+    await open(page, {
+      'drills.count.decks': 1,
+      'drills.count.cardsPerFlash': '1',
+      'drills.count.testEvery': 'everyCard',
+      'drills.count.dealByHand': true,
+      'drills.count.accuracy': 0,
+      'drills.count.alarmSeconds': 1799,
+    });
+    const screen = await launch(page, COUNT);
+    await recordDeals(page);
+    const next = screen.getByRole('button', { name: 'Next' });
+    await next.click();
+    await next.click();
+    await expect(screen.locator('.drill__answers-wrap')).toBeVisible();
+
+    await tapEveryCellTwice(page);
+    // One card comes, then the player deals the next test by hand.
+    await expect(screen.locator('.drill__answers-wrap')).toBeHidden();
+    await expect(next).toBeVisible();
+    expect(await page.evaluate(() => window.__cjDeals.length)).toBe(2);
+  });
+
+  test('a Restart right after a right answer deals at the set speed', async ({ page }) => {
+    await open(page, {
+      'drills.count.decks': 1,
+      'drills.count.cardsPerFlash': '1',
+      'drills.count.testEvery': 'everyCard',
+      'drills.count.accuracy': 0,
+      'drills.count.dealTenths': 5,
+      'drills.count.timerMode': 'countUp',
+      'drills.count.alarmSeconds': 1799,
+    });
+    const screen = await launch(page, COUNT);
+    await expect(screen.locator('.drill__answers-wrap')).toBeVisible();
+    await tapEveryCellTwice(page);
+    await screen.getByRole('button', { name: 'Restart' }).click();
+    await recordDeals(page);
+    await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
+    await page.waitForTimeout(2000);
+    const deals = await page.evaluate(() => window.__cjDeals);
+    const gaps = deals.slice(1).map((t, i) => t - deals[i]);
+    // Every half second, never two deal loops at once.
+    expect(gaps.every(gap => gap > 350)).toBe(true);
+  });
+});
+
+test('a finished drill offers no Pause', async ({ page }) => {
+  await open(page, {
+    'drills.depth.drill': 'trueCount',
+    'drills.depth.decks': 1,
+    'drills.depth.resolution': 'half',
+    'drills.depth.countRangeMin': 30,
+    'drills.depth.countRangeMax': 64,
+    'drills.depth.timerMode': 'auto',
+    'drills.depth.seconds': 60,
+  });
+  const screen = await launch(page, DEPTH);
+  await expect(screen.locator('.drill__message')).toHaveText('No tests can be shown with these options.');
+  await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+});

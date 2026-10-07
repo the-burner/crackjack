@@ -46,6 +46,17 @@ function fakeClock(options = {}) {
 }
 
 describe('DrillClock', () => {
+  it('schedules nothing once stopped, so a late callback cannot restart a run', () => {
+    const clock = fakeClock();
+    clock.start();
+    clock.stop();
+    const fired = [];
+    clock.after('advance', 1, () => fired.push('after'));
+    clock.every('deal', 1, () => fired.push('every'));
+    clock.advance(5);
+    expect(fired).toEqual([]);
+  });
+
   it('counts down, fires the alarm once and marks the display overdue', () => {
     const clock = fakeClock();
     clock.start();

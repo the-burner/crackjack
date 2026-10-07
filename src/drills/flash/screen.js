@@ -120,6 +120,10 @@ export function flashScreen(app) {
   let answerGrid = null;
   let finished = false;
   let started = false;
+  /** The wait between a right index answer and the next hand, so it can be called off. */
+  let advanceTimer = null;
+  /** A pause called off that wait: move on when play resumes. */
+  let advanceOnResume = false;
 
   const shell = drillShell(app, {
     title: 'Flash Drills',
@@ -176,6 +180,8 @@ export function flashScreen(app) {
 
   function stop() {
     shell.clock?.stop();
+    cancelAdvance();
+    advanceOnResume = false;
     answered = false;
     pending = false;
     hand = null;
@@ -273,7 +279,8 @@ export function flashScreen(app) {
 
   /** Grades a tap on the index-test grid. */
   function gridTap(event) {
-    if (!hand || finished || !answerGrid) return;
+    // Once the answer is in, further taps are ignored until the next hand.
+    if (!hand || finished || !answerGrid || advanceTimer) return;
     const box = grid.getBoundingClientRect();
     const cell = answerGrid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -286,7 +293,10 @@ export function flashScreen(app) {
       answerGrid.mark(cell, 'correct');
       draw();
       app.sound.play('correct');
-      setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        advance();
+      }, PAUSE_AFTER_ANSWER_MS);
       return;
     }
     if (!answered) recordError(null);
@@ -369,8 +379,13 @@ export function flashScreen(app) {
   function pause() {
     if (finished) return;
     shell.clock.pause();
+    // A hand already answered is done with; the next one comes on resume.
+    if (advanceTimer) {
+      cancelAdvance();
+      advanceOnResume = true;
+    }
     // Kept for the resume, so the hand is neither skipped nor counted twice.
-    held = hand ? { hand, count, answered } : null;
+    held = hand && !advanceOnResume ? { hand, count, answered } : null;
     hand = null;
     draw();
   }
@@ -378,8 +393,16 @@ export function flashScreen(app) {
   function resume() {
     if (finished) return;
     shell.clock.resume();
-    nextHand(held);
+    if (advanceOnResume) {
+      advanceOnResume = false;
+      advance();
+    } else nextHand(held);
     held = null;
+  }
+
+  function cancelAdvance() {
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
   }
 
   /** Which answers the chosen situations allow. */

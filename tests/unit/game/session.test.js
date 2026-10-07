@@ -276,6 +276,30 @@ describe('the bankroll', () => {
     expect(app.storage.get('bankroll')).toBe(30000);
   });
 
+  it('counts a dealer error taken after the payoff in the bankroll figures', () => {
+    // 19 against 20: the hand loses its 25.
+    const session = riggedSession(deal(card(10), card(10), card(9), card(10)));
+    playRound(session);
+    expect(session.stats).toMatchObject({ highBankroll: 29975, lowBankroll: 29975, bankrollSum: 29975 });
+    session.adjustBankroll(-50);
+    expect(session.stats).toMatchObject({ highBankroll: 29925, lowBankroll: 29925, bankrollSum: 29925 });
+    // The Foul refund puts it back.
+    session.adjustBankroll(50);
+    expect(session.stats).toMatchObject({ highBankroll: 29975, lowBankroll: 29975, bankrollSum: 29975 });
+  });
+
+  it("leaves the last round's figures alone once the next round starts", () => {
+    const session = riggedSession(
+      deal(card(10), card(10), card(9), card(10), deal(card(10), card(9), card(10), card(9))),
+    );
+    playRound(session);
+    session.startRound({ betPerHand: 25 });
+    const before = { ...session.stats };
+    session.adjustBankroll(25);
+    expect(session.stats.bankrollSum).toBe(before.bankrollSum);
+    expect(session.stats.highBankroll).toBe(before.highBankroll);
+  });
+
   it('takes a refund from the dealer, and saves it', () => {
     const app = makeApp();
     const session = riggedSession([], app);

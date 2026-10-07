@@ -674,3 +674,50 @@ test('a hand that lost to a dealer standing on 16 costs only its bet', async ({ 
   expect(await roundResults(page)).toEqual(['Lose']);
   await expect(bankroll(page)).toHaveText('$990.00');
 });
+
+// --- the table behind other screens --------------------------------------------
+
+test('the bankroll figures count a payoff mistake and its Foul refund', async ({ page }) => {
+  await openTable(page, { settings: { 'dealerErrors.blackjackPayoff': true } });
+  // A natural paid even money: $1,010 instead of $1,015.
+  await playRound(page, { cards: [card(A), card(9), card(K), card(8)], actions: [] });
+  await openStats(page);
+  await expect(stat(page, 'Bankroll High')).toHaveText('$1,010');
+  await page.locator('.game-stats [data-action="back"]').click();
+  await callFoul(page);
+  await openStats(page);
+  await expect(stat(page, 'Bankroll High')).toHaveText('$1,015');
+  await expect(stat(page, 'Bankroll Low')).toHaveText('$1,015');
+});
+
+test('the insurance offer waits while another screen covers the table', async ({ page }) => {
+  await page.clock.install();
+  await openTable(page);
+  await page.evaluate(
+    stack => {
+      window.__cjStack = stack;
+    },
+    [card(10), card(A), card(8), card(9)],
+  );
+  await tapTile(page, 0);
+  await expect(page.locator('[data-action="pass"]')).toBeVisible();
+  await openStats(page);
+  // Longer than the offer lasts with the table showing.
+  await page.clock.fastForward(10000);
+  await page.locator('.game-stats [data-action="back"]').click();
+  await expect(page.locator('[data-action="pass"]')).toBeVisible();
+});
+
+test('Customize changes the bets offered as soon as the table is back', async ({ page }) => {
+  await openTable(page);
+  await page.locator('.bet-overlay [data-action="customize"]').click();
+  await page
+    .locator('[data-screen="settings.betting"] .tc-row', { hasText: 'Chip Value' })
+    .locator('select')
+    .selectOption({ label: '$25' });
+  await page.locator('[data-screen="settings.betting"] [data-action="back"]').click();
+  await expect(overlay(page)).toBeVisible();
+  // One chip is now $25: the lost hand costs that.
+  await playRound(page, { cards: [card(10), card(10, 1), card(9), card(K)] });
+  await expect(bankroll(page)).toHaveText('$975.00');
+});

@@ -100,16 +100,16 @@ test('the random count straddles zero for a balanced system', async ({ page }) =
   expect(Math.abs(mean)).toBeLessThan(1.5);
 });
 
-test('pause does nothing once the drill has finished', async ({ page }) => {
+test('pause is off once the drill has finished', async ({ page }) => {
   await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd' });
   const screen = await launch(page);
   for (let hand = 0; hand < 10; hand++) await screen.locator('[data-action="stand"]').click();
   expect(await statsText(screen)).toContain('Hands: 10');
 
-  await screen.getByRole('button', { name: 'Pause' }).click();
-  await screen.getByRole('button', { name: 'Continue' }).click();
+  await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+  // Restart brings it back with the new run.
+  await screen.getByRole('button', { name: 'Restart' }).click();
   await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled({ timeout: 5000 });
-  expect(await statsText(screen)).toContain('Hands: 10');
 });
 
 test('the clock stops while the strategy table covers the drill', async ({ page }) => {

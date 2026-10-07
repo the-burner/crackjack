@@ -217,4 +217,22 @@ describe('settings changed in another tab', () => {
     settings.set('rules.decks', 6);
     expect(JSON.parse(backend.getItem('cj.settings'))['mechanics.sound']).toBe(true);
   });
+
+  it('tell the listeners which keys changed', () => {
+    const backend = new MemoryBackend();
+    const storage = new Storage(backend);
+    let watcher = null;
+    storage.watch = (key, fn) => {
+      watcher = fn;
+      return () => {};
+    };
+    const settings = new Settings(schema, storage);
+    const seen = [];
+    settings.subscribe((key, value) => seen.push([key, value]));
+
+    new Settings(schema, new Storage(backend)).set('mechanics.sound', true);
+    watcher();
+
+    expect(seen).toEqual([['mechanics.sound', true]]);
+  });
 });

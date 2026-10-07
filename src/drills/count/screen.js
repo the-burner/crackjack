@@ -90,6 +90,8 @@ export function countScreen(app) {
   let started = false;
   /** A correct answer came in while paused: deal again on resume. */
   let resumePending = false;
+  /** The wait between a right answer and the next deal, so it can be called off. */
+  let advanceTimer = null;
 
   const shell = drillShell(app, {
     title: 'Count Drills',
@@ -136,6 +138,8 @@ export function countScreen(app) {
 
   function stop() {
     shell.clock?.stop();
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
     nextButton.hidden = true;
     grid = null;
     tray = null;
@@ -219,7 +223,8 @@ export function countScreen(app) {
   }
 
   function tap(event) {
-    if (!grid || done || shell.paused) return;
+    // Once the answer is in, further taps are ignored until the next deal.
+    if (!grid || done || shell.paused || advanceTimer) return;
     const box = gridCanvas.getBoundingClientRect();
     const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
     if (!cell) return;
@@ -234,7 +239,10 @@ export function countScreen(app) {
         showTest();
         return;
       }
-      setTimeout(resumeDealing, PAUSE_AFTER_ANSWER_MS);
+      advanceTimer = setTimeout(() => {
+        advanceTimer = null;
+        resumeDealing();
+      }, PAUSE_AFTER_ANSWER_MS);
       return;
     }
     grid.mark(cell, verdict === 'close' ? 'close' : 'wrong');

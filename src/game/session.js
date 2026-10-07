@@ -53,6 +53,8 @@ export class GameSession {
     this.stats = { ...emptyStats(), ...app.storage.get(STATS_KEY, {}) };
     this.warnings = [];
     this.lastError = null;
+    /** The last settled round's bankroll figures, until the next round starts. */
+    this.settledRound = null;
 
     const startingBankroll = this.settings.get('table.startingBankroll');
     const saved = app.storage.get(BANKROLL_KEY, null);
@@ -172,6 +174,7 @@ export class GameSession {
     this.stats.highBet = Math.max(this.stats.highBet, roundBet);
     if (roundBet > 0) this.stats.lowBet = this.stats.lowBet === 0 ? roundBet : Math.min(this.stats.lowBet, roundBet);
 
+    this.settledRound = null;
     const events = this.game.startRound(humanSeats.map(seat => ({ seat, bet: betPerHand, sideBets })));
     this.afterEngineStep();
     return events;
@@ -319,11 +322,23 @@ export class GameSession {
 
   afterEngineStep() {
     if (this.game.state !== STATE.settled) return;
-    this.stats.bankrollSum += this.game.bankroll;
-    this.stats.highBankroll = Math.max(this.stats.highBankroll, this.game.bankroll);
-    this.stats.lowBankroll =
-      this.stats.lowBankroll === 0 ? this.game.bankroll : Math.min(this.stats.lowBankroll, this.game.bankroll);
+    // Kept so a later change to this round's bankroll (a dealer error, a Foul
+    // refund) replaces what the round recorded rather than going unrecorded.
+    this.settledRound = {
+      bankroll: this.game.bankroll,
+      highBankroll: this.stats.highBankroll,
+      lowBankroll: this.stats.lowBankroll,
+    };
+    this.recordBankroll();
     this.save();
+  }
+
+  /** Adds the bankroll to the high, low and average figures. */
+  recordBankroll() {
+    const bankroll = this.game.bankroll;
+    this.stats.bankrollSum += bankroll;
+    this.stats.highBankroll = Math.max(this.stats.highBankroll, bankroll);
+    this.stats.lowBankroll = this.stats.lowBankroll === 0 ? bankroll : Math.min(this.stats.lowBankroll, bankroll);
   }
 
   nextRound() {
@@ -332,6 +347,7 @@ export class GameSession {
 
   /** Puts the bankroll back to its starting amount. */
   resetBankroll() {
+    this.settledRound = null;
     this.game.bankroll = this.settings.get('table.startingBankroll');
     this.save();
   }
@@ -353,6 +369,14 @@ export class GameSession {
   /** Adjusts the bankroll (dealer-error refunds, mid-round returns). */
   adjustBankroll(delta) {
     this.game.bankroll += delta;
+    const round = this.settledRound;
+    if (round) {
+      this.stats.bankrollSum -= round.bankroll;
+      this.stats.highBankroll = round.highBankroll;
+      this.stats.lowBankroll = round.lowBankroll;
+      round.bankroll = this.game.bankroll;
+      this.recordBankroll();
+    }
     this.save();
   }
 
