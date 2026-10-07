@@ -27,7 +27,14 @@ export function drillOptionsScreen(app, { title, help, drill, onLaunch }) {
   // editor, the tray-style correction made at launch).
   const unsubscribe = app.settings.subscribe(() => form.refresh());
 
-  const launch = button('Launch the Drill', { variant: 'primary', icon: 'gear', iconPos: 'bottom', block: true, onClick: onLaunch, 'data-action': 'launch' });
+  const launch = button('Launch the Drill', {
+    variant: 'primary',
+    icon: 'gear',
+    iconPos: 'bottom',
+    block: true,
+    onClick: onLaunch,
+    'data-action': 'launch',
+  });
 
   return {
     el,
@@ -54,8 +61,8 @@ export const group = (...children) => h('div', { class: 'drill-options__group' }
 export const row = (label, control) => field(label, control, { inline: true });
 
 /** A label over one or more cards, keeping them together (as on the settings screens). */
-export const section = (title, ...children) => h('div', { class: 'section' },
-  h('h2', { class: 'section__title' }, title), ...children.filter(Boolean));
+export const section = (title, ...children) =>
+  h('div', { class: 'section' }, h('h2', { class: 'section__title' }, title), ...children.filter(Boolean));
 
 /** A select and a small button side by side. */
 export const withButton = (main, extra) => h('div', { class: 'drill-options__pair' }, main, extra);
@@ -68,7 +75,10 @@ function optionsForm(app, prefix) {
   const controls = [];
   const full = key => (key.includes('.') ? key : `${prefix}.${key}`);
   const get = key => app.settings.get(full(key));
-  const set = (key, value) => { app.settings.set(full(key), value); form.refresh(); };
+  const set = (key, value) => {
+    app.settings.set(full(key), value);
+    form.refresh();
+  };
 
   const form = {
     get,
@@ -93,18 +103,29 @@ function optionsForm(app, prefix) {
 
     /** A select whose value is spread over more than one setting. */
     custom(name, options, read, write) {
-      const el = select(options, read(), value => { write(value); form.refresh(); }, { name: full(name) });
+      const el = select(
+        options,
+        read(),
+        value => {
+          write(value);
+          form.refresh();
+        },
+        { name: full(name) },
+      );
       controls.push(() => el.setValue(read()));
       return el;
     },
 
     /** Checkboxes for boolean settings: `{label, key}`. */
     checks(items, options) {
-      const el = checkList(items.map(item => ({
-        label: item.label,
-        checked: Boolean(get(item.key)),
-        onChange: on => set(item.key, on),
-      })), options);
+      const el = checkList(
+        items.map(item => ({
+          label: item.label,
+          checked: Boolean(get(item.key)),
+          onChange: on => set(item.key, on),
+        })),
+        options,
+      );
       controls.push(() => el.refresh(i => get(items[i].key)));
       return el;
     },
@@ -114,11 +135,14 @@ function optionsForm(app, prefix) {
      * situations), as `{label, flag}`.
      */
     flags(key, items, options) {
-      const el = checkList(items.map(item => ({
-        label: item.label,
-        checked: Boolean(get(key)[item.flag]),
-        onChange: on => set(key, { ...get(key), [item.flag]: on }),
-      })), options);
+      const el = checkList(
+        items.map(item => ({
+          label: item.label,
+          checked: Boolean(get(key)[item.flag]),
+          onChange: on => set(key, { ...get(key), [item.flag]: on }),
+        })),
+        options,
+      );
       controls.push(() => el.refresh(i => get(key)[items[i].flag]));
       return el;
     },
@@ -127,7 +151,10 @@ function optionsForm(app, prefix) {
     number(label, key, { prompt, format, min, max } = {}) {
       const schema = app.settings.schema[full(key)];
       const el = valueButton(get(key), value => set(key, value), {
-        prompt: prompt ?? label, min: min ?? schema.min, max: max ?? schema.max, format,
+        prompt: prompt ?? label,
+        min: min ?? schema.min,
+        max: max ?? schema.max,
+        format,
       });
       controls.push(() => el.setValue(get(key)));
       return el;
@@ -144,11 +171,19 @@ function optionsForm(app, prefix) {
         className: 'value-btn',
         'aria-label': label,
         onClick: async () => {
-          const picked = await pickDuration({ title: label, value: get(key), min, max, columns: tenths ? tenthsColumns(max) : undefined });
+          const picked = await pickDuration({
+            title: label,
+            value: get(key),
+            min,
+            max,
+            columns: tenths ? tenthsColumns(max) : undefined,
+          });
           if (picked !== null) set(key, picked);
         },
       });
-      controls.push(() => { value.textContent = show(get(key)); });
+      controls.push(() => {
+        value.textContent = show(get(key));
+      });
       return h('div', { class: 'settings-row' }, h('span', { class: 'label' }, label), value);
     },
 
@@ -165,7 +200,8 @@ function optionsForm(app, prefix) {
 
 /** Deck-count options; drills that allow Spanish decks add them separately. */
 export const DECK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8].map(value => ({
-  value, label: `${['Single', 'Double', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][value - 1]} Deck${value > 1 ? 's' : ''}`,
+  value,
+  label: `${['Single', 'Double', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][value - 1]} Deck${value > 1 ? 's' : ''}`,
 }));
 
 /** The timer mode every drill offers besides its own timed mode: stop when the drill time runs out. */

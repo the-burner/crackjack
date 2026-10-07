@@ -26,7 +26,11 @@ const SPLITTING = [
 ];
 
 export function ruleVariationsScreen(app) {
-  const { el, columns, form } = settingsScreen(app, { title: 'Rule Variations', help: 'settings.ruleVariations', note: NOTE });
+  const { el, columns, form } = settingsScreen(app, {
+    title: 'Rule Variations',
+    help: 'settings.ruleVariations',
+    note: NOTE,
+  });
   columns.append(group(form.checks(DOUBLING)), group(form.checks(SPLITTING)));
   return { el };
 }

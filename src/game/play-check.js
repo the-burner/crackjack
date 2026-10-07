@@ -17,13 +17,19 @@ const SECTION_TABLES = {
 };
 
 const ACTION_NAMES = {
-  [ACTION.hit]: 'Hit', [ACTION.stand]: 'Stand', [ACTION.double]: 'Double',
-  [ACTION.split]: 'Split', [ACTION.surrender]: 'Surrender',
+  [ACTION.hit]: 'Hit',
+  [ACTION.stand]: 'Stand',
+  [ACTION.double]: 'Double',
+  [ACTION.split]: 'Split',
+  [ACTION.surrender]: 'Surrender',
 };
 
 const ADVICE_TO_ACTION = {
-  [ADVICE.hit]: ACTION.hit, [ADVICE.stand]: ACTION.stand, [ADVICE.double]: ACTION.double,
-  [ADVICE.split]: ACTION.split, [ADVICE.surrender]: ACTION.surrender,
+  [ADVICE.hit]: ACTION.hit,
+  [ADVICE.stand]: ACTION.stand,
+  [ADVICE.double]: ACTION.double,
+  [ADVICE.split]: ACTION.split,
+  [ADVICE.surrender]: ACTION.surrender,
 };
 
 /**
@@ -39,20 +45,32 @@ const ADVICE_TO_ACTION = {
  */
 export function correctPlay({ strategy, rules, hand, upcard, counts, shoe, handsInSeat }) {
   const { total, hardTotal } = hand.totals();
-  const advice = advisePlay(strategy, {
-    total, hardTotal, card1: valueOf(hand.cards[0]), card2: valueOf(hand.cards[1] ?? hand.cards[0]),
-    cardCount: hand.cardCount, cardIds: hand.cards.slice(0, 2),
-  }, {
-    upcard: valueOf(upcard), dealerTotal: valueOf(upcard) === 1 ? 11 : valueOf(upcard), dealerHardTotal: valueOf(upcard),
-    trueCount: counts.trueCount, runningCount: counts.runningCount,
-    decks: shoe.decks, cardsDealt: shoe.dealt,
-    allowed: {
-      double: doubleAllowed(rules, hand),
-      softDouble: doubleAllowed(rules, hand),
-      split: splitAllowed(rules, hand, handsInSeat),
-      surrender: surrenderAllowed(rules, hand),
+  const advice = advisePlay(
+    strategy,
+    {
+      total,
+      hardTotal,
+      card1: valueOf(hand.cards[0]),
+      card2: valueOf(hand.cards[1] ?? hand.cards[0]),
+      cardCount: hand.cardCount,
+      cardIds: hand.cards.slice(0, 2),
     },
-  });
+    {
+      upcard: valueOf(upcard),
+      dealerTotal: valueOf(upcard) === 1 ? 11 : valueOf(upcard),
+      dealerHardTotal: valueOf(upcard),
+      trueCount: counts.trueCount,
+      runningCount: counts.runningCount,
+      decks: shoe.decks,
+      cardsDealt: shoe.dealt,
+      allowed: {
+        double: doubleAllowed(rules, hand),
+        softDouble: doubleAllowed(rules, hand),
+        split: splitAllowed(rules, hand, handsInSeat),
+        surrender: surrenderAllowed(rules, hand),
+      },
+    },
+  );
   return { action: ADVICE_TO_ACTION[advice.action], advice };
 }
 
@@ -114,7 +132,8 @@ export function checkBet({ ramp, chipValue, count, betPerHand, hands }) {
   let message = '';
   if (!correct) {
     const amount = `$${expected.betPerHand}`;
-    message = expected.hands > 1 ? `You should have bet ${expected.hands} hands of ${amount}` : `You should have bet ${amount}`;
+    message =
+      expected.hands > 1 ? `You should have bet ${expected.hands} hands of ${amount}` : `You should have bet ${amount}`;
   }
   return { correct, expected, message, tooHigh: betPerHand * hands > expected.betPerHand * expected.hands };
 }

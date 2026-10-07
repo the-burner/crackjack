@@ -13,13 +13,31 @@ export const pauseForSpeed = speed => Math.round(((101 - clampSpeed(speed)) / 12
 const clampSpeed = speed => Math.min(100, Math.max(1, Number(speed) || 1));
 
 /** Sounds played for a settled hand, by result. */
-const RESULT_SOUNDS = { Win: 'win', '21': 'win', Bonus: 'win', Lose: 'lose', Bust: 'lose', Surrender: 'lose', Push: 'push' };
+const RESULT_SOUNDS = {
+  Win: 'win',
+  21: 'win',
+  Bonus: 'win',
+  Lose: 'lose',
+  Bust: 'lose',
+  Surrender: 'lose',
+  Push: 'push',
+};
 
 /** Results the original swept off the table as soon as they happened, not at the payoff. */
 const SWEPT_IN_PLAY = { Bust: 'Bust', Surrender: 'Surrender', Blackjack: '21' };
 
 /** Events that only change what is on screen, with no pause of their own. */
-const INSTANT = new Set(['roundStart', 'dealt', 'offerInsurance', 'insuranceDeclined', 'turn', 'action', 'dealerTurn', 'clear', 'conceal']);
+const INSTANT = new Set([
+  'roundStart',
+  'dealt',
+  'offerInsurance',
+  'insuranceDeclined',
+  'turn',
+  'action',
+  'dealerTurn',
+  'clear',
+  'conceal',
+]);
 
 /** How long the dealer's hole card flashes when the player catches sight of it. */
 const PEEK_MS = 500;
@@ -68,8 +86,17 @@ export function planSteps(events, { pauses, isComputer = () => false, swept = ne
 /** As in the original: the result on the seat's chips, what it paid, then the cards are swept. */
 function payoff(event, payout, pauses) {
   const steps = [{ event, pause: pauses.payoff, sound: null }];
-  if (payout !== null) steps.push({ event: { type: 'payout', hand: event.hand, amount: payout }, pause: Math.round(pauses.payoff * 0.15), sound: null });
-  steps.push({ event: { type: 'sweep', hand: event.hand }, pause: pauses.payoff, sound: RESULT_SOUNDS[event.result] ?? null });
+  if (payout !== null)
+    steps.push({
+      event: { type: 'payout', hand: event.hand, amount: payout },
+      pause: Math.round(pauses.payoff * 0.15),
+      sound: null,
+    });
+  steps.push({
+    event: { type: 'sweep', hand: event.hand },
+    pause: pauses.payoff,
+    sound: RESULT_SOUNDS[event.result] ?? null,
+  });
   return steps;
 }
 

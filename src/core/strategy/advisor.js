@@ -66,16 +66,33 @@ export function advisePlay(strategy, hand, ctx) {
 
   let column = ctx.upcard === 1 ? 9 : ctx.upcard - 2;
   if (strategy.extended) {
-    column = ctx.dealerTotal !== ctx.dealerHardTotal && ctx.dealerHardTotal < 8 ? ctx.dealerHardTotal + 15 : ctx.dealerTotal - 4;
+    column =
+      ctx.dealerTotal !== ctx.dealerHardTotal && ctx.dealerHardTotal < 8
+        ? ctx.dealerHardTotal + 15
+        : ctx.dealerTotal - 4;
   }
 
-  const result = { action: ACTION.hit, section: SECTION.none, row: -1, threshold: null, doubleOrLess: false, standWith3OrMore: false, sectionRows: {} };
+  const result = {
+    action: ACTION.hit,
+    section: SECTION.none,
+    row: -1,
+    threshold: null,
+    doubleOrLess: false,
+    standWith3OrMore: false,
+    sectionRows: {},
+  };
   let section = SECTION.none;
   /** The index (or code) consulted last; null until a table cell is read. */
   let threshold = null;
   let count = ctx.trueCount;
-  const setRow = row => { result.row = row; result.sectionRows[section] = row; };
-  const enter = s => { section = s; result.section = s; };
+  const setRow = row => {
+    result.row = row;
+    result.sectionRows[section] = row;
+  };
+  const enter = s => {
+    section = s;
+    result.section = s;
+  };
   /** Loads a cell: chooses the count to compare against and resolves per-deck codes. */
   const load = cell => {
     threshold = cell;
@@ -83,8 +100,15 @@ export function advisePlay(strategy, hand, ctx) {
     if (threshold === CODE.plus3PerDeck) threshold = plus3PerDeck;
     if (threshold === CODE.minus7PerDeck) threshold = minus7PerDeck;
   };
-  const done = action => { result.action = action; result.threshold = threshold; return result; };
-  const stop = () => { result.threshold = threshold; return result; };
+  const done = action => {
+    result.action = action;
+    result.threshold = threshold;
+    return result;
+  };
+  const stop = () => {
+    result.threshold = threshold;
+    return result;
+  };
 
   if (hc === 21 && !strategy.extended) return done(ACTION.stand);
 
@@ -257,7 +281,9 @@ export function advisePlay(strategy, hand, ctx) {
     load(t.hardStand[17 - hc][column]);
   }
   switch (threshold) {
-    case CODE.sevenSevenHitBelow0Else13: threshold = card1 === 7 ? 0 : 13; break;
+    case CODE.sevenSevenHitBelow0Else13:
+      threshold = card1 === 7 ? 0 : 13;
+      break;
     case CODE.hitUnless77AtMinus6:
       if (card1 !== 7) return done(ACTION.hit);
       threshold = -6;
@@ -266,11 +292,15 @@ export function advisePlay(strategy, hand, ctx) {
       if (card1 !== 7) return done(ACTION.hit);
       threshold = -1;
       break;
-    case CODE.sevenSevenHitBelow1Else15: threshold = card1 === 7 ? 1 : 15; break;
+    case CODE.sevenSevenHitBelow1Else15:
+      threshold = card1 === 7 ? 1 : 15;
+      break;
     case CODE.sevenSevenByDecksElseHit:
       threshold = card1 === 7 ? (decks === 1 ? 0 : 4) : 32222;
       break;
-    case CODE.hit102: threshold = card1 === 2 && card2 === 10 ? 30000 : NEVER; break;
+    case CODE.hit102:
+      threshold = card1 === 2 && card2 === 10 ? 30000 : NEVER;
+      break;
     case CODE.sevenSevenByDecks:
       threshold = 15;
       if (card1 === 7 && decks === 2) threshold = 6;
@@ -282,21 +312,32 @@ export function advisePlay(strategy, hand, ctx) {
       return done(ACTION.stand);
     default:
   }
-  const byCards = standUnlessCards(threshold, ncards) ?? standUnlessCardsOr678(threshold, ncards, card1, card2, id1, id2);
+  const byCards =
+    standUnlessCards(threshold, ncards) ?? standUnlessCardsOr678(threshold, ncards, card1, card2, id1, id2);
   if (byCards !== null) return done(byCards);
   return done(count < threshold ? ACTION.hit : ACTION.stand);
 }
 
 /** Codes "double, except hit with N or more cards". */
 function doubleUnlessCards(code, ncards) {
-  const limit = { [CODE.doubleUnless3Cards]: 2, [CODE.doubleUnless4Cards]: 3, [CODE.doubleUnless5Cards]: 4, [CODE.doubleUnless6Cards]: 5 }[code];
+  const limit = {
+    [CODE.doubleUnless3Cards]: 2,
+    [CODE.doubleUnless4Cards]: 3,
+    [CODE.doubleUnless5Cards]: 4,
+    [CODE.doubleUnless6Cards]: 5,
+  }[code];
   if (limit === undefined) return null;
   return ncards > limit ? ACTION.hit : ACTION.double;
 }
 
 /** Codes "stand, except hit with N or more cards". */
 function standUnlessCards(code, ncards) {
-  const limit = { [CODE.standUnless3Cards]: 2, [CODE.standUnless4Cards]: 3, [CODE.standUnless5Cards]: 4, [CODE.standUnless6Cards]: 5 }[code];
+  const limit = {
+    [CODE.standUnless3Cards]: 2,
+    [CODE.standUnless4Cards]: 3,
+    [CODE.standUnless5Cards]: 4,
+    [CODE.standUnless6Cards]: 5,
+  }[code];
   if (limit === undefined) return null;
   return ncards > limit ? ACTION.hit : ACTION.stand;
 }
@@ -304,8 +345,11 @@ function standUnlessCards(code, ncards) {
 /** Codes that also hit two-card hands that could become a 6-7-8 bonus. */
 function standUnlessCardsOr678(code, ncards, card1, card2, id1, id2) {
   const limits = {
-    [CODE.standUnless4CardsOr678]: 3, [CODE.standUnless5CardsOr678]: 4, [CODE.standUnless5CardsOrSuited678]: 4,
-    [CODE.standUnless5CardsOrSpaded678]: 4, [CODE.standUnless6CardsOrSpaded678]: 5,
+    [CODE.standUnless4CardsOr678]: 3,
+    [CODE.standUnless5CardsOr678]: 4,
+    [CODE.standUnless5CardsOrSuited678]: 4,
+    [CODE.standUnless5CardsOrSpaded678]: 4,
+    [CODE.standUnless6CardsOrSpaded678]: 5,
   };
   const limit = limits[code];
   if (limit === undefined) return null;
@@ -316,7 +360,8 @@ function standUnlessCardsOr678(code, ncards, card1, card2, id1, id2) {
     // Deliberately compares ranks (id % 13), not suits.
     if (code === CODE.standUnless5CardsOrSuited678 && id1 % 13 === id2 % 13) action = ACTION.hit;
     const spaded = id1 !== undefined && id2 !== undefined && id1 <= 13 && id2 <= 13;
-    if ((code === CODE.standUnless5CardsOrSpaded678 || code === CODE.standUnless6CardsOrSpaded678) && spaded) action = ACTION.hit;
+    if ((code === CODE.standUnless5CardsOrSpaded678 || code === CODE.standUnless6CardsOrSpaded678) && spaded)
+      action = ACTION.hit;
   }
   return action;
 }

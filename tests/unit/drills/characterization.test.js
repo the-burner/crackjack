@@ -8,18 +8,29 @@ import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
 import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '../../../src/core/counting.js';
 import { emptyTallies } from '../../../src/services/error-tallies.js';
 import {
-  buildHandList, handIndex, correctPlay, errorCell, columnOf, SITUATIONS,
+  buildHandList,
+  handIndex,
+  correctPlay,
+  errorCell,
+  columnOf,
+  SITUATIONS,
 } from '../../../src/drills/flash/logic.js';
 import { depthGrid, trueCountFor } from '../../../src/drills/depth/logic.js';
 import { trayImage, TRAY_STYLES } from '../../../src/drills/shared/discard-tray.js';
 import { drillCounts } from '../../../src/drills/shared/count-answers.js';
 import { DrillShoe } from '../../../src/drills/shared/shoe.js';
 
-const strategyFor = c => buildStrategy(STRATEGY_FILES[c.system], {
-  decks: c.decks, hitSoft17: Boolean(c.h17), doubleAfterSplit: Boolean(c.das), noHoleCard: false, indexSet: 'all',
-});
+const strategyFor = c =>
+  buildStrategy(STRATEGY_FILES[c.system], {
+    decks: c.decks,
+    hitSoft17: Boolean(c.h17),
+    doubleAfterSplit: Boolean(c.das),
+    noHoleCard: false,
+    indexSet: 'all',
+  });
 
-const emptyMask = () => Object.fromEntries(SITUATIONS.map(k => [k, Array.from({ length: 10 }, () => new Array(10).fill(false))]));
+const emptyMask = () =>
+  Object.fromEntries(SITUATIONS.map(k => [k, Array.from({ length: 10 }, () => new Array(10).fill(false))]));
 
 /** The original packed a list entry as [dealer column, value, type slot]. */
 const TYPE_SLOT = { hardStand: 0, split: 1, softStand: 2, hardDouble: 3, softDouble: 4, surrender: 5 };
@@ -28,7 +39,10 @@ const packed = e => [columnOf(e.upcard), e.kind === 'split' && e.value === 1 ? 1
 describe('flash hand lists match the original', () => {
   for (const record of loadFixture('drills-hand-lists')) {
     const { config } = record;
-    const chosen = Object.entries(config.situations).filter(([, on]) => on).map(([k]) => k).join('+');
+    const chosen = Object.entries(config.situations)
+      .filter(([, on]) => on)
+      .map(([k]) => k)
+      .join('+');
     it(`${config.hands}, system ${config.system}, ${chosen || 'nothing'}`, () => {
       const customMask = emptyMask();
       for (const [table, row, column] of config.mask ?? []) customMask[table][row][column] = true;
@@ -83,11 +97,20 @@ describe('flash indices and plays match the original', () => {
       const hand = handOf(r);
       for (const play of r.plays) {
         const mine = correctPlay(strategy, hand, {
-          count: play.count, situations: allSituations, doubleAnyCards: Boolean(r.config.doubleAnyCards),
+          count: play.count,
+          situations: allSituations,
+          doubleAnyCards: Boolean(r.config.doubleAnyCards),
         });
         const cell = errorCell(mine, null, hand);
         if (mine.action !== play.action || mine.section !== play.table || (cell && cell.row !== play.row)) {
-          wrong.push({ ...r.hand, upcard: r.upcard, count: play.count, system: r.config.system, mine: [mine.action, mine.section, mine.row], theirs: [play.action, play.table, play.row] });
+          wrong.push({
+            ...r.hand,
+            upcard: r.upcard,
+            count: play.count,
+            system: r.config.system,
+            mine: [mine.action, mine.section, mine.row],
+            theirs: [play.action, play.table, play.row],
+          });
         }
       }
     }
@@ -101,7 +124,11 @@ describe('depth answer grids match the original', () => {
   /** How many rows actually carry a label. */
   const usedRows = columns => {
     const rows = new Set();
-    columns.forEach(column => column.forEach((label, row) => { if (label !== '') rows.add(row); }));
+    columns.forEach(column =>
+      column.forEach((label, row) => {
+        if (label !== '') rows.add(row);
+      }),
+    );
     return rows.size;
   };
 
@@ -111,8 +138,9 @@ describe('depth answer grids match the original', () => {
       const grid = depthGrid(config);
       const labelled = grid.cells.some(c => c.label !== '');
       // The original kept its labels in karray[column][row].
-      const mine = Array.from({ length: 12 }, (_, column) => Array.from({ length: 12 }, (_, row) =>
-        grid.cells.find(c => c.column === column && c.row === row)?.label ?? ''));
+      const mine = Array.from({ length: 12 }, (_, column) =>
+        Array.from({ length: 12 }, (_, row) => grid.cells.find(c => c.column === column && c.row === row)?.label ?? ''),
+      );
       // Deliberate difference: at half resolution the original left an empty row
       // between the halves and the whole decks, which the rebuild drops so the
       // rows are evenly spaced (see depthGrid). Every label still belongs to the
@@ -175,7 +203,11 @@ describe('count drill answers match the original', () => {
   /** Replays a card sequence through the new shoe and counter. */
   function replay(config, cards, rounding) {
     const strategy = buildStrategy(STRATEGY_FILES[config.system], {
-      decks: config.decks, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all',
+      decks: config.decks,
+      hitSoft17: false,
+      doubleAfterSplit: false,
+      noHoleCard: false,
+      indexSet: 'all',
     });
     const shoe = new DrillShoe({
       decks: config.decks,
@@ -185,7 +217,9 @@ describe('count drill answers match the original', () => {
     // Replace the front of the shoe with the recorded sequence, keeping its
     // length so the decks-remaining arithmetic is unchanged.
     const stacked = shoe.cards.slice();
-    cards.forEach((card, i) => { stacked[i] = card; });
+    cards.forEach((card, i) => {
+      stacked[i] = card;
+    });
     shoe.cards = stacked;
     shoe.dealt = 0;
     return shoe;
@@ -220,7 +254,11 @@ describe('count drill answers match the original', () => {
     expect(exact.length).toBeGreaterThan(10);
     for (const rounding of [TC_ROUNDING.round, TC_ROUNDING.truncate, TC_ROUNDING.floor]) {
       for (const record of exact) {
-        const shoe = replay(record.config, record.steps.map(s => s.card), rounding);
+        const shoe = replay(
+          record.config,
+          record.steps.map(s => s.card),
+          rounding,
+        );
         record.steps.forEach(step => {
           shoe.deal();
           const counts = drillCounts(shoe);
@@ -233,13 +271,21 @@ describe('count drill answers match the original', () => {
 
 describe('the true count of a depth test matches the original', () => {
   it('converts a running count the same way for every resolution', () => {
-    const strategy = buildStrategy(STRATEGY_FILES[30], { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
+    const strategy = buildStrategy(STRATEGY_FILES[30], {
+      decks: 6,
+      hitSoft17: false,
+      doubleAfterSplit: false,
+      noHoleCard: false,
+      indexSet: 'all',
+    });
     // Taken from the count fixture: the same decks_left rounding drives both.
     for (const division of [TC_DIVISION.fullDeck, TC_DIVISION.halfDeck, TC_DIVISION.quarterDeck, TC_DIVISION.exact]) {
       for (const lastDeck of [TC_LAST_DECK.halfDeck, TC_LAST_DECK.quarterDeck, TC_LAST_DECK.exact]) {
         for (const decksInTray of [0.25, 1, 2.5, 5, 5.75]) {
           const value = trueCountFor(8, decksInTray, {
-            decks: 6, strategy, trueCountSettings: { division, lastDeck, rounding: TC_ROUNDING.floor },
+            decks: 6,
+            strategy,
+            trueCountSettings: { division, lastDeck, rounding: TC_ROUNDING.floor },
           });
           expect(Number.isInteger(value)).toBe(true);
         }

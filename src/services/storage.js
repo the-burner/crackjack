@@ -73,7 +73,9 @@ export class Storage {
    * @returns {() => void} unsubscribe
    */
   watch(key, fn, target = globalThis) {
-    const onStorage = event => { if (event.key === PREFIX + key) fn(this.get(key)); };
+    const onStorage = event => {
+      if (event.key === PREFIX + key) fn(this.get(key));
+    };
     target.addEventListener?.('storage', onStorage);
     return () => target.removeEventListener?.('storage', onStorage);
   }
@@ -84,10 +86,22 @@ export class MemoryBackend {
   constructor() {
     this.map = new Map();
   }
-  get length() { return this.map.size; }
-  key(i) { return [...this.map.keys()][i] ?? null; }
-  getItem(k) { return this.map.has(k) ? this.map.get(k) : null; }
-  setItem(k, v) { this.map.set(k, String(v)); }
-  removeItem(k) { this.map.delete(k); }
-  clear() { this.map.clear(); }
+  get length() {
+    return this.map.size;
+  }
+  key(i) {
+    return [...this.map.keys()][i] ?? null;
+  }
+  getItem(k) {
+    return this.map.has(k) ? this.map.get(k) : null;
+  }
+  setItem(k, v) {
+    this.map.set(k, String(v));
+  }
+  removeItem(k) {
+    this.map.delete(k);
+  }
+  clear() {
+    this.map.clear();
+  }
 }

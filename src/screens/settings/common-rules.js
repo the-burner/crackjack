@@ -45,7 +45,11 @@ const SURRENDER = [
 const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
 export function commonRulesScreen(app) {
-  const { el, columns, form } = settingsScreen(app, { title: 'Common Rules', help: 'settings.commonRules', note: NOTE });
+  const { el, columns, form } = settingsScreen(app, {
+    title: 'Common Rules',
+    help: 'settings.commonRules',
+    note: NOTE,
+  });
   columns.append(
     group(form.checks(CHECKS)),
     group(

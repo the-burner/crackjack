@@ -26,14 +26,17 @@ describe('trueCountSettings', () => {
   });
 
   it('maps every resolution, last-deck and rounding choice', () => {
-    const divisions = ['full', 'half', 'quarter', 'exact'].map(resolution =>
-      trueCountSettings(settings({ 'trueCount.resolution': resolution })).division);
+    const divisions = ['full', 'half', 'quarter', 'exact'].map(
+      resolution => trueCountSettings(settings({ 'trueCount.resolution': resolution })).division,
+    );
     expect(divisions).toEqual([TC_DIVISION.fullDeck, TC_DIVISION.halfDeck, TC_DIVISION.quarterDeck, TC_DIVISION.exact]);
-    const lastDecks = ['half', 'quarter', 'exact'].map(resolution =>
-      trueCountSettings(settings({ 'trueCount.lastDeckResolution': resolution })).lastDeck);
+    const lastDecks = ['half', 'quarter', 'exact'].map(
+      resolution => trueCountSettings(settings({ 'trueCount.lastDeckResolution': resolution })).lastDeck,
+    );
     expect(lastDecks).toEqual([TC_LAST_DECK.halfDeck, TC_LAST_DECK.quarterDeck, TC_LAST_DECK.exact]);
-    const roundings = ['round', 'truncate', 'floor'].map(rounding =>
-      trueCountSettings(settings({ 'trueCount.rounding': rounding })).rounding);
+    const roundings = ['round', 'truncate', 'floor'].map(
+      rounding => trueCountSettings(settings({ 'trueCount.rounding': rounding })).rounding,
+    );
     expect(roundings).toEqual([TC_ROUNDING.round, TC_ROUNDING.truncate, TC_ROUNDING.floor]);
   });
 
@@ -55,7 +58,10 @@ describe('drillStrategy', () => {
   it('follows the rules and index settings the strategy was chosen with', () => {
     const chosen = drillStrategy(app({ 'strategy.system': 30 }), 6).strategy;
     const noIndices = drillStrategy(app({ 'strategy.system': 30, 'strategy.indexSet': 'none' }), 6).strategy;
-    const forcedCount = drillStrategy(app({ 'strategy.system': 30, 'strategy.adjustInitialCount': true, 'strategy.initialCount': 7 }), 6).strategy;
+    const forcedCount = drillStrategy(
+      app({ 'strategy.system': 30, 'strategy.adjustInitialCount': true, 'strategy.initialCount': 7 }),
+      6,
+    ).strategy;
     expect(noIndices.tables).not.toEqual(chosen.tables);
     expect(forcedCount.initialRunningCount[5]).toBe(7);
   });

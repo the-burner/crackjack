@@ -6,8 +6,17 @@ import { button, select, checkList, valueButton } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
 import { promptNumber } from '../../ui/dialogs.js';
 import {
-  CHIP_CHOICES, HAND_CHOICES, MIN_ROWS, MAX_ROWS,
-  countLabels, formatRow, maxChipsForHands, normalizeRamp, rampToSave, setRow, setRowCount,
+  CHIP_CHOICES,
+  HAND_CHOICES,
+  MIN_ROWS,
+  MAX_ROWS,
+  countLabels,
+  formatRow,
+  maxChipsForHands,
+  normalizeRamp,
+  rampToSave,
+  setRow,
+  setRowCount,
 } from '../../settings/bet-ramp.js';
 import { group } from '../settings/controls.js';
 
@@ -19,37 +28,63 @@ export function bettingScreen(app) {
 
   const ramp = () => normalizeRamp(settings.get('betting.ramp'));
 
-  const warn = checkList([{
-    label: 'Warning on Betting Error',
-    checked: settings.get('betting.warnOnError'),
-    onChange: on => { settings.set('betting.warnOnError', on); render(); },
-  }]);
+  const warn = checkList([
+    {
+      label: 'Warning on Betting Error',
+      checked: settings.get('betting.warnOnError'),
+      onChange: on => {
+        settings.set('betting.warnOnError', on);
+        render();
+      },
+    },
+  ]);
   const chipValue = select(
     CHIP_VALUES.map(value => ({ value, label: `$${value}` })),
     settings.get('betting.chipValue'),
     value => settings.set('betting.chipValue', value),
   );
-  const rowCountButton = valueButton(ramp().rows.length, count => {
-    settings.set('betting.ramp', setRowCount(ramp(), count));
-    render();
-  }, { prompt: 'Number of different bets in table', min: MIN_ROWS, max: MAX_ROWS });
-  const minCountButton = valueButton(ramp().minCount, minCount => {
-    settings.set('betting.ramp', normalizeRamp({ ...ramp(), minCount }));
-    render();
-  }, { prompt: 'Start Count', min: -99, max: 99 });
-  const minCountRow = h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Minimum bet count:'), minCountButton);
+  const rowCountButton = valueButton(
+    ramp().rows.length,
+    count => {
+      settings.set('betting.ramp', setRowCount(ramp(), count));
+      render();
+    },
+    { prompt: 'Number of different bets in table', min: MIN_ROWS, max: MAX_ROWS },
+  );
+  const minCountButton = valueButton(
+    ramp().minCount,
+    minCount => {
+      settings.set('betting.ramp', normalizeRamp({ ...ramp(), minCount }));
+      render();
+    },
+    { prompt: 'Start Count', min: -99, max: 99 },
+  );
+  const minCountRow = h(
+    'div',
+    { class: 'tc-row' },
+    h('span', { class: 'label' }, 'Minimum bet count:'),
+    minCountButton,
+  );
   const table = h('div', {});
 
-  body.append(h('div', { class: 'column' },
-    h('p', { class: 'note settings-note' }, 'Enter the number of different bets in the table and then click on a table cell to enter a new bet.'),
-    group(
-      warn,
-      h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Chip Value:'), chipValue),
-      h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Number of bets:'), rowCountButton),
-      minCountRow,
+  body.append(
+    h(
+      'div',
+      { class: 'column' },
+      h(
+        'p',
+        { class: 'note settings-note' },
+        'Enter the number of different bets in the table and then click on a table cell to enter a new bet.',
+      ),
+      group(
+        warn,
+        h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Chip Value:'), chipValue),
+        h('div', { class: 'tc-row' }, h('span', { class: 'label' }, 'Number of bets:'), rowCountButton),
+        minCountRow,
+      ),
+      table,
     ),
-    table,
-  ));
+  );
 
   function render() {
     const showCounts = settings.get('betting.warnOnError');
@@ -58,12 +93,29 @@ export function bettingScreen(app) {
     minCountRow.hidden = !showCounts;
     rowCountButton.setValue(current.rows.length);
     minCountButton.setValue(current.minCount);
-    replaceChildren(table, h('table', { class: 'grid bet-table' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'Count'), h('th', {}, 'Hands x Chips'))),
-      h('tbody', {}, current.rows.map((row, i) => h('tr', {
-        dataset: { row: String(i) },
-        onclick: () => app.open('settings.betting.select', { row: i }),
-      }, h('td', {}, counts[i]), h('td', {}, formatRow(row)))))));
+    replaceChildren(
+      table,
+      h(
+        'table',
+        { class: 'grid bet-table' },
+        h('thead', {}, h('tr', {}, h('th', {}, 'Count'), h('th', {}, 'Hands x Chips'))),
+        h(
+          'tbody',
+          {},
+          current.rows.map((row, i) =>
+            h(
+              'tr',
+              {
+                dataset: { row: String(i) },
+                onclick: () => app.open('settings.betting.select', { row: i }),
+              },
+              h('td', {}, counts[i]),
+              h('td', {}, formatRow(row)),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   return {
@@ -86,29 +138,58 @@ export function betSelectScreen(app, { row = 0 } = {}) {
   const current = normalizeRamp(settings.get('betting.ramp'));
   let hands = current.rows[row]?.hands ?? 1;
 
-  const handButtons = HAND_CHOICES.map(n => h('button', {
-    type: 'button',
-    class: 'tile tile--hands',
-    dataset: { hands: String(n) },
-    onclick: () => { hands = n; refresh(); },
-  }, n === 1 ? '1' : `${n}x`));
-  const chipButtons = CHIP_CHOICES.map(n => h('button', {
-    type: 'button',
-    class: 'tile tile--chips',
-    dataset: { chips: String(n) },
-    onclick: () => choose(n),
-  }, String(n)));
+  const handButtons = HAND_CHOICES.map(n =>
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'tile tile--hands',
+        dataset: { hands: String(n) },
+        onclick: () => {
+          hands = n;
+          refresh();
+        },
+      },
+      n === 1 ? '1' : `${n}x`,
+    ),
+  );
+  const chipButtons = CHIP_CHOICES.map(n =>
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'tile tile--chips',
+        dataset: { chips: String(n) },
+        onclick: () => choose(n),
+      },
+      String(n),
+    ),
+  );
 
-  body.append(h('div', { class: 'bet-pad' },
-    h('div', { class: 'note' }, 'In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the number of spots at the top first. You can also enter a custom bet at the bottom.'),
-    h('div', { class: 'bet-pad__row' }, handButtons),
-    h('div', { class: 'bet-pad__chips' }, chunk(chipButtons, HAND_CHOICES.length).map(cells => h('div', { class: 'bet-pad__row' }, cells))),
-    button('Custom Bet', { block: true, onClick: () => customBet(), 'data-action': 'custom-bet' }),
-  ));
+  body.append(
+    h(
+      'div',
+      { class: 'bet-pad' },
+      h(
+        'div',
+        { class: 'note' },
+        'In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the number of spots at the top first. You can also enter a custom bet at the bottom.',
+      ),
+      h('div', { class: 'bet-pad__row' }, handButtons),
+      h(
+        'div',
+        { class: 'bet-pad__chips' },
+        chunk(chipButtons, HAND_CHOICES.length).map(cells => h('div', { class: 'bet-pad__row' }, cells)),
+      ),
+      button('Custom Bet', { block: true, onClick: () => customBet(), 'data-action': 'custom-bet' }),
+    ),
+  );
 
   function refresh() {
     handButtons.forEach(b => b.classList.toggle('is-on', Number(b.dataset.hands) === hands));
-    chipButtons.forEach(b => { b.disabled = Number(b.dataset.chips) > maxChipsForHands(hands); });
+    chipButtons.forEach(b => {
+      b.disabled = Number(b.dataset.chips) > maxChipsForHands(hands);
+    });
   }
 
   function choose(chips) {
@@ -117,7 +198,10 @@ export function betSelectScreen(app, { row = 0 } = {}) {
   }
 
   async function customBet() {
-    const chips = await promptNumber('Enter number of chips', current.rows[row]?.chips ?? 1, { min: 1, max: maxChipsForHands(hands) });
+    const chips = await promptNumber('Enter number of chips', current.rows[row]?.chips ?? 1, {
+      min: 1,
+      max: maxChipsForHands(hands),
+    });
     if (chips === null) return;
     choose(chips);
   }
@@ -125,4 +209,5 @@ export function betSelectScreen(app, { row = 0 } = {}) {
   return { el, onShow: refresh };
 }
 
-const chunk = (items, size) => Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));
+const chunk = (items, size) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));

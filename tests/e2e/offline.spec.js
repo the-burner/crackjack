@@ -10,7 +10,9 @@ test('runs offline after the first visit', { tag: '@build' }, async ({ page, con
     const registration = await navigator.serviceWorker.ready;
     // Wait for the precache to finish installing and take control.
     if (!navigator.serviceWorker.controller) {
-      await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
+      await new Promise(resolve =>
+        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }),
+      );
     }
     return registration.active?.state;
   });

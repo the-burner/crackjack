@@ -189,21 +189,28 @@ describe('every setting does something', () => {
   })('src');
 
   /** Files that only define or edit settings, so reading one there proves nothing. */
-  const isEditor = file => file.includes('settings/schema.js')
-    || file.includes('data/help.js')
-    || file.includes('screens/settings/')
-    || file.includes('screens/strategy/')
-    || file.includes('drills/') && file.endsWith('options.js')
-    || file.includes('drills/shared/options-screen.js');
+  const isEditor = file =>
+    file.includes('settings/schema.js') ||
+    file.includes('data/help.js') ||
+    file.includes('screens/settings/') ||
+    file.includes('screens/strategy/') ||
+    (file.includes('drills/') && file.endsWith('options.js')) ||
+    file.includes('drills/shared/options-screen.js');
 
   const consumers = new Map();
   const sources = sourceFiles.filter(file => !isEditor(file)).map(file => readFileSync(file, 'utf8'));
   for (const key of Object.keys(SETTINGS_SCHEMA)) {
-    consumers.set(key, sources.some(text => text.includes(`'${key}'`)));
+    consumers.set(
+      key,
+      sources.some(text => text.includes(`'${key}'`)),
+    );
   }
 
   it('is read by something other than the screen that edits it', () => {
-    const dead = [...consumers].filter(([, used]) => !used).map(([key]) => key).sort();
+    const dead = [...consumers]
+      .filter(([, used]) => !used)
+      .map(([key]) => key)
+      .sort();
     expect(dead).toEqual(Object.keys(NOT_IMPLEMENTED_YET).sort());
   });
 

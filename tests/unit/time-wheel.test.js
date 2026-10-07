@@ -3,8 +3,15 @@ import { durationColumns, joinDuration, splitDuration, tenthsColumns } from '../
 
 describe('duration wheels', () => {
   it('shows only the wheels a range needs', () => {
-    expect(durationColumns(1799).map(c => [c.unit, c.count])).toEqual([['min', 30], ['s', 60]]);
-    expect(durationColumns(7200).map(c => [c.unit, c.count])).toEqual([['h', 3], ['min', 60], ['s', 60]]);
+    expect(durationColumns(1799).map(c => [c.unit, c.count])).toEqual([
+      ['min', 30],
+      ['s', 60],
+    ]);
+    expect(durationColumns(7200).map(c => [c.unit, c.count])).toEqual([
+      ['h', 3],
+      ['min', 60],
+      ['s', 60],
+    ]);
     expect(durationColumns(45).map(c => [c.unit, c.count])).toEqual([['s', 46]]);
   });
 
@@ -23,7 +30,10 @@ describe('duration wheels', () => {
 
   it('splits tenths of a second into seconds and tenths', () => {
     const columns = tenthsColumns(59);
-    expect(columns.map(c => [c.unit, c.count])).toEqual([['.', 6], ['s', 10]]);
+    expect(columns.map(c => [c.unit, c.count])).toEqual([
+      ['.', 6],
+      ['s', 10],
+    ]);
     expect(splitDuration(8, columns)).toEqual([0, 8]);
     expect(splitDuration(25, columns)).toEqual([2, 5]);
     expect(joinDuration([5, 9], columns, { min: 1, max: 59 })).toBe(59);

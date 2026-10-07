@@ -12,7 +12,8 @@ export const DOUBLE_TAP_DISTANCE = 30;
 export function doubleTapDetector({ maxMs = DOUBLE_TAP_MS, maxDistance = DOUBLE_TAP_DISTANCE } = {}) {
   let last = null;
   return tap => {
-    const double = last !== null && tap.t - last.t <= maxMs && Math.hypot(tap.x - last.x, tap.y - last.y) <= maxDistance;
+    const double =
+      last !== null && tap.t - last.t <= maxMs && Math.hypot(tap.x - last.x, tap.y - last.y) <= maxDistance;
     last = double ? null : tap;
     return double;
   };

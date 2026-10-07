@@ -129,7 +129,15 @@ export const dealerErrorsOn = settings => Object.values(ERROR_SETTINGS).some(key
  * @param {() => number} o.random
  * @returns {{type: string, label: string, amount: number, hands: {key: string, shortfall: number, result: string}[]}|null}
  */
-export function pickDealerError({ hands, dealer, dealerBlackjack, dealerPeeked = true, blackjackBonus = true, enabled, random }) {
+export function pickDealerError({
+  hands,
+  dealer,
+  dealerBlackjack,
+  dealerPeeked = true,
+  blackjackBonus = true,
+  enabled,
+  random,
+}) {
   for (const type of enabled) {
     const affected = affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus });
     const amount = affected.reduce((sum, hand) => sum + hand.shortfall, 0);
@@ -173,7 +181,8 @@ export function bustedGoodHandShortfall({ bet, playerTotal, dealerTotal }) {
 
 /** The dealer can claim 21 on 22 with four cards, or on 22 or 23 with five. */
 const canClaim21 = dealer =>
-  (dealer.cardCount >= 4 && dealer.total === 22) || (dealer.cardCount >= 5 && (dealer.total === 22 || dealer.total === 23));
+  (dealer.cardCount >= 4 && dealer.total === 22) ||
+  (dealer.cardCount >= 5 && (dealer.total === 22 || dealer.total === 23));
 
 /** The hands a mistake of this type would touch, and what each one loses. */
 function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus }) {
@@ -182,18 +191,21 @@ function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus })
     // Insurance paid at 1:1 instead of 2:1, on a hand the blackjack beat.
     case DEALER_ERROR.insuranceMispaid:
       if (!dealerBlackjack || !blackjackBonus) return [];
-      return hands.filter(h => h.insuranceBet > 0 && h.result === 'Lose')
+      return hands
+        .filter(h => h.insuranceBet > 0 && h.result === 'Lose')
         .map(h => ({ key: h.key, shortfall: h.insuranceBet, result: h.result }));
     // A natural paid at even money instead of the blackjack premium. A side bet
     // the hand also won is in its payout, and is not what the dealer shorted.
     case DEALER_ERROR.blackjackMispaid:
-      return hands.map(h => ({ hand: h, premium: h.payout - (h.sideBetPaid ?? h.sideBetWin ?? 0) - h.bet * 2 }))
+      return hands
+        .map(h => ({ hand: h, premium: h.payout - (h.sideBetPaid ?? h.sideBetWin ?? 0) - h.bet * 2 }))
         .filter(({ hand: h, premium }) => h.isNatural && premium > 0)
         .map(({ hand: h, premium }) => ({ key: h.key, shortfall: premium, result: 'Win' }));
     // The dealer busted but counted the hand as 21.
     case DEALER_ERROR.shouldHaveBusted:
       if (!dealer.busted || !canClaim21(dealer)) return [];
-      return hands.filter(h => h.payout > 0 && !h.isNatural && h.total <= 21)
+      return hands
+        .filter(h => h.payout > 0 && !h.isNatural && h.total <= 21)
         .map(h => ({
           key: h.key,
           // A hand of 21 would push against the claimed 21; anything less loses.
@@ -204,22 +216,24 @@ function affectedHands(type, { hands, dealer, dealerBlackjack, blackjackBonus })
     // A hand that won by one point paid as a push.
     case DEALER_ERROR.winNotPaid:
       if (dealer.busted) return [];
-      return hands.filter(h => plain(h) && h.result === 'Win' && h.total - dealer.total === 1)
+      return hands
+        .filter(h => plain(h) && h.result === 'Win' && h.total - dealer.total === 1)
         .map(h => ({ key: h.key, shortfall: h.bet, result: 'Push' }));
     // Chips taken on a push.
     case DEALER_ERROR.chipsOnPush:
-      return hands.filter(h => plain(h) && h.result === 'Push')
+      return hands
+        .filter(h => plain(h) && h.result === 'Push')
         .map(h => ({ key: h.key, shortfall: h.bet, result: 'Lose' }));
     // The dealer stood on 16. The hands that lost to it are the ones the
     // player was cheated of, since a drawing dealer busts more often than not.
     case DEALER_ERROR.stoodOn16:
       if (dealer.stoodOnSixteen !== true) return [];
-      return hands.filter(h => h.payout === 0 && h.total <= 21 && !h.isNatural)
+      return hands
+        .filter(h => h.payout === 0 && h.total <= 21 && !h.isNatural)
         .map(h => ({ key: h.key, shortfall: h.bet + (h.doubled ? h.bet : 0), result: 'Lose' }));
     // A winning side bet was not paid.
     case DEALER_ERROR.bonusNotPaid:
-      return hands.filter(h => h.sideBetWin > 0)
-        .map(h => ({ key: h.key, shortfall: h.sideBetWin, result: h.result }));
+      return hands.filter(h => h.sideBetWin > 0).map(h => ({ key: h.key, shortfall: h.sideBetWin, result: h.result }));
     default:
       return [];
   }

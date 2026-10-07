@@ -51,10 +51,18 @@ export function joinDuration(values, columns, { min = 0, max = Infinity } = {}) 
 function wheel({ label, unit, count }, value) {
   const items = Array.from({ length: count }, (_, n) => h('div', { class: 'wheel__item' }, String(n)));
   const list = h('div', { class: 'wheel__list' }, items);
-  const el = h('div', {
-    class: 'wheel', tabindex: '0', role: 'spinbutton',
-    'aria-label': label, 'aria-valuemin': '0', 'aria-valuemax': String(count - 1),
-  }, list);
+  const el = h(
+    'div',
+    {
+      class: 'wheel',
+      tabindex: '0',
+      role: 'spinbutton',
+      'aria-label': label,
+      'aria-valuemin': '0',
+      'aria-valuemax': String(count - 1),
+    },
+    list,
+  );
   const column = h('div', { class: 'wheel__column' }, el, h('span', { class: 'wheel__unit' }, unit));
 
   const index = () => Math.min(count - 1, Math.max(0, Math.round(el.scrollTop / ITEM_HEIGHT)));
@@ -88,7 +96,10 @@ function wheel({ label, unit, count }, value) {
     if (n >= 0) scrollToIndex(n);
   });
 
-  column.place = () => { scrollToIndex(value, 'instant'); curve(); };
+  column.place = () => {
+    scrollToIndex(value, 'instant');
+    curve();
+  };
   column.read = index;
   return column;
 }
@@ -111,18 +122,47 @@ export function pickDuration({ title, value, min = 0, max, columns = durationCol
       document.removeEventListener('keydown', onKey);
       resolve(result);
     };
-    const done = () => close(joinDuration(wheels.map(w => w.read()), columns, { min, max }));
+    const done = () =>
+      close(
+        joinDuration(
+          wheels.map(w => w.read()),
+          columns,
+          { min, max },
+        ),
+      );
     const onKey = event => {
       if (event.key === 'Escape') close(null);
       if (event.key === 'Enter') done();
     };
-    const overlay = h('div', { class: 'sheet-overlay', onclick: event => { if (event.target === overlay) close(null); } },
-      h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
-        h('div', { class: 'sheet__bar' },
-          h('button', { type: 'button', class: 'sheet__action', onclick: () => close(null), 'data-action': 'cancel' }, 'Cancel'),
+    const overlay = h(
+      'div',
+      {
+        class: 'sheet-overlay',
+        onclick: event => {
+          if (event.target === overlay) close(null);
+        },
+      },
+      h(
+        'div',
+        { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+        h(
+          'div',
+          { class: 'sheet__bar' },
+          h(
+            'button',
+            { type: 'button', class: 'sheet__action', onclick: () => close(null), 'data-action': 'cancel' },
+            'Cancel',
+          ),
           h('div', { class: 'sheet__title' }, title),
-          h('button', { type: 'button', class: 'sheet__action sheet__action--done', onclick: done, 'data-action': 'done' }, 'Done')),
-        h('div', { class: 'wheels' }, wheels)));
+          h(
+            'button',
+            { type: 'button', class: 'sheet__action sheet__action--done', onclick: done, 'data-action': 'done' },
+            'Done',
+          ),
+        ),
+        h('div', { class: 'wheels' }, wheels),
+      ),
+    );
     const unregister = registerOverlay(() => close(null));
     document.body.append(overlay);
     document.addEventListener('keydown', onKey);

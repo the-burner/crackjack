@@ -1,13 +1,21 @@
 // Full Table Drills: Options.
 
 import {
-  drillOptionsScreen, group, section, COUNT_DOWN_HALT_OPTION,
-  DECK_OPTIONS, ACCURACY_OPTIONS, BIAS_OPTIONS, END_WARNING_OPTIONS,
+  drillOptionsScreen,
+  group,
+  section,
+  COUNT_DOWN_HALT_OPTION,
+  DECK_OPTIONS,
+  ACCURACY_OPTIONS,
+  BIAS_OPTIONS,
+  END_WARNING_OPTIONS,
 } from '../shared/options-screen.js';
 import { FULL_DRILL_LABELS } from './logic.js';
 
-const DRILL_OPTIONS = ['runningCount', 'acesLeft', 'acesDealt', 'tenSideCount', 'twoTables']
-  .map(value => ({ value, label: `Drill: ${FULL_DRILL_LABELS[value]}` }));
+const DRILL_OPTIONS = ['runningCount', 'acesLeft', 'acesDealt', 'tenSideCount', 'twoTables'].map(value => ({
+  value,
+  label: `Drill: ${FULL_DRILL_LABELS[value]}`,
+}));
 
 const HANDS_OPTIONS = [
   { value: 'twoToFourCards', label: 'Hands: 2-4 Card Hands' },
@@ -22,14 +30,13 @@ const PLAYERS_OPTIONS = [
 ];
 
 /** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
-const MODE_OPTIONS = [
-  { value: 'auto', label: 'Timer Mode: Shoe' },
-  COUNT_DOWN_HALT_OPTION,
-];
+const MODE_OPTIONS = [{ value: 'auto', label: 'Timer Mode: Shoe' }, COUNT_DOWN_HALT_OPTION];
 
 export function fullOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
-    title: 'Full Table Options', help: 'drills.full.options', drill: 'drills.full',
+    title: 'Full Table Options',
+    help: 'drills.full.options',
+    drill: 'drills.full',
     onLaunch: () => app.open('drills.full'),
   });
   const { form } = screen;
@@ -42,23 +49,29 @@ export function fullOptionsScreen(app) {
   const drillTime = form.duration('Drill time', 'alarmSeconds');
 
   screen.append(
-    section('Drill', group(
-      form.select('drill', DRILL_OPTIONS),
-      form.select('accuracy', ACCURACY_OPTIONS),
-      twoCounts,
-      handStyle,
-      form.select('players', PLAYERS_OPTIONS),
-      form.select('decks', DECK_OPTIONS),
-      form.select('bias', BIAS_OPTIONS),
-      endWarning,
-    )),
-    section('Timer', group(
-      form.select('timerMode', MODE_OPTIONS),
-      perTest,
-      drillTime,
-      form.duration('Flash speed', 'flashSpeed'),
-      form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]),
-    )),
+    section(
+      'Drill',
+      group(
+        form.select('drill', DRILL_OPTIONS),
+        form.select('accuracy', ACCURACY_OPTIONS),
+        twoCounts,
+        handStyle,
+        form.select('players', PLAYERS_OPTIONS),
+        form.select('decks', DECK_OPTIONS),
+        form.select('bias', BIAS_OPTIONS),
+        endWarning,
+      ),
+    ),
+    section(
+      'Timer',
+      group(
+        form.select('timerMode', MODE_OPTIONS),
+        perTest,
+        drillTime,
+        form.duration('Flash speed', 'flashSpeed'),
+        form.checks([{ label: 'Progressive Speed', key: 'progressiveSpeed' }]),
+      ),
+    ),
   );
 
   form.watch(() => {

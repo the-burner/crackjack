@@ -30,7 +30,16 @@ function makeGame({ table = {}, rules = makeRules(), random = 0.5, onCardSeen = 
   });
 }
 
-const peekingTable = over => ({ peeking: { mode: 'holeCard', percent: 100, adjacentHands: false, randomizeCard: false, randomizeHand: false, ...over } });
+const peekingTable = over => ({
+  peeking: {
+    mode: 'holeCard',
+    percent: 100,
+    adjacentHands: false,
+    randomizeCard: false,
+    randomizeHand: false,
+    ...over,
+  },
+});
 
 describe('peeking at the hole card', () => {
   it('flashes the card and puts it back down', () => {
@@ -60,8 +69,10 @@ describe('peeking at the hole card', () => {
 
   it('happens as often as the percentage says', () => {
     // The card shows when the draw lands above 100 - percent.
-    const shows = random => makeGame({ table: peekingTable({ percent: 30 }), random })
-      .startRound([{ seat: 1, bet: 10 }]).some(e => e.type === 'peek');
+    const shows = random =>
+      makeGame({ table: peekingTable({ percent: 30 }), random })
+        .startRound([{ seat: 1, bet: 10 }])
+        .some(e => e.type === 'peek');
     expect(shows(0.8)).toBe(true);
     expect(shows(0.5)).toBe(false);
   });
@@ -94,7 +105,12 @@ function withUpcard(game, upcard) {
 }
 
 describe('peeking at a neighbour', () => {
-  const faceDown = over => ({ cardsFaceDown: true, computerSeats: [2], computerBet: 5, ...peekingTable({ mode: 'off', adjacentHands: true, ...over }) });
+  const faceDown = over => ({
+    cardsFaceDown: true,
+    computerSeats: [2],
+    computerBet: 5,
+    ...peekingTable({ mode: 'off', adjacentHands: true, ...over }),
+  });
 
   it('deals the seat beside the player face up in a face-down game', () => {
     const game = makeGame({ table: faceDown() });

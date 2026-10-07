@@ -14,7 +14,19 @@ import { promptNumber } from './dialogs.js';
  * @param {boolean} [o.large]
  * @param {boolean} [o.block]
  */
-export function button(label, { onClick, icon, iconPos = 'right', variant = 'default', large = false, block = false, className = '', ...attrs } = {}) {
+export function button(
+  label,
+  {
+    onClick,
+    icon,
+    iconPos = 'right',
+    variant = 'default',
+    large = false,
+    block = false,
+    className = '',
+    ...attrs
+  } = {},
+) {
   const classes = ['btn'];
   if (variant !== 'default') classes.push(`btn--${variant}`);
   if (large) classes.push('btn--large');
@@ -26,10 +38,17 @@ export function button(label, { onClick, icon, iconPos = 'right', variant = 'def
 
 /** Title bar with Back on the left, the title, and Help (plus optional extra buttons) on the right. */
 export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } = {}) {
-  return h('header', { class: 'topbar' },
+  return h(
+    'header',
+    { class: 'topbar' },
     onBack ? button(backLabel, { variant: 'nav', onClick: onBack, 'data-action': 'back' }) : h('span'),
     h('div', { class: 'topbar__title', role: 'heading' }, title),
-    h('div', { class: 'topbar__end' }, ...end, onHelp ? button('Help', { variant: 'nav', onClick: onHelp, 'data-action': 'help' }) : null),
+    h(
+      'div',
+      { class: 'topbar__end' },
+      ...end,
+      onHelp ? button('Help', { variant: 'nav', onClick: onHelp, 'data-action': 'help' }) : null,
+    ),
   );
 }
 
@@ -44,10 +63,15 @@ export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } =
 export const selectedIndexFor = (options, value) => options.findIndex(o => o.value === value);
 
 export function select(options, value, onChange, { mini = false, name } = {}) {
-  const el = h('select', { name, onchange: () => onChange(options[el.selectedIndex].value) },
-    options.map(o => h('option', {}, o.label)));
+  const el = h(
+    'select',
+    { name, onchange: () => onChange(options[el.selectedIndex].value) },
+    options.map(o => h('option', {}, o.label)),
+  );
   const wrap = h('div', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el);
-  wrap.setValue = v => { el.selectedIndex = selectedIndexFor(options, v); };
+  wrap.setValue = v => {
+    el.selectedIndex = selectedIndexFor(options, v);
+  };
   wrap.setValue(value);
   wrap.control = el;
   return wrap;
@@ -66,17 +90,28 @@ export function checkList(items, { horizontal = false, chips = false } = {}) {
       row.classList.toggle('is-on', input.checked);
       item.onChange(input.checked);
     });
-    row.setChecked = c => { input.checked = c; row.classList.toggle('is-on', c); };
+    row.setChecked = c => {
+      input.checked = c;
+      row.classList.toggle('is-on', c);
+    };
     return row;
   });
-  const el = h('div', { class: `checklist${horizontal ? ' checklist--horizontal' : ''}${chips ? ' checklist--chips' : ''}` }, rows);
+  const el = h(
+    'div',
+    { class: `checklist${horizontal ? ' checklist--horizontal' : ''}${chips ? ' checklist--chips' : ''}` },
+    rows,
+  );
   /** Re-reads every item's state from `getChecked(index)`. */
   el.refresh = getChecked => rows.forEach((r, i) => r.setChecked(Boolean(getChecked(i))));
   return el;
 }
 
 /** A button showing a number; tapping it prompts for a new value within [min, max]. */
-export function valueButton(value, onChange, { prompt = 'Value', min = -Infinity, max = Infinity, format = String } = {}) {
+export function valueButton(
+  value,
+  onChange,
+  { prompt = 'Value', min = -Infinity, max = Infinity, format = String } = {},
+) {
   let current = value;
   const el = button(format(current), {
     className: 'value-btn',
@@ -87,7 +122,10 @@ export function valueButton(value, onChange, { prompt = 'Value', min = -Infinity
       onChange(n);
     },
   });
-  el.setValue = v => { current = v; el.textContent = format(v); };
+  el.setValue = v => {
+    current = v;
+    el.textContent = format(v);
+  };
   return el;
 }
 
@@ -98,8 +136,14 @@ export function valueButton(value, onChange, { prompt = 'Value', min = -Infinity
 export function slider(label, value, onChange, { min, max, step = 1 }) {
   const range = h('input', { type: 'range', min, max, step, value });
   const box = h('input', {
-    type: 'number', class: 'slider__value', min, max, step, value,
-    inputmode: 'numeric', 'aria-label': label || 'Value',
+    type: 'number',
+    class: 'slider__value',
+    min,
+    max,
+    step,
+    value,
+    inputmode: 'numeric',
+    'aria-label': label || 'Value',
   });
   const clamp = n => {
     const stepped = Math.round((n - min) / step) * step + min;
@@ -110,7 +154,9 @@ export function slider(label, value, onChange, { min, max, step = 1 }) {
     box.value = n;
     onChange(n);
   };
-  range.addEventListener('input', () => { box.value = range.value; });
+  range.addEventListener('input', () => {
+    box.value = range.value;
+  });
   range.addEventListener('change', () => commit(Number(range.value)));
   // Typing updates the slider once the value is complete (Enter or leaving the box).
   box.addEventListener('change', () => {
@@ -121,10 +167,20 @@ export function slider(label, value, onChange, { min, max, step = 1 }) {
     }
     commit(clamp(typed));
   });
-  box.addEventListener('keydown', event => { if (event.key === 'Enter') box.blur(); });
+  box.addEventListener('keydown', event => {
+    if (event.key === 'Enter') box.blur();
+  });
   box.addEventListener('focus', () => box.select());
-  const el = h('div', { class: 'slider' }, label ? h('div', { class: 'slider__label' }, label) : null, h('div', { class: 'slider__row' }, box, range));
-  el.setValue = v => { range.value = v; box.value = v; };
+  const el = h(
+    'div',
+    { class: 'slider' },
+    label ? h('div', { class: 'slider__label' }, label) : null,
+    h('div', { class: 'slider__row' }, box, range),
+  );
+  el.setValue = v => {
+    range.value = v;
+    box.value = v;
+  };
   return el;
 }
 

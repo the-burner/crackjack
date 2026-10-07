@@ -24,9 +24,12 @@ export function peekingScreen(app) {
   columns.append(
     group(
       form.checks(CHECKS),
-      h('div', { class: 'settings-row peeking-modes' },
+      h(
+        'div',
+        { class: 'settings-row peeking-modes' },
         h('span', { class: 'label' }, 'Percent of the time:'),
-        form.select('peeking.percent', PERCENTS, { mini: true })),
+        form.select('peeking.percent', PERCENTS, { mini: true }),
+      ),
     ),
     group(
       trailingLabel(form.select('peeking.strategyHigh', strategies), 'HC High'),

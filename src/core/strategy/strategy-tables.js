@@ -6,7 +6,15 @@
 // Cells hold either an index number (take the action when the count is at or
 // above it), NEVER/ALWAYS, or a special code from SPECIAL_CODES.
 
-import { NEVER, ALWAYS, NO_ENTRY, VARIANT, TABLE_NAMES, parseStrategyFile, parseBasicStrategyFile } from './strategy-file.js';
+import {
+  NEVER,
+  ALWAYS,
+  NO_ENTRY,
+  VARIANT,
+  TABLE_NAMES,
+  parseStrategyFile,
+  parseBasicStrategyFile,
+} from './strategy-file.js';
 import { BASIC_STRATEGY_FILE } from '../../data/strategy-files.js';
 
 export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'];
@@ -117,12 +125,43 @@ export const CODE_DESCRIPTIONS = {
 export const INSURANCE = { byTotalTable: 9998, never: 9999, pivot: -9999 };
 
 /** Cells that the Illustrious 18 / Sweet 16 / Catch 20 index sets keep. */
-const ILLUSTRIOUS_18_SPLITS = [[1, 3], [1, 4]];
-const ILLUSTRIOUS_18_HARD_STANDS = [[1, 7], [1, 8], [2, 8], [4, 0], [4, 1], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]];
-const ILLUSTRIOUS_18_HARD_DOUBLES = [[0, 9], [1, 8], [1, 9], [2, 0], [2, 5]];
-const CATCH_20_SOFT_DOUBLES = [[1, 3], [1, 4]];
-const CATCH_20_EXTRA_HARD_DOUBLES = [[3, 3], [3, 4]];
-const FAB_4_SURRENDERS = [[2, 7], [2, 8], [2, 9], [3, 8]];
+const ILLUSTRIOUS_18_SPLITS = [
+  [1, 3],
+  [1, 4],
+];
+const ILLUSTRIOUS_18_HARD_STANDS = [
+  [1, 7],
+  [1, 8],
+  [2, 8],
+  [4, 0],
+  [4, 1],
+  [5, 0],
+  [5, 1],
+  [5, 2],
+  [5, 3],
+  [5, 4],
+];
+const ILLUSTRIOUS_18_HARD_DOUBLES = [
+  [0, 9],
+  [1, 8],
+  [1, 9],
+  [2, 0],
+  [2, 5],
+];
+const CATCH_20_SOFT_DOUBLES = [
+  [1, 3],
+  [1, 4],
+];
+const CATCH_20_EXTRA_HARD_DOUBLES = [
+  [3, 3],
+  [3, 4],
+];
+const FAB_4_SURRENDERS = [
+  [2, 7],
+  [2, 8],
+  [2, 9],
+  [3, 8],
+];
 
 const QUARTER_COUNT_BY_DECKS = { 1: 2, 2: 0, 3: -2, 4: -3, 5: -5, 6: -6, 7: -8, 8: -10 };
 
@@ -168,7 +207,12 @@ function basicTemplate() {
 export function buildStrategy(file, options) {
   const f = typeof file === 'string' ? parseStrategyFile(file) : structuredClone(file);
   const {
-    decks, hitSoft17, doubleAfterSplit, noHoleCard, fab4 = false, customMask = null,
+    decks,
+    hitSoft17,
+    doubleAfterSplit,
+    noHoleCard,
+    fab4 = false,
+    customMask = null,
     forcedInitialRunningCount = null,
   } = options;
   let { indexSet = 'all', rangeHigh = 99, rangeLow = -99 } = options;
@@ -185,7 +229,8 @@ export function buildStrategy(file, options) {
 
   const fileCell = (variant, table, k, l) =>
     l >= BASE_COLUMNS ? f.extendedTables[variant][table][k][l - BASE_COLUMNS] : f.tables[variant][table][k][l];
-  const emptyTables = () => Object.fromEntries(TABLE_NAMES.map(n => [n, Array.from({ length: ROWS }, () => new Array(columns))]));
+  const emptyTables = () =>
+    Object.fromEntries(TABLE_NAMES.map(n => [n, Array.from({ length: ROWS }, () => new Array(columns))]));
   const tables = emptyTables();
   const eachCell = (cols, fn) => {
     for (let k = 0; k < ROWS; k++) for (let l = 0; l < cols; l++) fn(k, l);
@@ -213,7 +258,11 @@ export function buildStrategy(file, options) {
   if (multiDeck && hitSoft17 && f.variants.multiDeck && f.variants.hitSoft17) variant = VARIANT.hitSoft17MultiDeck;
   else if (multiDeck && f.variants.multiDeck) variant = VARIANT.multiDeck;
   else if (hitSoft17 && f.variants.hitSoft17) variant = VARIANT.hitSoft17;
-  eachCell(columns, (k, l) => TABLE_NAMES.forEach((name, t) => { tables[name][k][l] = fileCell(variant, t, k, l); }));
+  eachCell(columns, (k, l) =>
+    TABLE_NAMES.forEach((name, t) => {
+      tables[name][k][l] = fileCell(variant, t, k, l);
+    }),
+  );
 
   // 2. Overlay double-after-split entries.
   if (f.variants.doubleAfterSplit && doubleAfterSplit) {
@@ -250,14 +299,22 @@ export function buildStrategy(file, options) {
     if (decks > 1 && hitSoft17) v = VARIANT.hitSoft17MultiDeck;
     else if (multiDeck) v = VARIANT.multiDeck;
     else if (hitSoft17) v = VARIANT.hitSoft17;
-    for (let t = 0; t < 6; t++) eachCell(BASE_COLUMNS, (k, l) => { basic[0][t][k][l] = basic[v][t][k][l]; });
+    for (let t = 0; t < 6; t++)
+      eachCell(BASE_COLUMNS, (k, l) => {
+        basic[0][t][k][l] = basic[v][t][k][l];
+      });
     const overlay = from => {
-      for (let t = 0; t < 6; t++) eachCell(BASE_COLUMNS, (k, l) => { if (basic[from][t][k][l] > NO_ENTRY) basic[0][t][k][l] = basic[from][t][k][l]; });
+      for (let t = 0; t < 6; t++)
+        eachCell(BASE_COLUMNS, (k, l) => {
+          if (basic[from][t][k][l] > NO_ENTRY) basic[0][t][k][l] = basic[from][t][k][l];
+        });
     };
     if (doubleAfterSplit) overlay(decks > 1 ? VARIANT.doubleAfterSplitMultiDeck : VARIANT.doubleAfterSplit);
     if (noHoleCard) overlay(VARIANT.noHoleCard);
   }
-  const basicTables = Object.fromEntries(TABLE_NAMES.map((name, t) => [name, basic[0][t].slice(0, ROWS).map(r => r.slice(0, BASE_COLUMNS))]));
+  const basicTables = Object.fromEntries(
+    TABLE_NAMES.map((name, t) => [name, basic[0][t].slice(0, ROWS).map(r => r.slice(0, BASE_COLUMNS))]),
+  );
 
   // 4. Resolve pivot-based codes for running-count (unbalanced) systems.
   const pivotSum = () => {
@@ -277,7 +334,8 @@ export function buildStrategy(file, options) {
       for (const name of TABLE_NAMES) {
         const v = tables[name][k][l];
         if (v === CODE.insuranceIndex) tables[name][k][l] = insuranceIndex;
-        else if (v === CODE.negativeInsuranceIndex) tables[name][k][l] = -insuranceIndex + (name === 'hardStand' ? 1 : 0);
+        else if (v === CODE.negativeInsuranceIndex)
+          tables[name][k][l] = -insuranceIndex + (name === 'hardStand' ? 1 : 0);
         else if (v === CODE.pivot) tables[name][k][l] = pivot;
         else if (v === CODE.realPivot) tables[name][k][l] = realPivot;
         else if (v === CODE.pivotPlus2) tables[name][k][l] = pivot + 2;
@@ -304,7 +362,9 @@ export function buildStrategy(file, options) {
   }
 
   // 6. Limit the index set by reverting cells to basic strategy.
-  const useBasic = (name, k, l) => { tables[name][k][l] = basic[0][TABLE_NAMES.indexOf(name)][k][l]; };
+  const useBasic = (name, k, l) => {
+    tables[name][k][l] = basic[0][TABLE_NAMES.indexOf(name)][k][l];
+  };
   if (indexSet === 'none') {
     eachCell(BASE_COLUMNS, (k, l) => TABLE_NAMES.forEach(name => useBasic(name, k, l)));
   }
@@ -315,13 +375,21 @@ export function buildStrategy(file, options) {
       if (sweet16 || !contains(ILLUSTRIOUS_18_SPLITS, k, l)) useBasic('split', k, l);
       if (!contains(ILLUSTRIOUS_18_HARD_STANDS, k, l)) useBasic('hardStand', k, l);
       if (!(catch20 && contains(CATCH_20_SOFT_DOUBLES, k, l))) useBasic('softDouble', k, l);
-      if (!contains(ILLUSTRIOUS_18_HARD_DOUBLES, k, l) && !(catch20 && contains(CATCH_20_EXTRA_HARD_DOUBLES, k, l))) useBasic('hardDouble', k, l);
+      if (!contains(ILLUSTRIOUS_18_HARD_DOUBLES, k, l) && !(catch20 && contains(CATCH_20_EXTRA_HARD_DOUBLES, k, l)))
+        useBasic('hardDouble', k, l);
       useBasic('softStand', k, l);
       if (!(fab4 && contains(FAB_4_SURRENDERS, k, l))) useBasic('surrender', k, l);
     });
   }
   if (indexSet === 'custom' && customMask) {
-    applyCustomMask(tables, basic, customMask, { decks, fileDecks: f.decks, doubleAfterSplit, noHoleCard, fileDoubleAfterSplit: f.variants.doubleAfterSplit, earlySurrender: f.earlySurrender });
+    applyCustomMask(tables, basic, customMask, {
+      decks,
+      fileDecks: f.decks,
+      doubleAfterSplit,
+      noHoleCard,
+      fileDoubleAfterSplit: f.variants.doubleAfterSplit,
+      earlySurrender: f.earlySurrender,
+    });
   }
 
   // 7. Index range, deck-dependent codes and initial running count adjustment.
@@ -378,7 +446,12 @@ function limitToRange(v, low, high) {
 }
 
 /** Custom index set: cells not selected in the mask revert to basic strategy. */
-function applyCustomMask(tables, basic, mask, { decks, fileDecks, doubleAfterSplit, noHoleCard, fileDoubleAfterSplit, earlySurrender }) {
+function applyCustomMask(
+  tables,
+  basic,
+  mask,
+  { decks, fileDecks, doubleAfterSplit, noHoleCard, fileDoubleAfterSplit, earlySurrender },
+) {
   const masks = TABLE_NAMES.map(name => mask[name]);
   for (let k = 0; k < ROWS; k++) {
     for (let l = 0; l < BASE_COLUMNS; l++) {
@@ -391,12 +464,14 @@ function applyCustomMask(tables, basic, mask, { decks, fileDecks, doubleAfterSpl
     }
   }
   const overlay = from => {
-    for (let k = 0; k < ROWS; k++) for (let l = 0; l < BASE_COLUMNS; l++) {
-      for (let t = 0; t < 6; t++) {
-        if (basic[from][t][k][l] > NO_ENTRY && !masks[t][k][l]) tables[TABLE_NAMES[t]][k][l] = basic[from][t][k][l];
+    for (let k = 0; k < ROWS; k++)
+      for (let l = 0; l < BASE_COLUMNS; l++) {
+        for (let t = 0; t < 6; t++) {
+          if (basic[from][t][k][l] > NO_ENTRY && !masks[t][k][l]) tables[TABLE_NAMES[t]][k][l] = basic[from][t][k][l];
+        }
       }
-    }
   };
-  if (fileDoubleAfterSplit && doubleAfterSplit) overlay(decks > fileDecks + 1 ? VARIANT.doubleAfterSplitMultiDeck : VARIANT.doubleAfterSplit);
+  if (fileDoubleAfterSplit && doubleAfterSplit)
+    overlay(decks > fileDecks + 1 ? VARIANT.doubleAfterSplitMultiDeck : VARIANT.doubleAfterSplit);
   if (noHoleCard) overlay(VARIANT.noHoleCard);
 }

@@ -25,8 +25,17 @@ import { createBetOverlay } from '../table/bet-overlay.js';
 import { attachSwipes } from '../table/gestures.js';
 import { obviouslyBad, areYouSure } from '../table/bad-plays.js';
 import {
-  dealerErrorsOn, enabledErrors, pickDealerError, claimFoul, missedMessage, errorHandFrom,
-  dealerStandsByMistake, bustsGoodHandByMistake, bustedGoodHandShortfall, DEALER_ERROR, ERROR_LABELS,
+  dealerErrorsOn,
+  enabledErrors,
+  pickDealerError,
+  claimFoul,
+  missedMessage,
+  errorHandFrom,
+  dealerStandsByMistake,
+  bustsGoodHandByMistake,
+  bustedGoodHandShortfall,
+  DEALER_ERROR,
+  ERROR_LABELS,
 } from '../dealer-errors.js';
 
 /** The insurance offer passes itself after this long. */
@@ -52,14 +61,27 @@ export function tableScreen(app) {
   const counts = h('div', { class: 'table__counts' });
   const chips = new Map();
   const actionButtons = new Map();
-  const sides = { left: h('div', { class: 'table__actions table__actions--left' }), right: h('div', { class: 'table__actions table__actions--right' }) };
+  const sides = {
+    left: h('div', { class: 'table__actions table__actions--left' }),
+    right: h('div', { class: 'table__actions table__actions--right' }),
+  };
   for (const [action, label, icon, side] of ACTION_LABELS) {
     const btn = button(label, { icon, onClick: () => play(action), hidden: true, 'data-action': action });
     actionButtons.set(action, btn);
     sides[side].append(btn);
   }
-  const insureButton = button('Insure', { icon: 'arrow-d', onClick: () => answerInsurance(true), hidden: true, 'data-action': 'insure' });
-  const passButton = button('Pass', { icon: 'arrow-l', onClick: () => answerInsurance(false), hidden: true, 'data-action': 'pass' });
+  const insureButton = button('Insure', {
+    icon: 'arrow-d',
+    onClick: () => answerInsurance(true),
+    hidden: true,
+    'data-action': 'insure',
+  });
+  const passButton = button('Pass', {
+    icon: 'arrow-l',
+    onClick: () => answerInsurance(false),
+    hidden: true,
+    'data-action': 'pass',
+  });
   sides.left.append(insureButton, passButton);
 
   const overlay = createBetOverlay({
@@ -74,14 +96,19 @@ export function tableScreen(app) {
     onLastError: openLastError,
   });
 
-  const felt = h('div', { class: 'table__felt' },
-    canvas, bankroll, counts, sides.left, sides.right, overlay.el);
-  const bar = h('header', { class: 'table__bar' },
+  const felt = h('div', { class: 'table__felt' }, canvas, bankroll, counts, sides.left, sides.right, overlay.el);
+  const bar = h(
+    'header',
+    { class: 'table__bar' },
     button('Back', { variant: 'nav', onClick: () => app.back(), 'data-action': 'back' }),
-    h('div', { class: 'table__bar-end' },
+    h(
+      'div',
+      { class: 'table__bar-end' },
       button('Stats', { variant: 'nav', icon: 'grid', onClick: openStats, 'data-action': 'stats' }),
       button('Error', { variant: 'nav', icon: 'info', onClick: openLastError, 'data-action': 'error' }),
-      button('Help', { variant: 'nav', onClick: () => app.help('game.table', 'Blackjack'), 'data-action': 'help' })));
+      button('Help', { variant: 'nav', onClick: () => app.help('game.table', 'Blackjack'), 'data-action': 'help' }),
+    ),
+  );
   const el = h('section', { class: 'table' }, bar, felt);
 
   // --- play state -----------------------------------------------------------
@@ -168,9 +195,13 @@ export function tableScreen(app) {
     }
   }
 
-  const box = (node, rect) => Object.assign(node.style, {
-    left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.width}px`, height: `${rect.height}px`,
-  });
+  const box = (node, rect) =>
+    Object.assign(node.style, {
+      left: `${rect.x}px`,
+      top: `${rect.y}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+    });
 
   function render() {
     if (!layout) return;
@@ -190,7 +221,9 @@ export function tableScreen(app) {
         // A result is shown as a pill, like the app's other pop-ups.
         const shown = chip.firstElementChild;
         if (shown?.textContent !== held.result || shown.dataset.tone !== RESULT_TONES[held.result]) {
-          chip.replaceChildren(h('span', { class: 'table__result', dataset: { tone: RESULT_TONES[held.result] ?? 'push' } }, held.result));
+          chip.replaceChildren(
+            h('span', { class: 'table__result', dataset: { tone: RESULT_TONES[held.result] ?? 'push' } }, held.result),
+          );
         }
       } else {
         chip.textContent = held ? chipText(held) : '';
@@ -209,7 +242,8 @@ export function tableScreen(app) {
     const parts = [];
     const accuracy = session.accuracy();
     if (settings.get('display.showBetAccuracy') && session.stats.betDecisions > 0) parts.push(`Bets: ${accuracy.bet}%`);
-    if (settings.get('display.showPlayAccuracy') && session.stats.playDecisions > 0) parts.push(`Plays: ${accuracy.play}%`);
+    if (settings.get('display.showPlayAccuracy') && session.stats.playDecisions > 0)
+      parts.push(`Plays: ${accuracy.play}%`);
     if (settings.get('display.showRunningCount')) parts.push(`RC: ${round1(shown.running)}`);
     if (settings.get('display.showTrueCount')) parts.push(`TC: ${round1(shown.trueCount)}`);
     return parts.join(', ');
@@ -393,7 +427,14 @@ export function tableScreen(app) {
       overlay.setMessage(`Bet above the table maximum of ${money(high)}.`);
       return;
     }
-    if (!checkAffordable({ bankroll: session.bankroll, betPerHand: amount, hands: seats.length, sideBets: pendingSideBets })) {
+    if (
+      !checkAffordable({
+        bankroll: session.bankroll,
+        betPerHand: amount,
+        hands: seats.length,
+        sideBets: pendingSideBets,
+      })
+    ) {
       overlay.setMessage('Not enough in the bankroll for that bet.');
       return;
     }
@@ -464,9 +505,10 @@ export function tableScreen(app) {
     };
   }
 
-  const sideBetLabel = () => Object.entries(pendingSideBets)
-    .map(([id, amount]) => `${id} side bet ${money(amount)}`)
-    .join(', ');
+  const sideBetLabel = () =>
+    Object.entries(pendingSideBets)
+      .map(([id, amount]) => `${id} side bet ${money(amount)}`)
+      .join(', ');
 
   function shuffleNow() {
     // Played out like any shuffle: the burn is shown, then goes into the tray.
@@ -489,7 +531,8 @@ export function tableScreen(app) {
   session.beforeDealerDraw = dealer => {
     const enabled = enabledErrors(settings);
     const dealt = { ...dealer.totals(), cardCount: dealer.cardCount };
-    if (!dealerStandsByMistake({ dealer: dealt, playerTotal: lastPlayerTotal(), enabled, random: Math.random })) return true;
+    if (!dealerStandsByMistake({ dealer: dealt, playerTotal: lastPlayerTotal(), enabled, random: Math.random }))
+      return true;
     stoodOnSixteen = true;
     return false;
   };
@@ -501,7 +544,11 @@ export function tableScreen(app) {
     const judged = { total: hand.total, cardCount: hand.cardCount, doubled: hand.doubled };
     if (!bustsGoodHandByMistake({ hand: judged, enabled, random: Math.random })) return false;
     // The hand pays nothing, so the bankroll is already short by what it owed.
-    const shortfall = bustedGoodHandShortfall({ bet: hand.bet, playerTotal: hand.total, dealerTotal: session.game.dealer.total });
+    const shortfall = bustedGoodHandShortfall({
+      bet: hand.bet,
+      playerTotal: hand.total,
+      dealerTotal: session.game.dealer.total,
+    });
     pendingError = {
       type: DEALER_ERROR.bustedGoodHand,
       label: ERROR_LABELS[DEALER_ERROR.bustedGoodHand],
@@ -515,8 +562,14 @@ export function tableScreen(app) {
   function injectDealerError(events) {
     const enabled = enabledErrors(settings);
     if (enabled.length === 0 || pendingError) return;
-    const hands = session.game.hands.filter(hand => hand.owner === PLAYER.human)
-      .map(hand => errorHandFrom(hand, { sideBetWin: sideBetWinOf(events, hand.key), sideBetPaid: sideBetPaidOf(events, hand.key) }));
+    const hands = session.game.hands
+      .filter(hand => hand.owner === PLAYER.human)
+      .map(hand =>
+        errorHandFrom(hand, {
+          sideBetWin: sideBetWinOf(events, hand.key),
+          sideBetPaid: sideBetPaidOf(events, hand.key),
+        }),
+      );
     const dealer = session.game.dealer;
     const error = pickDealerError({
       hands,
@@ -644,7 +697,9 @@ export function tableScreen(app) {
 
     onShow() {
       observer.observe(felt);
-      renderer.whenReady().then(() => { relayout(); });
+      renderer.whenReady().then(() => {
+        relayout();
+      });
       relayout();
       if (!overlay.visible && session.state === STATE.betting) {
         state.setBankroll(session.bankroll);
@@ -681,9 +736,18 @@ const round1 = n => Math.round(n * 10) / 10;
 const MESSAGE_MS = 3500;
 
 /** The original's colours for a result on the chips. */
-const RESULT_TONES = { Win: 'win', '21': 'win', Bonus: 'win', Push: 'push', Lose: 'lose', Bust: 'lose', Surrender: 'lose' };
+const RESULT_TONES = {
+  Win: 'win',
+  21: 'win',
+  Bonus: 'win',
+  Push: 'push',
+  Lose: 'lose',
+  Bust: 'lose',
+  Surrender: 'lose',
+};
 
-const money = amount => `$${amount.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 })}`;
+const money = amount =>
+  `$${amount.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 })}`;
 
 /** The bankroll always shows cents. */
 const dollars = amount => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

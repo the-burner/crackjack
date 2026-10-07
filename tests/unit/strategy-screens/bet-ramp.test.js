@@ -1,8 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
-  CHIP_CHOICES, MAX_CHIPS, MAX_ROWS, checkBet, countLabels, decodeRow, encodeRow,
-  formatRow, fromPackedRamp, maxChipsForHands, normalizeRamp, rampToSave, rowCounts,
-  rowForCount, setRow, setRowCount, toPackedRamp,
+  CHIP_CHOICES,
+  MAX_CHIPS,
+  MAX_ROWS,
+  checkBet,
+  countLabels,
+  decodeRow,
+  encodeRow,
+  formatRow,
+  fromPackedRamp,
+  maxChipsForHands,
+  normalizeRamp,
+  rampToSave,
+  rowCounts,
+  rowForCount,
+  setRow,
+  setRowCount,
+  toPackedRamp,
 } from '../../../src/settings/bet-ramp.js';
 import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
 
@@ -23,18 +37,21 @@ describe('normalizeRamp', () => {
   });
 
   it('gives an empty row one chip on one hand', () => {
-    expect(normalizeRamp({ minCount: 0, rows: [{ chips: 0, hands: 0 }] }))
-      .toEqual({ minCount: 0, rows: [{ chips: 1, hands: 1 }] });
+    expect(normalizeRamp({ minCount: 0, rows: [{ chips: 0, hands: 0 }] })).toEqual({
+      minCount: 0,
+      rows: [{ chips: 1, hands: 1 }],
+    });
   });
 
   it('keeps chips x hands within the 200 chip limit', () => {
-    expect(normalizeRamp({ minCount: 0, rows: [{ chips: 200, hands: 6 }] }).rows[0])
-      .toEqual({ chips: 33, hands: 6 });
+    expect(normalizeRamp({ minCount: 0, rows: [{ chips: 200, hands: 6 }] }).rows[0]).toEqual({ chips: 33, hands: 6 });
   });
 
   it('clamps the number of rows', () => {
     expect(normalizeRamp({ minCount: 0, rows: [] }).rows).toHaveLength(1);
-    expect(normalizeRamp({ minCount: 0, rows: new Array(30).fill({ chips: 1, hands: 1 }) }).rows).toHaveLength(MAX_ROWS);
+    expect(normalizeRamp({ minCount: 0, rows: new Array(30).fill({ chips: 1, hands: 1 }) }).rows).toHaveLength(
+      MAX_ROWS,
+    );
   });
 });
 
@@ -80,7 +97,14 @@ describe('row labels', () => {
   });
 
   it('counts the rows of a ramp with no minCount from zero', () => {
-    expect(rowCounts({ rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] })).toEqual([0, 1]);
+    expect(
+      rowCounts({
+        rows: [
+          { chips: 1, hands: 1 },
+          { chips: 2, hands: 1 },
+        ],
+      }),
+    ).toEqual([0, 1]);
   });
 
   it('writes multi-hand bets as hands x chips', () => {
@@ -95,13 +119,22 @@ describe('rampToSave', () => {
   });
 
   it('brings a ramp with out-of-range values back into range', () => {
-    expect(rampToSave({ minCount: 1.5, rows: [{ chips: 999, hands: 9 }] }))
-      .toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
+    expect(rampToSave({ minCount: 1.5, rows: [{ chips: 999, hands: 9 }] })).toEqual({
+      minCount: 2,
+      rows: [{ chips: 33, hands: 6 }],
+    });
   });
 });
 
 describe('rowForCount', () => {
-  const ramp = { minCount: 0, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }, { chips: 5, hands: 2 }] };
+  const ramp = {
+    minCount: 0,
+    rows: [
+      { chips: 1, hands: 1 },
+      { chips: 2, hands: 1 },
+      { chips: 5, hands: 2 },
+    ],
+  };
 
   it('uses the first row below the table', () => {
     expect(rowForCount(ramp, -8)).toEqual({ chips: 1, hands: 1 });
@@ -117,7 +150,13 @@ describe('rowForCount', () => {
 });
 
 describe('checkBet', () => {
-  const ramp = { minCount: 0, rows: [{ chips: 1, hands: 1 }, { chips: 4, hands: 2 }] };
+  const ramp = {
+    minCount: 0,
+    rows: [
+      { chips: 1, hands: 1 },
+      { chips: 4, hands: 2 },
+    ],
+  };
 
   it('accepts the expected bet', () => {
     expect(checkBet({ ramp, count: 1, chipValue: 5, hands: 2, total: 40 }).ok).toBe(true);
@@ -133,12 +172,18 @@ describe('checkBet', () => {
   });
 
   it('reports betting too little', () => {
-    expect(checkBet({ ramp, count: 1, chipValue: 5, hands: 2, total: 20 })).toMatchObject({ ok: false, tooMuch: false });
+    expect(checkBet({ ramp, count: 1, chipValue: 5, hands: 2, total: 20 })).toMatchObject({
+      ok: false,
+      tooMuch: false,
+    });
   });
 
   it('treats betting on no hands at all as too little', () => {
-    expect(checkBet({ ramp, count: 0, chipValue: 5, hands: 0, total: 0 }))
-      .toMatchObject({ ok: false, tooMuch: false, expectedPerHand: 5 });
+    expect(checkBet({ ramp, count: 0, chipValue: 5, hands: 0, total: 0 })).toMatchObject({
+      ok: false,
+      tooMuch: false,
+      expectedPerHand: 5,
+    });
   });
 });
 
@@ -154,9 +199,21 @@ describe('packed encoding', () => {
   });
 
   it('puts the minimum count in base', () => {
-    const packed = toPackedRamp({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
+    const packed = toPackedRamp({
+      minCount: 3,
+      rows: [
+        { chips: 1, hands: 1 },
+        { chips: 2, hands: 1 },
+      ],
+    });
     expect(packed).toMatchObject({ offset: -1, base: 4, top: 4 });
-    expect(fromPackedRamp(packed)).toEqual({ minCount: 3, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] });
+    expect(fromPackedRamp(packed)).toEqual({
+      minCount: 3,
+      rows: [
+        { chips: 1, hands: 1 },
+        { chips: 2, hands: 1 },
+      ],
+    });
   });
 
   it('round-trips ramps through the single-number row encoding', () => {

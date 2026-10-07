@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
-  tableSlots, scatterSlots, dealRound, handComplete, fullAnswer, partialView, spotsFor,
-  isAceCountDrill, DEALER_SPOT, SCATTER_CARDS, SLOTS_PER_SPOT, TWO_TABLE_PHASES,
+  tableSlots,
+  scatterSlots,
+  dealRound,
+  handComplete,
+  fullAnswer,
+  partialView,
+  spotsFor,
+  isAceCountDrill,
+  DEALER_SPOT,
+  SCATTER_CARDS,
+  SLOTS_PER_SPOT,
+  TWO_TABLE_PHASES,
 } from '../../../src/drills/full/logic.js';
 import { cardId } from '../../../src/core/cards.js';
 import { seededRandom } from '../../../src/core/random.js';
@@ -15,7 +25,7 @@ describe('table slots', () => {
 
   it('sizes the cards from the table height', () => {
     expect(cardHeight).toBe(175);
-    expect(cardWidth).toBe(Math.floor(175 * 150 / 215));
+    expect(cardWidth).toBe(Math.floor((175 * 150) / 215));
   });
 
   it('has seven spots of four slots', () => {
@@ -116,7 +126,11 @@ describe('dealRound', () => {
 
   it('reports when the shoe runs out mid-round', () => {
     let left = 3;
-    const { hands, stopped } = dealRound({ players: 6, handStyle: 'firstTwoCards', draw: () => (left-- > 0 ? card(5) : null) });
+    const { hands, stopped } = dealRound({
+      players: 6,
+      handStyle: 'firstTwoCards',
+      draw: () => (left-- > 0 ? card(5) : null),
+    });
     expect(stopped).toBe(true);
     expect(hands.flatMap(h => h.cards)).toHaveLength(3);
   });
@@ -163,8 +177,10 @@ describe('the Two Tables partial view', () => {
 
   it('asks about each table twice, partly then fully', () => {
     expect(TWO_TABLE_PHASES).toEqual([
-      { table: 0, partial: true }, { table: 1, partial: true },
-      { table: 0, partial: false }, { table: 1, partial: false },
+      { table: 0, partial: true },
+      { table: 1, partial: true },
+      { table: 0, partial: false },
+      { table: 1, partial: false },
     ]);
   });
 });

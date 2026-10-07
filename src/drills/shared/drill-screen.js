@@ -26,7 +26,23 @@ import { clockTime } from './format.js';
  *   (the Flash drill hides the accuracy until the end in some test modes).
  * @param {(score: DrillScore) => string} [o.countText]  Text of the count cell.
  */
-export function drillShell(app, { title, help, countLabel, className = '', pausable = false, onStart, onStop, onLayout, onPause, onResume, accuracyText = score => `Accuracy: ${score.accuracy}%`, countText = score => `${countLabel}: ${score.tests}` }) {
+export function drillShell(
+  app,
+  {
+    title,
+    help,
+    countLabel,
+    className = '',
+    pausable = false,
+    onStart,
+    onStop,
+    onLayout,
+    onPause,
+    onResume,
+    accuracyText = score => `Accuracy: ${score.accuracy}%`,
+    countText = score => `${countLabel}: ${score.tests}`,
+  },
+) {
   const score = new DrillScore();
   /** Paused because another screen covered the drill, rather than by the player. */
   let suspended = false;
@@ -40,8 +56,16 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
     seconds: h('td', {}, `Time: ${clockTime(0)}`),
     rate: h('td', {}, `${countLabel}/Min: 0`),
   };
-  const stats = h('table', { class: 'drill__stats' },
-    h('tbody', {}, h('tr', {}, statsCells.count, statsCells.accuracy), h('tr', {}, statsCells.seconds, statsCells.rate)));
+  const stats = h(
+    'table',
+    { class: 'drill__stats' },
+    h(
+      'tbody',
+      {},
+      h('tr', {}, statsCells.count, statsCells.accuracy),
+      h('tr', {}, statsCells.seconds, statsCells.rate),
+    ),
+  );
   const controls = h('div', { class: 'drill__controls' });
   // Shown over the drill's own area, not the whole screen.
   const countdown = h('div', { class: 'drill__countdown', hidden: true });
@@ -51,11 +75,17 @@ export function drillShell(app, { title, help, countLabel, className = '', pausa
   replaceChildren(controls, pauseButton, restartButton);
 
   const body = h('div', { class: 'drill__body' }, display, message, stats, controls);
-  const el = h('section', { class: `screen--felt drill${className ? ` ${className}` : ''}` },
-    h('header', { class: 'drill__bar' },
+  const el = h(
+    'section',
+    { class: `screen--felt drill${className ? ` ${className}` : ''}` },
+    h(
+      'header',
+      { class: 'drill__bar' },
       button('Back', { variant: 'nav', onClick: () => app.back(), 'data-action': 'back' }),
-      button('Help', { variant: 'nav', onClick: () => app.help(help, title) })),
-    body);
+      button('Help', { variant: 'nav', onClick: () => app.help(help, title) }),
+    ),
+    body,
+  );
   display.append(countdown);
 
   /** @typedef {object} DrillShell */

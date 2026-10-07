@@ -147,7 +147,10 @@ describe('burn cards', () => {
     state.apply({ type: 'shuffle' });
     state.apply({ type: 'burn', card: 7, faceUp: true });
     state.apply({ type: 'burn', card: 9, faceUp: false });
-    expect(state.burns).toEqual([{ card: 7, faceUp: true }, { card: 9, faceUp: false }]);
+    expect(state.burns).toEqual([
+      { card: 7, faceUp: true },
+      { card: 9, faceUp: false },
+    ]);
     expect(state.trayCards).toBe(0);
     state.apply({ type: 'roundStart', round: 1 });
     expect(state.burns).toEqual([]);

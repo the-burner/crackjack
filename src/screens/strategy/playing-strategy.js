@@ -31,42 +31,96 @@ export function playingStrategyScreen(app) {
   const get = key => settings.get(key);
   // A rule here is the same rule as on the settings screens, so it goes through
   // the same constraints and the whole form is re-read afterwards.
-  const write = (key, value) => { settings.update(applyRuleChange(get, key, value)); refresh(); };
-  const writeRange = (key, value) => { settings.update(applyIndexRangeChange(get, key, value)); refresh(); };
+  const write = (key, value) => {
+    settings.update(applyRuleChange(get, key, value));
+    refresh();
+  };
+  const writeRange = (key, value) => {
+    settings.update(applyIndexRangeChange(get, key, value));
+    refresh();
+  };
 
   const systemOptions = strategies.list().map(({ id, name }) => ({ value: id, label: name }));
-  const systemSelect = select(systemOptions, settings.get('strategy.system'), id => settings.set('strategy.system', id));
+  const systemSelect = select(systemOptions, settings.get('strategy.system'), id =>
+    settings.set('strategy.system', id),
+  );
   const indexSelect = select(
     INDEX_SETS.map(value => ({ value, label: INDEX_SET_LABELS[value] })),
     settings.get('strategy.indexSet'),
     value => settings.set('strategy.indexSet', value),
     { mini: true },
   );
-  const rangeMin = valueButton(settings.get('strategy.indexRangeMin'), v => writeRange('strategy.indexRangeMin', v), { prompt: 'Minimum Count', min: -99, max: 99 });
-  const rangeMax = valueButton(settings.get('strategy.indexRangeMax'), v => writeRange('strategy.indexRangeMax', v), { prompt: 'Maximum Count', min: -99, max: 99 });
-  const rules = checkList(RULE_CHECKS.map(({ label, key }) => ({
-    label, checked: settings.get(key), onChange: on => write(key, on),
-  })));
-  const ircCheck = checkList([{
-    label: 'Adjust IRC',
-    checked: settings.get('strategy.adjustInitialCount'),
-    onChange: on => settings.set('strategy.adjustInitialCount', on),
-  }]);
-  const ircValue = valueButton(settings.get('strategy.initialCount'), v => settings.set('strategy.initialCount', v), { prompt: 'Adjust IRC', min: -999, max: 999 });
+  const rangeMin = valueButton(settings.get('strategy.indexRangeMin'), v => writeRange('strategy.indexRangeMin', v), {
+    prompt: 'Minimum Count',
+    min: -99,
+    max: 99,
+  });
+  const rangeMax = valueButton(settings.get('strategy.indexRangeMax'), v => writeRange('strategy.indexRangeMax', v), {
+    prompt: 'Maximum Count',
+    min: -99,
+    max: 99,
+  });
+  const rules = checkList(
+    RULE_CHECKS.map(({ label, key }) => ({
+      label,
+      checked: settings.get(key),
+      onChange: on => write(key, on),
+    })),
+  );
+  const ircCheck = checkList([
+    {
+      label: 'Adjust IRC',
+      checked: settings.get('strategy.adjustInitialCount'),
+      onChange: on => settings.set('strategy.adjustInitialCount', on),
+    },
+  ]);
+  const ircValue = valueButton(settings.get('strategy.initialCount'), v => settings.set('strategy.initialCount', v), {
+    prompt: 'Adjust IRC',
+    min: -999,
+    max: 999,
+  });
 
-  body.append(h('div', { class: 'column' },
-    h('div', { class: 'strat-row' }, h('span', { class: 'label' }, 'Strategy:'), h('div', { class: 'strat-row__fill' }, systemSelect)),
-    h('div', { class: 'strat-row' },
-      h('span', { class: 'label' }, 'Indices:'),
-      h('div', { class: 'strat-row__fill' }, indexSelect),
-      button('Select', { onClick: () => app.open('strategy.tables', { mode: 'editMask', maskKey: 'strategy.customIndexMask' }), 'data-action': 'select-indices' })),
-    h('div', { class: 'strat-row' },
-      h('span', { class: 'label' }, 'Index Range:'),
-      h('div', { class: 'strat-row__fill row' }, rangeMin, h('span', { class: 'label' }, 'to'), rangeMax)),
-    h('div', { class: 'strat-row' }, h('span', { class: 'label' }, 'Rules:'), h('div', { class: 'strat-row__fill' }, rules)),
-    h('div', { class: 'row' }, ircCheck, ircValue),
-    button('Display Tables', { icon: 'grid', iconPos: 'bottom', onClick: () => app.open('strategy.tables', { mode: 'view' }), 'data-action': 'display-tables' }),
-  ));
+  body.append(
+    h(
+      'div',
+      { class: 'column' },
+      h(
+        'div',
+        { class: 'strat-row' },
+        h('span', { class: 'label' }, 'Strategy:'),
+        h('div', { class: 'strat-row__fill' }, systemSelect),
+      ),
+      h(
+        'div',
+        { class: 'strat-row' },
+        h('span', { class: 'label' }, 'Indices:'),
+        h('div', { class: 'strat-row__fill' }, indexSelect),
+        button('Select', {
+          onClick: () => app.open('strategy.tables', { mode: 'editMask', maskKey: 'strategy.customIndexMask' }),
+          'data-action': 'select-indices',
+        }),
+      ),
+      h(
+        'div',
+        { class: 'strat-row' },
+        h('span', { class: 'label' }, 'Index Range:'),
+        h('div', { class: 'strat-row__fill row' }, rangeMin, h('span', { class: 'label' }, 'to'), rangeMax),
+      ),
+      h(
+        'div',
+        { class: 'strat-row' },
+        h('span', { class: 'label' }, 'Rules:'),
+        h('div', { class: 'strat-row__fill' }, rules),
+      ),
+      h('div', { class: 'row' }, ircCheck, ircValue),
+      button('Display Tables', {
+        icon: 'grid',
+        iconPos: 'bottom',
+        onClick: () => app.open('strategy.tables', { mode: 'view' }),
+        'data-action': 'display-tables',
+      }),
+    ),
+  );
 
   /** Re-reads every control from the settings. */
   function refresh() {

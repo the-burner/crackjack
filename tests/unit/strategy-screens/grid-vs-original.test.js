@@ -7,8 +7,15 @@ import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
 import { loadFixture } from '../../support/fixtures.js';
 import { ALWAYS, NEVER, NO_ENTRY } from '../../../src/core/strategy/strategy-file.js';
 import {
-  TABLE_VIEWS, columnLabels, countsTables, gridCell, isIndexCell, rowCount, rowLabels,
-  specialtyPlays, viewByKey,
+  TABLE_VIEWS,
+  columnLabels,
+  countsTables,
+  gridCell,
+  isIndexCell,
+  rowCount,
+  rowLabels,
+  specialtyPlays,
+  viewByKey,
 } from '../../../src/core/strategy/strategy-grid.js';
 
 /**
@@ -18,7 +25,12 @@ import {
 const TABLE_NUMBERS = [0, 4, 1, 2, 3, 5];
 
 /** The recording has CSS colours as "rgb(r, g, b)". */
-const RGB = { '#00ff00': 'rgb(0, 255, 0)', '#ff0000': 'rgb(255, 0, 0)', '#00ffff': 'rgb(0, 255, 255)', '#0000ff': 'rgb(0, 0, 255)' };
+const RGB = {
+  '#00ff00': 'rgb(0, 255, 0)',
+  '#ff0000': 'rgb(255, 0, 0)',
+  '#00ffff': 'rgb(0, 255, 255)',
+  '#0000ff': 'rgb(0, 0, 255)',
+};
 /** Blank cells were a single space. */
 const blank = text => (text ?? '').trim();
 
@@ -59,16 +71,16 @@ describe.each(records.map(r => [`${r.name} ${JSON.stringify(r.config)}`, r]))('%
 
     describe(view.label, () => {
       it('labels the rows the same way', () => {
-        expect(rowLabels(view, { extended, earlySurrender: strategy.earlySurrender }))
-          .toEqual(recorded.rowLabels.filter(label => label !== ''));
+        expect(rowLabels(view, { extended, earlySurrender: strategy.earlySurrender })).toEqual(
+          recorded.rowLabels.filter(label => label !== ''),
+        );
       });
 
       it('shows the same text in every cell', () => {
         const table = strategy.tables[view.table];
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < record.columns; c++) {
-            expect(gridCell({ value: table[r][c], view }).text, `row ${r} col ${c}`)
-              .toBe(blank(recorded.cells[r][c]));
+            expect(gridCell({ value: table[r][c], view }).text, `row ${r} col ${c}`).toBe(blank(recorded.cells[r][c]));
           }
         }
       });
@@ -96,8 +108,12 @@ describe.each(records.map(r => [`${r.name} ${JSON.stringify(r.config)}`, r]))('%
 
   it('fills the Insurance/Counts tables the same way', () => {
     const counts = countsTables(strategy);
-    expect([counts.pointValues.rows[0].label, ...counts.pointValues.rows[0].values]).toEqual(record.counts.pointValues[0]);
-    expect([counts.pointValues.rows[1].label, ...counts.pointValues.rows[1].values]).toEqual(record.counts.pointValues[1]);
+    expect([counts.pointValues.rows[0].label, ...counts.pointValues.rows[0].values]).toEqual(
+      record.counts.pointValues[0],
+    );
+    expect([counts.pointValues.rows[1].label, ...counts.pointValues.rows[1].values]).toEqual(
+      record.counts.pointValues[1],
+    );
     expect(counts.startingCount.rows[0].values).toEqual(record.counts.startingCount[0]);
     expect(counts.insuranceHands.rows[0].values).toEqual(record.counts.insuranceHands[0]);
     expect(counts.rule).toBe(record.counts.rule);

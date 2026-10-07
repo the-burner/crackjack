@@ -10,8 +10,16 @@ import { readFileSync } from 'node:fs';
 
 const DIR = 'src/ui/styles/';
 /** The order index.html loads them in: equal specificity is settled by it. */
-const FILES = ['app.css', 'icons.css', 'screens.css', 'settings.css',
-  'strategy.css', 'drills.css', 'game.css', 'themes.css'];
+const FILES = [
+  'app.css',
+  'icons.css',
+  'screens.css',
+  'settings.css',
+  'strategy.css',
+  'drills.css',
+  'game.css',
+  'themes.css',
+];
 const SOURCE = FILES.map(name => readFileSync(DIR + name, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''));
 
 const THEMES = ['classic', 'latte', 'mocha'];
@@ -37,7 +45,9 @@ function blocks(text) {
 
 /** Does a block's selector list style the html element under this theme? */
 function styles(selector, theme) {
-  return selector.split(',').map(part => part.trim())
+  return selector
+    .split(',')
+    .map(part => part.trim())
     .some(part => part === ':root' || (theme !== 'classic' && part === `[data-theme='${theme}']`));
 }
 
@@ -73,15 +83,16 @@ const HEX = /^#([0-9a-f]{3,8})$/i;
 function parse(value) {
   const hex = HEX.exec(value);
   if (hex) {
-    const digits = hex[1].length <= 4
-      ? [...hex[1]].map(digit => digit + digit).join('')
-      : hex[1];
+    const digits = hex[1].length <= 4 ? [...hex[1]].map(digit => digit + digit).join('') : hex[1];
     const bytes = digits.match(/../g).map(pair => parseInt(pair, 16));
     return { r: bytes[0], g: bytes[1], b: bytes[2], a: bytes[3] === undefined ? 1 : bytes[3] / 255 };
   }
   const rgb = /^rgba?\(([^)]+)\)$/.exec(value);
   if (rgb) {
-    const parts = rgb[1].split(/[,/\s]+/).filter(Boolean).map(Number);
+    const parts = rgb[1]
+      .split(/[,/\s]+/)
+      .filter(Boolean)
+      .map(Number);
     return { r: parts[0], g: parts[1], b: parts[2], a: parts[3] === undefined ? 1 : parts[3] };
   }
   throw new Error(`cannot read the colour ${value}`);
@@ -95,7 +106,10 @@ function args(text) {
   for (let i = 0; i < text.length; i += 1) {
     if (text[i] === '(') depth += 1;
     else if (text[i] === ')') depth -= 1;
-    else if (text[i] === ',' && depth === 0) { out.push(text.slice(start, i)); start = i + 1; }
+    else if (text[i] === ',' && depth === 0) {
+      out.push(text.slice(start, i));
+      start = i + 1;
+    }
   }
   out.push(text.slice(start));
   return out.map(part => part.trim());
@@ -189,7 +203,7 @@ function below(floor, pairs) {
 }
 
 describe('text over the felt', () => {
-  it('writes the drills\' and the game\'s felt accent legibly on both felts', () => {
+  it("writes the drills' and the game's felt accent legibly on both felts", () => {
     // Display text (.drill__count at 600 20px, .bet-overlay__title at bold
     // 17px), held to the large-text floor: Latte has no accent that reaches
     // 4.5 on its own light felt, its darkest managing about 4.2.
@@ -204,13 +218,19 @@ describe('text over the felt', () => {
     expect(below(LARGE, pairs)).toEqual([]);
   });
 
-  it('writes the felt text legibly on both of the Full Table drill\'s felts', () => {
+  it("writes the felt text legibly on both of the Full Table drill's felts", () => {
     // .drill__message is 600 16px on --felt; the drill's canvas notice is
     // bold 32px, and that is the only text over --felt-alt.
-    const onFelt = THEMES.map(theme =>
-      [`${theme} --felt-text on --felt`, value('--felt-text', theme), value('--felt', theme)]);
-    const onAlt = THEMES.map(theme =>
-      [`${theme} --felt-text on --felt-alt`, value('--felt-text', theme), value('--felt-alt', theme)]);
+    const onFelt = THEMES.map(theme => [
+      `${theme} --felt-text on --felt`,
+      value('--felt-text', theme),
+      value('--felt', theme),
+    ]);
+    const onAlt = THEMES.map(theme => [
+      `${theme} --felt-text on --felt-alt`,
+      value('--felt-text', theme),
+      value('--felt-alt', theme),
+    ]);
     expect([...below(AA, onFelt), ...below(LARGE, onAlt)]).toEqual([]);
   });
 
@@ -219,11 +239,12 @@ describe('text over the felt', () => {
     // which is dark in every theme by design: --felt-fallback stands in for it.
     // The photograph has lighter passages than its fallback, so the ink has to
     // be a light one and not merely clear the fallback.
-    const pairs = THEMES.map(theme =>
-      [`${theme} --bar-text on --felt-fallback`,
-        value('--bar-text', theme), value('--felt-fallback', theme)]);
-    const dark = THEMES
-      .map(theme => [theme, luminance(value('--bar-text', theme))])
+    const pairs = THEMES.map(theme => [
+      `${theme} --bar-text on --felt-fallback`,
+      value('--bar-text', theme),
+      value('--felt-fallback', theme),
+    ]);
+    const dark = THEMES.map(theme => [theme, luminance(value('--bar-text', theme))])
       .filter(([, light]) => light < 0.5)
       .map(([theme, light]) => `${theme} --bar-text luminance: ${show(light)}`);
     expect([...below(AA, pairs), ...dark]).toEqual([]);
@@ -231,8 +252,7 @@ describe('text over the felt', () => {
 
   it('keeps the two Full Table felts plainly different colours', () => {
     // The second table's colour is the only cue for which table is being counted.
-    const same = THEMES
-      .map(theme => [theme, difference(value('--felt', theme), value('--felt-alt', theme))])
+    const same = THEMES.map(theme => [theme, difference(value('--felt', theme), value('--felt-alt', theme))])
       .filter(([, gap]) => gap < 25)
       .map(([theme, gap]) => `${theme} --felt to --felt-alt: ${show(gap)}`);
     expect(same).toEqual([]);
@@ -244,11 +264,13 @@ describe('text on a coloured tile', () => {
     const pairs = THEMES.flatMap(theme => {
       const mark = value('--tile-mark-text', theme);
       return [
-        ...['--tile-good', '--tile-close', '--tile-bad', '--tile-previous'].map(name =>
-          [`${theme} --tile-mark-text on ${name}`, mark, value(name, theme)]),
+        ...['--tile-good', '--tile-close', '--tile-bad', '--tile-previous'].map(name => [
+          `${theme} --tile-mark-text on ${name}`,
+          mark,
+          value(name, theme),
+        ]),
         [`${theme} --tile-text on --tile-bg`, value('--tile-text', theme), value('--tile-bg', theme)],
-        [`${theme} --toast-error-text on --tile-bad`,
-          value('--toast-error-text', theme), value('--tile-bad', theme)],
+        [`${theme} --toast-error-text on --tile-bad`, value('--toast-error-text', theme), value('--tile-bad', theme)],
       ];
     });
     expect(below(CHIP, pairs)).toEqual([]);
@@ -258,7 +280,11 @@ describe('text on a coloured tile', () => {
     const pairs = THEMES.flatMap(theme => [
       [`${theme} plain: --page-bg on --text`, value('--page-bg', theme), value('--text', theme)],
       [`${theme} good: --tile-mark-text on --tile-good`, value('--tile-mark-text', theme), value('--tile-good', theme)],
-      [`${theme} error: --toast-error-text on --tile-bad`, value('--toast-error-text', theme), value('--tile-bad', theme)],
+      [
+        `${theme} error: --toast-error-text on --tile-bad`,
+        value('--toast-error-text', theme),
+        value('--tile-bad', theme),
+      ],
     ]);
     expect(below(CHIP, pairs)).toEqual([]);
   });
@@ -288,15 +314,20 @@ describe('text on a coloured tile', () => {
 
 describe('the drill screens', () => {
   it('marks the right answer legibly on a button', () => {
-    const pairs = THEMES.map(theme =>
-      [`${theme} --answer-correct on --btn-bg`,
-        value('--answer-correct', theme), value('--btn-bg', theme)]);
+    const pairs = THEMES.map(theme => [
+      `${theme} --answer-correct on --btn-bg`,
+      value('--answer-correct', theme),
+      value('--btn-bg', theme),
+    ]);
     expect(below(AA, pairs)).toEqual([]);
   });
 
   it('writes an overdue time legibly in the stats panel', () => {
-    const pairs = THEMES.map(theme =>
-      [`${theme} --warning on --panel-bg`, value('--warning', theme), value('--panel-bg', theme)]);
+    const pairs = THEMES.map(theme => [
+      `${theme} --warning on --panel-bg`,
+      value('--warning', theme),
+      value('--panel-bg', theme),
+    ]);
     expect(below(AA, pairs)).toEqual([]);
   });
 
@@ -307,8 +338,7 @@ describe('the drill screens', () => {
   it('cannot show a disabled button as an enabled primary one', () => {
     const declarations = rule('.btn:disabled');
     const opacity = Number(/opacity:\s*([\d.]+)/.exec(declarations)[1]);
-    const background = /(?:^|;)\s*background(?:-color)?:\s*([^;]+)/.exec(declarations)?.[1]
-      ?? 'var(--primary-bg)';
+    const background = /(?:^|;)\s*background(?:-color)?:\s*([^;]+)/.exec(declarations)?.[1] ?? 'var(--primary-bg)';
     const same = [];
     for (const theme of THEMES) {
       const felt = value('--felt', theme);
@@ -323,9 +353,11 @@ describe('the drill screens', () => {
 describe('the controls', () => {
   it('shows the knob of a switch that is on', () => {
     // A control's own parts need 3:1, not 4.5.
-    const pairs = THEMES.map(theme =>
-      [`${theme} --toggle-knob on --check-on`,
-        value('--toggle-knob', theme), value('--check-on', theme)]);
+    const pairs = THEMES.map(theme => [
+      `${theme} --toggle-knob on --check-on`,
+      value('--toggle-knob', theme),
+      value('--check-on', theme),
+    ]);
     expect(below(LARGE, pairs)).toEqual([]);
   });
 
@@ -336,10 +368,8 @@ describe('the controls', () => {
    */
   it('outlines a number field inside a group card, in both themes', () => {
     const pairs = ['latte', 'mocha'].flatMap(theme => [
-      [`${theme} --input-border on --group-bg`,
-        value('--input-border', theme), value('--group-bg', theme)],
-      [`${theme} --input-border on --input-bg`,
-        value('--input-border', theme), value('--input-bg', theme)],
+      [`${theme} --input-border on --group-bg`, value('--input-border', theme), value('--group-bg', theme)],
+      [`${theme} --input-border on --input-bg`, value('--input-border', theme), value('--input-bg', theme)],
     ]);
     expect(below(2.5, pairs)).toEqual([]);
   });
@@ -363,14 +393,18 @@ describe('the controls', () => {
 
 describe('the wordmark', () => {
   it('writes both of its words on the page in large-text contrast', () => {
-    const pairs = THEMES.flatMap(theme => ['--logo-crack', '--logo-jack'].map(name =>
-      [`${theme} ${name} on --page-bg`, value(name, theme), value('--page-bg', theme)]));
+    const pairs = THEMES.flatMap(theme =>
+      ['--logo-crack', '--logo-jack'].map(name => [
+        `${theme} ${name} on --page-bg`,
+        value(name, theme),
+        value('--page-bg', theme),
+      ]),
+    );
     expect(below(LARGE, pairs)).toEqual([]);
   });
 
   it('keeps its two words plainly different colours', () => {
-    const same = THEMES
-      .map(theme => [theme, difference(value('--logo-crack', theme), value('--logo-jack', theme))])
+    const same = THEMES.map(theme => [theme, difference(value('--logo-crack', theme), value('--logo-jack', theme))])
       .filter(([, gap]) => gap < 20)
       .map(([theme, gap]) => `${theme} --logo-crack to --logo-jack: ${show(gap)}`);
     expect(same).toEqual([]);

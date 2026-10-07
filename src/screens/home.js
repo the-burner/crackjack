@@ -13,22 +13,49 @@ export const APP_VERSION = '3.0.0';
 export function homeScreen(app) {
   const { el, body } = standardScreen(app, { title: '', help: 'home', back: false });
   const go = name => () => app.open(name);
-  const drill = (name, detail, screen) => h('button', { type: 'button', class: 'home__drill', onclick: go(screen) },
-    h('span', { class: 'home__drill-name' }, name), h('span', { class: 'home__drill-detail' }, detail));
+  const drill = (name, detail, screen) =>
+    h(
+      'button',
+      { type: 'button', class: 'home__drill', onclick: go(screen) },
+      h('span', { class: 'home__drill-name' }, name),
+      h('span', { class: 'home__drill-detail' }, detail),
+    );
   body.append(
-    h('div', { class: 'column home' },
+    h(
+      'div',
+      { class: 'column home' },
       h('h1', { class: 'home__name', html: WORDMARK_SVG }),
-      button('Play Blackjack', { variant: 'primary', large: true, icon: 'arrow-r', block: true, onClick: () => openTable(app), 'data-action': 'play' }),
-      h('div', { class: 'section' },
+      button('Play Blackjack', {
+        variant: 'primary',
+        large: true,
+        icon: 'arrow-r',
+        block: true,
+        onClick: () => openTable(app),
+        'data-action': 'play',
+      }),
+      h(
+        'div',
+        { class: 'section' },
         h('h2', { class: 'section__title' }, 'Drills'),
-        h('div', { class: 'home__drills' },
+        h(
+          'div',
+          { class: 'home__drills' },
           drill('Flash Drills', 'Strategy and index plays', 'drills.flash.options'),
           drill('Depth Drills', 'Estimate decks played', 'drills.depth.options'),
           drill('Count Drills', 'Running and true count', 'drills.count.options'),
           drill('Full Table Drills', 'Count a whole table', 'drills.full.options'),
-        )),
-      h('div', { class: 'settings-group' },
-        button('Settings', { icon: 'arrow-r', block: true, className: 'list-row', onClick: go('settings'), 'data-action': 'settings' }),
+        ),
+      ),
+      h(
+        'div',
+        { class: 'settings-group' },
+        button('Settings', {
+          icon: 'arrow-r',
+          block: true,
+          className: 'list-row',
+          onClick: go('settings'),
+          'data-action': 'settings',
+        }),
         button('Reset Defaults', { block: true, className: 'list-row', onClick: () => resetDefaults(app) }),
         button('Screen Info', { block: true, className: 'list-row', onClick: () => screenInfo() }),
       ),

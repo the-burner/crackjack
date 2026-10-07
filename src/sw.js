@@ -22,7 +22,8 @@ self.addEventListener('message', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys()
+    caches
+      .keys()
       // Caches from before the Vite build were named cj-<version>.
       .then(keys => Promise.all(keys.filter(k => k.startsWith('cj-')).map(k => caches.delete(k))))
       .then(() => self.clients.claim()),

@@ -27,7 +27,9 @@ export function certificateFor(hostName) {
     }
     console.log(`Creating a locally-trusted certificate for ${hostName} ...`);
     fs.mkdirSync(dir, { recursive: true });
-    execFileSync('mkcert', ['-cert-file', cert, '-key-file', key, hostName, 'localhost', '127.0.0.1'], { stdio: 'inherit' });
+    execFileSync('mkcert', ['-cert-file', cert, '-key-file', key, hostName, 'localhost', '127.0.0.1'], {
+      stdio: 'inherit',
+    });
   }
   return { cert: fs.readFileSync(cert), key: fs.readFileSync(key) };
 }

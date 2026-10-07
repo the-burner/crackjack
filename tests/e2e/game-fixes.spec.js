@@ -17,22 +17,25 @@ async function openTable(page, { settings = {}, seed = 7, size = PORTRAIT } = {}
   }, seed);
   await page.addInitScript(overrides => {
     localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99,
-      'mechanics.otherPlayerSpeed': 99,
-      'mechanics.payoffSpeed': 99,
-      'table.startingBankroll': 1000,
-      'table.seatCount': 4,
-      'table.computerSeats': [false, false, true, true, true, true],
-      'betting.chipValue': 5,
-      'betting.warnOnError': false,
-      'strategy.warnOnError': false,
-      'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
-      'rules.surrender': 'none',
-      'display.hideActionButtons': false,
-      'display.showRunningCount': true,
-      ...overrides,
-    }));
+    localStorage.setItem(
+      'cj.settings',
+      JSON.stringify({
+        'mechanics.dealerSpeed': 99,
+        'mechanics.otherPlayerSpeed': 99,
+        'mechanics.payoffSpeed': 99,
+        'table.startingBankroll': 1000,
+        'table.seatCount': 4,
+        'table.computerSeats': [false, false, true, true, true, true],
+        'betting.chipValue': 5,
+        'betting.warnOnError': false,
+        'strategy.warnOnError': false,
+        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+        'rules.surrender': 'none',
+        'display.hideActionButtons': false,
+        'display.showRunningCount': true,
+        ...overrides,
+      }),
+    );
   }, settings);
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
@@ -46,9 +49,15 @@ async function playRound(page) {
   await grid(page).click({ position: { x: 25, y: 25 } });
   for (let i = 0; i < 25; i++) {
     const stand = page.locator('.table__actions [data-action="stand"]');
-    if (await stand.isVisible()) { await stand.click(); continue; }
+    if (await stand.isVisible()) {
+      await stand.click();
+      continue;
+    }
     const pass = page.locator('.table__actions [data-action="pass"]');
-    if (await pass.isVisible()) { await pass.click(); continue; }
+    if (await pass.isVisible()) {
+      await pass.click();
+      continue;
+    }
     if (await page.locator('.bet-overlay').isVisible()) return;
     await page.waitForTimeout(120);
   }
@@ -114,7 +123,8 @@ test.describe('the action buttons', () => {
       const covered = await page.evaluate(() => {
         const hits = (a, b) => !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
         const buttons = [...document.querySelectorAll('.table__actions .btn')]
-          .filter(el => !el.hidden).map(el => el.getBoundingClientRect());
+          .filter(el => !el.hidden)
+          .map(el => el.getBoundingClientRect());
         return [...document.querySelectorAll('.table__chip')]
           .filter(chip => buttons.some(box => hits(chip.getBoundingClientRect(), box)))
           .map(chip => chip.dataset.seat);
@@ -125,46 +135,68 @@ test.describe('the action buttons', () => {
 });
 
 test.describe('the result shown on a seat at the payoff', () => {
-  for (const [name, size] of [['portrait', PORTRAIT], ['landscape', { width: 844, height: 390 }]]) test(`looks like the app’s other pop-ups in ${name}`, async ({ page }) => {
-    await openTable(page, { settings: { 'mechanics.payoffSpeed': 1 }, size });
-    await grid(page).click({ position: { x: 25, y: 25 } });
-    for (let i = 0; i < 25; i++) {
-      const stand = page.locator('.table__actions [data-action="stand"]');
-      if (await stand.isVisible()) { await stand.click(); continue; }
-      const pass = page.locator('.table__actions [data-action="pass"]');
-      if (await pass.isVisible()) { await pass.click(); continue; }
-      if (await page.locator('.table__result').count()) break;
-      await page.waitForTimeout(100);
-    }
-    const result = page.locator('.table__result').first();
-    await expect(result).toBeVisible({ timeout: 30000 });
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', { width: 844, height: 390 }],
+  ])
+    test(`looks like the app’s other pop-ups in ${name}`, async ({ page }) => {
+      await openTable(page, { settings: { 'mechanics.payoffSpeed': 1 }, size });
+      await grid(page).click({ position: { x: 25, y: 25 } });
+      for (let i = 0; i < 25; i++) {
+        const stand = page.locator('.table__actions [data-action="stand"]');
+        if (await stand.isVisible()) {
+          await stand.click();
+          continue;
+        }
+        const pass = page.locator('.table__actions [data-action="pass"]');
+        if (await pass.isVisible()) {
+          await pass.click();
+          continue;
+        }
+        if (await page.locator('.table__result').count()) break;
+        await page.waitForTimeout(100);
+      }
+      const result = page.locator('.table__result').first();
+      await expect(result).toBeVisible({ timeout: 30000 });
 
-    const compare = await page.evaluate(async () => {
-      const el = document.querySelector('.table__result');
-      const tone = el.dataset.tone;
-      const { toast } = await import('/src/ui/toast.js');
-      const pop = toast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain' });
-      const pick = node => {
-        const c = getComputedStyle(node);
-        return {
-          radius: c.borderTopLeftRadius, shadow: c.boxShadow !== 'none',
-          weight: c.fontWeight, size: c.fontSize, background: c.backgroundColor, color: c.color,
+      const compare = await page.evaluate(async () => {
+        const el = document.querySelector('.table__result');
+        const tone = el.dataset.tone;
+        const { toast } = await import('/src/ui/toast.js');
+        const pop = toast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain' });
+        const pick = node => {
+          const c = getComputedStyle(node);
+          return {
+            radius: c.borderTopLeftRadius,
+            shadow: c.boxShadow !== 'none',
+            weight: c.fontWeight,
+            size: c.fontSize,
+            background: c.backgroundColor,
+            color: c.color,
+          };
         };
-      };
-      const box = el.getBoundingClientRect();
-      const holder = el.parentElement;
-      const clipped = getComputedStyle(holder).overflow !== 'visible'
-        && (box.height > holder.clientHeight + 0.5 || box.width > holder.clientWidth + 0.5);
-      const out = { tone, result: pick(el), popUp: pick(pop), chipWidth: holder.getBoundingClientRect().width, width: box.width, clipped };
-      pop.remove();
-      return out;
+        const box = el.getBoundingClientRect();
+        const holder = el.parentElement;
+        const clipped =
+          getComputedStyle(holder).overflow !== 'visible' &&
+          (box.height > holder.clientHeight + 0.5 || box.width > holder.clientWidth + 0.5);
+        const out = {
+          tone,
+          result: pick(el),
+          popUp: pick(pop),
+          chipWidth: holder.getBoundingClientRect().width,
+          width: box.width,
+          clipped,
+        };
+        pop.remove();
+        return out;
+      });
+      // A pill sized to its text, like the pop-ups, not a slab filling the seat.
+      expect(compare.result).toEqual(compare.popUp);
+      expect(compare.width).toBeLessThan(compare.chipWidth);
+      // Nothing of the pill may be cut off by the seat's label box.
+      expect(compare.clipped).toBe(false);
     });
-    // A pill sized to its text, like the pop-ups, not a slab filling the seat.
-    expect(compare.result).toEqual(compare.popUp);
-    expect(compare.width).toBeLessThan(compare.chipWidth);
-    // Nothing of the pill may be cut off by the seat's label box.
-    expect(compare.clipped).toBe(false);
-  });
 });
 
 test.describe('opening the table', () => {
@@ -172,11 +204,16 @@ test.describe('opening the table', () => {
     await page.setViewportSize(PORTRAIT);
     await page.addInitScript(() => {
       localStorage.clear();
-      localStorage.setItem('cj.settings', JSON.stringify({
-        // Slow enough to watch: each step of the shuffle takes most of a second.
-        'mechanics.dealerSpeed': 1, 'table.burnCards': 1, 'table.showBurnCards': true,
-        'display.hideActionButtons': false,
-      }));
+      localStorage.setItem(
+        'cj.settings',
+        JSON.stringify({
+          // Slow enough to watch: each step of the shuffle takes most of a second.
+          'mechanics.dealerSpeed': 1,
+          'table.burnCards': 1,
+          'table.showBurnCards': true,
+          'display.hideActionButtons': false,
+        }),
+      );
     });
     await page.goto('/index.html');
     await page.locator('[data-action="play"]').click();

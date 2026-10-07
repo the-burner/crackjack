@@ -84,7 +84,8 @@ export function insuranceOffered(rules, upcard, playerHasTwentyOne) {
  */
 export function doubleAllowed(rules, hand) {
   if (hand.cardCount < 2) return false;
-  if (hand.cardCount > 2 && !(rules.doubleAnyNumberOfCards || (rules.doubleOnThreeCards && hand.cardCount === 3))) return false;
+  if (hand.cardCount > 2 && !(rules.doubleAnyNumberOfCards || (rules.doubleOnThreeCards && hand.cardCount === 3)))
+    return false;
   if (hand.isSplit && !rules.doubleAfterSplit) {
     // Split aces can still double when that is allowed explicitly.
     if (!(hand.isAcePair() && rules.doubleAfterSplitAces)) return false;
@@ -99,11 +100,16 @@ export function doubleAllowed(rules, hand) {
     return rules.softDoubles === 'a8a9' && (total === 19 || total === 20);
   }
   switch (rules.hardDoubles) {
-    case 'any': return true;
-    case '8-11': return hardTotal >= 8 && hardTotal <= 11;
-    case '9-11': return hardTotal >= 9 && hardTotal <= 11;
-    case '10-11': return hardTotal >= 10 && hardTotal <= 11;
-    default: return false;
+    case 'any':
+      return true;
+    case '8-11':
+      return hardTotal >= 8 && hardTotal <= 11;
+    case '9-11':
+      return hardTotal >= 9 && hardTotal <= 11;
+    case '10-11':
+      return hardTotal >= 10 && hardTotal <= 11;
+    default:
+      return false;
   }
 }
 
@@ -163,7 +169,9 @@ export function dealerShouldDraw(rules, dealerHand) {
 export function charlieWin(rules, hand) {
   if (hand.busted()) return false;
   const n = hand.cardCount;
-  return (n === 5 && rules.autoWinFiveCards) || (n === 6 && rules.autoWinSixCards) || (n === 7 && rules.autoWinSevenCards);
+  return (
+    (n === 5 && rules.autoWinFiveCards) || (n === 6 && rules.autoWinSixCards) || (n === 7 && rules.autoWinSevenCards)
+  );
 }
 
 /**
@@ -176,10 +184,14 @@ export function blackjackPremium(rules, hand) {
   if (b.suitedAceJack && hand.isSuitedAceJack) return 1;
   if (b.heartsAceJack && hand.isHeartsAceJack) return 1;
   switch (rules.blackjackPayout) {
-    case '2:1': return 1;
-    case '1:1': return 0;
-    case '6:5': return 0.2;
-    default: return 0.5;
+    case '2:1':
+      return 1;
+    case '1:1':
+      return 0;
+    case '6:5':
+      return 0.2;
+    default:
+      return 0.5;
   }
 }
 
@@ -195,7 +207,12 @@ export function isSuited678(cards) {
   const three = cards.slice(0, 3);
   const suits = new Set(three.map(c => Math.floor((c - 1) / 13)));
   if (suits.size !== 1) return false;
-  return three.map(valueOf).sort((a, b) => a - b).join() === '6,7,8';
+  return (
+    three
+      .map(valueOf)
+      .sort((a, b) => a - b)
+      .join() === '6,7,8'
+  );
 }
 
 /** Describes a three-of-sevens hand: none, unsuited or suited. */

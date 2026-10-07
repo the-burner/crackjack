@@ -14,8 +14,12 @@ export const RESOLUTION_STEPS = { full: 1, half: 2, quarter: 4 };
 const DRILL_UNITS = { decksLeft: 1, halfDecksLeft: 2, quarterDecksLeft: 4, acesLeft: 4 };
 
 export const DRILL_LABELS = {
-  decksLeft: 'Decks Left', halfDecksLeft: 'Half Decks Left', quarterDecksLeft: 'Quarter Decks Left',
-  acesLeft: 'Aces Left', trueCount: 'TC Conversion', trueCountAndDecks: 'TC Conv. & Decks',
+  decksLeft: 'Decks Left',
+  halfDecksLeft: 'Half Decks Left',
+  quarterDecksLeft: 'Quarter Decks Left',
+  acesLeft: 'Aces Left',
+  trueCount: 'TC Conversion',
+  trueCountAndDecks: 'TC Conv. & Decks',
 };
 
 /** The two drills that ask for a true count rather than a depth. */
@@ -118,9 +122,8 @@ export function generateDepthTest(o) {
   const answer = trueCountFor(runningCount, decksInTray, o);
   if (answer < TRUE_COUNT_ANSWERS.low || answer > TRUE_COUNT_ANSWERS.high) return null;
   if (answer === o.previousAnswer) return null;
-  const panel = o.drill === 'trueCount'
-    ? `RC: ${runningCount} Decks: ${mixedNumber(decksInTray)}`
-    : `RC: ${runningCount}`;
+  const panel =
+    o.drill === 'trueCount' ? `RC: ${runningCount} Decks: ${mixedNumber(decksInTray)}` : `RC: ${runningCount}`;
   return { ...test, answer, runningCount, panel };
 }
 
@@ -155,7 +158,11 @@ export function trueCountFor(runningCount, decksInTray, { decks, strategy, trueC
 
 /** The deepest deck count each tray style can show. */
 export const TRAY_CAPACITY = {
-  eightDeckFront: 8, sixDeckFront: 6, doubleDeckFront: 2, sixDeckRear: 6, doubleDeckRear: 2,
+  eightDeckFront: 8,
+  sixDeckFront: 6,
+  doubleDeckFront: 2,
+  sixDeckRear: 6,
+  doubleDeckRear: 2,
 };
 
 /**

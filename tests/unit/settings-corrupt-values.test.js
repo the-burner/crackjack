@@ -17,8 +17,9 @@ function saved(values) {
 
 describe('corrupt json settings', () => {
   it('replaces a seat list that is not a list of six seats', () => {
-    expect(saved({ 'table.computerSeats': 'oops' }).get('table.computerSeats'))
-      .toEqual(SETTINGS_SCHEMA['table.computerSeats'].default);
+    expect(saved({ 'table.computerSeats': 'oops' }).get('table.computerSeats')).toEqual(
+      SETTINGS_SCHEMA['table.computerSeats'].default,
+    );
     expect(saved({ 'table.computerSeats': [true, false] }).get('table.computerSeats')).toHaveLength(6);
   });
 
@@ -34,8 +35,9 @@ describe('corrupt json settings', () => {
   });
 
   it('replaces a situation list that is missing a situation', () => {
-    expect(saved({ 'drills.flash.situations': { hardStand: true } }).get('drills.flash.situations'))
-      .toEqual(SETTINGS_SCHEMA['drills.flash.situations'].default);
+    expect(saved({ 'drills.flash.situations': { hardStand: true } }).get('drills.flash.situations')).toEqual(
+      SETTINGS_SCHEMA['drills.flash.situations'].default,
+    );
   });
 
   it('keeps a bet ramp whatever number of rows it has', () => {

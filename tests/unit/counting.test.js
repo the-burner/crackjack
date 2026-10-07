@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildStrategy } from '../../src/core/strategy/strategy-tables.js';
 import {
-  Counter, decksRemaining, roundTrueCount, COUNT_UNIT, TC_DIVISION, TC_LAST_DECK, TC_ROUNDING,
+  Counter,
+  decksRemaining,
+  roundTrueCount,
+  COUNT_UNIT,
+  TC_DIVISION,
+  TC_LAST_DECK,
+  TC_ROUNDING,
 } from '../../src/core/counting.js';
 import { cardId, suitOf } from '../../src/core/cards.js';
 import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
@@ -9,12 +15,31 @@ import { loadFixture } from '../support/fixtures.js';
 
 function replay(record) {
   const c = record.config;
-  const strategy = buildStrategy(STRATEGY_FILES[c.system], { decks: c.decks, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
-  const counter = new Counter(strategy, { division: c.division, lastDeck: c.lastDeck, rounding: c.rounding, aceSideCount: c.aceSideCount });
+  const strategy = buildStrategy(STRATEGY_FILES[c.system], {
+    decks: c.decks,
+    hitSoft17: false,
+    doubleAfterSplit: false,
+    noHoleCard: false,
+    indexSet: 'all',
+  });
+  const counter = new Counter(strategy, {
+    division: c.division,
+    lastDeck: c.lastDeck,
+    rounding: c.rounding,
+    aceSideCount: c.aceSideCount,
+  });
   expect(counter.running).toBe(record.initial);
   return record.shoe.map((card, i) => {
     counter.addCard(card, i + 1);
-    return [counter.running, counter.trueCount, counter.exactTrueCount, counter.aces, counter.tens, counter.betCount, counter.decksRemaining(i + 1)].map(v => (v === 0 ? 0 : v));
+    return [
+      counter.running,
+      counter.trueCount,
+      counter.exactTrueCount,
+      counter.aces,
+      counter.tens,
+      counter.betCount,
+      counter.decksRemaining(i + 1),
+    ].map(v => (v === 0 ? 0 : v));
   });
 }
 
@@ -22,7 +47,9 @@ describe('Counter replays the recorded shoes', () => {
   // Round and floor follow the game. "Truncate" follows the drills, which
   // truncated correctly (the game's version was off by one for exact negative
   // integers). Rounding mode 3 was never selectable and is not supported.
-  const game = loadFixture('counting.game').filter(r => r.config.rounding === TC_ROUNDING.round || r.config.rounding === TC_ROUNDING.floor);
+  const game = loadFixture('counting.game').filter(
+    r => r.config.rounding === TC_ROUNDING.round || r.config.rounding === TC_ROUNDING.floor,
+  );
   const drill = loadFixture('counting.drill').filter(r => r.config.rounding === TC_ROUNDING.truncate);
   it.each([...game, ...drill].map(r => [JSON.stringify(r.config), r]))('%s', (_, record) => {
     expect(replay(record)).toEqual(record.steps);
@@ -32,8 +59,19 @@ describe('Counter replays the recorded shoes', () => {
 describe('the counts a Counter keeps', () => {
   // KISS Stage II: ace-neutral and measured as a running count, which is what
   // the ace side count adjusts.
-  const kissII = buildStrategy(STRATEGY_FILES[51], { decks: 2, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
-  const settings = { division: TC_DIVISION.fullDeck, lastDeck: TC_LAST_DECK.halfDeck, rounding: TC_ROUNDING.round, aceSideCount: true };
+  const kissII = buildStrategy(STRATEGY_FILES[51], {
+    decks: 2,
+    hitSoft17: false,
+    doubleAfterSplit: false,
+    noHoleCard: false,
+    indexSet: 'all',
+  });
+  const settings = {
+    division: TC_DIVISION.fullDeck,
+    lastDeck: TC_LAST_DECK.halfDeck,
+    rounding: TC_ROUNDING.round,
+    aceSideCount: true,
+  };
 
   /** Half of the two-deck shoe, as fives apart from the aces asked for. */
   function dealHalfShoe(counter, aces = 0) {
@@ -77,7 +115,11 @@ describe('a count value of 10000', () => {
   };
 
   it('counts the card only when it is red', () => {
-    const counter = new Counter(redSeven, { division: TC_DIVISION.fullDeck, lastDeck: TC_LAST_DECK.halfDeck, rounding: TC_ROUNDING.round });
+    const counter = new Counter(redSeven, {
+      division: TC_DIVISION.fullDeck,
+      lastDeck: TC_LAST_DECK.halfDeck,
+      rounding: TC_ROUNDING.round,
+    });
     counter.addCard(7, 1);
     counter.addCard(20, 2);
     expect(counter.running).toBe(0);
@@ -94,7 +136,11 @@ describe('a count value of 10000', () => {
    * without deciding to diverge on purpose.
    */
   it('treats the king of clubs as red, exactly as the original did', () => {
-    const counter = new Counter(redSeven, { division: TC_DIVISION.fullDeck, lastDeck: TC_LAST_DECK.halfDeck, rounding: TC_ROUNDING.round });
+    const counter = new Counter(redSeven, {
+      division: TC_DIVISION.fullDeck,
+      lastDeck: TC_LAST_DECK.halfDeck,
+      rounding: TC_ROUNDING.round,
+    });
     const kingOfClubs = 26;
     expect(suitOf(kingOfClubs)).toBe(1);
     // A seven in that position would be counted, which is the quirk itself.
@@ -104,7 +150,11 @@ describe('a count value of 10000', () => {
   });
 
   it('counts a red seven in both red suits', () => {
-    const counter = new Counter(redSeven, { division: TC_DIVISION.fullDeck, lastDeck: TC_LAST_DECK.halfDeck, rounding: TC_ROUNDING.round });
+    const counter = new Counter(redSeven, {
+      division: TC_DIVISION.fullDeck,
+      lastDeck: TC_LAST_DECK.halfDeck,
+      rounding: TC_ROUNDING.round,
+    });
     counter.addCard(cardId(7, 2), 1);
     counter.addCard(cardId(7, 3), 2);
     expect(counter.running).toBe(2);
@@ -113,7 +163,13 @@ describe('a count value of 10000', () => {
 
 describe('decksRemaining', () => {
   it('never falls below a tenth of a deck, however much has gone', () => {
-    const overdealt = { decks: 1, cardsGone: 104, countUnit: COUNT_UNIT.deck, division: TC_DIVISION.fullDeck, lastDeck: TC_LAST_DECK.halfDeck };
+    const overdealt = {
+      decks: 1,
+      cardsGone: 104,
+      countUnit: COUNT_UNIT.deck,
+      division: TC_DIVISION.fullDeck,
+      lastDeck: TC_LAST_DECK.halfDeck,
+    };
     expect(decksRemaining(overdealt)).toBe(0.1);
   });
 });

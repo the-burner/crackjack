@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { Hand } from '../../../src/game/engine/hand.js';
 import { cardId } from '../../../src/core/cards.js';
 
-const SPADES = 0, HEARTS = 2, DIAMONDS = 3;
+const SPADES = 0,
+  HEARTS = 2,
+  DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
 
 /** A hand holding the given cards. */

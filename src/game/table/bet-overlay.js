@@ -38,15 +38,19 @@ export function createBetOverlay(handlers) {
 
   const title = h('div', { class: 'bet-overlay__title' });
   const canvas = h('canvas', { class: 'bet-overlay__grid' });
-  const tile = (label, icon, onClick, action) => button(label, { variant: 'nav', icon, onClick, 'data-action': action });
+  const tile = (label, icon, onClick, action) =>
+    button(label, { variant: 'nav', icon, onClick, 'data-action': action });
   const foulButton = tile('Foul', 'minus', handlers.onFoul, 'foul');
-  const buttons = h('div', { class: 'bet-overlay__buttons' },
+  const buttons = h(
+    'div',
+    { class: 'bet-overlay__buttons' },
     tile('Side Bet', 'plus', sideBet, 'side-bet'),
     tile('Reset Bank', 'refresh', handlers.onResetBank, 'reset-bank'),
     tile('Shuffle', 'arrow-r', handlers.onShuffle, 'shuffle'),
     tile('Customize', 'grid', handlers.onCustomize, 'customize'),
     tile('Last Error', 'info', handlers.onLastError, 'last-error'),
-    foulButton);
+    foulButton,
+  );
   const el = h('div', { class: 'bet-overlay', hidden: true }, title, canvas, buttons);
 
   function sideBet() {

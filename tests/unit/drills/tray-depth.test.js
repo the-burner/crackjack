@@ -17,7 +17,11 @@ const photoAt = (decks, style) => {
 describe('the empty tray', () => {
   // These are the empty photographs at the end of each style's series.
   const EMPTY = {
-    eightDeckFront: 303, sixDeckFront: 351, doubleDeckFront: 382, sixDeckRear: 431, doubleDeckRear: 447,
+    eightDeckFront: 303,
+    sixDeckFront: 351,
+    doubleDeckFront: 382,
+    sixDeckRear: 431,
+    doubleDeckRear: 447,
   };
 
   for (const [style, number] of Object.entries(EMPTY)) {
@@ -31,8 +35,11 @@ describe('a tray photo', () => {
   it('stays inside its own style’s series at every depth', () => {
     // Each series is a run of photo numbers; a style must never borrow another's.
     const series = {
-      eightDeckFront: [242, 303], sixDeckFront: [304, 351], doubleDeckFront: [366, 382],
-      sixDeckRear: [383, 431], doubleDeckRear: [432, 447],
+      eightDeckFront: [242, 303],
+      sixDeckFront: [304, 351],
+      doubleDeckFront: [366, 382],
+      sixDeckRear: [383, 431],
+      doubleDeckRear: [432, 447],
     };
     const strayed = [];
     for (const style of Object.keys(TRAY_STYLES)) {

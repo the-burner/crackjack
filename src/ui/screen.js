@@ -13,8 +13,15 @@ import { topBar } from './components.js';
  */
 export function standardScreen(app, { title, help, back = true, className = '', end = [] }) {
   const body = h('div', { class: 'screen__body' });
-  const el = h('section', { class: className },
-    topBar(title, { onBack: back ? () => app.back() : null, onHelp: help ? () => app.help(help, title || 'Crackjack') : null, end }),
-    body);
+  const el = h(
+    'section',
+    { class: className },
+    topBar(title, {
+      onBack: back ? () => app.back() : null,
+      onHelp: help ? () => app.help(help, title || 'Crackjack') : null,
+      end,
+    }),
+    body,
+  );
   return { el, body };
 }

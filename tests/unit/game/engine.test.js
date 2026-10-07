@@ -10,7 +10,9 @@ import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
 import { sideBetSpots } from '../../../src/game/engine/side-bets.js';
 import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.js';
 
-const SPADES = 0, HEARTS = 2, DIAMONDS = 3;
+const SPADES = 0,
+  HEARTS = 2,
+  DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
 
 function makeRules(overrides = {}) {
@@ -140,7 +142,9 @@ describe('dealer play', () => {
     stand.act(ACTION.stand);
     expect(stand.dealer.total).toBe(17);
 
-    const hit = riggedGame(deal(card(10), card(1), card(8), card(6), [card(2)]), { rules: makeRules({ 'rules.dealerHitsSoft17': true }) });
+    const hit = riggedGame(deal(card(10), card(1), card(8), card(6), [card(2)]), {
+      rules: makeRules({ 'rules.dealerHitsSoft17': true }),
+    });
     hit.startRound([{ seat: 1, bet: 10 }]);
     hit.declineInsurance();
     hit.act(ACTION.stand);
@@ -198,7 +202,9 @@ describe('bonuses', () => {
 
   it('pays suited sevens 10:1', () => {
     const rules = makeRules({ 'bonuses.sevens777': 'suited10:1' });
-    const game = riggedGame(deal(cardId(7, HEARTS), card(10), cardId(7, HEARTS), card(10), [cardId(7, HEARTS)]), { rules });
+    const game = riggedGame(deal(cardId(7, HEARTS), card(10), cardId(7, HEARTS), card(10), [cardId(7, HEARTS)]), {
+      rules,
+    });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.hit);
     expect(game.hands[0].result).toBe('Bonus');
@@ -237,8 +243,11 @@ describe('shoe', () => {
   it('counts only the cards that are face up', () => {
     const seen = [];
     const game = new BlackjackGame({
-      rules: makeRules(), table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true },
-      bankroll: 1000, random: seededRandom(3), onCardSeen: c => seen.push(c),
+      rules: makeRules(),
+      table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true },
+      bankroll: 1000,
+      random: seededRandom(3),
+      onCardSeen: c => seen.push(c),
     });
     game.startRound([{ seat: 1, bet: 10 }]);
     // Three cards are face up after the deal; the hole card is counted when revealed.
@@ -249,7 +258,10 @@ describe('shoe', () => {
 describe('seats and bets', () => {
   it('leaves out a seat that did not bet', () => {
     const game = riggedGame([], { table: { seatCount: 2 } });
-    game.startRound([{ seat: 1, bet: 0 }, { seat: 2, bet: 10 }]);
+    game.startRound([
+      { seat: 1, bet: 0 },
+      { seat: 2, bet: 10 },
+    ]);
     expect(game.hands.map(hand => hand.seat)).toEqual([2]);
     expect(game.bankroll).toBe(990);
   });
@@ -502,7 +514,10 @@ describe('side bets through the engine', () => {
   it('adds the game bonus on top of a hand the table already paid a bonus', () => {
     const rules = makeRules({ 'bonuses.fiveCard21': true });
     const sideBetGame = decodeSideBetGame(SIDE_BET_GAME_DEFINITIONS[17]);
-    const game = riggedGame(deal(card(2), card(10), card(3), card(7), [card(4), card(5), card(7)]), { rules, sideBetGame });
+    const game = riggedGame(deal(card(2), card(10), card(3), card(7), [card(4), card(5), card(7)]), {
+      rules,
+      sideBetGame,
+    });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.hit);
     game.act(ACTION.hit);

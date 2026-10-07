@@ -47,7 +47,12 @@ describe('namespaced storage', () => {
   });
 
   it('falls back to memory when localStorage cannot be reached', () => {
-    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('blocked'); } });
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new Error('blocked');
+      },
+    });
     try {
       const storage = new Storage();
       storage.set('a', 1);
@@ -59,7 +64,13 @@ describe('namespaced storage', () => {
   });
 
   it('falls back to memory when localStorage refuses to write', () => {
-    globalThis.localStorage = { setItem() { throw new Error('full'); }, getItem: () => null, removeItem() {} };
+    globalThis.localStorage = {
+      setItem() {
+        throw new Error('full');
+      },
+      getItem: () => null,
+      removeItem() {},
+    };
     try {
       expect(new Storage().persistent).toBe(false);
     } finally {
@@ -69,7 +80,9 @@ describe('namespaced storage', () => {
 
   it('keeps going when a write fails, and reports it once', () => {
     const backend = new MemoryBackend();
-    backend.setItem = () => { throw new Error('quota'); };
+    backend.setItem = () => {
+      throw new Error('quota');
+    };
     const storage = new Storage(backend);
     const seen = [];
     storage.onWriteError = err => seen.push(err.message);
@@ -81,7 +94,14 @@ describe('namespaced storage', () => {
   it('tells a watcher when another tab changes a key', () => {
     const { backend, storage } = store();
     let onStorage = null;
-    const target = { addEventListener: (type, fn) => { onStorage = fn; }, removeEventListener: () => { onStorage = null; } };
+    const target = {
+      addEventListener: (type, fn) => {
+        onStorage = fn;
+      },
+      removeEventListener: () => {
+        onStorage = null;
+      },
+    };
     const seen = [];
     const stop = storage.watch('settings', value => seen.push(value), target);
     backend.setItem('cj.settings', '{"a":1}');

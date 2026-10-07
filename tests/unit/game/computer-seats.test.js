@@ -33,7 +33,15 @@ function makeRules(overrides = {}) {
 function riggedGame(cards, { rules = makeRules(), table = {}, computerPlay = null } = {}) {
   const game = new BlackjackGame({
     rules,
-    table: { decks: 6, burnCards: 0, seatCount: 2, computerSeats: [2], computerBet: 5, doubleDownCardFaceUp: true, ...table },
+    table: {
+      decks: 6,
+      burnCards: 0,
+      seatCount: 2,
+      computerSeats: [2],
+      computerBet: 5,
+      doubleDownCardFaceUp: true,
+      ...table,
+    },
     bankroll: 1000,
     random: seededRandom(1),
     computerPlay,
@@ -67,8 +75,13 @@ describe('a computer seat deciding its play', () => {
     const hand = session.game.hands[0];
     const upcard = card(6);
     const expected = correctPlay({
-      strategy: session.strategy, rules: session.rules, hand, upcard,
-      counts: session.counts, shoe: session.game.shoe, handsInSeat: 1,
+      strategy: session.strategy,
+      rules: session.rules,
+      hand,
+      upcard,
+      counts: session.counts,
+      shoe: session.game.shoe,
+      handsInSeat: 1,
     }).action;
     const played = session.computerAction(hand, { dealerUpcard: upcard });
     expect(played).toBe(expected === ACTION.surrender ? ACTION.stand : expected);
@@ -90,7 +103,9 @@ describe('a computer seat deciding its play', () => {
     const random = seededRandom(5);
     const spy = vi.spyOn(Math, 'random').mockImplementation(() => random());
     const asked = [];
-    const session = new GameSession(makeApp({ 'table.seatCount': 2, 'table.computerSeats': [false, true, false, false, false, false] }));
+    const session = new GameSession(
+      makeApp({ 'table.seatCount': 2, 'table.computerSeats': [false, true, false, false, false, false] }),
+    );
     const real = session.computerAction.bind(session);
     session.computerAction = (hand, context) => {
       asked.push(hand.key);
@@ -112,11 +127,15 @@ describe('a computer seat that splits', () => {
   it('plays on the hand it split instead of abandoning it', () => {
     let splits = 0;
     const computerPlay = hand => {
-      if (hand.isPair() && splits === 0) { splits += 1; return ACTION.split; }
+      if (hand.isPair() && splits === 0) {
+        splits += 1;
+        return ACTION.split;
+      }
       return hand.total < 17 ? ACTION.hit : ACTION.stand;
     };
     const game = riggedGame([...eights, card(5), card(4), card(3), card(2)], {
-      rules: makeRules({ 'rules.maxSplitHands': 4 }), computerPlay,
+      rules: makeRules({ 'rules.maxSplitHands': 4 }),
+      computerPlay,
     });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.stand);
@@ -149,7 +168,8 @@ describe('a computer seat that splits', () => {
     const aces = [card(10), card(1), card(6), card(7), card(1, 1), card(9)];
     const computerPlay = hand => (hand.isPair() ? ACTION.split : ACTION.stand);
     const game = riggedGame(aces, {
-      rules: makeRules({ 'rules.maxSplitHands': 4, 'rules.hitSplitAces': false }), computerPlay,
+      rules: makeRules({ 'rules.maxSplitHands': 4, 'rules.hitSplitAces': false }),
+      computerPlay,
     });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.stand);
@@ -191,8 +211,13 @@ describe('a computer seat the strategy would have surrender', () => {
     const hand = { ...session.game.hands[0], cards: [card(10), card(6)] };
     Object.setPrototypeOf(hand, Object.getPrototypeOf(session.game.hands[0]));
     const withoutSurrender = correctPlay({
-      strategy: session.strategy, rules: { ...session.rules, surrender: 'none' }, hand, upcard: card(1),
-      counts: session.counts, shoe: session.game.shoe, handsInSeat: 1,
+      strategy: session.strategy,
+      rules: { ...session.rules, surrender: 'none' },
+      hand,
+      upcard: card(1),
+      counts: session.counts,
+      shoe: session.game.shoe,
+      handsInSeat: 1,
     }).action;
     expect(session.computerAction(hand, { dealerUpcard: card(1) })).toBe(withoutSurrender);
   });

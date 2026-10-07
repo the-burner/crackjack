@@ -29,12 +29,16 @@ export function isStrategyFileText(text) {
   if (nameEnd < 2) return false;
   try {
     const file = parseStrategyFile(text);
-    return file.name.length > 0
-      && file.decks >= 0 && file.decks <= 8
-      && file.countValues.slice(1, 11).every(Number.isFinite)
-      && file.initialRunningCount.length === 8 && file.initialRunningCount.every(Number.isFinite)
-      && file.insuranceByDecks.slice(1).every(Number.isFinite)
-      && file.groups.every(row => row.every(Number.isFinite));
+    return (
+      file.name.length > 0 &&
+      file.decks >= 0 &&
+      file.decks <= 8 &&
+      file.countValues.slice(1, 11).every(Number.isFinite) &&
+      file.initialRunningCount.length === 8 &&
+      file.initialRunningCount.every(Number.isFinite) &&
+      file.insuranceByDecks.slice(1).every(Number.isFinite) &&
+      file.groups.every(row => row.every(Number.isFinite))
+    );
   } catch {
     return false;
   }
@@ -81,7 +85,12 @@ export function addStrategy({ files, catalog }, text, name = text.slice(1, text.
     id,
     name,
     files: insertBefore(files, 'export const STRATEGY_FILES = {', '\n};', `\n  ${id}: ${JSON.stringify(text)},`),
-    catalog: insertBefore(catalog, 'export const BUILTIN_STRATEGIES = [', '\n].map(', `\n  [${id}, ${singleQuoted(name)}],`),
+    catalog: insertBefore(
+      catalog,
+      'export const BUILTIN_STRATEGIES = [',
+      '\n].map(',
+      `\n  [${id}, ${singleQuoted(name)}],`,
+    ),
   };
 }
 
@@ -93,8 +102,18 @@ export function addSideBetGame(games, definition, name = sideBetGameName(definit
   if (!isSideBetDefinition(definition)) throw new Error('That is not a side-bet game. Probably an incorrect code.');
   if (games.includes(JSON.stringify(definition))) throw new Error('That game is already bundled.');
   const id = Math.max(...objectIds(games, 'export const SIDE_BET_GAME_DEFINITIONS = {')) + 1;
-  let out = insertBefore(games, 'export const BUILTIN_SIDE_BET_GAMES = [', '\n];', `\n  { id: ${id}, name: ${JSON.stringify(name)} },`);
-  out = insertBefore(out, 'export const SIDE_BET_GAME_DEFINITIONS = {', '\n};', `\n  ${id}: ${JSON.stringify(definition)},`);
+  let out = insertBefore(
+    games,
+    'export const BUILTIN_SIDE_BET_GAMES = [',
+    '\n];',
+    `\n  { id: ${id}, name: ${JSON.stringify(name)} },`,
+  );
+  out = insertBefore(
+    out,
+    'export const SIDE_BET_GAME_DEFINITIONS = {',
+    '\n};',
+    `\n  ${id}: ${JSON.stringify(definition)},`,
+  );
   return { id, name, games: out };
 }
 
@@ -115,7 +134,11 @@ async function main([kind, code, ...rest]) {
   }
   let added;
   if (kind === 'strategy') {
-    added = addStrategy({ files: read(STRATEGY_FILES), catalog: read(STRATEGY_CATALOG) }, await download(strategyUrl(code)), name);
+    added = addStrategy(
+      { files: read(STRATEGY_FILES), catalog: read(STRATEGY_CATALOG) },
+      await download(strategyUrl(code)),
+      name,
+    );
     write(STRATEGY_FILES, added.files);
     write(STRATEGY_CATALOG, added.catalog);
   } else {

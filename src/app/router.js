@@ -28,7 +28,11 @@ function storableParams(params) {
 }
 
 export class Router {
-  constructor(root, app, { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false } = {}) {
+  constructor(
+    root,
+    app,
+    { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false } = {},
+  ) {
     this.root = root;
     this.app = app;
     this.history = history;
@@ -168,8 +172,10 @@ export class Router {
    */
   reconcile(wanted) {
     // Closes from the top until what is left is the start of the wanted stack.
-    while (this.stack.length > wanted.length
-      || (this.stack.length > 1 && this.current.name !== wanted[this.stack.length - 1].name)) {
+    while (
+      this.stack.length > wanted.length ||
+      (this.stack.length > 1 && this.current.name !== wanted[this.stack.length - 1].name)
+    ) {
       if (!this.closeTop()) {
         // A screen kept itself open, so the entry it would have used goes back.
         this.history?.pushState(this.entry, '');

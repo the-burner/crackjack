@@ -10,8 +10,17 @@ import { defaultRandom } from '../../core/random.js';
 import { Hand, PLAYER } from './hand.js';
 import { Shoe } from './shoe.js';
 import {
-  dealerPeeks, insuranceOffered, doubleAllowed, splitAllowed, splitAcesMayDraw, splitAcesMayHit,
-  surrenderAllowed, earlySurrenderAllowed, dealerShouldDraw, bustValue, charlieWin,
+  dealerPeeks,
+  insuranceOffered,
+  doubleAllowed,
+  splitAllowed,
+  splitAcesMayDraw,
+  splitAcesMayHit,
+  surrenderAllowed,
+  earlySurrenderAllowed,
+  dealerShouldDraw,
+  bustValue,
+  charlieWin,
 } from './rules.js';
 import { settleHand, RESULT } from './settlement.js';
 import { evaluateSideBet, evaluateHandBonus, sideBetSpots } from './side-bets.js';
@@ -57,7 +66,19 @@ export class BlackjackGame {
    * @param {() => number} [o.trueCount]  Current true count, for count-gated side-bet rules.
    * @param {(dealer: Hand) => boolean} [o.beforeDealerDraw]  Return false to make the dealer stand (dealer errors).
    */
-  constructor({ rules, table, bankroll, random = defaultRandom, computerPlay = null, onCardSeen = null, sideBetGame = null, trueCount = () => 0, beforeDealerDraw = null, onGoodHandBusted = null, onShuffle = null }) {
+  constructor({
+    rules,
+    table,
+    bankroll,
+    random = defaultRandom,
+    computerPlay = null,
+    onCardSeen = null,
+    sideBetGame = null,
+    trueCount = () => 0,
+    beforeDealerDraw = null,
+    onGoodHandBusted = null,
+    onShuffle = null,
+  }) {
     this.rules = rules;
     this.table = table;
     this.bankroll = bankroll;
@@ -99,9 +120,10 @@ export class BlackjackGame {
     const seats = this.table.computerSeats ?? [];
     if (!this.table.playersComeAndGo || seats.length === 0) return seats;
     if (this.seatedComputers && this.random() > COME_AND_GO_CHANCE) return this.seatedComputers;
-    const wanted = seats.length === 1
-      ? Math.floor(this.random() * 2)
-      : Math.min(seats.length, Math.floor(this.random() * seats.length) + 1);
+    const wanted =
+      seats.length === 1
+        ? Math.floor(this.random() * 2)
+        : Math.min(seats.length, Math.floor(this.random() * seats.length) + 1);
     const free = [...seats];
     const taken = [];
     while (taken.length < wanted && free.length > 0) {
@@ -218,7 +240,10 @@ export class BlackjackGame {
     const peeking = this.peeking();
     if (!peeking.adjacentHands || hand.owner === PLAYER.human) return false;
     const humanBeside = side => this.hands.some(h => h.owner === PLAYER.human && h.seat === hand.seat + side);
-    for (const [side, key] of [[1, 'next'], [-1, 'previous']]) {
+    for (const [side, key] of [
+      [1, 'next'],
+      [-1, 'previous'],
+    ]) {
       if (!humanBeside(side)) continue;
       if (peeking.randomizeHand) {
         if (this.peekedSides?.[key]) return true;
@@ -385,15 +410,24 @@ export class BlackjackGame {
     if (!this.availableActions()[action]) return this.takeEvents();
     this.emit('action', { hand: hand.key, action });
     switch (action) {
-      case ACTION.hit: this.hit(hand); break;
-      case ACTION.stand: this.stand(hand); break;
-      case ACTION.double: this.double(hand); break;
+      case ACTION.hit:
+        this.hit(hand);
+        break;
+      case ACTION.stand:
+        this.stand(hand);
+        break;
+      case ACTION.double:
+        this.double(hand);
+        break;
       case ACTION.split:
         if (this.split(hand)) this.emit('turn', { hand: hand.key });
         else this.advance();
         break;
-      case ACTION.surrender: this.surrender(hand); break;
-      default: break;
+      case ACTION.surrender:
+        this.surrender(hand);
+        break;
+      default:
+        break;
     }
     return this.takeEvents();
   }
@@ -491,8 +525,10 @@ export class BlackjackGame {
     if (this.callsGoodHandBust(hand)) return;
     // A redoubled hand is finished unless the table doubles on any number of cards.
     const redoubled = hand.doubleBet > hand.bet && !this.rules.doubleAnyNumberOfCards;
-    const mayContinue = (this.rules.hitAfterDouble || this.rules.redouble || this.rules.doubleDownRescue)
-      && hand.total <= 20 && !redoubled;
+    const mayContinue =
+      (this.rules.hitAfterDouble || this.rules.redouble || this.rules.doubleDownRescue) &&
+      hand.total <= 20 &&
+      !redoubled;
     if (mayContinue) {
       this.emit('turn', { hand: hand.key });
       return;
@@ -519,7 +555,11 @@ export class BlackjackGame {
     // Keep the new hand next to its sibling so play order follows the table.
     this.hands.splice(this.activeIndex + 1, 0, newHand);
     // Every hand in this seat shares the split count, so resplit limits apply.
-    this.hands.filter(h => h.seat === hand.seat).forEach(h => { h.splitCount = splitCount; });
+    this.hands
+      .filter(h => h.seat === hand.seat)
+      .forEach(h => {
+        h.splitCount = splitCount;
+      });
     this.emit('split', { hand: hand.key, newHand: newHand.key, card: moved });
 
     this.dealTo(hand, { faceUp: this.dealtFaceUp(hand) });
@@ -542,7 +582,9 @@ export class BlackjackGame {
     const guard = 12;
     for (let i = 0; i < guard; i++) {
       if (hand.isNatural() || hand.busted() || hand.stood) break;
-      const action = this.computerPlay?.(hand, { dealerUpcard: this.dealer.cards[0], game: this }) ?? defaultComputerAction(this.rules, hand, this.dealer.cards[0]);
+      const action =
+        this.computerPlay?.(hand, { dealerUpcard: this.dealer.cards[0], game: this }) ??
+        defaultComputerAction(this.rules, hand, this.dealer.cards[0]);
       if (action === ACTION.double && doubleAllowed(this.rules, hand)) {
         hand.doubleBet += hand.bet;
         hand.doubled = true;
@@ -597,12 +639,25 @@ export class BlackjackGame {
     // a face-down game's hands, and a double card dealt face down in any game.
     for (const hand of this.hands) this.revealHand(hand);
     for (const hand of this.hands) {
-      const { payout, result, net } = settleHand({ rules: this.rules, hand, dealer: this.dealer, dealerBlackjack: this.dealerBlackjack });
+      const { payout, result, net } = settleHand({
+        rules: this.rules,
+        hand,
+        dealer: this.dealer,
+        dealerBlackjack: this.dealerBlackjack,
+      });
       const side = this.settleSideBets(hand, result);
       hand.result = result;
       hand.payout = payout + side.payout;
       if (hand.owner === PLAYER.human) this.bankroll += hand.payout;
-      this.emit('settled', { hand: hand.key, result, payout: hand.payout, net: net + side.net, seat: hand.seat, owner: hand.owner, sideBets: side.details });
+      this.emit('settled', {
+        hand: hand.key,
+        result,
+        payout: hand.payout,
+        net: net + side.net,
+        seat: hand.seat,
+        owner: hand.owner,
+        sideBets: side.details,
+      });
     }
     this.shoe.endRound();
     this.state = STATE.settled;

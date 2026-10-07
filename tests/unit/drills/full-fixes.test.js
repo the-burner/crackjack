@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
-  dealRound, partialView, fullAnswer, fullyShownLimit, fullQuestionDrill, asksTwoCounts,
-  nextTwoTablePhase, spotsFor, DEALER_SPOT, TWO_TABLE_PHASES,
+  dealRound,
+  partialView,
+  fullAnswer,
+  fullyShownLimit,
+  fullQuestionDrill,
+  asksTwoCounts,
+  nextTwoTablePhase,
+  spotsFor,
+  DEALER_SPOT,
+  TWO_TABLE_PHASES,
 } from '../../../src/drills/full/logic.js';
 import { halfSteps, answerIndex } from '../../../src/drills/count/logic.js';
 import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.js';
@@ -64,7 +72,12 @@ describe('the scattered layout', () => {
   it('deals loose cards only, so no hidden hands are counted', () => {
     let drawn = 0;
     const { hands, stopped } = dealRound({
-      players: 6, handStyle: 'scattered', draw: () => { drawn += 1; return card(5); },
+      players: 6,
+      handStyle: 'scattered',
+      draw: () => {
+        drawn += 1;
+        return card(5);
+      },
     });
     expect(hands).toEqual([]);
     expect(stopped).toBe(false);

@@ -9,7 +9,12 @@ describe('duration wheels within the setting maximum', () => {
   it('never offers a duration above the maximum', () => {
     for (const max of [15, 30, 40, 60, 1799]) {
       const columns = durationColumns(max);
-      expect(joinDuration(columns.map(c => c.count - 1), columns)).toBe(max);
+      expect(
+        joinDuration(
+          columns.map(c => c.count - 1),
+          columns,
+        ),
+      ).toBe(max);
     }
   });
 });

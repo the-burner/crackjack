@@ -13,12 +13,22 @@ function fakeClock(options = {}) {
   let now = 1000;
   const timers = [];
   const clock = new DrillClock({
-    mode: TIMER_MODE.countDown, limit: 10,
+    mode: TIMER_MODE.countDown,
+    limit: 10,
     now: () => now,
-    setTimer: (fn, ms) => { timers.push({ fn, at: now + ms / 1000 }); return timers.length - 1; },
-    clearTimer: id => { if (timers[id]) timers[id].cancelled = true; },
-    onAlarm: () => { clock.alarms = (clock.alarms ?? 0) + 1; },
-    onHalt: () => { clock.halts = (clock.halts ?? 0) + 1; },
+    setTimer: (fn, ms) => {
+      timers.push({ fn, at: now + ms / 1000 });
+      return timers.length - 1;
+    },
+    clearTimer: id => {
+      if (timers[id]) timers[id].cancelled = true;
+    },
+    onAlarm: () => {
+      clock.alarms = (clock.alarms ?? 0) + 1;
+    },
+    onHalt: () => {
+      clock.halts = (clock.halts ?? 0) + 1;
+    },
     ...options,
   });
   clock.advance = seconds => {
@@ -173,10 +183,17 @@ describe('DrillClock', () => {
     let tick = null;
     let ticks = 0;
     const clock = new DrillClock({
-      mode: TIMER_MODE.countUp, limit: 10, now: () => 0,
-      setTimer: fn => { tick = fn; return 1; },
+      mode: TIMER_MODE.countUp,
+      limit: 10,
+      now: () => 0,
+      setTimer: fn => {
+        tick = fn;
+        return 1;
+      },
       clearTimer: () => {},
-      onTick: () => { ticks += 1; },
+      onTick: () => {
+        ticks += 1;
+      },
     });
     clock.start();
     clock.pause();
@@ -209,7 +226,9 @@ describe('DrillClock', () => {
     const clock = fakeClock();
     let beeps = 0;
     clock.start();
-    clock.every('beep', 1, () => { beeps += 1; });
+    clock.every('beep', 1, () => {
+      beeps += 1;
+    });
     clock.advance(3.5);
     expect(beeps).toBe(3);
     clock.cancel('beep');
@@ -221,7 +240,9 @@ describe('DrillClock', () => {
     const clock = fakeClock();
     let beeps = 0;
     clock.start();
-    clock.every('beep', 1, () => { beeps += 1; });
+    clock.every('beep', 1, () => {
+      beeps += 1;
+    });
     clock.pause();
     clock.advance(5);
     expect(beeps).toBe(0);
@@ -231,7 +252,11 @@ describe('DrillClock', () => {
     vi.useFakeTimers();
     try {
       const seconds = [];
-      const clock = new DrillClock({ mode: TIMER_MODE.countUp, limit: 60, onTick: () => seconds.push(clock.display().seconds) });
+      const clock = new DrillClock({
+        mode: TIMER_MODE.countUp,
+        limit: 60,
+        onTick: () => seconds.push(clock.display().seconds),
+      });
       clock.start();
       vi.advanceTimersByTime(3000);
       clock.stop();
@@ -244,15 +269,16 @@ describe('DrillClock', () => {
 
 describe('AnswerGrid with an offset row', () => {
   /** Two columns: a fraction row, and a whole row shifted half a column left. */
-  const grid = () => new AnswerGrid({
-    rows: 2,
-    columns: 2,
-    cells: [
-      { row: 0, column: 0, value: 1, label: '½' },
-      { row: 0, column: 1, value: 3, label: '1½' },
-      { row: 1, column: 1, value: 2, offset: -0.5, label: '1' },
-    ],
-  });
+  const grid = () =>
+    new AnswerGrid({
+      rows: 2,
+      columns: 2,
+      cells: [
+        { row: 0, column: 0, value: 1, label: '½' },
+        { row: 0, column: 1, value: 3, label: '1½' },
+        { row: 1, column: 1, value: 2, offset: -0.5, label: '1' },
+      ],
+    });
 
   it('finds the offset cell under the point it is drawn at', () => {
     // The offset key spans the middle of a 200px-wide grid: 50px to 150px.
@@ -371,7 +397,15 @@ describe('answer grids', () => {
 
 describe('clockTime', () => {
   it('writes seconds as hours, minutes and seconds', () => {
-    expect([0, 5, 65, 3599, 3600, 3725, 36000].map(clockTime)).toEqual(['00:00:00', '00:00:05', '00:01:05', '00:59:59', '01:00:00', '01:02:05', '10:00:00']);
+    expect([0, 5, 65, 3599, 3600, 3725, 36000].map(clockTime)).toEqual([
+      '00:00:00',
+      '00:00:05',
+      '00:01:05',
+      '00:59:59',
+      '01:00:00',
+      '01:02:05',
+      '10:00:00',
+    ]);
   });
 
   it('never shows a negative time', () => {
@@ -393,21 +427,36 @@ describe('signedCount', () => {
 });
 
 describe('DrillShoe', () => {
-  const strategy = buildStrategy(STRATEGY_FILES[30], { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
+  const strategy = buildStrategy(STRATEGY_FILES[30], {
+    decks: 6,
+    hitSoft17: false,
+    doubleAfterSplit: false,
+    noHoleCard: false,
+    indexSet: 'all',
+  });
   const settings = { division: 0, lastDeck: 1, rounding: 'round' };
 
   it('deals every card once and counts as it goes', () => {
     const shoe = new DrillShoe({ decks: 2, strategy, trueCountSettings: settings, random: seededRandom(5) });
     const seen = new Set();
     let count = 0;
-    while (shoe.remaining) { seen.add(shoe.deal()); count++; }
+    while (shoe.remaining) {
+      seen.add(shoe.deal());
+      count++;
+    }
     expect(count).toBe(104);
     expect(seen.size).toBe(52);
     expect(shoe.deal()).toBeNull();
   });
 
   it('leaves out tens for Spanish decks', () => {
-    const shoe = new DrillShoe({ decks: 1, strategy, trueCountSettings: settings, random: seededRandom(5), cardsPerDeck: 48 });
+    const shoe = new DrillShoe({
+      decks: 1,
+      strategy,
+      trueCountSettings: settings,
+      random: seededRandom(5),
+      cardsPerDeck: 48,
+    });
     expect(shoe.cards.length).toBe(48);
     expect(shoe.cards.some(id => id % 13 === 10)).toBe(false);
   });

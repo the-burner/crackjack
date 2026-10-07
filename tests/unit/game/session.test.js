@@ -202,7 +202,10 @@ describe('actions', () => {
   });
 
   it('checks nothing when strategy warnings are off', () => {
-    const session = riggedSession(deal(card(10), card(9), card(6), card(5)), makeApp({ 'strategy.warnOnError': false }));
+    const session = riggedSession(
+      deal(card(10), card(9), card(6), card(5)),
+      makeApp({ 'strategy.warnOnError': false }),
+    );
     session.startRound({ betPerHand: 25 });
     session.act('stand');
     expect(session.takeWarnings()).toEqual([]);
@@ -353,7 +356,12 @@ describe('burn cards and the count', () => {
   });
 
   it('counts a shown burn card on the shoe after a reshuffle too', () => {
-    const app = makeApp({ 'table.burnCards': 1, 'table.showBurnCards': true, 'table.shuffleMode': 'rounds', 'table.roundsPerShoe': 1 });
+    const app = makeApp({
+      'table.burnCards': 1,
+      'table.showBurnCards': true,
+      'table.shuffleMode': 'rounds',
+      'table.roundsPerShoe': 1,
+    });
     const session = new GameSession(app);
     session.game.takeEvents();
     playRound(session);

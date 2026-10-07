@@ -1,14 +1,53 @@
 /* Drill screens: green felt, display area, stats panel and answer grids. */
 
-.drill { background: var(--felt); color: var(--felt-text); }
+.drill {
+  background: var(--felt);
+  color: var(--felt-text);
+}
 /* Same height and button positions as the standard title bar, so Back and Help stay put on launch. */
-.drill__bar { position: relative; z-index: 6; display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 48px; padding: 2px 8px; }
-.drill__bar .btn--nav { min-height: 40px; padding: 0 8px; background: transparent; color: var(--felt-text); font: 400 17px var(--font); }
-.drill__bar .btn--nav:active { background: transparent; opacity: 0.5; }
-.drill__body { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 0 4px 6px; min-height: 0; }
-.drill__display { flex: 1; position: relative; min-height: 0; }
-.drill__display canvas { display: block; }
-.drill__message { font: 600 16px var(--font); text-align: center; min-height: 20px; color: var(--felt-accent); }
+.drill__bar {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 2px 8px;
+}
+.drill__bar .btn--nav {
+  min-height: 40px;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--felt-text);
+  font: 400 17px var(--font);
+}
+.drill__bar .btn--nav:active {
+  background: transparent;
+  opacity: 0.5;
+}
+.drill__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px 6px;
+  min-height: 0;
+}
+.drill__display {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+.drill__display canvas {
+  display: block;
+}
+.drill__message {
+  font: 600 16px var(--font);
+  text-align: center;
+  min-height: 20px;
+  color: var(--felt-accent);
+}
 
 /* Stats: a compact two-by-two block of figures. */
 /* Two fixed halves, so the divider stays in the middle whatever the figures say. */
@@ -22,13 +61,34 @@
   background: var(--panel-bg);
   color: var(--panel-text);
 }
-.drill__stats td { width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 10px; font: 500 13px var(--font); font-variant-numeric: tabular-nums; text-align: center; }
-.drill__stats tr + tr td { border-top: 1px solid var(--panel-border); }
-.drill__stats td + td { border-left: 1px solid var(--panel-border); }
-.drill__stats td.is-overdue { color: var(--warning); font-weight: 600; }
+.drill__stats td {
+  width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 10px;
+  font: 500 13px var(--font);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.drill__stats tr + tr td {
+  border-top: 1px solid var(--panel-border);
+}
+.drill__stats td + td {
+  border-left: 1px solid var(--panel-border);
+}
+.drill__stats td.is-overdue {
+  color: var(--warning);
+  font-weight: 600;
+}
 
-.drill__controls { display: flex; gap: 8px; }
-.drill__controls .btn { flex: 1; }
+.drill__controls {
+  display: flex;
+  gap: 8px;
+}
+.drill__controls .btn {
+  flex: 1;
+}
 
 .drill__countdown {
   position: absolute;
@@ -41,19 +101,35 @@
   color: var(--felt-text);
   pointer-events: none;
 }
-.drill__countdown[hidden] { display: none; }
+.drill__countdown[hidden] {
+  display: none;
+}
 
 /* Answer grid canvas fills the width under the display. */
-.drill__answers { width: 100%; }
+.drill__answers {
+  width: 100%;
+}
 
 /* The drill options screens use the shared settings look plus a launch button. */
-.drill-options .btn--primary { margin-top: 4px; }
+.drill-options .btn--primary {
+  margin-top: 4px;
+}
 
 /* --- Options screens ------------------------------------------------------ */
 
-.drill-options__group { display: flex; flex-direction: column; gap: 6px; }
-.drill-options__pair { display: flex; align-items: stretch; }
-.drill-options__pair > :first-child { flex: 1; min-width: 0; }
+.drill-options__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.drill-options__pair {
+  display: flex;
+  align-items: stretch;
+}
+.drill-options__pair > :first-child {
+  flex: 1;
+  min-width: 0;
+}
 /* The button beside a dropdown: split off by a divider and tinted so it reads as tappable. */
 /* Same 96px column as the value rows, so the dividers line up. */
 .drill-options__pair > .btn {
@@ -67,13 +143,26 @@
   color: var(--accent);
   font-weight: 500;
 }
-.drill-options__pair > .btn:active { background: transparent; opacity: 0.5; transform: none; }
-.drill-options .field--inline > .label { flex: 0 0 96px; font-size: 14px; }
-.drill-options .slider { flex: 1; }
+.drill-options__pair > .btn:active {
+  background: transparent;
+  opacity: 0.5;
+  transform: none;
+}
+.drill-options .field--inline > .label {
+  flex: 0 0 96px;
+  font-size: 14px;
+}
+.drill-options .slider {
+  flex: 1;
+}
 
 /* --- Play screens --------------------------------------------------------- */
 
-.drill__cards, .drill__tray { position: absolute; inset: 0; }
+.drill__cards,
+.drill__tray {
+  position: absolute;
+  inset: 0;
+}
 
 /* The line of text above the tray (running count, decks dealt). */
 .drill__panel {
@@ -102,34 +191,75 @@
   color: var(--felt-accent);
   pointer-events: none;
 }
-.drill__count[hidden] { display: none; }
+.drill__count[hidden] {
+  display: none;
+}
 
 /* The canvas is taken out of the flow so its size never feeds back into the
    layout that decides how big it should be. */
-.drill__answers-wrap { position: relative; width: 100%; min-height: 0; }
-.drill__answers-wrap > .drill__answers { position: absolute; inset: 0; }
+.drill__answers-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+}
+.drill__answers-wrap > .drill__answers {
+  position: absolute;
+  inset: 0;
+}
 /* The Flash index test has no fixed share of the screen: six columns of three
    roughly square cells. */
-.drill--flash .drill__answers-wrap { aspect-ratio: 2 / 1; max-height: 100%; }
+.drill--flash .drill__answers-wrap {
+  aspect-ratio: 2 / 1;
+  max-height: 100%;
+}
 
 /* A short landscape screen has no room for a fixed ratio: let the grid shrink. */
 @media (orientation: landscape) and (max-height: 400px) {
-  .drill--flash .drill__answers-wrap { aspect-ratio: auto; flex: 1 1 0; }
-  .drill--flash .drill__display { min-height: 90px; }
+  .drill--flash .drill__answers-wrap {
+    aspect-ratio: auto;
+    flex: 1 1 0;
+  }
+  .drill--flash .drill__display {
+    min-height: 90px;
+  }
 }
-.drill__buttons { display: flex; flex-direction: column; gap: 6px; }
-.drill__buttons[hidden] { display: none; }
-.drill__answer-row { display: flex; gap: 6px; }
-.drill__answer-row .btn { flex: 1; min-height: 56px; }
-.drill__answer-row .btn[hidden] { display: none; }
-.drill__answer-row .btn.is-correct { color: var(--answer-correct); text-decoration: underline; }
+.drill__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.drill__buttons[hidden] {
+  display: none;
+}
+.drill__answer-row {
+  display: flex;
+  gap: 6px;
+}
+.drill__answer-row .btn {
+  flex: 1;
+  min-height: 56px;
+}
+.drill__answer-row .btn[hidden] {
+  display: none;
+}
+.drill__answer-row .btn.is-correct {
+  color: var(--answer-correct);
+  text-decoration: underline;
+}
 
 /* Drills with an answer grid: half the screen for the display, the rest the grid. */
-.drill--grid .drill__display { flex: 0 0 50%; }
-.drill--grid .drill__answers-wrap { flex: 1 1 0; min-height: 120px; }
+.drill--grid .drill__display {
+  flex: 0 0 50%;
+}
+.drill--grid .drill__answers-wrap {
+  flex: 1 1 0;
+  min-height: 120px;
+}
 
 /* The card area gets whatever the stats and buttons leave, about two thirds. */
-.drill--flash .drill__display { min-height: 140px; }
+.drill--flash .drill__display {
+  min-height: 140px;
+}
 
 /* The Full Table drill: the table on top, stats and grid side by side below. */
 .drill--full .drill__body {
@@ -139,11 +269,27 @@
   column-gap: 8px;
   row-gap: 4px;
 }
-.drill--full .drill__display { grid-column: 1 / -1; grid-row: 1; }
-.drill--full .drill__message { grid-column: 1; grid-row: 2; }
-.drill--full .drill__stats { grid-column: 1; grid-row: 3; }
-.drill--full .drill__controls { grid-column: 1; grid-row: 4; align-self: start; }
-.drill--full .drill__answers-wrap { grid-column: 2; grid-row: 2 / -1; }
+.drill--full .drill__display {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+.drill--full .drill__message {
+  grid-column: 1;
+  grid-row: 2;
+}
+.drill--full .drill__stats {
+  grid-column: 1;
+  grid-row: 3;
+}
+.drill--full .drill__controls {
+  grid-column: 1;
+  grid-row: 4;
+  align-self: start;
+}
+.drill--full .drill__answers-wrap {
+  grid-column: 2;
+  grid-row: 2 / -1;
+}
 
 /* Shown instead of the Full Table drill while the device is upright. */
 .drill__cover {
@@ -159,7 +305,9 @@
   padding: 24px;
   font: 600 18px var(--font);
 }
-.drill__cover[hidden] { display: none; }
+.drill__cover[hidden] {
+  display: none;
+}
 
 /* Landscape: the drill's own area fills the left half, the controls the right. */
 @media (orientation: landscape) {
@@ -171,10 +319,15 @@
     column-gap: 8px;
     row-gap: 6px;
   }
-  .drill:not(.drill--full) .drill__display { grid-column: 1; grid-row: 1 / -1; }
+  .drill:not(.drill--full) .drill__display {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
   .drill:not(.drill--full) .drill__message,
   .drill:not(.drill--full) .drill__stats,
   .drill:not(.drill--full) .drill__controls,
   .drill:not(.drill--full) .drill__buttons,
-  .drill:not(.drill--full) .drill__answers-wrap { grid-column: 2; }
+  .drill:not(.drill--full) .drill__answers-wrap {
+    grid-column: 2;
+  }
 }

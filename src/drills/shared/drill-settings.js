@@ -3,7 +3,12 @@
 
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../../core/counting.js';
 
-const DIVISION = { full: TC_DIVISION.fullDeck, half: TC_DIVISION.halfDeck, quarter: TC_DIVISION.quarterDeck, exact: TC_DIVISION.exact };
+const DIVISION = {
+  full: TC_DIVISION.fullDeck,
+  half: TC_DIVISION.halfDeck,
+  quarter: TC_DIVISION.quarterDeck,
+  exact: TC_DIVISION.exact,
+};
 const LAST_DECK = { half: TC_LAST_DECK.halfDeck, quarter: TC_LAST_DECK.quarterDeck, exact: TC_LAST_DECK.exact };
 const ROUNDING = { round: TC_ROUNDING.round, truncate: TC_ROUNDING.truncate, floor: TC_ROUNDING.floor };
 

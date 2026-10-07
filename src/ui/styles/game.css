@@ -14,7 +14,9 @@
   --bet-overlay-bg: rgba(0, 0, 0, 0.65);
 }
 
-.table { background: var(--table-bg); }
+.table {
+  background: var(--table-bg);
+}
 
 /* Title bar: a strip like the drills' in portrait (same height and button
    positions), floating over the felt in landscape. */
@@ -27,15 +29,43 @@
   padding: 2px 8px;
   background: var(--table-strip);
 }
-.table__bar-end { display: flex; gap: 2px; }
-.table__bar .btn--nav { min-height: 40px; padding: 0 8px; background: transparent; color: var(--bar-text); font: 400 17px var(--font); }
-.table__bar .btn--nav:active { background: transparent; opacity: 0.5; }
-.table__bar .btn--icon-right { padding-right: 26px; }
-.table__bar .btn--icon-right::after { width: 14px; height: 14px; right: 6px; }
+.table__bar-end {
+  display: flex;
+  gap: 2px;
+}
+.table__bar .btn--nav {
+  min-height: 40px;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--bar-text);
+  font: 400 17px var(--font);
+}
+.table__bar .btn--nav:active {
+  background: transparent;
+  opacity: 0.5;
+}
+.table__bar .btn--icon-right {
+  padding-right: 26px;
+}
+.table__bar .btn--icon-right::after {
+  width: 14px;
+  height: 14px;
+  right: 6px;
+}
 
 @media (orientation: landscape) {
-  .table__bar { position: absolute; top: 0; left: 0; right: 0; z-index: 9; background: transparent; pointer-events: none; }
-  .table__bar .btn { pointer-events: auto; }
+  .table__bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9;
+    background: transparent;
+    pointer-events: none;
+  }
+  .table__bar .btn {
+    pointer-events: auto;
+  }
 }
 
 /* The felt: a canvas with the labels and controls laid over it. */
@@ -46,7 +76,11 @@
   overflow: hidden;
   touch-action: none;
 }
-.table__canvas { position: absolute; left: 0; top: 0; }
+.table__canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
 
 .table__bankroll,
 .table__counts,
@@ -60,16 +94,32 @@
   pointer-events: none;
 }
 
+.table__bankroll {
+  color: var(--table-text);
+  font: 600 20px var(--font);
+  text-shadow: 0 1px 2px var(--text-shadow);
+}
+.table__bankroll.is-negative {
+  color: var(--bankroll-negative);
+}
 
-.table__bankroll { color: var(--table-text); font: 600 20px var(--font); text-shadow: 0 1px 2px var(--text-shadow); }
-.table__bankroll.is-negative { color: var(--bankroll-negative); }
+.table__counts {
+  color: var(--table-accent);
+  font: 600 16px var(--font);
+  justify-content: flex-start;
+}
 
-.table__counts { color: var(--table-accent); font: 600 16px var(--font); justify-content: flex-start; }
-
-.table__chip { color: var(--table-text); font: 600 16px var(--font); text-shadow: 0 1px 2px var(--text-shadow); }
+.table__chip {
+  color: var(--table-text);
+  font: 600 16px var(--font);
+  text-shadow: 0 1px 2px var(--text-shadow);
+}
 /* A hand's result: the same pill as the app's pop-ups, and the same tones. The
    label box is sized for a bet amount, so the pill is let out of it. */
-.table__chip:has(.table__result) { overflow: visible; z-index: 6; }
+.table__chip:has(.table__result) {
+  overflow: visible;
+  z-index: 6;
+}
 .table__result {
   flex: none;
   white-space: nowrap;
@@ -82,9 +132,20 @@
   box-shadow: 0 6px 24px var(--dialog-shadow);
   animation: result-in 0.2s ease-out;
 }
-.table__result[data-tone='win'] { background: var(--tile-good); color: var(--tile-mark-text); }
-.table__result[data-tone='lose'] { background: var(--tile-bad); color: var(--toast-error-text); }
-@keyframes result-in { from { opacity: 0; transform: translateY(6px); } }
+.table__result[data-tone='win'] {
+  background: var(--tile-good);
+  color: var(--tile-mark-text);
+}
+.table__result[data-tone='lose'] {
+  background: var(--tile-bad);
+  color: var(--toast-error-text);
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
 
 /* Action buttons, in two stacks at the bottom corners. */
 .table__actions {
@@ -95,13 +156,29 @@
   flex-direction: column-reverse;
   gap: 6px;
 }
-.table__actions--left { left: 2px; align-items: flex-start; }
-.table__actions--right { right: 2px; align-items: flex-end; }
-.table__actions .btn { width: 140px; min-height: 46px; font-size: 14px; }
-.table__actions .btn[hidden] { display: none; }
+.table__actions--left {
+  left: 2px;
+  align-items: flex-start;
+}
+.table__actions--right {
+  right: 2px;
+  align-items: flex-end;
+}
+.table__actions .btn {
+  width: 140px;
+  min-height: 46px;
+  font-size: 14px;
+}
+.table__actions .btn[hidden] {
+  display: none;
+}
 
 @media (max-width: 420px) {
-  .table__actions .btn { width: 118px; min-height: 42px; font-size: 13px; }
+  .table__actions .btn {
+    width: 118px;
+    min-height: 42px;
+    font-size: 13px;
+  }
 }
 
 /* Betting overlay: a dark panel with the canvas bet grid. */
@@ -116,14 +193,19 @@
   border-radius: var(--radius);
   background: var(--bet-overlay-bg);
 }
-.bet-overlay[hidden] { display: none; }
+.bet-overlay[hidden] {
+  display: none;
+}
 .bet-overlay__title {
   color: var(--felt-accent);
   font: 600 17px var(--font);
   text-align: center;
   padding: 2px 0 4px;
 }
-.bet-overlay__grid { display: block; margin: 0 -2px; }
+.bet-overlay__grid {
+  display: block;
+  margin: 0 -2px;
+}
 /* Three buttons a row; a shorter last row is centred. */
 .bet-overlay__buttons {
   display: flex;
@@ -132,10 +214,22 @@
   gap: 4px;
   margin-top: 4px;
 }
-.bet-overlay__buttons .btn { flex: 0 0 calc((100% - 8px) / 3); }
-.bet-overlay__buttons .btn { min-height: 40px; padding: 4px 26px 4px 6px; font-size: 13px; }
-.bet-overlay__buttons .btn--icon-right::after { width: 14px; height: 14px; right: 8px; }
-.bet-overlay__buttons .btn[hidden] { display: none; }
+.bet-overlay__buttons .btn {
+  flex: 0 0 calc((100% - 8px) / 3);
+}
+.bet-overlay__buttons .btn {
+  min-height: 40px;
+  padding: 4px 26px 4px 6px;
+  font-size: 13px;
+}
+.bet-overlay__buttons .btn--icon-right::after {
+  width: 14px;
+  height: 14px;
+  right: 8px;
+}
+.bet-overlay__buttons .btn[hidden] {
+  display: none;
+}
 
 /* Bet picker: the spots row over the chip rows. */
 .bet-select__hands,
@@ -146,7 +240,11 @@
 }
 
 /* Statistics table. */
-.stats-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); }
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel-bg);
+}
 .stats-table th,
 .stats-table td {
   border: 1px solid var(--panel-border);
@@ -157,5 +255,10 @@
   font-weight: 400;
 }
 .stats-table__head th,
-.stats-table__head td { background: var(--panel-head-bg); font-weight: 600; }
-.game-stats .column { gap: 10px; }
+.stats-table__head td {
+  background: var(--panel-head-bg);
+  font-weight: 600;
+}
+.game-stats .column {
+  gap: 10px;
+}

@@ -10,7 +10,13 @@ const CARD_ASPECT = 150 / 215;
 
 /** How many cards one flash may hold, per "Cards" option. */
 export const FLASH_SIZES = {
-  1: [1], 2: [2], 3: [3], 4: [4], '1-2': [1, 2], '1-3': [1, 2, 3], '1-4': [1, 2, 3, 4],
+  1: [1],
+  2: [2],
+  3: [3],
+  4: [4],
+  '1-2': [1, 2],
+  '1-3': [1, 2, 3],
+  '1-4': [1, 2, 3, 4],
 };
 
 /** The most cards a flash can hold, which fixes the card size and the spacing. */
@@ -39,11 +45,10 @@ const POSITIONS = ['vertical', 'horizontal', 'diagonal', 'mixed'];
 
 /** Whether this flash is turned on its side. */
 export const flashRotated = (orientation, random) =>
-  (orientation === 'mixed' ? randomInt(2, random) === 1 : orientation === 'horizontal');
+  orientation === 'mixed' ? randomInt(2, random) === 1 : orientation === 'horizontal';
 
 /** How this flash is arranged. */
-export const flashLayout = (positions, random) =>
-  (positions === 'mixed' ? POSITIONS[randomInt(3, random)] : positions);
+export const flashLayout = (positions, random) => (positions === 'mixed' ? POSITIONS[randomInt(3, random)] : positions);
 
 /**
  * Where the cards of one flash go.
@@ -79,8 +84,13 @@ export function flashPositions({ layout, rotated, cards, maxCards, width, height
 }
 
 export const COUNT_DRILL_LABELS = {
-  runningCount: 'Running Count', trueCount: 'True Count', acesLeft: 'Aces Left', acesDealt: 'Aces Dealt',
-  aceBetCount: 'Ace Bet Count', acePlayCount: 'Ace Play Count', aceInsureCount: 'Ace Insure Count',
+  runningCount: 'Running Count',
+  trueCount: 'True Count',
+  acesLeft: 'Aces Left',
+  acesDealt: 'Aces Dealt',
+  aceBetCount: 'Ace Bet Count',
+  acePlayCount: 'Ace Play Count',
+  aceInsureCount: 'Ace Insure Count',
   tenSideCount: 'Ten Side Count',
 };
 
@@ -103,14 +113,22 @@ export function aceDrillSuits(drill, strategy) {
 /** The value the drill asks for. */
 export function countAnswer(drill, counts) {
   switch (drill) {
-    case 'trueCount': return counts.trueCount;
-    case 'acesLeft': return counts.acesLeft;
-    case 'acesDealt': return counts.aces;
-    case 'aceBetCount': return counts.betCount;
-    case 'acePlayCount': return counts.playCount;
-    case 'aceInsureCount': return counts.insureCount;
-    case 'tenSideCount': return counts.tens;
-    default: return counts.runningCount;
+    case 'trueCount':
+      return counts.trueCount;
+    case 'acesLeft':
+      return counts.acesLeft;
+    case 'acesDealt':
+      return counts.aces;
+    case 'aceBetCount':
+      return counts.betCount;
+    case 'acePlayCount':
+      return counts.playCount;
+    case 'aceInsureCount':
+      return counts.insureCount;
+    case 'tenSideCount':
+      return counts.tens;
+    default:
+      return counts.runningCount;
   }
 }
 

@@ -9,7 +9,8 @@ const STORAGE_KEY = 'errorTallies';
 const emptyGrid = () => Array.from({ length: 10 }, () => new Array(10).fill(0));
 export const emptyTallies = () => Object.fromEntries(TABLE_NAMES.map(name => [name, emptyGrid()]));
 
-const isGrid = grid => Array.isArray(grid) && grid.length === 10 && grid.every(row => Array.isArray(row) && row.length === 10);
+const isGrid = grid =>
+  Array.isArray(grid) && grid.length === 10 && grid.every(row => Array.isArray(row) && row.length === 10);
 
 export class ErrorTallies {
   constructor(storage) {
@@ -41,7 +42,11 @@ export class ErrorTallies {
     const tallies = this.load();
     const out = [];
     for (const table of TABLE_NAMES) {
-      tallies[table].forEach((r, row) => r.forEach((count, column) => { if (count > 0) out.push({ table, row, column, count }); }));
+      tallies[table].forEach((r, row) =>
+        r.forEach((count, column) => {
+          if (count > 0) out.push({ table, row, column, count });
+        }),
+      );
     }
     return out.sort((a, b) => b.count - a.count);
   }

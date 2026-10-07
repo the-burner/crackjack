@@ -63,8 +63,11 @@ export function rowCounts(ramp) {
 export function rampToSave(ramp) {
   const tidy = normalizeRamp(ramp);
   const rows = ramp?.rows;
-  const inRange = ramp?.minCount === tidy.minCount && Array.isArray(rows) && rows.length === tidy.rows.length
-    && tidy.rows.every(({ chips, hands }, i) => rows[i]?.chips === chips && rows[i]?.hands === hands);
+  const inRange =
+    ramp?.minCount === tidy.minCount &&
+    Array.isArray(rows) &&
+    rows.length === tidy.rows.length &&
+    tidy.rows.every(({ chips, hands }, i) => rows[i]?.chips === chips && rows[i]?.hands === hands);
   return inRange ? null : tidy;
 }
 
@@ -137,7 +140,10 @@ export function toPackedRamp(ramp) {
   const { minCount, rows } = normalizeRamp(ramp);
   const chipCounts = new Array(PACKED_ROWS).fill(0);
   const handCounts = new Array(PACKED_ROWS).fill(1);
-  rows.forEach(({ chips, hands }, i) => { chipCounts[i] = chips; handCounts[i] = hands; });
+  rows.forEach(({ chips, hands }, i) => {
+    chipCounts[i] = chips;
+    handCounts[i] = hands;
+  });
   // The offset is always -1, so the minimum count is carried by `base`.
   return { offset: -1, base: minCount + 1, top: minCount + rows.length - 1, chipCounts, handCounts };
 }

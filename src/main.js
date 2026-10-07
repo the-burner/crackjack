@@ -9,7 +9,9 @@ import { registerSW } from 'virtual:pwa-register';
 
 const app = createApp(document.getElementById('app'));
 applyTheme(app.settings.get('display.theme'));
-app.settings.subscribe((key, value) => { if (key === 'display.theme') applyTheme(value); });
+app.settings.subscribe((key, value) => {
+  if (key === 'display.theme') applyTheme(value);
+});
 registerScreens(app.router);
 app.router.open('home');
 
@@ -19,7 +21,8 @@ if (!app.storage.persistent) toast('Storage is blocked: settings will not be sav
 
 const updateServiceWorker = registerSW({
   async onNeedRefresh() {
-    if (await confirm('A new version of Crackjack is ready.', { title: 'Update', yes: 'Reload', no: 'Later' })) updateServiceWorker(true);
+    if (await confirm('A new version of Crackjack is ready.', { title: 'Update', yes: 'Reload', no: 'Later' }))
+      updateServiceWorker(true);
   },
   onRegisterError: err => console.warn('Service worker registration failed:', err),
 });

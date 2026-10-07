@@ -14,8 +14,11 @@ export const SLOTS_PER_SPOT = 4;
 export const SCATTER_CARDS = 15;
 
 export const FULL_DRILL_LABELS = {
-  runningCount: 'Running Count', acesLeft: 'Aces Left', acesDealt: 'Aces Dealt',
-  tenSideCount: 'Ten Side Count', twoTables: 'Two Tables',
+  runningCount: 'Running Count',
+  acesLeft: 'Aces Left',
+  acesDealt: 'Aces Dealt',
+  tenSideCount: 'Ten Side Count',
+  twoTables: 'Two Tables',
 };
 
 /** The spots in dealing order, the dealer last. */
@@ -29,8 +32,8 @@ export function tableSlots(width, height) {
   const cardHeight = Math.floor(height * 0.35);
   const cardWidth = Math.floor(cardHeight * CARD_ASPECT);
   const step = Math.floor(cardHeight * 0.22);
-  const run = (x, y, dx, dy) => Array.from({ length: SLOTS_PER_SPOT },
-    (_, i) => ({ x: Math.floor(x + i * dx), y: Math.floor(y + i * dy) }));
+  const run = (x, y, dx, dy) =>
+    Array.from({ length: SLOTS_PER_SPOT }, (_, i) => ({ x: Math.floor(x + i * dx), y: Math.floor(y + i * dy) }));
   const spots = [];
   spots[0] = run(width - cardWidth - 2, 2, -step * 1.3, 0);
   // The four bottom seats, right to left; the outer two sit a little higher.
@@ -39,7 +42,8 @@ export function tableSlots(width, height) {
     spots[seat + 1] = run(
       ((width - cardWidth) / 5) * across,
       height - cardHeight - (raised ? 2 + cardHeight / 6 : 0),
-      step, -step,
+      step,
+      -step,
     );
   });
   spots[5] = run(2, 2, step * 1.3, 0);
@@ -109,10 +113,14 @@ export function dealRound({ players, handStyle, dealerStopsAt16 = false, draw })
 /** The value the drill asks for. */
 export function fullAnswer(drill, counts) {
   switch (drill) {
-    case 'acesLeft': return counts.acesLeft;
-    case 'acesDealt': return counts.aces;
-    case 'tenSideCount': return counts.tens;
-    default: return counts.runningCount;
+    case 'acesLeft':
+      return counts.acesLeft;
+    case 'acesDealt':
+      return counts.aces;
+    case 'tenSideCount':
+      return counts.tens;
+    default:
+      return counts.runningCount;
   }
 }
 
@@ -121,11 +129,10 @@ export const isAceCountDrill = drill => drill === 'acesLeft' || drill === 'acesD
 
 /** The count a question asks for: Two Tables and the first of two counts ask the running count. */
 export const fullQuestionDrill = (drill, askingRunningCount) =>
-  (drill === 'twoTables' || askingRunningCount ? 'runningCount' : drill);
+  drill === 'twoTables' || askingRunningCount ? 'runningCount' : drill;
 
 /** Two Counts adds the running count, which the Running Count drill already asks for. */
-export const asksTwoCounts = (drill, twoCounts) =>
-  twoCounts && drill !== 'runningCount' && drill !== 'twoTables';
+export const asksTwoCounts = (drill, twoCounts) => twoCounts && drill !== 'runningCount' && drill !== 'twoTables';
 
 /**
  * Which cards of a round are shown in a Two Tables partial view: the first two
@@ -134,10 +141,12 @@ export const asksTwoCounts = (drill, twoCounts) =>
  * @returns {boolean[][]} one flag per card of each hand, in `hands` order
  */
 export function partialView(hands, fullyShownUpTo) {
-  return hands.map(({ spot, cards }) => cards.map((_, i) => {
-    if (spot === DEALER_SPOT) return i === 0;
-    return i < 2 || spot <= fullyShownUpTo;
-  }));
+  return hands.map(({ spot, cards }) =>
+    cards.map((_, i) => {
+      if (spot === DEALER_SPOT) return i === 0;
+      return i < 2 || spot <= fullyShownUpTo;
+    }),
+  );
 }
 
 /**
@@ -152,8 +161,10 @@ export function fullyShownLimit(hands, random) {
 
 /** The four questions of the Two Tables cycle: which table, and how much of it. */
 export const TWO_TABLE_PHASES = [
-  { table: 0, partial: true }, { table: 1, partial: true },
-  { table: 0, partial: false }, { table: 1, partial: false },
+  { table: 0, partial: true },
+  { table: 1, partial: true },
+  { table: 0, partial: false },
+  { table: 1, partial: false },
 ];
 
 /** The question after this one; after the last comes the first of a fresh pair of tables. */

@@ -35,14 +35,15 @@ const testsCount = async screen => {
 };
 
 /** How many near-white pixels a canvas holds, i.e. whether cards are on it. */
-const whitePixels = canvas => canvas.evaluate(el => {
-  const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
-  let white = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
-  }
-  return white;
-});
+const whitePixels = canvas =>
+  canvas.evaluate(el => {
+    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+    let white = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
+    }
+    return white;
+  });
 
 const cellPosition = (box, row, column) => ({ x: (box.width / 6) * (column + 0.5), y: (box.height / 3) * (row + 0.5) });
 
@@ -76,8 +77,12 @@ test('Two Tables runs its shoe out without crashing', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await open(page, {
-    'drills.full.drill': 'twoTables', 'drills.full.decks': 1, 'drills.full.players': 6,
-    'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 40, 'drills.full.flashSpeed': 30,
+    'drills.full.drill': 'twoTables',
+    'drills.full.decks': 1,
+    'drills.full.players': 6,
+    'drills.full.timerMode': 'auto',
+    'drills.full.testSeconds': 40,
+    'drills.full.flashSpeed': 30,
     'drills.full.accuracy': 0,
   });
   await page.setViewportSize(LANDSCAPE);
@@ -94,8 +99,10 @@ test('Two Tables runs its shoe out without crashing', async ({ page }) => {
 
 test('a double tap on the right answer moves on by one test, not two', async ({ page }) => {
   await open(page, {
-    'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 40,
-    'drills.full.flashSpeed': 30, 'drills.full.accuracy': 0,
+    'drills.full.timerMode': 'auto',
+    'drills.full.testSeconds': 40,
+    'drills.full.flashSpeed': 30,
+    'drills.full.accuracy': 0,
   });
   await page.setViewportSize(LANDSCAPE);
   const screen = await launch(page);
@@ -140,8 +147,12 @@ test('nothing is dealt or timed while the turn-sideways cover is up', async ({ p
 test('Two Counts asks two answers for one test, flashed once', async ({ page }) => {
   test.setTimeout(90000);
   await open(page, {
-    'drills.full.twoCounts': true, 'drills.full.drill': 'acesDealt', 'drills.full.timerMode': 'auto',
-    'drills.full.testSeconds': 40, 'drills.full.flashSpeed': 3, 'drills.full.accuracy': 0,
+    'drills.full.twoCounts': true,
+    'drills.full.drill': 'acesDealt',
+    'drills.full.timerMode': 'auto',
+    'drills.full.testSeconds': 40,
+    'drills.full.flashSpeed': 3,
+    'drills.full.accuracy': 0,
   });
   await page.setViewportSize(LANDSCAPE);
   const screen = await launch(page);
@@ -155,7 +166,9 @@ test('Two Counts asks two answers for one test, flashed once', async ({ page }) 
 
 test('an unanswered test is not scored when the drill time runs out', async ({ page }) => {
   await open(page, {
-    'drills.full.timerMode': 'countDownHalt', 'drills.full.alarmSeconds': 10, 'drills.full.flashSpeed': 30,
+    'drills.full.timerMode': 'countDownHalt',
+    'drills.full.alarmSeconds': 10,
+    'drills.full.flashSpeed': 30,
   });
   await page.setViewportSize(LANDSCAPE);
   const screen = await launch(page);

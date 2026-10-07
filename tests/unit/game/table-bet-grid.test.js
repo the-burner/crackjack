@@ -1,8 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { betCells, betLabel, gridGeometry, cellIndexAt, drawTile, COLUMNS, ROWS, TILE, TILE_GAP } from '../../../src/game/table/bet-grid.js';
+import {
+  betCells,
+  betLabel,
+  gridGeometry,
+  cellIndexAt,
+  drawTile,
+  COLUMNS,
+  ROWS,
+  TILE,
+  TILE_GAP,
+} from '../../../src/game/table/bet-grid.js';
 import { trayPhoto, shoePhoto } from '../../../src/game/table/photos.js';
 
-const ramp = (...rows) => ({ minCount: 0, rows: rows.map(r => (Array.isArray(r) ? { chips: r[0], hands: r[1] } : { chips: r, hands: 1 })) });
+const ramp = (...rows) => ({
+  minCount: 0,
+  rows: rows.map(r => (Array.isArray(r) ? { chips: r[0], hands: r[1] } : { chips: r, hands: 1 })),
+});
 
 describe('bet cells', () => {
   it('turns chip counts into amounts', () => {
@@ -76,20 +89,44 @@ describe('drawing a tile', () => {
   /** A canvas context that only remembers what it was told to draw. */
   const recorder = () => ({
     calls: [],
-    beginPath() { this.calls.push(['beginPath']); },
-    roundRect(...args) { this.calls.push(['roundRect', ...args]); },
-    fill() { this.calls.push(['fill', this.fillStyle]); },
-    fillText(text, x, y) { this.calls.push(['fillText', this.fillStyle, text, x, y]); },
+    beginPath() {
+      this.calls.push(['beginPath']);
+    },
+    roundRect(...args) {
+      this.calls.push(['roundRect', ...args]);
+    },
+    fill() {
+      this.calls.push(['fill', this.fillStyle]);
+    },
+    fillText(text, x, y) {
+      this.calls.push(['fillText', this.fillStyle, text, x, y]);
+    },
   });
 
   const tile = over => {
     const ctx = recorder();
-    drawTile(ctx, { x: 100, y: 200, width: 60, height: 40, label: '25', color: TILE.normal, font: '12px sans', ...over });
+    drawTile(ctx, {
+      x: 100,
+      y: 200,
+      width: 60,
+      height: 40,
+      label: '25',
+      color: TILE.normal,
+      font: '12px sans',
+      ...over,
+    });
     return ctx.calls;
   };
 
   it('insets the face from its cell on every side', () => {
-    expect(tile()).toContainEqual(['roundRect', 100 + TILE_GAP, 200 + TILE_GAP, 60 - 2 * TILE_GAP, 40 - 2 * TILE_GAP, 8]);
+    expect(tile()).toContainEqual([
+      'roundRect',
+      100 + TILE_GAP,
+      200 + TILE_GAP,
+      60 - 2 * TILE_GAP,
+      40 - 2 * TILE_GAP,
+      8,
+    ]);
   });
 
   it('fills the face with the colour it was given', () => {

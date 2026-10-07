@@ -19,8 +19,12 @@ function sameShape(value, def) {
     return Array.isArray(value) && value.length === def.length && def.every((d, i) => sameShape(value[i], d));
   }
   if (def !== null && typeof def === 'object') {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-      && Object.entries(def).every(([key, d]) => sameShape(value[key], d));
+    return (
+      Boolean(value) &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.entries(def).every(([key, d]) => sameShape(value[key], d))
+    );
   }
   return typeof value === typeof def;
 }
@@ -80,7 +84,10 @@ export class Settings {
     for (const [key, value] of Object.entries(changes)) {
       if (!(key in this.schema)) throw new Error(`Unknown setting: ${key}`);
       const v = this.coerce(key, value);
-      if (!Object.is(v, this.values[key])) { this.values[key] = v; changed.push(key); }
+      if (!Object.is(v, this.values[key])) {
+        this.values[key] = v;
+        changed.push(key);
+      }
     }
     if (changed.length) {
       this.save();
@@ -92,7 +99,8 @@ export class Settings {
   reset(prefixes = null) {
     const changes = {};
     for (const [key, def] of Object.entries(this.schema)) {
-      if (!prefixes || prefixes.some(p => key === p || key.startsWith(`${p}.`))) changes[key] = structuredClone(def.default);
+      if (!prefixes || prefixes.some(p => key === p || key.startsWith(`${p}.`)))
+        changes[key] = structuredClone(def.default);
     }
     this.update(changes);
   }

@@ -46,7 +46,10 @@ describe('a face-down game', () => {
     // Two seats, so the round is still going when the first one stands.
     // Deal order with two hands: 1-0, 2-0, dealer up, 1-0, 2-0, hole.
     const game = riggedGame([card(10), card(6), card(9), card(7), card(6), card(5)], { table: faceDown });
-    game.startRound([{ seat: 1, bet: 10 }, { seat: 2, bet: 10 }]);
+    game.startRound([
+      { seat: 1, bet: 10 },
+      { seat: 2, bet: 10 },
+    ]);
     const [first, second] = game.hands;
     expect(first.faceUp).toEqual([true, true]);
     expect(second.faceUp.some(Boolean)).toBe(false);

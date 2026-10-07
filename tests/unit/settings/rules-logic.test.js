@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
 import {
-  applyGameChange, applyIndexRangeChange, applyRuleChange, gameVariant, prepareLaunch,
+  applyGameChange,
+  applyIndexRangeChange,
+  applyRuleChange,
+  gameVariant,
+  prepareLaunch,
 } from '../../../src/settings/rules-logic.js';
 
 /** A reader over the schema defaults with the given overrides. */
@@ -25,7 +29,11 @@ describe('applyRuleChange: doubling', () => {
   });
 
   it('turning off three-card doubles turns off redouble and any-card doubles', () => {
-    const overrides = { 'rules.doubleOnThreeCards': true, 'rules.redouble': true, 'rules.doubleAnyNumberOfCards': true };
+    const overrides = {
+      'rules.doubleOnThreeCards': true,
+      'rules.redouble': true,
+      'rules.doubleAnyNumberOfCards': true,
+    };
     expect(change(overrides, 'rules.doubleOnThreeCards', false)).toEqual({
       'rules.doubleOnThreeCards': false,
       'rules.redouble': false,
@@ -48,8 +56,9 @@ describe('applyRuleChange: doubling', () => {
   });
 
   it('no longer hitting after a double leaves the double card as it is', () => {
-    expect(change({ 'rules.hitAfterDouble': true, 'table.doubleDownCardFaceUp': false }, 'rules.hitAfterDouble', false))
-      .toEqual({ 'rules.hitAfterDouble': false });
+    expect(
+      change({ 'rules.hitAfterDouble': true, 'table.doubleDownCardFaceUp': false }, 'rules.hitAfterDouble', false),
+    ).toEqual({ 'rules.hitAfterDouble': false });
   });
 });
 
@@ -129,8 +138,13 @@ describe('applyRuleChange: splitting', () => {
   });
 
   it('banning doubles after an ace split says nothing about other splits', () => {
-    expect(change({ 'rules.doubleAfterSplitAces': true, 'rules.doubleAfterSplit': true }, 'rules.doubleAfterSplitAces', false))
-      .toEqual({ 'rules.doubleAfterSplitAces': false });
+    expect(
+      change(
+        { 'rules.doubleAfterSplitAces': true, 'rules.doubleAfterSplit': true },
+        'rules.doubleAfterSplitAces',
+        false,
+      ),
+    ).toEqual({ 'rules.doubleAfterSplitAces': false });
   });
 });
 
@@ -211,12 +225,22 @@ describe('applyGameChange', () => {
   });
 
   it('keeps unrelated rules when a side bet is chosen', () => {
-    const current = reader({ 'rules.autoWinFiveCards': true, 'rules.doubleDownRescue': true, 'rules.surrender': 'late' });
+    const current = reader({
+      'rules.autoWinFiveCards': true,
+      'rules.doubleDownRescue': true,
+      'rules.surrender': 'late',
+    });
     expect(applyGameChange(current, 15)).toEqual({ 'bonuses.game': 15 });
   });
 
   it('does not reset a rule the new variant forces as well', () => {
-    const current = reader({ 'bonuses.game': 2002, 'rules.dealerWinsTies': true, 'rules.blackjackPayout': '1:1', 'rules.insurance': 'none', 'peeking.mode': 'off' });
+    const current = reader({
+      'bonuses.game': 2002,
+      'rules.dealerWinsTies': true,
+      'rules.blackjackPayout': '1:1',
+      'rules.insurance': 'none',
+      'peeking.mode': 'off',
+    });
     expect(applyGameChange(current, 2001)).toEqual({
       'bonuses.game': 2001,
       // Double exposure's own rules go back to their defaults...
@@ -260,13 +284,15 @@ describe('applyGameChange', () => {
 
 describe('applyIndexRangeChange', () => {
   it('refuses a minimum count above the maximum', () => {
-    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMax': 10 }), 'strategy.indexRangeMin', 50))
-      .toEqual({ 'strategy.indexRangeMin': 10 });
+    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMax': 10 }), 'strategy.indexRangeMin', 50)).toEqual({
+      'strategy.indexRangeMin': 10,
+    });
   });
 
   it('refuses a maximum count below the minimum', () => {
-    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMin': -4 }), 'strategy.indexRangeMax', -20))
-      .toEqual({ 'strategy.indexRangeMax': -4 });
+    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMin': -4 }), 'strategy.indexRangeMax', -20)).toEqual({
+      'strategy.indexRangeMax': -4,
+    });
   });
 
   it('takes a range that is the right way round as it is', () => {
@@ -282,14 +308,12 @@ describe('prepareLaunch', () => {
 
   it('frees the first seat when every seat in play is a computer', () => {
     const current = reader({ 'table.seatCount': 2, 'table.computerSeats': [true, true, true, true, true, true] });
-    expect(prepareLaunch(current).changes['table.computerSeats'])
-      .toEqual([false, true, true, true, true, true]);
+    expect(prepareLaunch(current).changes['table.computerSeats']).toEqual([false, true, true, true, true, true]);
   });
 
   it('counts only the seats in play when looking for a free seat', () => {
     const current = reader({ 'table.seatCount': 2, 'table.computerSeats': [true, true, true, true, true, false] });
-    expect(prepareLaunch(current).changes['table.computerSeats'])
-      .toEqual([false, true, true, true, true, false]);
+    expect(prepareLaunch(current).changes['table.computerSeats']).toEqual([false, true, true, true, true, false]);
     const six = reader({ 'table.seatCount': 6, 'table.computerSeats': [true, true, true, true, true, false] });
     expect(prepareLaunch(six)).toEqual({ changes: {} });
   });

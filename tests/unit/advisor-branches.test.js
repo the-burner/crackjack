@@ -14,7 +14,12 @@ const PLAY_ONLY = { double: false, softDouble: false, split: false, surrender: f
 
 function strategy(system, options = {}) {
   return buildStrategy(STRATEGY_FILES[system], {
-    decks: 1, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all', ...options,
+    decks: 1,
+    hitSoft17: false,
+    doubleAfterSplit: false,
+    noHoleCard: false,
+    indexSet: 'all',
+    ...options,
   });
 }
 
@@ -24,14 +29,25 @@ function hand(card1, card2, { cards = 2, hardTotal, cardIds } = {}) {
   const soft = card1 === 1 || card2 === 1;
   return {
     total: soft && hard + 10 <= 21 ? hard + 10 : hard,
-    hardTotal: hard, card1, card2, cardCount: cards, cardIds,
+    hardTotal: hard,
+    card1,
+    card2,
+    cardCount: cards,
+    cardIds,
   };
 }
 
 function advise(s, h, { upcard, count = 0, ...rest }) {
   return advisePlay(s, h, {
-    upcard, dealerTotal: upcard === 1 ? 11 : upcard, dealerHardTotal: upcard,
-    trueCount: count, runningCount: count, decks: s.decks, cardsDealt: 0, allowed: ALL, ...rest,
+    upcard,
+    dealerTotal: upcard === 1 ? 11 : upcard,
+    dealerHardTotal: upcard,
+    trueCount: count,
+    runningCount: count,
+    decks: s.decks,
+    cardsDealt: 0,
+    allowed: ALL,
+    ...rest,
   });
 }
 
@@ -85,18 +101,21 @@ describe('early surrender', () => {
   it('surrenders 8,8 from its own row', () => {
     const s = early();
     s.tables.surrender[6][8] = 2;
-    expect(advise(s, hand(8, 8), { upcard: 10, count: 2, allowed: SURRENDER_ONLY }))
-      .toMatchObject({ action: ACTION.surrender, row: 7 });
-    expect(advise(s, hand(8, 8), { upcard: 10, count: 1, allowed: SURRENDER_ONLY }).action)
-      .not.toBe(ACTION.surrender);
+    expect(advise(s, hand(8, 8), { upcard: 10, count: 2, allowed: SURRENDER_ONLY })).toMatchObject({
+      action: ACTION.surrender,
+      row: 7,
+    });
+    expect(advise(s, hand(8, 8), { upcard: 10, count: 1, allowed: SURRENDER_ONLY }).action).not.toBe(ACTION.surrender);
   });
 
   it('falls back to the hard-total rows when the 8,8 row has no entry', () => {
     const s = early();
     s.tables.surrender[6][8] = NO_ENTRY;
     s.tables.surrender[1][8] = NEVER;
-    expect(advise(s, hand(8, 8), { upcard: 10, allowed: SURRENDER_ONLY }))
-      .toMatchObject({ action: ACTION.surrender, row: 1 });
+    expect(advise(s, hand(8, 8), { upcard: 10, allowed: SURRENDER_ONLY })).toMatchObject({
+      action: ACTION.surrender,
+      row: 1,
+    });
   });
 
   it('reads a hard total of 5 to 7 from the row two below it', () => {
@@ -199,16 +218,22 @@ describe('doubling', () => {
   it('marks a soft double index in the 900s as "double or less"', () => {
     const s = strategy(2);
     s.tables.softDouble[2][1] = 903;
-    expect(advise(s, hand(1, 7), { upcard: 3, count: 3 }))
-      .toMatchObject({ action: ACTION.double, threshold: 3, doubleOrLess: true });
+    expect(advise(s, hand(1, 7), { upcard: 3, count: 3 })).toMatchObject({
+      action: ACTION.double,
+      threshold: 3,
+      doubleOrLess: true,
+    });
     expect(advise(s, hand(1, 7), { upcard: 3, count: 2 }).action).not.toBe(ACTION.double);
   });
 
   it('marks a hard double index in the 900s as "double or less"', () => {
     const s = strategy(2);
     s.tables.hardDouble[2][1] = 905;
-    expect(advise(s, hand(4, 5), { upcard: 3, count: 5 }))
-      .toMatchObject({ action: ACTION.double, threshold: 5, doubleOrLess: true });
+    expect(advise(s, hand(4, 5), { upcard: 3, count: 5 })).toMatchObject({
+      action: ACTION.double,
+      threshold: 5,
+      doubleOrLess: true,
+    });
     expect(advise(s, hand(4, 5), { upcard: 3, count: 4 }).action).not.toBe(ACTION.double);
   });
 
@@ -340,10 +365,14 @@ describe('hard hit/stand', () => {
   it('stands at a *D cell only past the first two cards', () => {
     const s = strategy(2);
     s.tables.hardStand[1][8] = CODE.standWith3OrMoreCards;
-    expect(advise(s, hand(6, 10), { upcard: 10, allowed: PLAY_ONLY }))
-      .toMatchObject({ action: ACTION.hit, standWith3OrMore: false });
-    expect(advise(s, hand(4, 5, { cards: 3, hardTotal: 16 }), { upcard: 10, allowed: PLAY_ONLY }))
-      .toMatchObject({ action: ACTION.stand, standWith3OrMore: true });
+    expect(advise(s, hand(6, 10), { upcard: 10, allowed: PLAY_ONLY })).toMatchObject({
+      action: ACTION.hit,
+      standWith3OrMore: false,
+    });
+    expect(advise(s, hand(4, 5, { cards: 3, hardTotal: 16 }), { upcard: 10, allowed: PLAY_ONLY })).toMatchObject({
+      action: ACTION.stand,
+      standWith3OrMore: true,
+    });
   });
 
   it('hits an *S4* cell with four or more cards', () => {
@@ -379,18 +408,30 @@ describe('adviseInsurance', () => {
   });
 
   it('reads the insurance hands table when the strategy uses it', () => {
-    const byTotal = { ...s, insurance: INSURANCE.byTotalTable, insuranceByTotal: [10, 20, 20, 20, 30, 30, 30, 30, 30, 30] };
+    const byTotal = {
+      ...s,
+      insurance: INSURANCE.byTotalTable,
+      insuranceByTotal: [10, 20, 20, 20, 30, 30, 30, 30, 30, 30],
+    };
     expect(adviseInsurance(byTotal, { trueCount: 3, insuranceCount: 3, hardTotal: 16 })).toBe(true);
     expect(adviseInsurance(byTotal, { trueCount: 2, insuranceCount: 2, hardTotal: 16 })).toBe(false);
   });
 
   it('reads the first entry of the insurance hands table below a total of 12', () => {
-    const byTotal = { ...s, insurance: INSURANCE.byTotalTable, insuranceByTotal: [10, 90, 90, 90, 90, 90, 90, 90, 90, 90] };
+    const byTotal = {
+      ...s,
+      insurance: INSURANCE.byTotalTable,
+      insuranceByTotal: [10, 90, 90, 90, 90, 90, 90, 90, 90, 90],
+    };
     expect(adviseInsurance(byTotal, { trueCount: 1, insuranceCount: 1, hardTotal: 11 })).toBe(true);
   });
 
   it('uses the unrounded true count when the insurance hands table has fractions', () => {
-    const byTotal = { ...s, insurance: INSURANCE.byTotalTable, insuranceByTotal: [10, 20, 20, 20, 25, 30, 30, 30, 30, 30] };
+    const byTotal = {
+      ...s,
+      insurance: INSURANCE.byTotalTable,
+      insuranceByTotal: [10, 20, 20, 20, 25, 30, 30, 30, 30, 30],
+    };
     expect(adviseInsurance(byTotal, { trueCount: 2.5, insuranceCount: 2, hardTotal: 16 })).toBe(true);
     expect(adviseInsurance(byTotal, { trueCount: 2.4, insuranceCount: 3, hardTotal: 16 })).toBe(false);
   });

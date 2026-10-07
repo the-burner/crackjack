@@ -23,22 +23,35 @@ describe('pause for a speed', () => {
 
 describe('planning a timeline', () => {
   it('deals the whole round at the dealer speed, every seat alike', () => {
-    const steps = plan([
-      { type: 'card', hand: '1-0', card: 5, cardIndex: 0 },
-      { type: 'card', hand: '3-0', card: 6, cardIndex: 0 },
-      { type: 'card', hand: '0-0', card: 7, faceUp: true, cardIndex: 0 },
-      { type: 'dealt', upcard: 7 },
-    ], { isComputer: key => key === '3-0' });
-    expect(steps.filter(s => s.event.type === 'card').map(s => s.pause)).toEqual([PAUSES.dealer, PAUSES.dealer, PAUSES.dealer]);
+    const steps = plan(
+      [
+        { type: 'card', hand: '1-0', card: 5, cardIndex: 0 },
+        { type: 'card', hand: '3-0', card: 6, cardIndex: 0 },
+        { type: 'card', hand: '0-0', card: 7, faceUp: true, cardIndex: 0 },
+        { type: 'dealt', upcard: 7 },
+      ],
+      { isComputer: key => key === '3-0' },
+    );
+    expect(steps.filter(s => s.event.type === 'card').map(s => s.pause)).toEqual([
+      PAUSES.dealer,
+      PAUSES.dealer,
+      PAUSES.dealer,
+    ]);
   });
 
   it('draws a card in play at the other-player speed, whoever holds the hand', () => {
     expect(plan([{ type: 'card', hand: '1-0', card: 5 }])[0]).toMatchObject({ pause: PAUSES.player, sound: 'card' });
-    expect(plan([{ type: 'card', hand: '3-0', card: 5 }], { isComputer: key => key === '3-0' })[0].pause).toBe(PAUSES.player);
+    expect(plan([{ type: 'card', hand: '3-0', card: 5 }], { isComputer: key => key === '3-0' })[0].pause).toBe(
+      PAUSES.player,
+    );
   });
 
   it('plays the dealer out at the dealer speed', () => {
-    const steps = plan([{ type: 'dealerTurn' }, { type: 'reveal', hand: '0-0', cardIndex: 1 }, { type: 'card', hand: '0-0', card: 5 }]);
+    const steps = plan([
+      { type: 'dealerTurn' },
+      { type: 'reveal', hand: '0-0', cardIndex: 1 },
+      { type: 'card', hand: '0-0', card: 5 },
+    ]);
     expect(steps.slice(1).map(s => s.pause)).toEqual([PAUSES.dealer, PAUSES.dealer]);
   });
 
@@ -64,8 +77,19 @@ describe('planning a timeline', () => {
 
   it('sweeps a bust or surrender at once, and pays it later with no pause', () => {
     const swept = new Set();
-    const now = plan([{ type: 'message', text: 'Bust', hand: '1-0' }, { type: 'message', text: 'Surrender', hand: '2-0' }], { swept });
-    expect(now.map(s => [s.event.type, s.event.result ?? null])).toEqual([['result', 'Bust'], ['sweep', null], ['result', 'Surrender'], ['sweep', null]]);
+    const now = plan(
+      [
+        { type: 'message', text: 'Bust', hand: '1-0' },
+        { type: 'message', text: 'Surrender', hand: '2-0' },
+      ],
+      { swept },
+    );
+    expect(now.map(s => [s.event.type, s.event.result ?? null])).toEqual([
+      ['result', 'Bust'],
+      ['sweep', null],
+      ['result', 'Surrender'],
+      ['sweep', null],
+    ]);
     const later = plan([{ type: 'settled', hand: '1-0', result: 'Bust', payout: 0 }], { swept });
     expect(later).toEqual([{ event: expect.objectContaining({ type: 'settled' }), pause: 0, sound: null }]);
   });
@@ -88,9 +112,13 @@ describe('planning a timeline', () => {
 
   it('plays a sound per event where the original did', () => {
     const sounds = plan([
-      { type: 'shuffle' }, { type: 'burn', card: 1 }, { type: 'reveal', hand: '0-0' },
-      { type: 'split', hand: '1-0' }, { type: 'settled', hand: '1-0', result: 'Push' },
-      { type: 'settled', hand: '2-0', result: 'Lose' }, { type: 'message', text: 'Dealer busts' },
+      { type: 'shuffle' },
+      { type: 'burn', card: 1 },
+      { type: 'reveal', hand: '0-0' },
+      { type: 'split', hand: '1-0' },
+      { type: 'settled', hand: '1-0', result: 'Push' },
+      { type: 'settled', hand: '2-0', result: 'Lose' },
+      { type: 'message', text: 'Dealer busts' },
     ]).map(s => s.sound);
     // Only a card off the shoe clicks: turning one over and moving one on a split are silent.
     // The burn is followed by a silent step that gathers it into the tray.
@@ -140,7 +168,12 @@ describe('running a timeline', () => {
 
   it('is busy while steps are pending and blocks input until they are done', () => {
     const { steps, idle, animator } = harness();
-    animator.play(plan([{ type: 'card', hand: '1-0' }, { type: 'card', hand: '1-0' }]));
+    animator.play(
+      plan([
+        { type: 'card', hand: '1-0' },
+        { type: 'card', hand: '1-0' },
+      ]),
+    );
     expect(animator.busy).toBe(true);
     expect(steps).toEqual(['card']);
     vi.advanceTimersByTime(PAUSES.player);
@@ -179,7 +212,13 @@ describe('running a timeline', () => {
 
   it('can finish the rest at once', () => {
     const { steps, animator } = harness();
-    animator.play(plan([{ type: 'card', hand: '1-0' }, { type: 'card', hand: '1-0' }, { type: 'settled', result: 'Win' }]));
+    animator.play(
+      plan([
+        { type: 'card', hand: '1-0' },
+        { type: 'card', hand: '1-0' },
+        { type: 'settled', result: 'Win' },
+      ]),
+    );
     animator.finish();
     expect(steps).toEqual(['card', 'card', 'settled', 'payout', 'sweep']);
     expect(animator.busy).toBe(false);
@@ -188,7 +227,12 @@ describe('running a timeline', () => {
 
   it('throws the queue away when cancelled', () => {
     const { steps, animator } = harness();
-    animator.play(plan([{ type: 'card', hand: '1-0' }, { type: 'card', hand: '1-0' }]));
+    animator.play(
+      plan([
+        { type: 'card', hand: '1-0' },
+        { type: 'card', hand: '1-0' },
+      ]),
+    );
     animator.cancel();
     vi.advanceTimersByTime(10000);
     expect(steps).toEqual(['card']);
@@ -282,7 +326,11 @@ describe('the turn pointer', () => {
 
 describe('the burn cards', () => {
   it('are shown, then gathered into the tray, as a step of their own', () => {
-    const steps = plan([{ type: 'shuffle' }, { type: 'burn', card: 4, faceUp: true }, { type: 'burn', card: 9, faceUp: true }]);
+    const steps = plan([
+      { type: 'shuffle' },
+      { type: 'burn', card: 4, faceUp: true },
+      { type: 'burn', card: 9, faceUp: true },
+    ]);
     expect(steps.map(s => s.event.type)).toEqual(['shuffle', 'burn', 'burn', 'burnsToTray']);
     // Long enough to see them go.
     expect(steps.at(-1).pause).toBe(PAUSES.dealer);
@@ -301,7 +349,11 @@ describe('the burn cards', () => {
 
 describe('the insurance stake', () => {
   it('stays on the seat long enough to be seen before it is taken', () => {
-    const steps = plan([{ type: 'insuranceTaken' }, { type: 'reveal', hand: '0-0', cardIndex: 1 }, { type: 'insuranceLost' }]);
+    const steps = plan([
+      { type: 'insuranceTaken' },
+      { type: 'reveal', hand: '0-0', cardIndex: 1 },
+      { type: 'insuranceLost' },
+    ]);
     expect(steps[0]).toMatchObject({ event: { type: 'insuranceTaken' }, pause: PAUSES.dealer });
     // The chips are taken at the payoff speed, like any other payment.
     expect(steps.at(-1)).toMatchObject({ event: { type: 'insuranceLost' }, pause: PAUSES.payoff });

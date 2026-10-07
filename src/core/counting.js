@@ -27,7 +27,16 @@ const RED_ONLY = 10000;
  * @param {number} p.lastDeck         TC_LAST_DECK.
  * @param {number} [p.estimate=0]     0 = nearest, 1 = round up, 2 = nearest (slightly biased up).
  */
-export function decksRemaining({ decks, cardsGone, cardsPerDeck = 52, removedCards = 0, countUnit, division, lastDeck, estimate = 0 }) {
+export function decksRemaining({
+  decks,
+  cardsGone,
+  cardsPerDeck = 52,
+  removedCards = 0,
+  countUnit,
+  division,
+  lastDeck,
+  estimate = 0,
+}) {
   const exact = (decks * cardsPerDeck - cardsGone + removedCards) / cardsPerDeck;
   let resolution = exact < 1 ? lastDeck : division;
   if (countUnit === COUNT_UNIT.halfDeck && resolution === TC_DIVISION.fullDeck) resolution = TC_DIVISION.halfDeck;
@@ -35,7 +44,11 @@ export function decksRemaining({ decks, cardsGone, cardsPerDeck = 52, removedCar
   let dl;
   if (resolution === TC_DIVISION.exact) dl = exact;
   else {
-    const bias = [[0.499, 0.249, 0.1249], [0.999, 0.499, 0.249], [0.999 * 0.95, 0.499 * 0.95, 0.249 * 0.95]][estimate][resolution];
+    const bias = [
+      [0.499, 0.249, 0.1249],
+      [0.999, 0.499, 0.249],
+      [0.999 * 0.95, 0.499 * 0.95, 0.249 * 0.95],
+    ][estimate][resolution];
     dl = truncate(steps * (exact + bias)) / steps;
   }
   return dl < 0.1 ? 0.1 : dl;
@@ -101,8 +114,13 @@ export class Counter {
 
   decksRemaining(cardsGone) {
     return decksRemaining({
-      decks: this.decks, cardsGone, cardsPerDeck: this.cardsPerDeck, removedCards: this.removedCards,
-      countUnit: this.strategy.trueCountType, division: this.settings.division, lastDeck: this.settings.lastDeck,
+      decks: this.decks,
+      cardsGone,
+      cardsPerDeck: this.cardsPerDeck,
+      removedCards: this.removedCards,
+      countUnit: this.strategy.trueCountType,
+      division: this.settings.division,
+      lastDeck: this.settings.lastDeck,
       estimate: this.settings.estimate ?? 0,
     });
   }
@@ -124,7 +142,8 @@ export class Counter {
     // Ace side count: adjust the bet count for aces dealt versus expected.
     if (this.strategy.countValues[1] === 0 && this.settings.aceSideCount) {
       const dl = this.decksRemaining(cardsGone);
-      const adjusted = (((this.decks - dl) * 52) / 13 - this.aces) * Math.abs(this.strategy.countValues[10]) / 10 + this.running;
+      const adjusted =
+        ((((this.decks - dl) * 52) / 13 - this.aces) * Math.abs(this.strategy.countValues[10])) / 10 + this.running;
       if (cardsLeft && per) this.betCount = roundTrueCount(adjusted / (dl * per), rounding);
       if (unit === COUNT_UNIT.runningOnly) this.betCount = adjusted;
     }

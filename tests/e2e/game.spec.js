@@ -27,21 +27,24 @@ async function openTable(page, { settings = {}, size = PORTRAIT, seed = 7 } = {}
   }, seed);
   await page.addInitScript(overrides => {
     localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99,
-      'mechanics.otherPlayerSpeed': 99,
-      'mechanics.payoffSpeed': 99,
-      'table.startingBankroll': 1000,
-      'table.seatCount': 4,
-      'table.computerSeats': [false, false, true, true, true, true],
-      'betting.chipValue': 5,
-      'betting.warnOnError': false,
-      'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
-      'rules.surrender': 'none',
-      // Hidden by default; most tests play with the buttons.
-      'display.hideActionButtons': false,
-      ...overrides,
-    }));
+    localStorage.setItem(
+      'cj.settings',
+      JSON.stringify({
+        'mechanics.dealerSpeed': 99,
+        'mechanics.otherPlayerSpeed': 99,
+        'mechanics.payoffSpeed': 99,
+        'table.startingBankroll': 1000,
+        'table.seatCount': 4,
+        'table.computerSeats': [false, false, true, true, true, true],
+        'betting.chipValue': 5,
+        'betting.warnOnError': false,
+        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+        'rules.surrender': 'none',
+        // Hidden by default; most tests play with the buttons.
+        'display.hideActionButtons': false,
+        ...overrides,
+      }),
+    );
   }, settings);
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
@@ -121,7 +124,9 @@ test.describe('the table', () => {
 
   test('ignores taps while the deal is still being animated', async ({ page }) => {
     // Slow the deal right down so the animation is still running after the bet.
-    await openTable(page, { settings: { 'mechanics.dealerSpeed': 1, 'mechanics.otherPlayerSpeed': 1, 'mechanics.payoffSpeed': 1 } });
+    await openTable(page, {
+      settings: { 'mechanics.dealerSpeed': 1, 'mechanics.otherPlayerSpeed': 1, 'mechanics.payoffSpeed': 1 },
+    });
     await grid(page).click({ position: { x: 25, y: 25 } });
     // Every action button stays hidden until the timeline has finished.
     for (const name of ['hit', 'stand', 'double', 'split', 'surrender']) {
@@ -229,7 +234,10 @@ test.describe('the table', () => {
     for (let round = 0; round < 10 && !inProgress; round++) {
       await placeBet(page);
       for (let wait = 0; wait < 100; wait++) {
-        if (await action(page, 'stand').isVisible()) { inProgress = true; break; }
+        if (await action(page, 'stand').isVisible()) {
+          inProgress = true;
+          break;
+        }
         const pass = page.locator('[data-action="pass"]');
         if (await pass.isVisible()) await pass.click();
         if (await overlay(page).isVisible()) break;
@@ -246,14 +254,14 @@ test.describe('the table', () => {
     expect(saved).toBe(before);
   });
 
-  test('shows a hand\'s result on its chips, then sweeps its cards', async ({ page }) => {
+  test("shows a hand's result on its chips, then sweeps its cards", async ({ page }) => {
     // Slow enough to see each result.
     await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 } });
     await placeBet(page);
     const hit = action(page, 'hit');
     await expect(hit).toBeVisible({ timeout: 30000 });
     // Hit until the hand is over.
-    for (let i = 0; i < 12 && await hit.isVisible(); i++) {
+    for (let i = 0; i < 12 && (await hit.isVisible()); i++) {
       await hit.click();
       await page.waitForTimeout(150);
     }
@@ -334,6 +342,8 @@ test.describe('the table', () => {
     // The smallest main bet is one chip, and Lucky Ladies allows only one times it.
     await grid(page).click({ position: { x: 25, y: 25 } });
     await expect(overlay(page)).toBeVisible();
-    await expect(overlay(page).locator('.bet-overlay__title')).toContainText('cannot be greater than 1 times the main bet');
+    await expect(overlay(page).locator('.bet-overlay__title')).toContainText(
+      'cannot be greater than 1 times the main bet',
+    );
   });
 });

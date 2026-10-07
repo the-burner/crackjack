@@ -30,7 +30,13 @@ const BASE_SETTINGS = {
   'betting.warnOnError': false,
   'strategy.warnOnError': false,
   // A count of 10 is never reached, so the first row is always the right bet.
-  'betting.ramp': { minCount: 10, rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }] },
+  'betting.ramp': {
+    minCount: 10,
+    rows: [
+      { chips: 1, hands: 1 },
+      { chips: 2, hands: 1 },
+    ],
+  },
   'rules.surrender': 'none',
   'display.hideActionButtons': false,
   'display.sound': true,
@@ -42,47 +48,53 @@ const BASE_SETTINGS = {
  * app saved.
  */
 async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {}) {
-  await page.addInitScript(({ rolls: picked }) => {
-    let a = 11;
-    const seeded = () => {
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-    window.__cjRolls = { dealerStandsByMistake: 0, bustsGoodHandByMistake: 0, pickDealerError: 0, ...picked };
-    Math.random = () => {
-      const stack = new Error().stack ?? '';
-      if (stack.includes('dealer-errors.js')) {
-        const name = Object.keys(window.__cjRolls).find(fn => stack.includes(fn));
-        return name ? window.__cjRolls[name] : 0;
-      }
-      return seeded();
-    };
-    // What the player hears: the file each sound effect would play.
-    window.__cjSounds = [];
-    HTMLMediaElement.prototype.play = function play() {
-      window.__cjSounds.push(this.src.split('/').pop());
-      return Promise.resolve();
-    };
-    // Result pills on the seats, with when they appeared.
-    window.__cjResults = [];
-    window.__cjRecordFrames = true;
-    new MutationObserver(() => {
-      for (const pill of document.querySelectorAll('.table__chip .table__result')) {
-        if (pill.dataset.seen) continue;
-        pill.dataset.seen = '1';
-        window.__cjResults.push({ text: pill.textContent, t: performance.now() });
-      }
-    }).observe(document, { childList: true, subtree: true });
-  }, { rolls });
-  await page.addInitScript(({ overrides, extra }) => {
-    if (sessionStorage.getItem('cj-test-setup')) return;
-    sessionStorage.setItem('cj-test-setup', '1');
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify(overrides));
-    for (const [key, value] of Object.entries(extra)) localStorage.setItem(`cj.${key}`, JSON.stringify(value));
-  }, { overrides: { ...BASE_SETTINGS, ...settings }, extra: storage });
+  await page.addInitScript(
+    ({ rolls: picked }) => {
+      let a = 11;
+      const seeded = () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+      window.__cjRolls = { dealerStandsByMistake: 0, bustsGoodHandByMistake: 0, pickDealerError: 0, ...picked };
+      Math.random = () => {
+        const stack = new Error().stack ?? '';
+        if (stack.includes('dealer-errors.js')) {
+          const name = Object.keys(window.__cjRolls).find(fn => stack.includes(fn));
+          return name ? window.__cjRolls[name] : 0;
+        }
+        return seeded();
+      };
+      // What the player hears: the file each sound effect would play.
+      window.__cjSounds = [];
+      HTMLMediaElement.prototype.play = function play() {
+        window.__cjSounds.push(this.src.split('/').pop());
+        return Promise.resolve();
+      };
+      // Result pills on the seats, with when they appeared.
+      window.__cjResults = [];
+      window.__cjRecordFrames = true;
+      new MutationObserver(() => {
+        for (const pill of document.querySelectorAll('.table__chip .table__result')) {
+          if (pill.dataset.seen) continue;
+          pill.dataset.seen = '1';
+          window.__cjResults.push({ text: pill.textContent, t: performance.now() });
+        }
+      }).observe(document, { childList: true, subtree: true });
+    },
+    { rolls },
+  );
+  await page.addInitScript(
+    ({ overrides, extra }) => {
+      if (sessionStorage.getItem('cj-test-setup')) return;
+      sessionStorage.setItem('cj-test-setup', '1');
+      localStorage.clear();
+      localStorage.setItem('cj.settings', JSON.stringify(overrides));
+      for (const [key, value] of Object.entries(extra)) localStorage.setItem(`cj.${key}`, JSON.stringify(value));
+    },
+    { overrides: { ...BASE_SETTINGS, ...settings }, extra: storage },
+  );
   await page.goto('/index.html');
   await stackTheShoe(page);
   await page.locator('[data-action="play"]').click();
@@ -117,8 +129,12 @@ const foul = page => page.locator('.bet-overlay [data-action="foul"]');
  * dealer's. `tile` is which bet tile to tap (0 is the smallest).
  */
 async function playRound(page, { cards, actions = ['stand'], tile = 0, insure = null }) {
-  await page.evaluate(stack => { window.__cjStack = stack; }, cards);
-  await page.evaluate(() => { window.__cjRoundStart = performance.now(); });
+  await page.evaluate(stack => {
+    window.__cjStack = stack;
+  }, cards);
+  await page.evaluate(() => {
+    window.__cjRoundStart = performance.now();
+  });
   await tapTile(page, tile);
   if (insure !== null) {
     const answer = page.locator(`[data-action="${insure ? 'insure' : 'pass'}"]`);
@@ -149,7 +165,8 @@ async function dealerCards(page) {
 }
 
 /** Result pills shown this round. */
-const roundResults = page => page.evaluate(() => window.__cjResults.filter(r => r.t >= window.__cjRoundStart).map(r => r.text));
+const roundResults = page =>
+  page.evaluate(() => window.__cjResults.filter(r => r.t >= window.__cjRoundStart).map(r => r.text));
 
 /** Sounds played since `from` (an index into the sound log). */
 const soundsSince = (page, from) => page.evaluate(start => window.__cjSounds.slice(start), from);
@@ -165,9 +182,11 @@ async function openStats(page) {
   await expect(page.locator('.stats-table')).toBeVisible();
 }
 
-const stat = (page, label) => page.locator('.stats-table tr:not(.stats-table__head)')
-  .filter({ has: page.locator('th', { hasText: new RegExp(`^${label}$`) }) })
-  .locator('td');
+const stat = (page, label) =>
+  page
+    .locator('.stats-table tr:not(.stats-table__head)')
+    .filter({ has: page.locator('th', { hasText: new RegExp(`^${label}$`) }) })
+    .locator('td');
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -250,7 +269,10 @@ test.describe('busted a good hand', () => {
   test('a doubled 20 can be called a bust when the table lets doubled hands draw on', async ({ page }) => {
     await openTable(page, { settings: { ...settings, 'rules.hitAfterDouble': true } });
     // 4 and 3 doubled to 12, then a hit to 20.
-    await playRound(page, { cards: [card(4), card(10), card(3), card(7), card(5), card(8)], actions: ['double', 'hit'] });
+    await playRound(page, {
+      cards: [card(4), card(10), card(3), card(7), card(5), card(8)],
+      actions: ['double', 'hit'],
+    });
     expect(await roundResults(page)).toEqual(['Bust']);
     await expect(bankroll(page)).toHaveText('$980.00');
   });
@@ -258,7 +280,10 @@ test.describe('busted a good hand', () => {
   test('a doubled 21 is never called a bust', async ({ page }) => {
     await openTable(page, { settings: { ...settings, 'rules.hitAfterDouble': true } });
     // 4 and 3 doubled to 11, then a hit to 21.
-    await playRound(page, { cards: [card(4), card(10), card(3), card(7), card(4, 1), card(10, 1)], actions: ['double', 'hit'] });
+    await playRound(page, {
+      cards: [card(4), card(10), card(3), card(7), card(4, 1), card(10, 1)],
+      actions: ['double', 'hit'],
+    });
     expect(await roundResults(page)).not.toContain('Bust');
     await expect(bankroll(page)).toHaveText('$1,020.00');
   });
@@ -271,7 +296,9 @@ test.describe('stood on 16', () => {
   // The player stands on 10 and 2.
   const player12 = (up, hole) => [card(10), up, card(2), hole];
 
-  test('the dealer stops on a four-card hard 16 when the player has less than 17, and Foul catches it', async ({ page }) => {
+  test('the dealer stops on a four-card hard 16 when the player has less than 17, and Foul catches it', async ({
+    page,
+  }) => {
     await openTable(page, { settings });
     // Dealer 2, 3, 4, 7 = hard 16; a 5 would follow if it drew.
     await playRound(page, { cards: [...player12(card(2), card(3)), card(4), card(7), card(5)] });
@@ -394,7 +421,12 @@ test.describe('blackjack mispaid', () => {
     await page.locator('[data-chips="1"]').click();
     await expect(overlay(page)).toBeVisible();
     await playRound(page, { cards: natural, actions: [] });
-    await page.evaluate(stack => { window.__cjStack = stack; }, [card(10, 1), card(7, 1), card(9, 1), card(K, 1)]);
+    await page.evaluate(
+      stack => {
+        window.__cjStack = stack;
+      },
+      [card(10, 1), card(7, 1), card(9, 1), card(K, 1)],
+    );
     await tapTile(page, 0);
     await expect(page.locator('.toast--error')).toHaveText('You missed a dealer error, BJ Mispaid, costing $5');
   });
@@ -405,7 +437,9 @@ test.describe('blackjack mispaid', () => {
 test.describe('insurance mispaid', () => {
   const settings = { 'dealerErrors.insurancePayoff': true };
 
-  test('insurance on a hand that lost to the blackjack is paid 1:1, and Foul refunds the difference', async ({ page }) => {
+  test('insurance on a hand that lost to the blackjack is paid 1:1, and Foul refunds the difference', async ({
+    page,
+  }) => {
     await openTable(page, { settings });
     // Player 10, 8 insures against the dealer's A, K.
     await playRound(page, { cards: [card(10), card(A), card(8), card(K)], actions: [], insure: true });
@@ -453,7 +487,10 @@ test.describe('calling Foul', () => {
   });
 
   test('a call with no error is a false call: buzzer, error tone, and no money moves', async ({ page }) => {
-    await openTable(page, { settings: { 'dealerErrors.bustOn21OrLess': true }, rolls: { bustsGoodHandByMistake: 0.99 } });
+    await openTable(page, {
+      settings: { 'dealerErrors.bustOn21OrLess': true },
+      rolls: { bustsGoodHandByMistake: 0.99 },
+    });
     await playRound(page, { cards: busted20, actions: ['hit', 'stand'] });
     await expect(bankroll(page)).toHaveText('$1,010.00');
     const before = await soundCount(page);
@@ -467,9 +504,16 @@ test.describe('calling Foul', () => {
     await openTable(page, { settings: { 'dealerErrors.bustOn21OrLess': true } });
     await playRound(page, { cards: busted20, actions: ['hit'] });
     await expect(bankroll(page)).toHaveText('$990.00');
-    await page.evaluate(stack => { window.__cjStack = stack; }, [card(10, 1), card(7, 1), card(9, 1), card(K, 1)]);
+    await page.evaluate(
+      stack => {
+        window.__cjStack = stack;
+      },
+      [card(10, 1), card(7, 1), card(9, 1), card(K, 1)],
+    );
     await tapTile(page, 0);
-    await expect(page.locator('.toast--error')).toHaveText('You missed a dealer error, Busted a good hand, costing $20');
+    await expect(page.locator('.toast--error')).toHaveText(
+      'You missed a dealer error, Busted a good hand, costing $20',
+    );
     // Nothing is refunded: the $10 bet is out on the new round.
     await expect(bankroll(page)).toHaveText('$980.00');
   });
@@ -502,11 +546,21 @@ test('Top Bet and Low Bet are per round, so Average Bet never exceeds Top Bet', 
   await openTable(page, {
     settings: {
       'table.seatCount': 2,
-      'betting.ramp': { minCount: 10, rows: [{ chips: 1, hands: 1 }, { chips: 1, hands: 2 }] },
+      'betting.ramp': {
+        minCount: 10,
+        rows: [
+          { chips: 1, hands: 1 },
+          { chips: 1, hands: 2 },
+        ],
+      },
     },
   });
   // Two hands of $10: seat 1, seat 2, dealer, seat 1, seat 2, hole card.
-  await playRound(page, { cards: [card(10), card(9), card(7), card(10, 1), card(9, 1), card(8)], tile: 1, actions: ['stand', 'stand'] });
+  await playRound(page, {
+    cards: [card(10), card(9), card(7), card(10, 1), card(9, 1), card(8)],
+    tile: 1,
+    actions: ['stand', 'stand'],
+  });
   // One hand of $10.
   await playRound(page, { cards: [card(10, 2), card(9, 2), card(8, 1), card(10, 3)] });
   await openStats(page);
@@ -549,7 +603,15 @@ test.describe('saved statistics', () => {
     await callFoul(page);
     await foul(page).click();
     await openStats(page);
-    const labels = ['Rounds Played', 'Total Initial Bets', 'Top Bet', 'Low Bet', 'Bankroll', 'Dealer Error Correct', 'Dealer Errors Missed'];
+    const labels = [
+      'Rounds Played',
+      'Total Initial Bets',
+      'Top Bet',
+      'Low Bet',
+      'Bankroll',
+      'Dealer Error Correct',
+      'Dealer Errors Missed',
+    ];
     const before = await Promise.all(labels.map(label => stat(page, label).textContent()));
     expect(before).toEqual(['1', '$10', '$10', '$10', '$1,010', '50%', '1']);
 
@@ -564,8 +626,17 @@ test.describe('saved statistics', () => {
 
   test('from before the dealer-error counters show no NaN', async ({ page }) => {
     const old = {
-      rounds: 3, totalBet: 30, highBet: 10, lowBet: 10, highBankroll: 1010, lowBankroll: 990, bankrollSum: 3000,
-      playDecisions: 3, playErrors: 1, betDecisions: 3, betErrors: 0,
+      rounds: 3,
+      totalBet: 30,
+      highBet: 10,
+      lowBet: 10,
+      highBankroll: 1010,
+      lowBankroll: 990,
+      bankrollSum: 3000,
+      playDecisions: 3,
+      playErrors: 1,
+      betDecisions: 3,
+      betErrors: 0,
     };
     await openTable(page, { settings: { 'dealerErrors.bustOn21OrLess': true }, storage: { gameStats: old } });
     await openStats(page);

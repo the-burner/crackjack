@@ -59,7 +59,10 @@ describe('when the shoe is shuffled', () => {
 describe('burn cards', () => {
   it('are dealt face up and counted where the table shows them', () => {
     const seen = vi.fn();
-    const game = makeGame({ table: { shuffleMode: SHUFFLE_MODE.rounds, roundsPerShoe: 1, burnCards: 2, showBurnCards: true }, onCardSeen: seen });
+    const game = makeGame({
+      table: { shuffleMode: SHUFFLE_MODE.rounds, roundsPerShoe: 1, burnCards: 2, showBurnCards: true },
+      onCardSeen: seen,
+    });
     playRound(game);
     seen.mockClear();
     const burns = game.nextRound().filter(e => e.type === 'burn');
@@ -70,7 +73,10 @@ describe('burn cards', () => {
 
   it('are dealt face down and uncounted where the table hides them', () => {
     const seen = vi.fn();
-    const game = makeGame({ table: { shuffleMode: SHUFFLE_MODE.rounds, roundsPerShoe: 1, burnCards: 2, showBurnCards: false }, onCardSeen: seen });
+    const game = makeGame({
+      table: { shuffleMode: SHUFFLE_MODE.rounds, roundsPerShoe: 1, burnCards: 2, showBurnCards: false },
+      onCardSeen: seen,
+    });
     playRound(game);
     seen.mockClear();
     const burns = game.nextRound().filter(e => e.type === 'burn');
@@ -83,7 +89,11 @@ describe('burn cards', () => {
 describe('the cut card', () => {
   it('shows on the card after penetration is reached, as the original tested it', () => {
     const shoe = new Shoe({
-      decks: 1, shuffleMode: SHUFFLE_MODE.cutCard, cardsBehindCutCard: 50, roundsPerShoe: 100, random: seededRandom(5),
+      decks: 1,
+      shuffleMode: SHUFFLE_MODE.cutCard,
+      cardsBehindCutCard: 50,
+      roundsPerShoe: 100,
+      random: seededRandom(5),
     });
     expect(shoe.penetration).toBe(2);
     shoe.draw();

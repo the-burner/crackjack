@@ -17,12 +17,16 @@ function tagProblems(html) {
 
 describe('help text', () => {
   it('has no broken characters', () => {
-    const broken = Object.entries(HELP).filter(([, html]) => html.includes('\uFFFD')).map(([key]) => key);
+    const broken = Object.entries(HELP)
+      .filter(([, html]) => html.includes('\uFFFD'))
+      .map(([key]) => key);
     expect(broken).toEqual([]);
   });
 
   it('has balanced HTML tags', () => {
-    const problems = Object.entries(HELP).map(([key, html]) => [key, tagProblems(html)]).filter(([, list]) => list.length);
+    const problems = Object.entries(HELP)
+      .map(([key, html]) => [key, tagProblems(html)])
+      .filter(([, list]) => list.length);
     expect(problems).toEqual([]);
   });
 });
@@ -47,7 +51,9 @@ describe('each screen gets its own help', () => {
 
 describe('the unusual games help', () => {
   const html = HELP['settings.unusualGames'];
-  const named = [...html.matchAll(/<li>\s*<strong>\s*([^<]+?)\s*<\/strong>/g)].map(m => m[1].replace(/\s+/g, ' ').trim());
+  const named = [...html.matchAll(/<li>\s*<strong>\s*([^<]+?)\s*<\/strong>/g)].map(m =>
+    m[1].replace(/\s+/g, ' ').trim(),
+  );
 
   it('names each game once', () => {
     const twice = named.filter((name, i) => named.indexOf(name) !== i);
@@ -57,7 +63,11 @@ describe('the unusual games help', () => {
   it('describes only games the app offers', async () => {
     const { BUILTIN_SIDE_BET_GAMES } = await import('../../src/data/side-bet-games.js');
     // The help abbreviates "blackjack" to "BJ", so normalise both.
-    const key = name => name.toLowerCase().replace(/blackjack/g, 'bj').replace(/[^a-z0-9+]/g, '');
+    const key = name =>
+      name
+        .toLowerCase()
+        .replace(/blackjack/g, 'bj')
+        .replace(/[^a-z0-9+]/g, '');
     const offered = BUILTIN_SIDE_BET_GAMES.map(game => key(game.name));
     const missing = named.filter(name => !offered.some(game => game.includes(key(name)) || key(name).includes(game)));
     expect(missing).toEqual([]);

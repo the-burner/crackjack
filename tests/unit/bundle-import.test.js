@@ -1,7 +1,14 @@
 import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
-  EXPORT_HOST, addSideBetGame, addStrategy, isSideBetDefinition, isStrategyFileText, normalizeDownload, sideBetUrl, strategyUrl,
+  EXPORT_HOST,
+  addSideBetGame,
+  addStrategy,
+  isSideBetDefinition,
+  isStrategyFileText,
+  normalizeDownload,
+  sideBetUrl,
+  strategyUrl,
 } from '../../tools/bundle-import.mjs';
 import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
 import { SIDE_BET_GAME_DEFINITIONS } from '../../src/data/side-bet-games.js';
@@ -33,7 +40,9 @@ describe('isStrategyFileText', () => {
   });
 
   it('rejects a server error page, non-strategy text and a truncated file', () => {
-    expect(isStrategyFileText('The page cannot be displayed because an internal server error has occurred.')).toBe(false);
+    expect(isStrategyFileText('The page cannot be displayed because an internal server error has occurred.')).toBe(
+      false,
+    );
     for (const bad of ['', '|', '|name|', null, 42]) expect(isStrategyFileText(bad)).toBe(false);
     expect(isStrategyFileText(STRATEGY_FILES[30].slice(0, 400))).toBe(false);
   });
@@ -73,6 +82,8 @@ describe('addSideBetGame', () => {
   it('rejects a bad download and a game that is already bundled', () => {
     expect(isSideBetDefinition('error')).toBe(false);
     expect(() => addSideBetGame(read('src/data/side-bet-games.js'), 'error')).toThrow(/not a side-bet game/);
-    expect(() => addSideBetGame(read('src/data/side-bet-games.js'), SIDE_BET_GAME_DEFINITIONS[8])).toThrow(/already bundled/);
+    expect(() => addSideBetGame(read('src/data/side-bet-games.js'), SIDE_BET_GAME_DEFINITIONS[8])).toThrow(
+      /already bundled/,
+    );
   });
 });

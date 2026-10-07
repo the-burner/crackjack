@@ -14,9 +14,19 @@ import { drawGridIn } from '../shared/answer-grid.js';
 import { gradeAnswer } from '../shared/scoring.js';
 import { halfSteps, answerIndex } from '../count/logic.js';
 import {
-  dealRound, tableSlots, scatterSlots, fullAnswer, isAceCountDrill, partialView,
-  fullyShownLimit, fullQuestionDrill, asksTwoCounts, nextTwoTablePhase,
-  TWO_TABLE_PHASES, TWO_TABLE_MINIMUM_CARDS, SCATTER_CARDS,
+  dealRound,
+  tableSlots,
+  scatterSlots,
+  fullAnswer,
+  isAceCountDrill,
+  partialView,
+  fullyShownLimit,
+  fullQuestionDrill,
+  asksTwoCounts,
+  nextTwoTablePhase,
+  TWO_TABLE_PHASES,
+  TWO_TABLE_MINIMUM_CARDS,
+  SCATTER_CARDS,
 } from './logic.js';
 
 const PAUSE_AFTER_ANSWER_MS = 100;
@@ -24,7 +34,10 @@ const END_WARNING_SECONDS = 3;
 const WARNING_TEXT = { oneCardLeft: 'One card left', twoCardsLeft: 'Two cards left' };
 const WARNING_REMAINING = { oneCardLeft: 1, twoCardsLeft: 2 };
 /** The cards are taken away just before the test time runs out. */
-const TABLE_COLORS = [['--felt', '#008000'], ['--felt-alt', '#000080']];
+const TABLE_COLORS = [
+  ['--felt', '#008000'],
+  ['--felt-alt', '#000080'],
+];
 
 const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
 
@@ -115,9 +128,15 @@ export function fullScreen(app) {
     grid = null;
     phase = 0;
     const shoeCount = twoTables ? 2 : 1;
-    shoes = Array.from({ length: shoeCount }, () => new DrillShoe({
-      decks: options.decks, strategy: options.strategy, trueCountSettings: options.trueCountSettings,
-    }));
+    shoes = Array.from(
+      { length: shoeCount },
+      () =>
+        new DrillShoe({
+          decks: options.decks,
+          strategy: options.strategy,
+          trueCountSettings: options.trueCountSettings,
+        }),
+    );
     revealedCounts = shoes.map(shoe => shoe.counter.running);
     tables = shoes.map(() => null);
     const clock = drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: finishShoe });
@@ -176,13 +195,15 @@ export function fullScreen(app) {
     const { hands, stopped } = dealRound({ players: options.players, handStyle: options.handStyle, draw });
     // The scattered layout has no hands behind the loose cards.
     const scatter = options.handStyle === 'scattered' ? drawScatter(draw) : null;
-    tables = [{
-      hands,
-      scatter,
-      scatterSeed: Math.floor(Math.random() * 1e9),
-      visible: hands.map(hand => hand.cards.map(() => true)),
-      color: TABLE_COLORS[0],
-    }];
+    tables = [
+      {
+        hands,
+        scatter,
+        scatterSeed: Math.floor(Math.random() * 1e9),
+        visible: hands.map(hand => hand.cards.map(() => true)),
+        color: TABLE_COLORS[0],
+      },
+    ];
     if (warned) {
       // A partial round is not worth a test; show the warning and deal again.
       notice = WARNING_TEXT[options.endWarning];
@@ -228,7 +249,13 @@ export function fullScreen(app) {
       // Cards are counted as they are revealed, so each one counts exactly once.
       let next = 0;
       const countValues = hands.map(hand => hand.cards.map(() => draw.countValues[next++]));
-      return { hands, countValues, scatter: null, visible: hands.map(hand => hand.cards.map(() => false)), color: TABLE_COLORS[i] };
+      return {
+        hands,
+        countValues,
+        scatter: null,
+        visible: hands.map(hand => hand.cards.map(() => false)),
+        color: TABLE_COLORS[i],
+      };
     });
     fullyShownUpTo = fullyShownLimit(tables[0].hands, Math.random);
     phase = 0;
@@ -240,12 +267,16 @@ export function fullScreen(app) {
     cardsHidden = false;
     const { table, partial } = TWO_TABLE_PHASES[phase];
     const current = tables[table];
-    const wanted = partial ? partialView(current.hands, fullyShownUpTo) : current.visible.map(row => row.map(() => true));
-    current.hands.forEach((hand, h) => hand.cards.forEach((_, c) => {
-      if (!wanted[h][c] || current.visible[h][c]) return;
-      current.visible[h][c] = true;
-      revealedCounts[table] += current.countValues[h][c];
-    }));
+    const wanted = partial
+      ? partialView(current.hands, fullyShownUpTo)
+      : current.visible.map(row => row.map(() => true));
+    current.hands.forEach((hand, h) =>
+      hand.cards.forEach((_, c) => {
+        if (!wanted[h][c] || current.visible[h][c]) return;
+        current.visible[h][c] = true;
+        revealedCounts[table] += current.countValues[h][c];
+      }),
+    );
     correctIndex = answerIndex(revealedCounts[table], inHalfSteps());
     render();
     startTest();
@@ -274,7 +305,10 @@ export function fullScreen(app) {
   /** The cards go away when the flash time is up, the test ends when its own time does. */
   function armHide(seconds) {
     hideAt = shell.clock.elapsed + seconds;
-    shell.clock.after('hide', seconds, () => { cardsHidden = true; render(); });
+    shell.clock.after('hide', seconds, () => {
+      cardsHidden = true;
+      render();
+    });
   }
 
   function armTest(seconds) {

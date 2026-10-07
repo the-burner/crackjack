@@ -8,8 +8,13 @@
 import { blackjackPremium, roundPremium, charlieWin, isSuited678, sevensKind } from './rules.js';
 
 export const RESULT = {
-  win: 'Win', lose: 'Lose', push: 'Push', bust: 'Bust', blackjack: '21',
-  surrender: 'Surrender', bonus: 'Bonus',
+  win: 'Win',
+  lose: 'Lose',
+  push: 'Push',
+  bust: 'Bust',
+  blackjack: '21',
+  surrender: 'Surrender',
+  bonus: 'Bonus',
 };
 
 /**
@@ -31,7 +36,11 @@ export const RESULT = {
 export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
   const stake = hand.bet + hand.doubleBet + hand.insuranceBet;
   const insurancePayout = settleInsurance({ hand, dealerBlackjack });
-  const finish = (payout, result) => ({ payout: payout + insurancePayout, result, net: payout + insurancePayout - stake });
+  const finish = (payout, result) => ({
+    payout: payout + insurancePayout,
+    result,
+    net: payout + insurancePayout - stake,
+  });
 
   // Surrender: half the bet comes back. Against a dealer blackjack a late
   // surrender (decided before the dealer checked) loses everything.
@@ -44,7 +53,8 @@ export function settleHand({ rules, hand, dealer, dealerBlackjack }) {
     return finish(lateAgainstBlackjack ? 0 : (hand.bet + hand.doubleBet) / 2, RESULT.surrender);
   }
 
-  const playerBlackjack = hand.isNatural() || (rules.bonuses.splitTenAceIsBlackjack && hand.cardCount === 2 && hand.total === 21);
+  const playerBlackjack =
+    hand.isNatural() || (rules.bonuses.splitTenAceIsBlackjack && hand.cardCount === 2 && hand.total === 21);
   const wager = hand.bet + hand.doubleBet;
 
   if (dealerBlackjack) {
@@ -104,7 +114,8 @@ export function handBonus(rules, hand, { dealerTotal = 0 } = {}) {
     if (b.sevens777 === '3:2') return { multiplier: 1.5, name: '777' };
   }
   // "Pays 2:1 if it wins" does not pay against a dealer 21.
-  if (isSuited678(hand.cards) && (b.suited678 || (b.suited678IfWins && dealerTotal !== 21))) return { multiplier: 2, name: 'Suited 678' };
+  if (isSuited678(hand.cards) && (b.suited678 || (b.suited678IfWins && dealerTotal !== 21)))
+    return { multiplier: 2, name: 'Suited 678' };
   if (twentyOne && n === 5 && b.fiveCard21) return { multiplier: 2, name: 'Five card 21' };
   if (twentyOne && n === 6 && b.sixCard21) return { multiplier: 2, name: 'Six card 21' };
   if (twentyOne && n >= 5 && b.fivePlusCard21) return { multiplier: 2, name: 'Five or more card 21' };

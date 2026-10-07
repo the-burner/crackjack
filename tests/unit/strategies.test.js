@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY, StrategyLibrary, strategyOptions } from '../../src/settings/strategies.js';
+import {
+  BUILTIN_STRATEGIES,
+  HOLE_CARD_STRATEGY,
+  StrategyLibrary,
+  strategyOptions,
+} from '../../src/settings/strategies.js';
 import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
 import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
 import { Settings } from '../../src/settings/store.js';
@@ -40,7 +45,17 @@ describe('strategy text', () => {
 });
 
 describe('building a strategy', () => {
-  const options = { decks: 6, hitSoft17: false, doubleAfterSplit: true, noHoleCard: false, indexSet: 'all', customMask: null, rangeLow: -99, rangeHigh: 99, forcedInitialRunningCount: null };
+  const options = {
+    decks: 6,
+    hitSoft17: false,
+    doubleAfterSplit: true,
+    noHoleCard: false,
+    indexSet: 'all',
+    customMask: null,
+    rangeLow: -99,
+    rangeHigh: 99,
+    forcedInitialRunningCount: null,
+  };
 
   it('memoizes a build, so the same request comes back identical', () => {
     const library = new StrategyLibrary();

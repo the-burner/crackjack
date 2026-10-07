@@ -61,7 +61,9 @@ const TIMED_HAND_MODES = ['auto', 'infinite'];
 
 export function flashOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
-    title: 'Flash Options', help: 'drills.flash.options', drill: 'drills.flash',
+    title: 'Flash Options',
+    help: 'drills.flash.options',
+    drill: 'drills.flash',
     onLaunch: () => launch(app),
   });
   const { form } = screen;
@@ -90,41 +92,62 @@ export function flashOptionsScreen(app) {
     drillTimeRow.hidden = mode !== 'countDownHalt';
   });
 
-  const deckSelect = form.custom('decks', DECK_OPTIONS,
+  const deckSelect = form.custom(
+    'decks',
+    DECK_OPTIONS,
     () => `${form.get('decks')}${form.get('spanishDecks') ? 's' : ''}`,
     value => {
       form.set('decks', Number.parseInt(value, 10));
       form.set('spanishDecks', value.endsWith('s'));
-    });
+    },
+  );
 
   /** Picks the custom hands; only shown when the hand list is Custom. */
   const selectButton = button('Select', { onClick: () => customHands() });
-  const customHands = () => app.open('strategy.tables', {
-    mode: 'editMask', maskKey: 'drills.flash.customHands',
-    decks: form.get('decks'), title: 'Custom Hands',
-  });
+  const customHands = () =>
+    app.open('strategy.tables', {
+      mode: 'editMask',
+      maskKey: 'drills.flash.customHands',
+      decks: form.get('decks'),
+      title: 'Custom Hands',
+    });
 
   screen.append(
-    section('Drill', group(
-      form.select('maxCards', CARDS_OPTIONS),
-      deckSelect,
-      withButton(form.select('hands', HANDS_OPTIONS), selectButton),
-      withButton(form.select('countMode', COUNT_OPTIONS), countButton),
-      form.select('testMode', TEST_MODE_OPTIONS),
-      nonBlockingToggle,
-    )),
+    section(
+      'Drill',
+      group(
+        form.select('maxCards', CARDS_OPTIONS),
+        deckSelect,
+        withButton(form.select('hands', HANDS_OPTIONS), selectButton),
+        withButton(form.select('countMode', COUNT_OPTIONS), countButton),
+        form.select('testMode', TEST_MODE_OPTIONS),
+        nonBlockingToggle,
+      ),
+    ),
     section('Situations', form.flags('situations', SITUATION_ITEMS, { chips: true })),
-    section('Timer', group(
-      withButton(form.select('timerMode', FLASH_TIMER_OPTIONS), roundsButton),
-      perHandToggle,
-      perHandRow,
-      progressiveRow,
-      drillTimeRow,
-    )),
-    section('Error History', group(
-      button('Error history', { icon: 'arrow-r', block: true, className: 'list-row', onClick: () => app.open('drills.flash.errors'), 'data-action': 'error-history' }),
-      button('Clear error history', { icon: 'back', onClick: () => clearErrors(app) }),
-    )),
+    section(
+      'Timer',
+      group(
+        withButton(form.select('timerMode', FLASH_TIMER_OPTIONS), roundsButton),
+        perHandToggle,
+        perHandRow,
+        progressiveRow,
+        drillTimeRow,
+      ),
+    ),
+    section(
+      'Error History',
+      group(
+        button('Error history', {
+          icon: 'arrow-r',
+          block: true,
+          className: 'list-row',
+          onClick: () => app.open('drills.flash.errors'),
+          'data-action': 'error-history',
+        }),
+        button('Clear error history', { icon: 'back', onClick: () => clearErrors(app) }),
+      ),
+    ),
   );
 
   /** Shows Select for the Custom list; choosing Drill Errors shows a summary toast. */
@@ -165,7 +188,9 @@ async function launch(app) {
   // With no tests, hands only move on when their time runs out.
   const handsTimed = TIMED_HAND_MODES.includes(s.get('drills.flash.timerMode')) && s.get('drills.flash.timePerHand');
   if (s.get('drills.flash.testMode') === 'none' && !handsTimed) {
-    await alert('With Test Mode set to No tests, each hand needs a time limit: choose Rounds or Infinite and turn on Time limit per hand.');
+    await alert(
+      'With Test Mode set to No tests, each hand needs a time limit: choose Rounds or Infinite and turn on Time limit per hand.',
+    );
     return;
   }
   const { strategy } = drillStrategy(app, s.get('drills.flash.decks'));

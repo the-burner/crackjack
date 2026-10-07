@@ -4,7 +4,10 @@ import { describe, it, expect } from 'vitest';
 import { selectedIndexFor } from '../../src/ui/components.js';
 
 describe('a dropdown holding a value that is not one of its options', () => {
-  const options = [{ value: 10, label: 'Ten' }, { value: 20, label: 'Twenty' }];
+  const options = [
+    { value: 10, label: 'Ten' },
+    { value: 20, label: 'Twenty' },
+  ];
 
   it('shows the option it was given', () => {
     expect(selectedIndexFor(options, 20)).toBe(1);

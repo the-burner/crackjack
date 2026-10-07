@@ -9,7 +9,9 @@ test.use({ serviceWorkers: 'block' });
 function watchErrors(page) {
   const errors = [];
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-  page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
+  page.on('console', msg => {
+    if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+  });
   return errors;
 }
 
@@ -58,8 +60,14 @@ const SCREENS = [
 ];
 
 const DRIVEN_ELSEWHERE = [
-  'home', 'help', 'game.table', 'game.stats',
-  'drills.flash', 'drills.depth', 'drills.count', 'drills.full',
+  'home',
+  'help',
+  'game.table',
+  'game.stats',
+  'drills.flash',
+  'drills.depth',
+  'drills.count',
+  'drills.full',
 ];
 
 test('every registered screen is either opened here or driven through the UI', async ({ page }) => {
@@ -98,8 +106,12 @@ test('every screen with a Help button has help text behind it', async ({ page })
 
 test('every screen a Help button names is a screen the app registers', async ({ page }) => {
   await openApp(page);
-  const { topics, registered } = await page.evaluate(() => import('/src/data/help.js')
-    .then(m => ({ topics: Object.keys(m.HELP), registered: [...window.app.router.factories.keys()] })));
+  const { topics, registered } = await page.evaluate(() =>
+    import('/src/data/help.js').then(m => ({
+      topics: Object.keys(m.HELP),
+      registered: [...window.app.router.factories.keys()],
+    })),
+  );
   expect(topics.filter(topic => !registered.includes(topic))).toEqual([]);
 });
 
@@ -123,7 +135,12 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
 
   const el = await openFromHub(page, 'Appearance & Customization', 'settings.appearance');
   const theme = el.locator('select[name="display.theme"]');
-  for (const [label, name] of [['Classic', 'classic'], ['Catppuccin Latte', 'latte'], ['Catppuccin Mocha', 'mocha'], ['Classic', 'classic']]) {
+  for (const [label, name] of [
+    ['Classic', 'classic'],
+    ['Catppuccin Latte', 'latte'],
+    ['Catppuccin Mocha', 'mocha'],
+    ['Classic', 'classic'],
+  ]) {
     await theme.selectOption({ label });
     await expect(html).toHaveAttribute('data-theme', name);
     expect(await saved(page, 'display.theme')).toBe(name);
@@ -195,8 +212,11 @@ test('the True Count screen shows a row for every calculation it sets', async ({
   await openApp(page);
   const el = await openFromHub(page, 'True Count Calcs', 'settings.trueCount');
   await expect(el.locator('.tc-row .label')).toHaveText([
-    'True Count Resolution:', 'Last Deck Resolution:', 'True Count Division:',
-    'Remaining Cards:', 'Allowed estimation error:',
+    'True Count Resolution:',
+    'Last Deck Resolution:',
+    'True Count Division:',
+    'Remaining Cards:',
+    'Allowed estimation error:',
   ]);
   await expect(el.getByRole('checkbox', { name: 'Ace side count' })).toBeVisible();
   await expect(el.getByRole('checkbox', { name: 'Ten side count' })).toBeVisible();
@@ -217,12 +237,15 @@ test('the game table and the screens it opens log nothing while a round is playe
   const errors = watchErrors(page);
   await page.addInitScript(() => {
     localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99,
-      'mechanics.otherPlayerSpeed': 99,
-      'mechanics.payoffSpeed': 99,
-      'bonuses.game': 8,
-    }));
+    localStorage.setItem(
+      'cj.settings',
+      JSON.stringify({
+        'mechanics.dealerSpeed': 99,
+        'mechanics.otherPlayerSpeed': 99,
+        'mechanics.payoffSpeed': 99,
+        'bonuses.game': 8,
+      }),
+    );
   });
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();

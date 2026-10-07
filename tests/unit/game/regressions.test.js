@@ -86,7 +86,9 @@ describe('settling two side-bet spots', () => {
       const game = new BlackjackGame({
         rules: makeRules(),
         table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true },
-        bankroll: 1000, random: seededRandom(4), sideBetGame,
+        bankroll: 1000,
+        random: seededRandom(4),
+        sideBetGame,
       });
       game.takeEvents();
       // A player total under 13 wins the Under spot and loses the Over spot.
@@ -152,14 +154,18 @@ describe('doubling with a thin bankroll', () => {
   const doubling = extra => makeRules({ 'rules.hardDoubles': 'any', 'rules.doubleAnyNumberOfCards': true, ...extra });
 
   it('refuses a triple down the bankroll cannot cover', () => {
-    const game = riggedGame(deal(card(5), card(9), card(4), card(5), [card(2)]), { rules: doubling({ 'rules.tripleDown': true }) });
+    const game = riggedGame(deal(card(5), card(9), card(4), card(5), [card(2)]), {
+      rules: doubling({ 'rules.tripleDown': true }),
+    });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.bankroll = 10;
     expect(game.availableActions().double).toBe(false);
   });
 
   it('refuses a redouble the bankroll cannot cover', () => {
-    const game = riggedGame(deal(card(5), card(9), card(4), card(5), [card(2), card(2)]), { rules: doubling({ 'rules.redouble': true }) });
+    const game = riggedGame(deal(card(5), card(9), card(4), card(5), [card(2), card(2)]), {
+      rules: doubling({ 'rules.redouble': true }),
+    });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.double);
     game.bankroll = 15;
@@ -173,7 +179,11 @@ describe('doubling with a thin bankroll', () => {
 describe('early surrender against a ten', () => {
   // Choosing this rule turns the ten peek off, as the original did, so the hand
   // can be given up before the dealer's hole card is known.
-  const rules = makeRules({ 'rules.surrender': 'earlyVsTen', 'rules.dealerPeeksTen': false, 'rules.insurance': 'normal' });
+  const rules = makeRules({
+    'rules.surrender': 'earlyVsTen',
+    'rules.dealerPeeksTen': false,
+    'rules.insurance': 'normal',
+  });
 
   it('offers surrender under a ten without the dealer checking first', () => {
     const game = riggedGame(deal(card(10), card(13), card(6), card(1)), { rules });
@@ -198,7 +208,9 @@ describe('the count across a split', () => {
     const game = new BlackjackGame({
       rules: makeRules({ 'rules.maxSplitHands': 4 }),
       table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true },
-      bankroll: 1000, random: seededRandom(1), onCardSeen: c => seen.push(c),
+      bankroll: 1000,
+      random: seededRandom(1),
+      onCardSeen: c => seen.push(c),
     });
     game.takeEvents();
     const queue = deal(card(8), card(9), card(8, 1), card(5), [card(13), card(12)]);
@@ -225,7 +237,9 @@ describe('the count across a split', () => {
     const game = new BlackjackGame({
       rules: makeRules({ 'rules.maxSplitHands': 4 }),
       table: { decks: 6, burnCards: 0, seatCount: 1, computerSeats: [], doubleDownCardFaceUp: true },
-      bankroll: 1000, random: seededRandom(1), onCardSeen: c => seen.push(c),
+      bankroll: 1000,
+      random: seededRandom(1),
+      onCardSeen: c => seen.push(c),
     });
     game.takeEvents();
     const queue = deal(card(8), card(9), card(8, 1), card(5), [card(13), card(12)]);
@@ -270,18 +284,21 @@ describe('a double card dealt face down in a face-up game', () => {
 describe('a computer hand that busts in a face-down game', () => {
   it('is turned face up before it is swept, so its counted cards were seen', () => {
     // Seat 1 is the player, seat 2 a computer that hits 12 and busts.
-    const game = riggedGame(
-      [card(10), card(10, 1), card(9), card(10, 2), card(2, 1), card(7), card(10, 3)],
-      { table: { cardsFaceDown: true, seatCount: 2, computerSeats: [2], computerBet: 5 } },
-    );
+    const game = riggedGame([card(10), card(10, 1), card(9), card(10, 2), card(2, 1), card(7), card(10, 3)], {
+      table: { cardsFaceDown: true, seatCount: 2, computerSeats: [2], computerBet: 5 },
+    });
     game.computerPlay = hand => (hand.total < 17 ? ACTION.hit : ACTION.stand);
     const events = [...game.startRound([{ seat: 1, bet: 10 }])];
     events.push(...game.act(ACTION.stand));
     const computer = game.hands.find(h => h.key === '2-0');
     expect(computer.busted()).toBe(true);
     const bust = events.findIndex(e => e.type === 'message' && e.hand === '2-0' && e.text === 'Bust');
-    const revealedBefore = new Set(events.slice(0, bust)
-      .filter(e => e.type === 'reveal' && e.hand === '2-0').map(e => e.cardIndex));
+    const revealedBefore = new Set(
+      events
+        .slice(0, bust)
+        .filter(e => e.type === 'reveal' && e.hand === '2-0')
+        .map(e => e.cardIndex),
+    );
     expect([...revealedBefore].sort()).toEqual([0, 1]);
   });
 });
@@ -289,15 +306,19 @@ describe('a computer hand that busts in a face-down game', () => {
 describe('a computer blackjack in a face-down game', () => {
   it('is turned face up before it is announced and swept', () => {
     // Seat 2, a computer, is dealt a queen and an ace.
-    const game = riggedGame(
-      [card(10), card(12, 2), card(9), card(7), card(1, 3), card(10, 3)],
-      { table: { cardsFaceDown: true, seatCount: 2, computerSeats: [2], computerBet: 5 } },
-    );
+    const game = riggedGame([card(10), card(12, 2), card(9), card(7), card(1, 3), card(10, 3)], {
+      table: { cardsFaceDown: true, seatCount: 2, computerSeats: [2], computerBet: 5 },
+    });
     const events = [...game.startRound([{ seat: 1, bet: 10 }])];
     events.push(...game.act(ACTION.stand));
     const announced = events.findIndex(e => e.type === 'message' && e.hand === '2-0' && e.text === 'Blackjack');
     expect(announced).toBeGreaterThan(-1);
-    const shown = new Set(events.slice(0, announced).filter(e => e.type === 'reveal' && e.hand === '2-0').map(e => e.cardIndex));
+    const shown = new Set(
+      events
+        .slice(0, announced)
+        .filter(e => e.type === 'reveal' && e.hand === '2-0')
+        .map(e => e.cardIndex),
+    );
     expect([...shown].sort()).toEqual([0, 1]);
   });
 });
@@ -333,9 +354,18 @@ describe('a hand the dealer wrongly busted', () => {
 });
 
 describe('doubling split aces', () => {
-  const pairOfAces = () => riggedGame(deal(card(1), card(9), card(1, 1), card(5), [card(1, 2), card(9, 1)]), {
-    rules: makeRules({ 'rules.doubleAfterSplit': true, 'rules.hitSplitAces': false, 'rules.resplitAces': true, 'rules.maxSplitHands': 4, 'rules.doubleAfterSplitAces': false, 'rules.hardDoubles': 'any', 'rules.softDoubles': 'any' }),
-  });
+  const pairOfAces = () =>
+    riggedGame(deal(card(1), card(9), card(1, 1), card(5), [card(1, 2), card(9, 1)]), {
+      rules: makeRules({
+        'rules.doubleAfterSplit': true,
+        'rules.hitSplitAces': false,
+        'rules.resplitAces': true,
+        'rules.maxSplitHands': 4,
+        'rules.doubleAfterSplitAces': false,
+        'rules.hardDoubles': 'any',
+        'rules.softDoubles': 'any',
+      }),
+    });
 
   it('is not offered on a split ace without its own rule, even where splits may double', () => {
     const game = pairOfAces();
@@ -345,7 +375,13 @@ describe('doubling split aces', () => {
   });
 
   it('is offered once split aces may be hit', () => {
-    const rules = makeRules({ 'rules.doubleAfterSplit': true, 'rules.hitSplitAces': true, 'rules.hardDoubles': 'any', 'rules.softDoubles': 'any', 'rules.maxSplitHands': 4 });
+    const rules = makeRules({
+      'rules.doubleAfterSplit': true,
+      'rules.hitSplitAces': true,
+      'rules.hardDoubles': 'any',
+      'rules.softDoubles': 'any',
+      'rules.maxSplitHands': 4,
+    });
     const game = riggedGame(deal(card(1), card(9), card(1, 1), card(5), [card(5), card(9, 1)]), { rules });
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.split);

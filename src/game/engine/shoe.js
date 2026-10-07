@@ -15,7 +15,13 @@ export class Shoe {
    * @param {number} o.roundsPerShoe
    * @param {() => number} [o.random]
    */
-  constructor({ decks, shuffleMode = SHUFFLE_MODE.cutCard, cardsBehindCutCard = 78, roundsPerShoe = 6, random = defaultRandom }) {
+  constructor({
+    decks,
+    shuffleMode = SHUFFLE_MODE.cutCard,
+    cardsBehindCutCard = 78,
+    roundsPerShoe = 6,
+    random = defaultRandom,
+  }) {
     this.decks = decks;
     this.shuffleMode = shuffleMode;
     this.cardsBehindCutCard = cardsBehindCutCard;

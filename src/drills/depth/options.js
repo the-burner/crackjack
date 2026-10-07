@@ -3,19 +3,29 @@
 import { h } from '../../ui/dom.js';
 import { alert } from '../../ui/dialogs.js';
 import {
-  drillOptionsScreen, group, row, section, withButton,
-  DECK_OPTIONS, COUNT_DOWN_HALT_OPTION, ACCURACY_OPTIONS, TRAY_OPTIONS,
+  drillOptionsScreen,
+  group,
+  row,
+  section,
+  withButton,
+  DECK_OPTIONS,
+  COUNT_DOWN_HALT_OPTION,
+  ACCURACY_OPTIONS,
+  TRAY_OPTIONS,
 } from '../shared/options-screen.js';
 import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic.js';
 
-const DRILL_OPTIONS = ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks']
-  .map(value => ({ value, label: `Drill: ${DRILL_LABELS[value]}` }));
+const DRILL_OPTIONS = [
+  'decksLeft',
+  'halfDecksLeft',
+  'quarterDecksLeft',
+  'acesLeft',
+  'trueCount',
+  'trueCountAndDecks',
+].map(value => ({ value, label: `Drill: ${DRILL_LABELS[value]}` }));
 
 /** Rounds: a set number of tests, each timed. Count Down & Halt: until the drill time runs out. */
-const DEPTH_TIMER_OPTIONS = [
-  { value: 'auto', label: 'Timer Mode: Rounds' },
-  COUNT_DOWN_HALT_OPTION,
-];
+const DEPTH_TIMER_OPTIONS = [{ value: 'auto', label: 'Timer Mode: Rounds' }, COUNT_DOWN_HALT_OPTION];
 
 const RESOLUTION_OPTIONS = [
   { value: 'full', label: 'Resolution: Full Deck' },
@@ -25,16 +35,25 @@ const RESOLUTION_OPTIONS = [
 
 export function depthOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
-    title: 'Depth Options', help: 'drills.depth.options', drill: 'drills.depth',
+    title: 'Depth Options',
+    help: 'drills.depth.options',
+    drill: 'drills.depth',
     onLaunch: () => launch(app),
   });
   const { form } = screen;
-  const valueRow = (label, control) => h('div', { class: 'settings-row' }, h('span', { class: 'label' }, label), control);
+  const valueRow = (label, control) =>
+    h('div', { class: 'settings-row' }, h('span', { class: 'label' }, label), control);
 
   // One card for the drill-specific settings: the count range feeds the TC
   // Conversion drills, "in tray" the others.
-  const minCount = valueRow('Minimum count', form.number('Minimum Count', 'countRangeMin', { prompt: 'Minimum Count' }));
-  const maxCount = valueRow('Maximum count', form.number('Maximum Count', 'countRangeMax', { prompt: 'Maximum Count' }));
+  const minCount = valueRow(
+    'Minimum count',
+    form.number('Minimum Count', 'countRangeMin', { prompt: 'Minimum Count' }),
+  );
+  const maxCount = valueRow(
+    'Maximum count',
+    form.number('Maximum Count', 'countRangeMax', { prompt: 'Maximum Count' }),
+  );
   const inTray = form.checks([{ label: 'Decks or Aces in Tray', key: 'askCardsInTray' }]);
 
   // Rounds times each test; Count Down & Halt times the whole drill.
@@ -48,21 +67,27 @@ export function depthOptionsScreen(app) {
   const drillCardLabel = drillCard.firstChild;
 
   screen.append(
-    section('Drill', group(
-      form.select('drill', DRILL_OPTIONS),
-      form.select('accuracy', ACCURACY_OPTIONS),
-      form.select('resolution', RESOLUTION_OPTIONS),
-      form.select('decks', DECK_OPTIONS),
-      form.select('trayStyle', TRAY_OPTIONS),
-      row('Thickness:', form.slider('', 'cardThickness')),
-    )),
+    section(
+      'Drill',
+      group(
+        form.select('drill', DRILL_OPTIONS),
+        form.select('accuracy', ACCURACY_OPTIONS),
+        form.select('resolution', RESOLUTION_OPTIONS),
+        form.select('decks', DECK_OPTIONS),
+        form.select('trayStyle', TRAY_OPTIONS),
+        row('Thickness:', form.slider('', 'cardThickness')),
+      ),
+    ),
     drillCard,
-    section('Timer', group(
-      withButton(form.select('timerMode', DEPTH_TIMER_OPTIONS), roundsButton),
-      perTestRow,
-      progressiveRow,
-      drillTimeRow,
-    )),
+    section(
+      'Timer',
+      group(
+        withButton(form.select('timerMode', DEPTH_TIMER_OPTIONS), roundsButton),
+        perTestRow,
+        progressiveRow,
+        drillTimeRow,
+      ),
+    ),
   );
 
   form.watch(() => {
@@ -94,7 +119,9 @@ async function launch(app) {
   }
   if (decks === 1 && s.get('drills.depth.resolution') === 'full') {
     s.set('drills.depth.resolution', 'half');
-    await alert('Full resolution needs more than one deck: there would be nothing to ask. Resolution changed to Half Deck.');
+    await alert(
+      'Full resolution needs more than one deck: there would be nothing to ask. Resolution changed to Half Deck.',
+    );
     return;
   }
   if (isTrueCountDrill(s.get('drills.depth.drill'))) {

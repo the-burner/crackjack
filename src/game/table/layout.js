@@ -73,7 +73,16 @@ function cardHeightFor({ width, height, seatsShown, portrait }) {
  * @param {boolean} [o.noHoleCard]    The dealer takes a second card only after the players.
  * @returns {object} the layout
  */
-export function tableLayout({ width, height, seatCount, humanSeats = [1], decks = 6, showTray = true, showShoe = true, noHoleCard = false }) {
+export function tableLayout({
+  width,
+  height,
+  seatCount,
+  humanSeats = [1],
+  decks = 6,
+  showTray = true,
+  showShoe = true,
+  noHoleCard = false,
+}) {
   const portrait = height > width;
   const seats = visibleSeats({ seatCount, humanSeats, portrait });
   const shown = seats.length;
@@ -93,7 +102,11 @@ export function tableLayout({ width, height, seatCount, humanSeats = [1], decks 
   /** Horizontal room one seat's hands take up. */
   const seatWidth = cardWidth + splitStep * 3;
   const railY = Math.round(height * (portrait ? RAIL_TOP.portrait : RAIL_TOP.landscape));
-  const rail = { y: railY, height: height - railY, sourceHeight: Math.min(RAIL_SIZE.height, (RAIL_SIZE.width * (height - railY)) / width) };
+  const rail = {
+    y: railY,
+    height: height - railY,
+    sourceHeight: Math.min(RAIL_SIZE.height, (RAIL_SIZE.width * (height - railY)) / width),
+  };
   const edge = x => railEdgeY(rail, width, x);
 
   const seatLayouts = seats.map((seat, i) => {
@@ -110,9 +123,17 @@ export function tableLayout({ width, height, seatCount, humanSeats = [1], decks 
   const dealer = dealerRow({ width, cardWidth, cardHeight, portrait, topOfSeats, tray, noHoleCard });
 
   return {
-    width, height, portrait, cardWidth, cardHeight,
-    seatCount, seats: seatLayouts, hiddenSeats: seatCount - shown,
-    dealer, tray, shoe,
+    width,
+    height,
+    portrait,
+    cardWidth,
+    cardHeight,
+    seatCount,
+    seats: seatLayouts,
+    hiddenSeats: seatCount - shown,
+    dealer,
+    tray,
+    shoe,
     burns: burnRow({ cardWidth, cardHeight, portrait, tray }),
     rail,
     bankroll: bankrollBox({ width, height, portrait, dealer, cardHeight, tray }),
@@ -260,7 +281,12 @@ function bankrollBox({ width, portrait, dealer, cardHeight, tray }) {
     return { x: left, y: Math.max(4, dealer.y - boxHeight - 6), width: width - left - 4, height: boxHeight };
   }
   const boxWidth = Math.round(width * 0.3);
-  return { x: Math.round((width - boxWidth) / 2), y: Math.max(2, dealer.y - boxHeight - 6), width: boxWidth, height: boxHeight };
+  return {
+    x: Math.round((width - boxWidth) / 2),
+    y: Math.max(2, dealer.y - boxHeight - 6),
+    width: boxWidth,
+    height: boxHeight,
+  };
 }
 
 /** The status band: between the tray and the shoe along the top. */
@@ -278,7 +304,13 @@ function statusBox({ width, portrait, tray, shoe }) {
  * @param {{count: number, holeHidden: boolean}} [dealerHand]  For the dealer (see dealerSlot).
  * @returns {{x: number, y: number}|null} null when the seat is not shown.
  */
-export function cardSlot(layout, handKey, cardIndex, dealerHand = { count: cardIndex + 1, holeHidden: false }, { handsInSeat = 0 } = {}) {
+export function cardSlot(
+  layout,
+  handKey,
+  cardIndex,
+  dealerHand = { count: cardIndex + 1, holeHidden: false },
+  { handsInSeat = 0 } = {},
+) {
   const [seat, index] = handKey.split('-').map(Number);
   if (seat === 0) return dealerSlot(layout.dealer, cardIndex, dealerHand);
   const seatLayout = layout.seats.find(s => s.seat === seat);

@@ -6,12 +6,22 @@ import { test, expect } from '@playwright/test';
 test.use({ serviceWorkers: 'block' });
 
 /** Boolean grids shaped like the strategy tables. */
-const emptyMask = () => Object.fromEntries(
-  ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender']
-    .map(name => [name, Array.from({ length: 10 }, () => new Array(10).fill(false))]),
-);
+const emptyMask = () =>
+  Object.fromEntries(
+    ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender'].map(name => [
+      name,
+      Array.from({ length: 10 }, () => new Array(10).fill(false)),
+    ]),
+  );
 
-const ONLY_HARD_STAND = { hardStand: true, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: false };
+const ONLY_HARD_STAND = {
+  hardStand: true,
+  softStand: false,
+  hardDouble: false,
+  softDouble: false,
+  split: false,
+  surrender: false,
+};
 
 /** Opens the app with the given settings already saved. */
 async function open(page, settings = {}) {
@@ -104,7 +114,10 @@ test('pause does nothing once the drill has finished', async ({ page }) => {
 
 test('the clock stops while the strategy table covers the drill', async ({ page }) => {
   await open(page, {
-    ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'drills.flash.timerMode': 'infinite', 'drills.flash.timePerHand': false,
+    ...FIXED_16_V_TEN(),
+    'drills.flash.testMode': 'warn',
+    'drills.flash.timerMode': 'infinite',
+    'drills.flash.timePerHand': false,
   });
   const screen = await launch(page);
   await screen.locator('[data-action="hit"]').click();
@@ -139,7 +152,10 @@ test('no tests mode neither grades the index test nor records an error', async (
 
 test('an unanswered hand is not scored when the clock halts', async ({ page }) => {
   await open(page, {
-    ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'drills.flash.timerMode': 'countDownHalt', 'drills.flash.drillSeconds': 10,
+    ...FIXED_16_V_TEN(),
+    'drills.flash.testMode': 'warn',
+    'drills.flash.timerMode': 'countDownHalt',
+    'drills.flash.drillSeconds': 10,
   });
   const screen = await launch(page);
   expect(await statsText(screen)).toContain('Hands: 1');
@@ -154,7 +170,11 @@ test('the index test grid leaves the cards on screen in landscape', async ({ pag
     'drills.flash.timerMode': 'infinite',
     'drills.flash.timePerHand': false,
   });
-  for (const size of [{ width: 844, height: 390 }, { width: 568, height: 320 }, { width: 926, height: 428 }]) {
+  for (const size of [
+    { width: 844, height: 390 },
+    { width: 568, height: 320 },
+    { width: 926, height: 428 },
+  ]) {
     await page.setViewportSize(size);
     const screen = page.locator('[data-screen="drills.flash"]');
     if (!(await screen.count())) await launch(page);
@@ -168,8 +188,13 @@ test('the closing text is set in the app font', async ({ page }) => {
     const { get, set } = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font');
     window.canvasFonts = [];
     Object.defineProperty(CanvasRenderingContext2D.prototype, 'font', {
-      get() { return get.call(this); },
-      set(value) { window.canvasFonts.push(value); set.call(this, value); },
+      get() {
+        return get.call(this);
+      },
+      set(value) {
+        window.canvasFonts.push(value);
+        set.call(this, value);
+      },
     });
   });
   await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd' });

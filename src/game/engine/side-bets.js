@@ -15,8 +15,14 @@ import { rankOf, suitOf, valueOf, handTotals } from '../../core/cards.js';
  * with this mapping.
  */
 const PATTERN = {
-  none: 0, pair: 1, trips: 2, straight: 3, flush: 4, straightFlush: 5,
-  suitedPair: 6, suitedTrips: 7,
+  none: 0,
+  pair: 1,
+  trips: 2,
+  straight: 3,
+  flush: 4,
+  straightFlush: 5,
+  suitedPair: 6,
+  suitedTrips: 7,
   /**
    * No pattern required, and the player's conditions are judged on the cards
    * the rule picks out rather than the whole hand. The original reached this by
@@ -33,22 +39,32 @@ const BLACK_SUITS = [0, 1];
 /** The player cards a rule looks at. */
 function playerCards(cards, code) {
   switch (code) {
-    case 1: return cards.slice(0, 1);
-    case 2: return cards.slice(1, 2);
-    case 3: return cards.slice(0, 2);
-    case 4: return cards.slice(0, 3);
-    default: return [];
+    case 1:
+      return cards.slice(0, 1);
+    case 2:
+      return cards.slice(1, 2);
+    case 3:
+      return cards.slice(0, 2);
+    case 4:
+      return cards.slice(0, 3);
+    default:
+      return [];
   }
 }
 
 /** The dealer cards a rule looks at. */
 function dealerCards(cards, code) {
   switch (code) {
-    case 1: return cards.slice(0, 1);
-    case 2: return cards.slice(1, 2);
-    case 3: return cards.slice(0, 2);
-    case 4: return cards.slice(0, 3);
-    default: return [];
+    case 1:
+      return cards.slice(0, 1);
+    case 2:
+      return cards.slice(1, 2);
+    case 3:
+      return cards.slice(0, 2);
+    case 4:
+      return cards.slice(0, 3);
+    default:
+      return [];
   }
 }
 
@@ -83,15 +99,24 @@ function hasPair(cards, { suited }) {
 /** Whether the selected cards show the rule's pattern. */
 function patternMatches(pattern, cards) {
   switch (pattern) {
-    case PATTERN.none: return true;
-    case PATTERN.pair: return hasPair(cards, { suited: false });
-    case PATTERN.suitedPair: return hasPair(cards, { suited: true });
-    case PATTERN.trips: return cards.length >= 3 && allSameRank(cards) && !allSameSuit(cards);
-    case PATTERN.suitedTrips: return cards.length >= 3 && allSameRank(cards) && allSameSuit(cards);
-    case PATTERN.straight: return straightMatches(cards) && !allSameSuit(cards);
-    case PATTERN.straightFlush: return straightMatches(cards) && allSameSuit(cards);
-    case PATTERN.flush: return cards.length >= 3 && allSameSuit(cards) && !straightMatches(cards);
-    default: return false;
+    case PATTERN.none:
+      return true;
+    case PATTERN.pair:
+      return hasPair(cards, { suited: false });
+    case PATTERN.suitedPair:
+      return hasPair(cards, { suited: true });
+    case PATTERN.trips:
+      return cards.length >= 3 && allSameRank(cards) && !allSameSuit(cards);
+    case PATTERN.suitedTrips:
+      return cards.length >= 3 && allSameRank(cards) && allSameSuit(cards);
+    case PATTERN.straight:
+      return straightMatches(cards) && !allSameSuit(cards);
+    case PATTERN.straightFlush:
+      return straightMatches(cards) && allSameSuit(cards);
+    case PATTERN.flush:
+      return cards.length >= 3 && allSameSuit(cards) && !straightMatches(cards);
+    default:
+      return false;
   }
 }
 
@@ -115,13 +140,20 @@ function suitMatches(code, cards) {
   if (!code || cards.length === 0) return true;
   const suits = cards.map(suitOf);
   switch (code) {
-    case 1: return allSameSuit(cards);
-    case 6: return allSameSuit(cards) && allSameRank(cards);
-    case 7: return suits.every(s => BLACK_SUITS.includes(s)) || suits.every(s => !BLACK_SUITS.includes(s));
-    case 8: return !allSameSuit(cards);
-    case 9: return suits.every(s => BLACK_SUITS.includes(s));
-    case 10: return suits.every(s => !BLACK_SUITS.includes(s));
-    default: return suits.every(s => s === code - 2);
+    case 1:
+      return allSameSuit(cards);
+    case 6:
+      return allSameSuit(cards) && allSameRank(cards);
+    case 7:
+      return suits.every(s => BLACK_SUITS.includes(s)) || suits.every(s => !BLACK_SUITS.includes(s));
+    case 8:
+      return !allSameSuit(cards);
+    case 9:
+      return suits.every(s => BLACK_SUITS.includes(s));
+    case 10:
+      return suits.every(s => !BLACK_SUITS.includes(s));
+    default:
+      return suits.every(s => s === code - 2);
   }
 }
 

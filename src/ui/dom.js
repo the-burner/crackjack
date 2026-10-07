@@ -7,7 +7,9 @@
  * except `false`/`null`/`undefined`, which are skipped.
  */
 export function h(tag, props = {}, ...children) {
-  const el = tag.startsWith('svg:') ? document.createElementNS('http://www.w3.org/2000/svg', tag.slice(4)) : document.createElement(tag);
+  const el = tag.startsWith('svg:')
+    ? document.createElementNS('http://www.w3.org/2000/svg', tag.slice(4))
+    : document.createElement(tag);
   for (const [key, value] of Object.entries(props ?? {})) {
     if (value === false || value === null || value === undefined) continue;
     if (key.startsWith('on') && typeof value === 'function') el.addEventListener(key.slice(2), value);

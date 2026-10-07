@@ -13,7 +13,12 @@ test('boots with a settings value that is not an object', async ({ page }) => {
 
 test('boots without localStorage, saying that settings will not be saved', async ({ page }) => {
   await page.addInitScript(() => {
-    Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new Error('blocked'); } });
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new Error('blocked');
+      },
+    });
   });
   await page.goto('/index.html');
   await expect(page.locator('[data-screen="home"]')).toBeVisible();
@@ -41,7 +46,9 @@ test.describe('the installed app offline', { tag: '@build' }, () => {
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) {
-        await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
+        await new Promise(resolve =>
+          navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }),
+        );
       }
     });
 

@@ -9,8 +9,9 @@ import { group, settingsScreen } from './controls.js';
 /** Storage key holding the current bankroll, which the game screen restores. */
 const BANKROLL_KEY = 'bankroll';
 
-const NOTE = 'Set the basic configuation on this screen. Seats can have computer players '
-  + 'or can be available for you to play. You can bet in any number of the available seats.';
+const NOTE =
+  'Set the basic configuation on this screen. Seats can have computer players ' +
+  'or can be available for you to play. You can bet in any number of the available seats.';
 
 const SEAT_COUNTS = [
   { value: 1, label: 'One Seat' },
@@ -19,7 +20,16 @@ const SEAT_COUNTS = [
   { value: 6, label: 'Six Seats' },
 ];
 
-const DECK_LABELS = ['Single Deck', 'Double Deck', 'Three Decks', 'Four Decks', 'Five Decks', 'Six Decks', 'Seven Decks', 'Eight Decks'];
+const DECK_LABELS = [
+  'Single Deck',
+  'Double Deck',
+  'Three Decks',
+  'Four Decks',
+  'Five Decks',
+  'Six Decks',
+  'Seven Decks',
+  'Eight Decks',
+];
 
 const SHUFFLE_MODES = [
   { value: 'cutCard', label: 'Shuffle after a Cut Card' },
@@ -34,8 +44,11 @@ export function setupScreen(app) {
 
   /** The cut card cannot sit beyond the shoe. */
   const maxCardsBehindCutCard = () => 52 * settings.get('table.decks') - 1;
-  const clampCutCard = () => settings.set('table.cardsBehindCutCard',
-    Math.min(settings.get('table.cardsBehindCutCard'), maxCardsBehindCutCard()));
+  const clampCutCard = () =>
+    settings.set(
+      'table.cardsBehindCutCard',
+      Math.min(settings.get('table.cardsBehindCutCard'), maxCardsBehindCutCard()),
+    );
 
   // The shuffle point and the number of rounds share one row: which one is
   // shown depends on the shuffle mode.
@@ -57,10 +70,23 @@ export function setupScreen(app) {
       seatPicker(app),
     ),
     group(
-      form.select('table.decks', DECKS.map((decks, i) => ({ value: decks, label: DECK_LABELS[i] })), {
-        onChange: (key, value) => { settings.set(key, value); clampCutCard(); form.refresh(); },
+      form.select(
+        'table.decks',
+        DECKS.map((decks, i) => ({ value: decks, label: DECK_LABELS[i] })),
+        {
+          onChange: (key, value) => {
+            settings.set(key, value);
+            clampCutCard();
+            form.refresh();
+          },
+        },
+      ),
+      form.select('table.shuffleMode', SHUFFLE_MODES, {
+        onChange: (key, value) => {
+          settings.set(key, value);
+          showShuffleRow();
+        },
       }),
-      form.select('table.shuffleMode', SHUFFLE_MODES, { onChange: (key, value) => { settings.set(key, value); showShuffleRow(); } }),
       cutCardRow,
       roundsRow,
       form.number('Burn Cards:', 'table.burnCards', { prompt: 'Burn Cards' }),

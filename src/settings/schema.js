@@ -12,15 +12,26 @@ const json = (value, shape) => ({ type: 'json', default: value, shape });
 
 const grid = (rows, cols, value) => Array.from({ length: rows }, () => new Array(cols).fill(value));
 const tableGrids = value => ({
-  split: grid(10, 10, value), hardStand: grid(10, 10, value), softDouble: grid(10, 10, value),
-  hardDouble: grid(10, 10, value), softStand: grid(10, 10, value), surrender: grid(10, 10, value),
+  split: grid(10, 10, value),
+  hardStand: grid(10, 10, value),
+  softDouble: grid(10, 10, value),
+  hardDouble: grid(10, 10, value),
+  softStand: grid(10, 10, value),
+  surrender: grid(10, 10, value),
 });
 
 export const DECKS = [1, 2, 3, 4, 5, 6, 7, 8];
 export const ACCURACY = [0, 1, 2];
 export const TRAY_STYLES = ['eightDeckFront', 'sixDeckFront', 'doubleDeckFront', 'sixDeckRear', 'doubleDeckRear'];
 export const TABLE_LIMITS = [
-  [1, 50], [5, 250], [5, 1000], [10, 2000], [25, 2500], [100, 5000], [500, 25000], [1, 100000],
+  [1, 50],
+  [5, 250],
+  [5, 1000],
+  [10, 2000],
+  [25, 2500],
+  [100, 5000],
+  [500, 25000],
+  [1, 100000],
 ];
 
 export const SETTINGS_SCHEMA = {
@@ -73,7 +84,10 @@ export const SETTINGS_SCHEMA = {
   'table.seatCount': oneOf([1, 2, 4, 6], 4),
   /** Seats 1..6: true = computer player. */
   'table.computerSeats': json([true, false, false, false, false, false]),
-  'table.limits': oneOf(TABLE_LIMITS.map((_, i) => i), 7),
+  'table.limits': oneOf(
+    TABLE_LIMITS.map((_, i) => i),
+    7,
+  ),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
   'table.showBurnCards': bool(true),
@@ -81,7 +95,10 @@ export const SETTINGS_SCHEMA = {
   'table.refreshBankrollOnStart': bool(false),
 
   // Playing strategy (shared).
-  'strategy.system': oneOf(BUILTIN_STRATEGIES.map(strategy => strategy.id), 100),
+  'strategy.system': oneOf(
+    BUILTIN_STRATEGIES.map(strategy => strategy.id),
+    100,
+  ),
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
@@ -103,11 +120,16 @@ export const SETTINGS_SCHEMA = {
   'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
   'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
-  'betting.ramp': json({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) },
-    value => Boolean(value) && Array.isArray(value.rows)),
+  'betting.ramp': json(
+    { minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) },
+    value => Boolean(value) && Array.isArray(value.rows),
+  ),
 
   // Unusual games, side bets and bonuses (game).
-  'bonuses.game': oneOf(BUILTIN_SIDE_BET_GAMES.map(game => game.id), 0),
+  'bonuses.game': oneOf(
+    BUILTIN_SIDE_BET_GAMES.map(game => game.id),
+    0,
+  ),
   /** The rules an unusual game overwrote, put back when it is left. */
   'bonuses.savedRules': json({}),
   'bonuses.sevens777': oneOf(['none', '2:1', '3:2', 'suited10:1'], 'none'),
@@ -130,7 +152,10 @@ export const SETTINGS_SCHEMA = {
   'dealerErrors.shouldHaveBusted': bool(false),
   'dealerErrors.loseOnPush': bool(false),
   'dealerErrors.noBonusPayoff': bool(false),
-  'dealerErrors.dealingBias': oneOf(['none', 'positiveCounts', 'negativeCounts', 'manyCardHands', 'repeatErrors', 'difficultHands'], 'none'),
+  'dealerErrors.dealingBias': oneOf(
+    ['none', 'positiveCounts', 'negativeCounts', 'manyCardHands', 'repeatErrors', 'difficultHands'],
+    'none',
+  ),
 
   // Peeking / hole carding (game).
   'peeking.mode': oneOf(['off', 'holeCard', 'whenDealerPeeks'], 'off'),
@@ -161,9 +186,19 @@ export const SETTINGS_SCHEMA = {
   'display.showTrueCount': bool(false),
 
   // Flash drills.
-  'drills.flash.hands': oneOf(['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom', 'roundRobin'], 'default'),
+  'drills.flash.hands': oneOf(
+    ['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom', 'roundRobin'],
+    'default',
+  ),
   'drills.flash.customHands': json(tableGrids(true)),
-  'drills.flash.situations': json({ hardStand: true, softStand: true, hardDouble: true, softDouble: true, split: true, surrender: true }),
+  'drills.flash.situations': json({
+    hardStand: true,
+    softStand: true,
+    hardDouble: true,
+    softDouble: true,
+    split: true,
+    surrender: true,
+  }),
   'drills.flash.countMode': oneOf(['zero', 'random', 'fixed', 'indexTest'], 'random'),
   'drills.flash.fixedCount': int(0, -99, 99),
   'drills.flash.maxCards': oneOf([2, 3, 4, 5], 2),
@@ -183,7 +218,10 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.progressiveSpeed': bool(false),
 
   // Depth (discard tray) drills.
-  'drills.depth.drill': oneOf(['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'], 'decksLeft'),
+  'drills.depth.drill': oneOf(
+    ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'],
+    'decksLeft',
+  ),
   'drills.depth.accuracy': oneOf(ACCURACY, 0),
   'drills.depth.resolution': oneOf(['full', 'half', 'quarter'], 'half'),
   'drills.depth.decks': oneOf(DECKS, 6),
@@ -201,7 +239,19 @@ export const SETTINGS_SCHEMA = {
   'drills.depth.progressiveSpeed': bool(false),
 
   // Count drills.
-  'drills.count.drill': oneOf(['runningCount', 'trueCount', 'acesLeft', 'acesDealt', 'aceBetCount', 'acePlayCount', 'aceInsureCount', 'tenSideCount'], 'runningCount'),
+  'drills.count.drill': oneOf(
+    [
+      'runningCount',
+      'trueCount',
+      'acesLeft',
+      'acesDealt',
+      'aceBetCount',
+      'acePlayCount',
+      'aceInsureCount',
+      'tenSideCount',
+    ],
+    'runningCount',
+  ),
   'drills.count.testEvery': oneOf(['everyCard', 'about8', 'about16', 'about36', 'never'], 'about36'),
   'drills.count.accuracy': oneOf(ACCURACY, 0),
   'drills.count.orientation': oneOf(['vertical', 'horizontal', 'mixed'], 'vertical'),

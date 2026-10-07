@@ -15,17 +15,32 @@ import { drillStrategy } from '../shared/drill-settings.js';
 import { countGrid, countWindow, INITIAL_WINDOW } from '../shared/count-grid.js';
 import { drawGridIn } from '../shared/answer-grid.js';
 import {
-  buildHandList, dealHand, ownIndex, countCentre, countForHand, correctPlay, errorCell, RoundRobin,
-  describeHand, rowOf, columnOf, ACTION_LABELS, SITUATION_LABELS,
+  buildHandList,
+  dealHand,
+  ownIndex,
+  countCentre,
+  countForHand,
+  correctPlay,
+  errorCell,
+  RoundRobin,
+  describeHand,
+  rowOf,
+  columnOf,
+  ACTION_LABELS,
+  SITUATION_LABELS,
 } from './logic.js';
 
 /** The answer buttons, in two rows, with their swipe hints. */
 const ANSWER_BUTTONS = [
-  [{ action: ACTION.double, label: 'Double', icon: 'arrow-u' },
+  [
+    { action: ACTION.double, label: 'Double', icon: 'arrow-u' },
     { action: ACTION.split, label: 'Split', icon: 'arrow-r' },
-    { action: ACTION.surrender, label: 'Surrender', icon: 'delete' }],
-  [{ action: ACTION.hit, label: 'Hit', icon: 'arrow-d' },
-    { action: ACTION.stand, label: 'Stand', icon: 'arrow-l' }],
+    { action: ACTION.surrender, label: 'Surrender', icon: 'delete' },
+  ],
+  [
+    { action: ACTION.hit, label: 'Hit', icon: 'arrow-d' },
+    { action: ACTION.stand, label: 'Stand', icon: 'arrow-l' },
+  ],
 ];
 
 /** Hands whose own index is too far outside the grid are skipped in the index test. */
@@ -74,8 +89,17 @@ export function flashScreen(app) {
     return el;
   });
   let next = 0;
-  const answers = h('div', { class: 'drill__buttons' },
-    ANSWER_BUTTONS.map(row => h('div', { class: 'drill__answer-row' }, row.map(() => answerButtons[next++]))));
+  const answers = h(
+    'div',
+    { class: 'drill__buttons' },
+    ANSWER_BUTTONS.map(row =>
+      h(
+        'div',
+        { class: 'drill__answer-row' },
+        row.map(() => answerButtons[next++]),
+      ),
+    ),
+  );
 
   let run = -1;
   let list = [];
@@ -104,7 +128,8 @@ export function flashScreen(app) {
     className: 'drill--flash',
     pausable: true,
     accuracyText: score => (warn ? `Accuracy: ${score.accuracy}%` : silent ? 'No Tests' : 'Displayed at end'),
-    countText: score => (options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`),
+    countText: score =>
+      options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`,
     onStart: start,
     onStop: stop,
     onLayout: draw,
@@ -116,8 +141,8 @@ export function flashScreen(app) {
   showButtons();
 
   /** Rounds and Infinite can time each hand; Count Down & Halt times the whole drill. */
-  const timedHands = options.timePerHand
-    && (options.timerMode === TIMER_MODE.auto || options.timerMode === TIMER_MODE.infinite);
+  const timedHands =
+    options.timePerHand && (options.timerMode === TIMER_MODE.auto || options.timerMode === TIMER_MODE.infinite);
   /** Seconds per hand; with Progressive Speed, 10% less on each Restart. */
   const speed = () => progressiveSpeed(options.seconds, run, options.progressive);
 
@@ -177,8 +202,10 @@ export function flashScreen(app) {
       finish();
       return;
     }
-    count = again ? again.count
-      : indexTest ? 0
+    count = again
+      ? again.count
+      : indexTest
+        ? 0
         : countForHand({ ...options, index, centre: countCentre(strategy) }, Math.random);
     play = correctPlay(strategy, hand, { count, situations, doubleAnyCards: options.doubleAnyCards });
     // A resumed hand is the same test, so it keeps its place in the count.
@@ -270,7 +297,8 @@ export function flashScreen(app) {
 
   function illegalPress(action) {
     if (action === ACTION.split && (hand.cardCount > 2 || hand.cards[0] !== hand.cards[1])) return 'Cannot split.';
-    if (action === ACTION.double && hand.cardCount > 2 && !options.doubleAnyCards) return 'Cannot double with more than two cards.';
+    if (action === ACTION.double && hand.cardCount > 2 && !options.doubleAnyCards)
+      return 'Cannot double with more than two cards.';
     if (action === ACTION.surrender && hand.cardCount > 2) return 'Cannot surrender with more than two cards.';
     return null;
   }
@@ -415,13 +443,17 @@ export function flashScreen(app) {
     const left = cardWidth / 2;
     const stepX = (width - cardWidth - left - 2) / (slots - 1);
     const bottom = height - cardHeight - 2;
-    hand.cardIds.forEach((id, i) => drawCard(ctx, id, left + i * stepX, bottom - i * stepY, cardWidth, cardHeight, { spanish }));
+    hand.cardIds.forEach((id, i) =>
+      drawCard(ctx, id, left + i * stepX, bottom - i * stepY, cardWidth, cardHeight, { spanish }),
+    );
   }
 
   grid.addEventListener('click', gridTap);
   let swipeFrom = null;
   const doubleTap = doubleTapDetector();
-  canvas.addEventListener('pointerdown', event => { swipeFrom = { x: event.clientX, y: event.clientY }; });
+  canvas.addEventListener('pointerdown', event => {
+    swipeFrom = { x: event.clientX, y: event.clientY };
+  });
   canvas.addEventListener('pointerup', event => {
     if (!swipeFrom || indexTest || silent) return;
     const dx = event.clientX - swipeFrom.x;

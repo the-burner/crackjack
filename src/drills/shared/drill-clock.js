@@ -3,7 +3,13 @@
 //
 // Time comes from an injectable clock (seconds), so tests can drive it.
 
-export const TIMER_MODE = { auto: 'auto', countDown: 'countDown', countUp: 'countUp', countDownHalt: 'countDownHalt', infinite: 'infinite' };
+export const TIMER_MODE = {
+  auto: 'auto',
+  countDown: 'countDown',
+  countUp: 'countUp',
+  countDownHalt: 'countDownHalt',
+  infinite: 'infinite',
+};
 
 export class DrillClock {
   /**
@@ -17,7 +23,16 @@ export class DrillClock {
    * @param {() => void} [o.onAlarm]    Called once when the limit is reached.
    * @param {() => void} [o.onHalt]     Called when a count-down-and-halt run ends.
    */
-  constructor({ mode, limit, now = () => Date.now() / 1000, setTimer = (fn, ms) => setTimeout(fn, ms), clearTimer = id => clearTimeout(id), onTick, onAlarm, onHalt }) {
+  constructor({
+    mode,
+    limit,
+    now = () => Date.now() / 1000,
+    setTimer = (fn, ms) => setTimeout(fn, ms),
+    clearTimer = id => clearTimeout(id),
+    onTick,
+    onAlarm,
+    onHalt,
+  }) {
     this.mode = mode;
     this.limit = limit;
     this.now = now;
@@ -74,12 +89,15 @@ export class DrillClock {
 
   scheduleTick() {
     this.cancel('tick');
-    this.timers.set('tick', this.setTimer(() => {
-      if (this.paused) return;
-      this.scheduleTick();
-      this.onTick?.();
-      this.checkAlarm();
-    }, 1000));
+    this.timers.set(
+      'tick',
+      this.setTimer(() => {
+        if (this.paused) return;
+        this.scheduleTick();
+        this.onTick?.();
+        this.checkAlarm();
+      }, 1000),
+    );
   }
 
   checkAlarm() {
@@ -96,13 +114,25 @@ export class DrillClock {
   /** Runs `fn` after `seconds`, replacing any previous timer with the same name. */
   after(name, seconds, fn) {
     this.cancel(name);
-    this.timers.set(name, this.setTimer(() => { this.timers.delete(name); fn(); }, seconds * 1000));
+    this.timers.set(
+      name,
+      this.setTimer(() => {
+        this.timers.delete(name);
+        fn();
+      }, seconds * 1000),
+    );
   }
 
   /** Runs `fn` every `seconds` until cancelled. */
   every(name, seconds, fn) {
     const tick = () => {
-      this.timers.set(name, this.setTimer(() => { tick(); fn(); }, seconds * 1000));
+      this.timers.set(
+        name,
+        this.setTimer(() => {
+          tick();
+          fn();
+        }, seconds * 1000),
+      );
     };
     this.cancel(name);
     tick();

@@ -27,72 +27,125 @@ export function crackPolygon(points) {
     const len = Math.hypot(bx - ax, by - ay) || 1;
     const nx = -(by - ay) / len;
     const ny = (bx - ax) / len;
-    left.push(`${+(x + nx * w / 2).toFixed(1)},${+(y + ny * w / 2).toFixed(1)}`);
-    right.unshift(`${+(x - nx * w / 2).toFixed(1)},${+(y - ny * w / 2).toFixed(1)}`);
+    left.push(`${+(x + (nx * w) / 2).toFixed(1)},${+(y + (ny * w) / 2).toFixed(1)}`);
+    right.unshift(`${+(x - (nx * w) / 2).toFixed(1)},${+(y - (ny * w) / 2).toFixed(1)}`);
   });
   return `<polygon points="${left.concat(right).join(' ')}"/>`;
 }
 
 /** `body` with the cracks cut out of it. */
 function cracked(id, body, cracks, [x, y, width, height]) {
-  return `<mask id="${id}" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${width}" height="${height}">`
-    + `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#fff" stroke="none"/>`
-    + `<g fill="#000" stroke="none">${cracks.map(crackPolygon).join('')}</g></mask>`
-    + `<g mask="url(#${id})">${body}</g>`;
+  return (
+    `<mask id="${id}" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${width}" height="${height}">` +
+    `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#fff" stroke="none"/>` +
+    `<g fill="#000" stroke="none">${cracks.map(crackPolygon).join('')}</g></mask>` +
+    `<g mask="url(#${id})">${body}</g>`
+  );
 }
 
 const ICON_C = '<path d="M 505 351 A 210 210 0 1 0 505 673"/>';
 const ICON_J = 'M 770 300 V 630 Q 770 760 650 760';
 const ICON_CRACKS = [
-  [[88, 238, 64], [168, 316, 54], [136, 362, 46], [224, 404, 36], [196, 446, 27], [276, 474, 17], [262, 502, 9], [322, 526, 2]],
-  [[196, 446, 16], [146, 486, 9], [156, 528, 1]],
+  [
+    [88, 238, 64],
+    [168, 316, 54],
+    [136, 362, 46],
+    [224, 404, 36],
+    [196, 446, 27],
+    [276, 474, 17],
+    [262, 502, 9],
+    [322, 526, 2],
+  ],
+  [
+    [196, 446, 16],
+    [146, 486, 9],
+    [156, 528, 1],
+  ],
 ];
 
 export function iconSvg() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">`
-    + `<rect width="1024" height="1024" fill="${MOCHA.base}"/>`
-    + `<g fill="none" stroke-width="112" stroke-linecap="round" transform="translate(46 -22)">`
-    + `<g stroke="${MOCHA.mauve}">${cracked('crack', ICON_C, ICON_CRACKS, [0, 0, 1024, 1024])}</g>`
-    + `<path stroke="${MOCHA.peach}" d="${ICON_J}"/></g></svg>\n`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">` +
+    `<rect width="1024" height="1024" fill="${MOCHA.base}"/>` +
+    `<g fill="none" stroke-width="112" stroke-linecap="round" transform="translate(46 -22)">` +
+    `<g stroke="${MOCHA.mauve}">${cracked('crack', ICON_C, ICON_CRACKS, [0, 0, 1024, 1024])}</g>` +
+    `<path stroke="${MOCHA.peach}" d="${ICON_J}"/></g></svg>\n`
+  );
 }
 
 // Wordmark: baseline 150, x-height 60..150, ascenders from 14.
-const CRACK = [
-  'M 124 38 A 64 64 0 1 0 124 128',
-  'M 172 150 V 100 Q 172 58 220 60',
-  'M 326 60 V 150', 'M 428 74 A 45 45 0 1 0 428 136',
-  'M 470 14 V 150 M 526 58 L 474 112 M 496 92 L 532 150',
-].map(d => `<path d="${d}"/>`).join('') + '<circle cx="282" cy="105" r="44"/>';
-const JACK = [
-  'M 586 62 V 172 Q 586 212 548 212', 'M 586 18 V 19',
-  'M 702 60 V 150', 'M 804 74 A 45 45 0 1 0 804 136',
-  'M 846 14 V 150 M 902 58 L 850 112 M 872 92 L 908 150',
-].map(d => `<path d="${d}"/>`).join('') + '<circle cx="658" cy="105" r="44"/>';
+const CRACK =
+  [
+    'M 124 38 A 64 64 0 1 0 124 128',
+    'M 172 150 V 100 Q 172 58 220 60',
+    'M 326 60 V 150',
+    'M 428 74 A 45 45 0 1 0 428 136',
+    'M 470 14 V 150 M 526 58 L 474 112 M 496 92 L 532 150',
+  ]
+    .map(d => `<path d="${d}"/>`)
+    .join('') + '<circle cx="282" cy="105" r="44"/>';
+const JACK =
+  [
+    'M 586 62 V 172 Q 586 212 548 212',
+    'M 586 18 V 19',
+    'M 702 60 V 150',
+    'M 804 74 A 45 45 0 1 0 804 136',
+    'M 846 14 V 150 M 902 58 L 850 112 M 872 92 L 908 150',
+  ]
+    .map(d => `<path d="${d}"/>`)
+    .join('') + '<circle cx="658" cy="105" r="44"/>';
 const WORD_CRACKS = [
-  [[-8, 82, 18], [30, 104, 17], [52, 90, 16], [110, 116, 15], [150, 98, 14], [205, 122, 12], [255, 96, 11], [315, 120, 9], [370, 100, 7], [430, 118, 5], [490, 102, 3], [548, 112, 0.5]],
-  [[150, 98, 7], [176, 72, 3.5], [186, 56, 0.5]],
-  [[315, 120, 5], [338, 142, 2.5], [344, 160, 0.5]],
+  [
+    [-8, 82, 18],
+    [30, 104, 17],
+    [52, 90, 16],
+    [110, 116, 15],
+    [150, 98, 14],
+    [205, 122, 12],
+    [255, 96, 11],
+    [315, 120, 9],
+    [370, 100, 7],
+    [430, 118, 5],
+    [490, 102, 3],
+    [548, 112, 0.5],
+  ],
+  [
+    [150, 98, 7],
+    [176, 72, 3.5],
+    [186, 56, 0.5],
+  ],
+  [
+    [315, 120, 5],
+    [338, 142, 2.5],
+    [344, 160, 0.5],
+  ],
 ];
 
 /** The wordmark, coloured by the theme's --logo-crack and --logo-jack. */
 export function wordmarkSvg() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -6 950 232" role="img" aria-label="Crackjack">`
-    + `<g fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">`
-    + `<g style="stroke: var(--logo-crack)">${cracked('wordmark-crack', CRACK, WORD_CRACKS, [-30, -30, 600, 280])}</g>`
-    + `<g style="stroke: var(--logo-jack)">${JACK}</g></g></svg>`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -6 950 232" role="img" aria-label="Crackjack">` +
+    `<g fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">` +
+    `<g style="stroke: var(--logo-crack)">${cracked('wordmark-crack', CRACK, WORD_CRACKS, [-30, -30, 600, 280])}</g>` +
+    `<g style="stroke: var(--logo-jack)">${JACK}</g></g></svg>`
+  );
 }
 
 async function main() {
   const icon = iconSvg();
   fs.writeFileSync(path.join(ICONS, 'icon.svg'), icon);
-  fs.writeFileSync(path.join(REPO, 'src/ui/wordmark.js'),
-    '// The "Crackjack" wordmark. Generated by tools/logo.mjs (npm run logo); do not edit.\n\n'
-    + `export const WORDMARK_SVG = ${JSON.stringify(wordmarkSvg())};\n`);
+  fs.writeFileSync(
+    path.join(REPO, 'src/ui/wordmark.js'),
+    '// The "Crackjack" wordmark. Generated by tools/logo.mjs (npm run logo); do not edit.\n\n' +
+      `export const WORDMARK_SVG = ${JSON.stringify(wordmarkSvg())};\n`,
+  );
   const browser = await chromium.launch();
   const page = await browser.newPage();
   for (const size of PNG_SIZES) {
     await page.setViewportSize({ width: size, height: size });
-    await page.setContent(`<body style="margin:0">${icon.replace('<svg ', `<svg width="${size}" height="${size}" `)}</body>`);
+    await page.setContent(
+      `<body style="margin:0">${icon.replace('<svg ', `<svg width="${size}" height="${size}" `)}</body>`,
+    );
     await page.screenshot({ path: path.join(ICONS, `icon-${size}.png`), omitBackground: false });
   }
   await browser.close();

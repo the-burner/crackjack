@@ -3,14 +3,30 @@ import { buildStrategy, CODE } from '../../../src/core/strategy/strategy-tables.
 import { NEVER, ALWAYS, NO_ENTRY } from '../../../src/core/strategy/strategy-file.js';
 import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
 import {
-  GRID_COLOR, TABLE_VIEWS, codeDescription, codeSymbol, columnLabels, countsTables,
-  gridCell, insuranceRuleText, rowCount, rowLabels, specialCode, specialtyPlays, viewByKey,
+  GRID_COLOR,
+  TABLE_VIEWS,
+  codeDescription,
+  codeSymbol,
+  columnLabels,
+  countsTables,
+  gridCell,
+  insuranceRuleText,
+  rowCount,
+  rowLabels,
+  specialCode,
+  specialtyPlays,
+  viewByKey,
 } from '../../../src/core/strategy/strategy-grid.js';
 
 const view = key => viewByKey(key);
 const OPTIONS = {
-  decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false,
-  indexSet: 'all', rangeHigh: 99, rangeLow: -99,
+  decks: 6,
+  hitSoft17: false,
+  doubleAfterSplit: false,
+  noHoleCard: false,
+  indexSet: 'all',
+  rangeHigh: 99,
+  rangeLow: -99,
 };
 const highLow = buildStrategy(STRATEGY_FILES[30], OPTIONS);
 // The settings the reference screenshots were taken with (the game's defaults).
@@ -19,8 +35,13 @@ const SCREENSHOT = { ...OPTIONS, hitSoft17: true, doubleAfterSplit: true };
 describe('views', () => {
   it('lists the seven tables in the original order', () => {
     expect(TABLE_VIEWS.map(v => v.label)).toEqual([
-      'Hard Hit/Stand', 'Soft Hit/Stand', 'Hard Double Down', 'Soft Double Down',
-      'Split', 'Surrender', 'Insurance/Counts',
+      'Hard Hit/Stand',
+      'Soft Hit/Stand',
+      'Hard Double Down',
+      'Soft Double Down',
+      'Split',
+      'Surrender',
+      'Insurance/Counts',
     ]);
   });
 
@@ -35,7 +56,18 @@ describe('row and column labels', () => {
   });
 
   it('labels hard hit/stand rows by player total for extended strategies', () => {
-    expect(rowLabels(view('hardStand'), { extended: true })).toEqual(['21', '20', '19', '18', '17', '16', '15', '14', '13', '12']);
+    expect(rowLabels(view('hardStand'), { extended: true })).toEqual([
+      '21',
+      '20',
+      '19',
+      '18',
+      '17',
+      '16',
+      '15',
+      '14',
+      '13',
+      '12',
+    ]);
   });
 
   it('labels soft rows A9 down to A2, with AT added for extended strategies', () => {
@@ -76,9 +108,17 @@ describe('row and column labels', () => {
 });
 
 describe('gridCell', () => {
-  it('paints the table\'s own action green and the other one red', () => {
-    expect(gridCell({ value: ALWAYS, view: view('hardStand') })).toEqual({ text: '', background: GRID_COLOR.action, color: '#000' });
-    expect(gridCell({ value: NEVER, view: view('hardStand') })).toEqual({ text: '', background: GRID_COLOR.opposite, color: '#000' });
+  it("paints the table's own action green and the other one red", () => {
+    expect(gridCell({ value: ALWAYS, view: view('hardStand') })).toEqual({
+      text: '',
+      background: GRID_COLOR.action,
+      color: '#000',
+    });
+    expect(gridCell({ value: NEVER, view: view('hardStand') })).toEqual({
+      text: '',
+      background: GRID_COLOR.opposite,
+      color: '#000',
+    });
   });
 
   it('reverses the colours on the double and split tables', () => {
@@ -93,7 +133,11 @@ describe('gridCell', () => {
   });
 
   it('shows an index on cyan', () => {
-    expect(gridCell({ value: -3, view: view('hardStand') })).toEqual({ text: '-3', background: GRID_COLOR.index, color: '#000' });
+    expect(gridCell({ value: -3, view: view('hardStand') })).toEqual({
+      text: '-3',
+      background: GRID_COLOR.index,
+      color: '#000',
+    });
     expect(gridCell({ value: 0, view: view('split') }).text).toBe('0');
   });
 
@@ -102,19 +146,34 @@ describe('gridCell', () => {
   });
 
   it('shows "act below" indices on blue with white text, on the split and surrender tables', () => {
-    expect(gridCell({ value: -31492, view: view('split') })).toEqual({ text: '8', background: GRID_COLOR.below, color: '#fff' });
+    expect(gridCell({ value: -31492, view: view('split') })).toEqual({
+      text: '8',
+      background: GRID_COLOR.below,
+      color: '#fff',
+    });
     expect(gridCell({ value: -31492, view: view('surrender') }).background).toBe(GRID_COLOR.below);
     // Other tables have no "below" encoding; the raw value is simply blank.
-    expect(gridCell({ value: -31492, view: view('hardStand') })).toEqual({ text: '', background: GRID_COLOR.index, color: '#000' });
+    expect(gridCell({ value: -31492, view: view('hardStand') })).toEqual({
+      text: '',
+      background: GRID_COLOR.index,
+      color: '#000',
+    });
   });
 
   it('shows a special code as its symbol', () => {
-    expect(gridCell({ value: CODE.standWith3OrMoreCards, view: view('hardStand') }))
-      .toEqual({ text: 'D', background: GRID_COLOR.index, color: '#000' });
+    expect(gridCell({ value: CODE.standWith3OrMoreCards, view: view('hardStand') })).toEqual({
+      text: 'D',
+      background: GRID_COLOR.index,
+      color: '#000',
+    });
   });
 
   it('puts code 1098 on blue in the split and surrender tables', () => {
-    expect(gridCell({ value: 1098, view: view('split') })).toEqual({ text: 'VR', background: GRID_COLOR.below, color: '#fff' });
+    expect(gridCell({ value: 1098, view: view('split') })).toEqual({
+      text: 'VR',
+      background: GRID_COLOR.below,
+      color: '#fff',
+    });
     expect(gridCell({ value: 1098, view: view('hardStand') }).background).toBe(GRID_COLOR.index);
   });
 
@@ -124,10 +183,16 @@ describe('gridCell', () => {
   });
 
   it('shades error counts instead of the strategy', () => {
-    expect(gridCell({ value: ALWAYS, view: view('hardStand'), errorCount: 0 }))
-      .toEqual({ text: '', background: GRID_COLOR.noErrors, color: '#fff' });
-    expect(gridCell({ value: ALWAYS, view: view('hardStand'), errorCount: 3 }))
-      .toEqual({ text: '3', background: GRID_COLOR.errors, color: '#000' });
+    expect(gridCell({ value: ALWAYS, view: view('hardStand'), errorCount: 0 })).toEqual({
+      text: '',
+      background: GRID_COLOR.noErrors,
+      color: '#fff',
+    });
+    expect(gridCell({ value: ALWAYS, view: view('hardStand'), errorCount: 3 })).toEqual({
+      text: '3',
+      background: GRID_COLOR.errors,
+      color: '#000',
+    });
   });
 });
 
@@ -158,8 +223,10 @@ describe('special codes', () => {
       [CODE.pivot, 0, CODE.standWith3OrMoreCards],
       [CODE.pivot, ALWAYS, NEVER],
     ];
-    expect(specialtyPlays(table, { ...view('split'), rows: 2, extendedRows: 2 }, { columns: 3 }))
-      .toEqual(['J - Pivot', 'D - Stand with 3 or more cards']);
+    expect(specialtyPlays(table, { ...view('split'), rows: 2, extendedRows: 2 }, { columns: 3 })).toEqual([
+      'J - Pivot',
+      'D - Stand with 3 or more cards',
+    ]);
   });
 
   it('returns no plays for a table without special codes', () => {
@@ -178,7 +245,10 @@ describe('insurance and counts', () => {
   it('builds the four small tables for High-Low', () => {
     const counts = countsTables(highLow);
     expect(counts.pointValues.columns).toEqual(['A', '2', '3', '4', '5', '6', '7', '8', '9', 'X']);
-    expect(counts.pointValues.rows[0]).toEqual({ label: 'Red', values: ['-1', '1', '1', '1', '1', '1', '0', '0', '0', '-1'] });
+    expect(counts.pointValues.rows[0]).toEqual({
+      label: 'Red',
+      values: ['-1', '1', '1', '1', '1', '1', '0', '0', '0', '-1'],
+    });
     expect(counts.pointValues.rows[1].values).toEqual(counts.pointValues.rows[0].values);
     expect(counts.startingCount.rows[0].values).toEqual(['0', '0', '0', '0', '0', '0', '0', '0']);
     expect(counts.insuranceDecks.rows[0].values).toEqual(['1', '2', '3', '3', '3', '3', '3', '3']);
@@ -221,7 +291,9 @@ describe('High-Low hard hit/stand grid', () => {
   const v = view('hardStand');
 
   it('matches the screenshot', () => {
-    const texts = rowLabels(v).map((_, r) => columnLabels().map((__, c) => gridCell({ value: table[r][c], view: v }).text));
+    const texts = rowLabels(v).map((_, r) =>
+      columnLabels().map((__, c) => gridCell({ value: table[r][c], view: v }).text),
+    );
     expect(texts[0]).toEqual(['', '', '', '', '', '', '', '', '', '-6']);
     expect(texts[1]).toEqual(['-8', '-10', '', '', '', '9', '7', '5', '0', '3']);
     expect(texts[2]).toEqual(['-5', '-6', '-7', '-9', '-9', '10', '10', '8', '4', '5']);

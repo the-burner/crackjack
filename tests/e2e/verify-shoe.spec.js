@@ -37,22 +37,25 @@ async function openTable(page, { settings = {}, seed = 7 } = {}) {
     };
     requestAnimationFrame(sample);
     localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99,
-      'mechanics.otherPlayerSpeed': 99,
-      'mechanics.payoffSpeed': 99,
-      'table.startingBankroll': 1000,
-      'table.seatCount': 1,
-      'table.computerSeats': [false, false, false, false, false, false],
-      'betting.chipValue': 5,
-      'betting.warnOnError': false,
-      'strategy.warnOnError': false,
-      'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
-      'rules.surrender': 'none',
-      'display.hideActionButtons': false,
-      'display.showRunningCount': true,
-      ...overrides,
-    }));
+    localStorage.setItem(
+      'cj.settings',
+      JSON.stringify({
+        'mechanics.dealerSpeed': 99,
+        'mechanics.otherPlayerSpeed': 99,
+        'mechanics.payoffSpeed': 99,
+        'table.startingBankroll': 1000,
+        'table.seatCount': 1,
+        'table.computerSeats': [false, false, false, false, false, false],
+        'betting.chipValue': 5,
+        'betting.warnOnError': false,
+        'strategy.warnOnError': false,
+        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+        'rules.surrender': 'none',
+        'display.hideActionButtons': false,
+        'display.showRunningCount': true,
+        ...overrides,
+      }),
+    );
   }, settings);
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
@@ -63,7 +66,12 @@ const overlay = page => page.locator('.bet-overlay');
 const action = (page, name) => page.locator(`.table__actions [data-action="${name}"]`);
 const frames = page => page.evaluate(() => window.__cjFrames ?? []);
 const overlayLog = page => page.evaluate(() => window.__cjOverlay);
-const clearLogs = page => page.evaluate(() => { window.__cjFrames = []; window.__cjOverlay = []; window.__cjChip = []; });
+const clearLogs = page =>
+  page.evaluate(() => {
+    window.__cjFrames = [];
+    window.__cjOverlay = [];
+    window.__cjChip = [];
+  });
 
 /** The running count the table's readout shows. */
 const readout = async page => (await page.locator('.table__counts').textContent()).match(/RC: (-?[\d.]+)/)?.[1];
@@ -80,14 +88,19 @@ async function statsCount(page) {
 }
 
 /** What a fresh shoe's running count is after seeing `cards`, by the selected strategy. */
-const countOf = (page, cards) => page.evaluate(async seen => {
-  const { Counter } = await import('/src/core/counting.js');
-  const decks = window.app.settings.get('table.decks');
-  const counter = new Counter(window.app.strategies.current(window.app.settings, decks), { division: 0, lastDeck: 0, rounding: 0 });
-  counter.reset(decks);
-  for (const card of seen) counter.addCard(card, 1);
-  return String(Math.round(counter.running * 10) / 10);
-}, cards);
+const countOf = (page, cards) =>
+  page.evaluate(async seen => {
+    const { Counter } = await import('/src/core/counting.js');
+    const decks = window.app.settings.get('table.decks');
+    const counter = new Counter(window.app.strategies.current(window.app.settings, decks), {
+      division: 0,
+      lastDeck: 0,
+      rounding: 0,
+    });
+    counter.reset(decks);
+    for (const card of seen) counter.addCard(card, 1);
+    return String(Math.round(counter.running * 10) / 10);
+  }, cards);
 
 /** The first frame at or after index `from` that matches. */
 const findFrom = (list, from, test) => {
@@ -134,11 +147,14 @@ async function playRound(page, { prefer = ['stand'], insure = false, onTurn = nu
 }
 
 /** True for a frame showing a fresh shoe: nothing drawn yet. */
-const freshShoe = (frame, decks) => frame.shoeCards === decks * 52 && cardCount(frame) === 0 && frame.burns.length === 0;
+const freshShoe = (frame, decks) =>
+  frame.shoeCards === decks * 52 && cardCount(frame) === 0 && frame.burns.length === 0;
 
 test.describe('opening the table', () => {
   test('shows the burn face up, puts it in the tray, and only then opens betting', async ({ page }) => {
-    await openTable(page, { settings: { 'mechanics.dealerSpeed': 50, 'table.burnCards': 1, 'table.showBurnCards': true } });
+    await openTable(page, {
+      settings: { 'mechanics.dealerSpeed': 50, 'table.burnCards': 1, 'table.showBurnCards': true },
+    });
     const log = await frames(page);
     const shuffled = findFrom(log, 0, f => freshShoe(f, 6));
     const shown = findFrom(log, Math.max(0, shuffled), f => f.burns.length === 1 && f.burns[0].faceUp);
@@ -200,15 +216,27 @@ test.describe('the number of burn cards', () => {
     expect(log[three].burns.every(b => b.faceUp)).toBe(true);
     expect(findFrom(log, three, f => f.burns.length === 0 && f.trayCards === 3)).toBeGreaterThan(three);
     expect(log.at(-1).shoeCards).toBe(309);
-    const expected = await countOf(page, log[three].burns.map(b => b.card));
+    const expected = await countOf(
+      page,
+      log[three].burns.map(b => b.card),
+    );
     expect(await readout(page)).toBe(expected);
     expect(await statsCount(page)).toBe(expected);
   });
 });
 
 test.describe('between shoes', () => {
-  test('reshuffles and burns at the end of the round, before the next bets, and starts a new count', async ({ page }) => {
-    await openTable(page, { settings: { 'table.shuffleMode': 'rounds', 'table.roundsPerShoe': 1, 'table.burnCards': 1, 'table.showBurnCards': true } });
+  test('reshuffles and burns at the end of the round, before the next bets, and starts a new count', async ({
+    page,
+  }) => {
+    await openTable(page, {
+      settings: {
+        'table.shuffleMode': 'rounds',
+        'table.roundsPerShoe': 1,
+        'table.burnCards': 1,
+        'table.showBurnCards': true,
+      },
+    });
     const first = await frames(page);
     const firstBurn = first.find(f => f.burns.length === 1).burns[0].card;
 
@@ -225,9 +253,18 @@ test.describe('between shoes', () => {
 
     // The old shoe's count is not carried over.
     const newBurn = round[shown].burns[0].card;
-    const seenLastShoe = [firstBurn, ...new Set(round.slice(0, shuffled).flatMap(f => [f.dealer, ...f.hands]
-      .flatMap(hand => hand.cards.map((card, i) => (hand.faceUp[i] ? `${hand.key}:${i}:${card}` : null))).filter(Boolean)))]
-      .map(entry => (typeof entry === 'number' ? entry : Number(entry.split(':')[2])));
+    const seenLastShoe = [
+      firstBurn,
+      ...new Set(
+        round
+          .slice(0, shuffled)
+          .flatMap(f =>
+            [f.dealer, ...f.hands]
+              .flatMap(hand => hand.cards.map((card, i) => (hand.faceUp[i] ? `${hand.key}:${i}:${card}` : null)))
+              .filter(Boolean),
+          ),
+      ),
+    ].map(entry => (typeof entry === 'number' ? entry : Number(entry.split(':')[2])));
     const expected = await countOf(page, [newBurn]);
     const carried = await countOf(page, [...seenLastShoe, newBurn]);
     expect(await readout(page)).toBe(expected);
@@ -259,10 +296,15 @@ test.describe('the Shuffle button', () => {
     expect(await readout(page)).toBe(expected);
     expect(await statsCount(page)).toBe(expected);
     // As at the opening: the burn then goes into the tray, while betting is still open.
-    await expect.poll(async () => {
-      const last = (await frames(page)).at(-1);
-      return { burns: last.burns.length, tray: last.trayCards };
-    }, { timeout: 5000 }).toEqual({ burns: 0, tray: 1 });
+    await expect
+      .poll(
+        async () => {
+          const last = (await frames(page)).at(-1);
+          return { burns: last.burns.length, tray: last.trayCards };
+        },
+        { timeout: 5000 },
+      )
+      .toEqual({ burns: 0, tray: 1 });
     await expect(overlay(page)).toBeVisible();
   });
 });
@@ -270,7 +312,9 @@ test.describe('the Shuffle button', () => {
 test.describe('insurance', () => {
   test('takes the insurance chips off the seat as soon as the dealer has checked', async ({ page }) => {
     test.setTimeout(180000);
-    await openTable(page, { settings: { 'rules.insurance': 'normal', 'rules.dealerPeeksAce': true, 'mechanics.payoffSpeed': 60 } });
+    await openTable(page, {
+      settings: { 'rules.insurance': 'normal', 'rules.dealerPeeksAce': true, 'mechanics.payoffSpeed': 60 },
+    });
     let checked = null;
     for (let round = 0; round < 60 && !checked; round++) {
       const log = await playRound(page, { insure: true });
@@ -294,9 +338,15 @@ test.describe('insurance', () => {
     const { chip, log, reveal, missing } = checked;
     // Insurance was bought: the bankroll paid half the $5 bet.
     const banks = chip.map(c => Number(c.bank?.replace(/[$,]/g, '')));
-    expect(banks.some((bank, i) => i > 0 && banks[i - 1] - bank === 2.5), JSON.stringify(chip.map(c => c.bank))).toBe(true);
+    expect(
+      banks.some((bank, i) => i > 0 && banks[i - 1] - bank === 2.5),
+      JSON.stringify(chip.map(c => c.bank)),
+    ).toBe(true);
     // The stake was put up and shown on the seat.
-    expect(missing, `seat 1 label never showed the insurance stake; it showed ${JSON.stringify(chip.map(c => c.text))}`).toBeFalsy();
+    expect(
+      missing,
+      `seat 1 label never showed the insurance stake; it showed ${JSON.stringify(chip.map(c => c.text))}`,
+    ).toBeFalsy();
     const insured = chip.findIndex(c => c.text === '$7.50');
     const back = findFrom(chip, insured, c => c.text === '$5');
     expect(back, 'the insurance stake comes off the label').toBeGreaterThan(insured);
@@ -331,7 +381,14 @@ test.describe('peeking at the hole card', () => {
 
   test('flashes only under an upcard the dealer checks', async ({ page }) => {
     test.setTimeout(120000);
-    await openTable(page, { settings: { 'peeking.mode': 'whenDealerPeeks', 'peeking.percent': 100, 'rules.dealerPeeksAce': true, 'rules.dealerPeeksTen': true } });
+    await openTable(page, {
+      settings: {
+        'peeking.mode': 'whenDealerPeeks',
+        'peeking.percent': 100,
+        'rules.dealerPeeksAce': true,
+        'rules.dealerPeeksTen': true,
+      },
+    });
     const seen = { checked: 0, other: 0 };
     for (let round = 0; round < 20; round++) {
       const log = await playRound(page);
@@ -347,7 +404,14 @@ test.describe('peeking at the hole card', () => {
 
   test('does not flash under a ten when the dealer does not check tens', async ({ page }) => {
     test.setTimeout(120000);
-    await openTable(page, { settings: { 'peeking.mode': 'whenDealerPeeks', 'peeking.percent': 100, 'rules.dealerPeeksAce': true, 'rules.dealerPeeksTen': false } });
+    await openTable(page, {
+      settings: {
+        'peeking.mode': 'whenDealerPeeks',
+        'peeking.percent': 100,
+        'rules.dealerPeeksAce': true,
+        'rules.dealerPeeksTen': false,
+      },
+    });
     let tens = 0;
     for (let round = 0; round < 15; round++) {
       const log = await playRound(page);
@@ -367,10 +431,11 @@ const FACE_DOWN = {
 };
 
 /** The frame at the end of the initial deal: every hand has two cards. */
-const endOfDeal = log => log.findIndex(f => f.dealer.cards.length === 2 && f.hands.length >= 4 && f.hands.every(h => h.cards.length === 2));
+const endOfDeal = log =>
+  log.findIndex(f => f.dealer.cards.length === 2 && f.hands.length >= 4 && f.hands.every(h => h.cards.length === 2));
 
 test.describe('peeking right and left', () => {
-  test('deals the neighbour\'s cards face up and counts them; other seats stay face down', async ({ page }) => {
+  test("deals the neighbour's cards face up and counts them; other seats stay face down", async ({ page }) => {
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true } });
     const burn = (await frames(page)).find(f => f.burns.length === 1).burns[0].card;
     for (let round = 0; round < 3; round++) {
@@ -389,7 +454,9 @@ test.describe('peeking right and left', () => {
       expect(hand('4-0').faceUp, `round ${round}: seat 4`).toEqual([false, false]);
       if (round === 0 && atTurn) {
         // At the player's turn the readout is everything face up so far, the neighbour's cards included.
-        const visible = [atTurn.frame.dealer, ...atTurn.frame.hands].flatMap(h => h.cards.filter((_, i) => h.faceUp[i]));
+        const visible = [atTurn.frame.dealer, ...atTurn.frame.hands].flatMap(h =>
+          h.cards.filter((_, i) => h.faceUp[i]),
+        );
         expect(visible).toEqual(expect.arrayContaining(hand('2-0').cards));
         expect(atTurn.rc).toBe(await countOf(page, [burn, ...visible]));
       }
@@ -397,7 +464,7 @@ test.describe('peeking right and left', () => {
     }
   });
 
-  test('randomize card turns up the neighbour\'s cards one by one, at random', async ({ page }) => {
+  test("randomize card turns up the neighbour's cards one by one, at random", async ({ page }) => {
     test.setTimeout(120000);
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true, 'peeking.randomizeCard': true } });
     const patterns = new Set();
@@ -414,7 +481,7 @@ test.describe('peeking right and left', () => {
     expect(patterns.has('[true,false]') || patterns.has('[false,true]')).toBe(true);
   });
 
-  test('randomize hand turns up the whole neighbour\'s hand or none of it', async ({ page }) => {
+  test("randomize hand turns up the whole neighbour's hand or none of it", async ({ page }) => {
     test.setTimeout(120000);
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true, 'peeking.randomizeHand': true } });
     const patterns = new Set();
@@ -429,18 +496,23 @@ test.describe('peeking right and left', () => {
 });
 
 test.describe('a face-down game', () => {
-  test('shows the player\'s hand for its turn, hides it on standing, and turns every hand up at the showdown', async ({ page }) => {
+  test("shows the player's hand for its turn, hides it on standing, and turns every hand up at the showdown", async ({
+    page,
+  }) => {
     test.setTimeout(120000);
     await openTable(page, { settings: FACE_DOWN });
     for (let round = 0; round < 5; round++) {
       const log = await playRound(page);
       const deal = endOfDeal(log);
       expect(deal).toBeGreaterThanOrEqual(0);
-      expect(log[deal].hands.every(h => h.faceUp.every(up => !up)), `round ${round}: dealt face down`).toBe(true);
+      expect(
+        log[deal].hands.every(h => h.faceUp.every(up => !up)),
+        `round ${round}: dealt face down`,
+      ).toBe(true);
       // The dealer's hole card turning up marks the showdown.
       const showdown = findFrom(log, deal, f => f.dealer.cards.length >= 2 && f.dealer.faceUp[1] === true);
       expect(showdown).toBeGreaterThan(deal);
-      const mine = (f) => f.hands.find(h => h.key === '1-0');
+      const mine = f => f.hands.find(h => h.key === '1-0');
       const turn = findFrom(log, deal, f => f.pointer?.hand === '1-0');
       if (turn >= 0) {
         expect(mine(log[turn]).faceUp.every(Boolean), `round ${round}: face up for its turn`).toBe(true);
@@ -482,7 +554,8 @@ test.describe('the double-down card face down', () => {
     for (let round = 0; round < 25 && !doubled; round++) {
       const log = await playRound(page, { prefer: ['double'] });
       const at = log.findIndex(f => f.hands.some(h => h.cards.length >= 3 && h.faceUp[2] === false));
-      if (at >= 0) doubled = { log, at, key: log[at].hands.find(h => h.cards.length >= 3 && h.faceUp[2] === false).key };
+      if (at >= 0)
+        doubled = { log, at, key: log[at].hands.find(h => h.cards.length >= 3 && h.faceUp[2] === false).key };
     }
     expect(doubled, 'a hand was doubled').not.toBeNull();
     const { log, at, key } = doubled;
@@ -503,7 +576,9 @@ test.describe('players come and go', () => {
     test.setTimeout(300000);
     await openTable(page, {
       settings: {
-        'mechanics.dealerSpeed': 100, 'mechanics.otherPlayerSpeed': 100, 'mechanics.payoffSpeed': 100,
+        'mechanics.dealerSpeed': 100,
+        'mechanics.otherPlayerSpeed': 100,
+        'mechanics.payoffSpeed': 100,
         'table.playersComeAndGo': true,
         // Portrait shows four seats.
         'table.seatCount': 4,
@@ -513,7 +588,11 @@ test.describe('players come and go', () => {
     const seatings = [];
     for (let round = 0; round < 60; round++) {
       const log = await playRound(page);
-      const seats = new Set(log.flatMap(f => f.hands.filter(h => h.cards.length > 0 && !h.key.startsWith('1-')).map(h => h.key.split('-')[0])));
+      const seats = new Set(
+        log.flatMap(f =>
+          f.hands.filter(h => h.cards.length > 0 && !h.key.startsWith('1-')).map(h => h.key.split('-')[0]),
+        ),
+      );
       seatings.push([...seats].sort().join(','));
     }
     const changes = seatings.slice(1).filter((s, i) => s !== seatings[i]).length;
@@ -568,7 +647,9 @@ test.describe('the cut card', () => {
 test.describe('extra findings', () => {
   test('the readout agrees with the Stats count after a split', async ({ page }) => {
     test.setTimeout(180000);
-    await openTable(page, { settings: { 'table.seatCount': 4, 'table.computerSeats': [false, true, true, true, false, false] } });
+    await openTable(page, {
+      settings: { 'table.seatCount': 4, 'table.computerSeats': [false, true, true, true, false, false] },
+    });
     let splits = 0;
     for (let round = 0; round < 80 && splits < 4; round++) {
       const log = await playRound(page, { prefer: ['split'] });
@@ -583,8 +664,12 @@ test.describe('extra findings', () => {
     test.setTimeout(180000);
     await openTable(page, {
       settings: {
-        'table.shuffleMode': 'rounds', 'table.roundsPerShoe': 80, 'table.burnCards': 1, 'table.showBurnCards': true,
-        'table.seatCount': 4, 'table.computerSeats': [false, true, true, true, false, false],
+        'table.shuffleMode': 'rounds',
+        'table.roundsPerShoe': 80,
+        'table.burnCards': 1,
+        'table.showBurnCards': true,
+        'table.seatCount': 4,
+        'table.computerSeats': [false, true, true, true, false, false],
       },
     });
     // In a face-up game every card dealt is seen by the end of its round.
@@ -605,7 +690,16 @@ test.describe('extra findings', () => {
         continue;
       }
       splits += 1;
-      const hands = [...keys].map(key => `${key}: ${log.findLast(f => f.hands.some(h => h.key === key && h.cards.length))?.hands.find(h => h.key === key).cards.map(rankOf).join(' ')}`).join('; ');
+      const hands = [...keys]
+        .map(
+          key =>
+            `${key}: ${log
+              .findLast(f => f.hands.some(h => h.key === key && h.cards.length))
+              ?.hands.find(h => h.key === key)
+              .cards.map(rankOf)
+              .join(' ')}`,
+        )
+        .join('; ');
       expect(await readout(page), `round ${round}, after a split (${hands}): the readout`).toBe(expected);
       expect(await statsCount(page), `round ${round}, after a split: the Stats count`).toBe(expected);
     }
@@ -626,10 +720,11 @@ test.describe('extra findings', () => {
         // Swept in play: it busted.
         busts += 1;
         const hand = log[last].hands.find(h => h.key === key);
-        expect(hand.faceUp, `round ${round}: ${key} ${JSON.stringify(hand.cards)} as it was swept`).toEqual(hand.cards.map(() => true));
+        expect(hand.faceUp, `round ${round}: ${key} ${JSON.stringify(hand.cards)} as it was swept`).toEqual(
+          hand.cards.map(() => true),
+        );
       }
     }
     expect(busts).toBeGreaterThan(0);
   });
 });
-

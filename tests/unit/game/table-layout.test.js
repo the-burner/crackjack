@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
-  tableLayout, visibleSeats, cardSlot, seatSlot, dealerSlot, railEdgeY, traySilhouette, DEALER_SPREAD_CARDS,
-  MAX_PORTRAIT_SEATS, CARDS_PER_HAND, HANDS_PER_SEAT,
+  tableLayout,
+  visibleSeats,
+  cardSlot,
+  seatSlot,
+  dealerSlot,
+  railEdgeY,
+  traySilhouette,
+  DEALER_SPREAD_CARDS,
+  MAX_PORTRAIT_SEATS,
+  CARDS_PER_HAND,
+  HANDS_PER_SEAT,
 } from '../../../src/game/table/layout.js';
 
 const PORTRAIT = { width: 390, height: 844 };
@@ -33,7 +42,10 @@ describe('visible seats', () => {
 });
 
 describe('table layout', () => {
-  for (const [name, size] of [['portrait', PORTRAIT], ['landscape', LANDSCAPE]]) {
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', LANDSCAPE],
+  ]) {
     describe(name, () => {
       const layout = layoutFor(size);
 
@@ -190,7 +202,10 @@ describe('the table edge', () => {
 });
 
 describe('bet circles', () => {
-  for (const [name, size] of [['portrait', PORTRAIT], ['landscape', LANDSCAPE]]) {
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', LANDSCAPE],
+  ]) {
     for (const seatCount of [1, 2, 4, 6]) {
       it(`sit under their seats, apart and on the table (${name}, ${seatCount} seats)`, () => {
         const layout = layoutFor(size, { seatCount, humanSeats: [1] });
@@ -199,7 +214,8 @@ describe('bet circles', () => {
           expect(seat.circle.y + seat.circle.ry).toBeLessThanOrEqual(layout.height);
         }
         const xs = layout.seats.map(s => s.circle).sort((a, b) => a.x - b.x);
-        for (let i = 1; i < xs.length; i++) expect(xs[i].x - xs[i - 1].x).toBeGreaterThanOrEqual(xs[i].rx + xs[i - 1].rx);
+        for (let i = 1; i < xs.length; i++)
+          expect(xs[i].x - xs[i - 1].x).toBeGreaterThanOrEqual(xs[i].rx + xs[i - 1].rx);
         // Every circle is the same gap above the table's curved edge.
         const gaps = layout.seats.map(({ circle: c }) => {
           const edge = Math.min(...[c.x - c.rx, c.x, c.x + c.rx].map(x => railEdgeY(layout.rail, layout.width, x)));
@@ -215,7 +231,10 @@ describe('bet circles', () => {
 });
 
 describe('the dealer hand', () => {
-  for (const [name, size] of [['portrait', PORTRAIT], ['landscape', LANDSCAPE]]) {
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', LANDSCAPE],
+  ]) {
     describe(name, () => {
       const layout = layoutFor(size);
       const xs = (count, holeHidden = false, dealer = layout.dealer) =>

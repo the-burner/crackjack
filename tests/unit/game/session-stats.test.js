@@ -88,9 +88,17 @@ describe('saved stats from an older version', () => {
   it('fills in the missing counters instead of reading NaN', () => {
     const app = makeApp();
     app.storage.set('gameStats', {
-      rounds: 4, totalBet: 40, highBet: 10, lowBet: 10,
-      highBankroll: 100, lowBankroll: 50, bankrollSum: 300,
-      playDecisions: 2, playErrors: 0, betDecisions: 2, betErrors: 0,
+      rounds: 4,
+      totalBet: 40,
+      highBet: 10,
+      lowBet: 10,
+      highBankroll: 100,
+      lowBankroll: 50,
+      bankrollSum: 300,
+      playDecisions: 2,
+      playErrors: 0,
+      betDecisions: 2,
+      betErrors: 0,
     });
     const session = new GameSession(app);
     expect(session.stats).toMatchObject({ rounds: 4, foulDecisions: 0, foulErrors: 0 });

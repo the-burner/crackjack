@@ -31,11 +31,23 @@ function recorder() {
     const felt = document.querySelector('.table__felt');
     const range = document.createRange();
     range.selectNodeContents(pill);
-    const rect = r => ({ left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
+    const rect = r => ({
+      left: r.left,
+      right: r.right,
+      top: r.top,
+      bottom: r.bottom,
+      width: r.width,
+      height: r.height,
+    });
     return {
       style: {
-        radius: c.borderTopLeftRadius, family: c.fontFamily, size: c.fontSize, weight: c.fontWeight,
-        shadow: c.boxShadow, background: c.backgroundColor, color: c.color,
+        radius: c.borderTopLeftRadius,
+        family: c.fontFamily,
+        size: c.fontSize,
+        weight: c.fontWeight,
+        shadow: c.boxShadow,
+        background: c.backgroundColor,
+        color: c.color,
       },
       pill: rect(pill.getBoundingClientRect()),
       text: rect(range.getBoundingClientRect()),
@@ -51,19 +63,37 @@ function recorder() {
     const f = frameCount();
     for (const chip of document.querySelectorAll('.table__chip')) {
       const pill = chip.querySelector('.table__result');
-      const state = { pill: pill ? pill.textContent : null, tone: pill?.dataset.tone ?? null, text: pill ? '' : chip.textContent };
+      const state = {
+        pill: pill ? pill.textContent : null,
+        tone: pill?.dataset.tone ?? null,
+        text: pill ? '' : chip.textContent,
+      };
       if (!changed(`chip${chip.dataset.seat}`, JSON.stringify(state))) continue;
       log.push({ kind: 'chip', t, f, seat: Number(chip.dataset.seat), ...state, look: pill ? pillLook(pill) : null });
     }
-    const offered = [...document.querySelectorAll('.table__actions [data-action]')].filter(el => !el.hidden).map(el => el.dataset.action).join(',');
+    const offered = [...document.querySelectorAll('.table__actions [data-action]')]
+      .filter(el => !el.hidden)
+      .map(el => el.dataset.action)
+      .join(',');
     if (changed('actions', offered)) log.push({ kind: 'actions', t, f, text: offered });
-    for (const [kind, selector] of [['bankroll', '.table__bankroll'], ['counts', '.table__counts']]) {
+    for (const [kind, selector] of [
+      ['bankroll', '.table__bankroll'],
+      ['counts', '.table__counts'],
+    ]) {
       const el = document.querySelector(selector);
       if (el && changed(kind, el.textContent)) log.push({ kind, t, f, text: el.textContent });
     }
     for (const el of document.querySelectorAll('.toast')) {
       if (!toasts.has(el)) {
-        const entry = { kind: 'toast', t, f, text: el.textContent, className: el.className, leaving: null, removed: null };
+        const entry = {
+          kind: 'toast',
+          t,
+          f,
+          text: el.textContent,
+          className: el.className,
+          leaving: null,
+          removed: null,
+        };
         toasts.set(el, entry);
         log.push(entry);
       }
@@ -72,7 +102,13 @@ function recorder() {
     }
     for (const [el, entry] of toasts) if (entry.removed === null && !el.isConnected) entry.removed = t;
   };
-  new MutationObserver(scan).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden'] });
+  new MutationObserver(scan).observe(document, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['class', 'hidden'],
+  });
 }
 
 /** Records every sound the table asks for, and every audio file actually started. */
@@ -108,24 +144,30 @@ async function openTable(page, { seed, settings = {}, size = PORTRAIT, sound = f
       };
     });
   }
-  await page.addInitScript(overrides => {
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99,
-      'mechanics.otherPlayerSpeed': 99,
-      'mechanics.payoffSpeed': 99,
-      'mechanics.dealerPointsOutStupidPlays': false,
-      'table.startingBankroll': 1000,
-      'table.seatCount': 4,
-      'table.computerSeats': [false, true, true, true, false, false],
-      'betting.chipValue': 5,
-      'betting.warnOnError': false,
-      'strategy.warnOnError': false,
-      'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
-      'display.hideActionButtons': false,
-      ...overrides,
-    }));
-  }, { ...settings, 'display.sound': sound });
+  await page.addInitScript(
+    overrides => {
+      localStorage.clear();
+      localStorage.setItem(
+        'cj.settings',
+        JSON.stringify({
+          'mechanics.dealerSpeed': 99,
+          'mechanics.otherPlayerSpeed': 99,
+          'mechanics.payoffSpeed': 99,
+          'mechanics.dealerPointsOutStupidPlays': false,
+          'table.startingBankroll': 1000,
+          'table.seatCount': 4,
+          'table.computerSeats': [false, true, true, true, false, false],
+          'betting.chipValue': 5,
+          'betting.warnOnError': false,
+          'strategy.warnOnError': false,
+          'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+          'display.hideActionButtons': false,
+          ...overrides,
+        }),
+      );
+    },
+    { ...settings, 'display.sound': sound },
+  );
   await page.goto('/index.html');
   if (sound) await recordSounds(page);
   await page.locator('[data-action="play"]').click();
@@ -153,7 +195,8 @@ const POLICY = {
       return 'stand';
     };
   },
-  hitTo17: (offered, cards) => (offered.includes('pass') ? 'pass' : offered.includes('hit') && total(cards) < 17 ? 'hit' : 'stand'),
+  hitTo17: (offered, cards) =>
+    offered.includes('pass') ? 'pass' : offered.includes('hit') && total(cards) < 17 ? 'hit' : 'stand',
   // Lets the insurance offer run out by itself.
   waitOutInsurance: offered => (offered.includes('pass') ? null : 'stand'),
 };
@@ -187,7 +230,10 @@ async function playRound(page, choose = POLICY.stand, { timeout = 45000, betDela
       };
     }, ACTIONS);
     const pick = offered.length ? choose(offered, cards) : null;
-    if (pick) await actionButton(page, pick).click().catch(() => {});
+    if (pick)
+      await actionButton(page, pick)
+        .click()
+        .catch(() => {});
     else await page.waitForTimeout(40);
   }
   await expect(overlay(page)).toBeVisible();
@@ -271,7 +317,9 @@ test.describe('the payoff at the end of a round', () => {
       }
       // The cards land in the tray as the hand leaves.
       const before = frames[gone - 1];
-      expect(frames[gone].trayCards - before.trayCards, `${hand.key} cards into the tray`).toBe(handIn(before, hand.key).cards.length);
+      expect(frames[gone].trayCards - before.trayCards, `${hand.key} cards into the tray`).toBe(
+        handIn(before, hand.key).cards.length,
+      );
       previousGoneT = goneT;
     }
     // Hand by hand: no frame loses more than one hand at a time.
@@ -281,21 +329,34 @@ test.describe('the payoff at the end of a round', () => {
     }
   });
 
-  test('labels computer seats with a result but never an amount, and leaves the bankroll alone for them', async ({ page }) => {
+  test('labels computer seats with a result but never an amount, and leaves the bankroll alone for them', async ({
+    page,
+  }) => {
     test.setTimeout(60000);
     await openTable(page, { seed: 15, settings });
     const { frames, log } = await playRound(page);
     const revealT = frames[dealerPlays(frames)].t;
     for (const seat of [3, 4]) {
       const pills = pillsOn(log, seat);
-      expect(pills.map(e => e.pill), `seat ${seat}`).toEqual([order[seat - 1].result]);
-      expect(chipLog(log, seat).filter(e => e.text.includes('$')), `seat ${seat} amounts`).toEqual([]);
+      expect(
+        pills.map(e => e.pill),
+        `seat ${seat}`,
+      ).toEqual([order[seat - 1].result]);
+      expect(
+        chipLog(log, seat).filter(e => e.text.includes('$')),
+        `seat ${seat} amounts`,
+      ).toEqual([]);
     }
     // The bankroll does not move from the first computer result to the end of the round.
     const computerFrom = pillsOn(log, 3)[0].t;
     const bank = log.filter(e => e.kind === 'bankroll');
     const atStart = bank.filter(e => e.t <= computerFrom).at(-1).text;
-    expect(bank.filter(e => e.t > computerFrom).map(e => e.text).filter(text => text !== atStart)).toEqual([]);
+    expect(
+      bank
+        .filter(e => e.t > computerFrom)
+        .map(e => e.text)
+        .filter(text => text !== atStart),
+    ).toEqual([]);
     // Two $5 bets: one won $10, one lost; the computer seats change nothing.
     expect(atStart).toBe('$1,000.00');
     expect(revealT).toBeLessThan(computerFrom);
@@ -325,7 +386,14 @@ test.describe('a hand settled during play', () => {
     // Seed 1: seat 1 hits to 25.
     await openTable(page, { seed: 1, settings: speeds });
     const { frames, log } = await playRound(page, POLICY.hit);
-    sweptBefore(frames, log, '1-0', 'Bust', firstIndex(frames, f => f.pointer?.hand === '2-0'), 'seat 2 plays');
+    sweptBefore(
+      frames,
+      log,
+      '1-0',
+      'Bust',
+      firstIndex(frames, f => f.pointer?.hand === '2-0'),
+      'seat 2 plays',
+    );
     // Not shown again at the payoff.
     expect(pillsOn(log, 1).filter(e => e.t > frames[dealerPlays(frames)].t)).toEqual([]);
   });
@@ -334,14 +402,28 @@ test.describe('a hand settled during play', () => {
     // Seed 2 (seat 1 doubles): computer seats 3 and 4 both bust.
     await openTable(page, { seed: 2, settings: speeds });
     const { frames, log } = await playRound(page, POLICY.double);
-    sweptBefore(frames, log, '3-0', 'Bust', firstIndex(frames, f => f.pointer?.hand === '4-0'), 'seat 4 plays');
+    sweptBefore(
+      frames,
+      log,
+      '3-0',
+      'Bust',
+      firstIndex(frames, f => f.pointer?.hand === '4-0'),
+      'seat 4 plays',
+    );
     sweptBefore(frames, log, '4-0', 'Bust', dealerPlays(frames), 'the dealer plays');
   });
 
   test('a surrender shows its result and is swept before the next seat plays', async ({ page }) => {
     await openTable(page, { seed: 2, settings: { ...speeds, 'rules.surrender': 'late' } });
     const { frames, log } = await playRound(page, POLICY.surrender);
-    sweptBefore(frames, log, '1-0', 'Surrender', firstIndex(frames, f => f.pointer?.hand === '2-0'), 'seat 2 plays');
+    sweptBefore(
+      frames,
+      log,
+      '1-0',
+      'Surrender',
+      firstIndex(frames, f => f.pointer?.hand === '2-0'),
+      'seat 2 plays',
+    );
   });
 
   test('a blackjack is swept at once when the dealer has checked for one', async ({ page }) => {
@@ -349,7 +431,14 @@ test.describe('a hand settled during play', () => {
     await openTable(page, { seed: 130, settings: speeds });
     const { frames, log } = await playRound(page);
     expect(value(frames[dealerPlays(frames)].dealer.cards[0])).toBe(10);
-    sweptBefore(frames, log, '1-0', '21', firstIndex(frames, f => f.pointer?.hand === '2-0'), 'seat 2 plays');
+    sweptBefore(
+      frames,
+      log,
+      '1-0',
+      '21',
+      firstIndex(frames, f => f.pointer?.hand === '2-0'),
+      'seat 2 plays',
+    );
   });
 
   test('a blackjack waits for the payoff when the dealer has no hole card', async ({ page }) => {
@@ -361,7 +450,14 @@ test.describe('a hand settled during play', () => {
     expect(goneAt(frames, '1-0'), 'the natural stays until the dealer has its second card').toBeGreaterThan(second);
     expect(pillsOn(log, 1)[0].t).toBeGreaterThan(frames[second].t);
     // A bust is still swept at once.
-    sweptBefore(frames, log, '2-0', 'Bust', firstIndex(frames, f => f.pointer?.hand === '3-0'), 'seat 3 plays');
+    sweptBefore(
+      frames,
+      log,
+      '2-0',
+      'Bust',
+      firstIndex(frames, f => f.pointer?.hand === '3-0'),
+      'seat 3 plays',
+    );
   });
 });
 
@@ -373,8 +469,13 @@ test.describe('the result label', () => {
     'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
     'mechanics.payoffSpeed': 60,
   };
-  for (const [name, size] of [['portrait', PORTRAIT], ['landscape', LANDSCAPE]]) {
-    test(`is a pill like the app's pop-ups for a win, a loss and a push, unclipped and sized to its text, in ${name}`, async ({ page }) => {
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', LANDSCAPE],
+  ]) {
+    test(`is a pill like the app's pop-ups for a win, a loss and a push, unclipped and sized to its text, in ${name}`, async ({
+      page,
+    }) => {
       await openTable(page, { seed: 15, settings, size });
       const { log } = await playRound(page);
       const pills = log.filter(e => e.kind === 'chip' && e.pill !== null);
@@ -386,8 +487,13 @@ test.describe('the result label', () => {
           const el = toast('x', { tone });
           const c = getComputedStyle(el);
           out[tone] = {
-            radius: c.borderTopLeftRadius, family: c.fontFamily, size: c.fontSize, weight: c.fontWeight,
-            shadow: c.boxShadow, background: c.backgroundColor, color: c.color,
+            radius: c.borderTopLeftRadius,
+            family: c.fontFamily,
+            size: c.fontSize,
+            weight: c.fontWeight,
+            shadow: c.boxShadow,
+            background: c.backgroundColor,
+            color: c.color,
           };
           el.remove();
         }
@@ -425,7 +531,9 @@ test.describe('the result label', () => {
 // --- 5 and 6. the turn pointer ---------------------------------------------
 
 test.describe('the turn pointer', () => {
-  test('points at every hand in turn, and rests on a computer hand for a step even when it stands', async ({ page }) => {
+  test('points at every hand in turn, and rests on a computer hand for a step even when it stands', async ({
+    page,
+  }) => {
     test.setTimeout(60000);
     const speed = 40;
     // Seed 15: computer seat 3 draws a card, computer seat 4 stands on 17 without drawing.
@@ -440,9 +548,17 @@ test.describe('the turn pointer', () => {
     // Bet as a player would, after a moment: the first turn's pointer is checked on its own below.
     const { frames } = await playRound(page, POLICY.stand, { betDelay: 2000 });
     for (const key of ['1-0', '2-0', '3-0', '4-0']) {
-      expect(frames.some(f => f.pointer?.hand === key), `pointer on ${key}`).toBe(true);
+      expect(
+        frames.some(f => f.pointer?.hand === key),
+        `pointer on ${key}`,
+      ).toBe(true);
     }
-    expect(handIn(frames.findLast(f => has(f, '4-0') && f.dealer.faceUp[1] !== true), '4-0').cards).toHaveLength(2);
+    expect(
+      handIn(
+        frames.findLast(f => has(f, '4-0') && f.dealer.faceUp[1] !== true),
+        '4-0',
+      ).cards,
+    ).toHaveLength(2);
     for (const key of ['3-0', '4-0']) {
       expect(dwell(frames, key), `pointer rests on ${key}`).toBeGreaterThanOrEqual(pauseFor(speed) * 0.85);
     }
@@ -454,7 +570,12 @@ test.describe('the turn pointer', () => {
     }
     // Gone before the dealer plays.
     const reveal = dealerPlays(frames);
-    expect(frames.slice(reveal).filter(f => f.pointer).map(f => f.pointer.hand)).toEqual([]);
+    expect(
+      frames
+        .slice(reveal)
+        .filter(f => f.pointer)
+        .map(f => f.pointer.hand),
+    ).toEqual([]);
   });
 
   for (const [name, seed, choose, extra] of [
@@ -463,31 +584,43 @@ test.describe('the turn pointer', () => {
     ['a surrender', 2, POLICY.surrender, { 'rules.surrender': 'late' }],
   ]) {
     test(`leaves a hand before it is paid, and never points at an emptied seat, after ${name}`, async ({ page }) => {
-      await openTable(page, { seed, settings: { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60, ...extra } });
+      await openTable(page, {
+        seed,
+        settings: { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60, ...extra },
+      });
       const { frames, log } = await playRound(page, choose);
       expect(frames.filter(f => f.pointer && !has(f, f.pointer.hand)).map(f => f.pointer.hand)).toEqual([]);
       // While a seat shows a result, the pointer is not on any of its hands.
       for (const entry of log.filter(e => e.kind === 'chip' && e.pill !== null)) {
         const frame = frames[entry.f - 1];
-        expect(frame.pointer?.hand?.split('-')[0], `seat ${entry.seat} showing ${entry.pill}`).not.toBe(String(entry.seat));
+        expect(frame.pointer?.hand?.split('-')[0], `seat ${entry.seat} showing ${entry.pill}`).not.toBe(
+          String(entry.seat),
+        );
       }
     });
   }
 
   /** Bets, waits with no input, and returns how long after the turn began the pointer was first drawn. */
   async function firstPointerDelay(page) {
-    await page.evaluate(() => { window.__cjFrames = []; window.__cjLog.length = 0; });
+    await page.evaluate(() => {
+      window.__cjFrames = [];
+      window.__cjLog.length = 0;
+    });
     await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(1500);
     const { frames, log } = await page.evaluate(() => ({ frames: window.__cjFrames, log: window.__cjLog }));
     const turn = log.find(e => e.kind === 'actions' && e.text.includes('stand'));
     const drawn = frames.find(f => f.pointer?.hand === '1-0');
-    test.info().annotations.push({ type: 'pointer delay', description: drawn ? `${Math.round(drawn.t - turn.t)} ms` : 'never' });
+    test
+      .info()
+      .annotations.push({ type: 'pointer delay', description: drawn ? `${Math.round(drawn.t - turn.t)} ms` : 'never' });
     return drawn ? drawn.t - turn.t : Infinity;
   }
 
-  test('appears on the first turn of a session within a moment, with no input, when the bet is placed at once', async ({ page }) => {
+  test('appears on the first turn of a session within a moment, with no input, when the bet is placed at once', async ({
+    page,
+  }) => {
     await openTable(page, { seed: 7 });
     expect(await firstPointerDelay(page)).toBeLessThan(300);
   });
@@ -497,7 +630,9 @@ test.describe('the turn pointer', () => {
     expect(await firstPointerDelay(page)).toBeLessThan(300);
   });
 
-  test('appears on the first turn of a session within a moment, with no input, when the bet takes a while', async ({ page }) => {
+  test('appears on the first turn of a session within a moment, with no input, when the bet takes a while', async ({
+    page,
+  }) => {
     await openTable(page, { seed: 7 });
     await page.waitForTimeout(2000);
     expect(await firstPointerDelay(page)).toBeLessThan(300);
@@ -512,12 +647,21 @@ test.describe('the turn pointer', () => {
     await openTable(page, { seed: 7 });
     await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
-    await expect.poll(() => page.evaluate(() => window.__cjFrames.at(-1).pointer?.hand ?? null), { timeout: 5000 }).toBe('1-0');
+    await expect
+      .poll(() => page.evaluate(() => window.__cjFrames.at(-1).pointer?.hand ?? null), { timeout: 5000 })
+      .toBe('1-0');
   });
 
   test('appears on the first turn of a session when it is a computer seat', async ({ page }) => {
     // The shipped table: seat 1 is a computer player.
-    await openTable(page, { seed: 7, settings: { 'table.seatCount': 2, 'table.computerSeats': [true, false, false, false, false, false], 'mechanics.otherPlayerSpeed': 30 } });
+    await openTable(page, {
+      seed: 7,
+      settings: {
+        'table.seatCount': 2,
+        'table.computerSeats': [true, false, false, false, false, false],
+        'mechanics.otherPlayerSpeed': 30,
+      },
+    });
     const { frames } = await playRound(page);
     expect(dwell(frames, '1-0')).toBeGreaterThanOrEqual(pauseFor(30) * 0.85);
   });
@@ -527,18 +671,19 @@ test.describe('the turn pointer', () => {
 
 test.describe('split hands', () => {
   /** Where the layout puts the first card of each hand column, by seat. */
-  const columns = page => page.evaluate(async () => {
-    const { tableLayout } = await import('/src/game/table/layout.js');
-    const felt = document.querySelector('.table__felt');
-    const layout = tableLayout({
-      width: Math.max(200, Math.round(felt.clientWidth)),
-      height: Math.max(200, Math.round(felt.clientHeight)),
-      seatCount: window.app.settings.get('table.seatCount'),
-      humanSeats: [1],
-      decks: window.app.settings.get('table.decks'),
+  const columns = page =>
+    page.evaluate(async () => {
+      const { tableLayout } = await import('/src/game/table/layout.js');
+      const felt = document.querySelector('.table__felt');
+      const layout = tableLayout({
+        width: Math.max(200, Math.round(felt.clientWidth)),
+        height: Math.max(200, Math.round(felt.clientHeight)),
+        seatCount: window.app.settings.get('table.seatCount'),
+        humanSeats: [1],
+        decks: window.app.settings.get('table.decks'),
+      });
+      return Object.fromEntries(layout.seats.map(seat => [seat.seat, seat.hands.map(hand => hand[0].x)]));
     });
-    return Object.fromEntries(layout.seats.map(seat => [seat.seat, seat.hands.map(hand => hand[0].x)]));
-  });
 
   test('a single split puts the two hands at the two ends of the seat', async ({ page }) => {
     // Seed 14: seat 1 splits once; computer seat 2 splits aces.
@@ -575,7 +720,10 @@ test.describe('split hands', () => {
 });
 
 test.describe('split hands at the payoff', () => {
-  for (const [name, seed, choose] of [['one split', 14, POLICY.splitOnce], ['two splits', 22, () => POLICY.splitAll]]) {
+  for (const [name, seed, choose] of [
+    ['one split', 14, POLICY.splitOnce],
+    ['two splits', 22, () => POLICY.splitAll],
+  ]) {
     test(`stay where they are while the seat is paid, after ${name}`, async ({ page }) => {
       await openTable(page, { seed });
       const { frames } = await playRound(page, choose());
@@ -583,7 +731,10 @@ test.describe('split hands at the payoff', () => {
       const keys = frames[reveal].hands.filter(hand => hand.key.startsWith('1-')).map(hand => hand.key);
       expect(keys.length).toBeGreaterThan(1);
       for (const key of keys) {
-        const xs = frames.slice(reveal).filter(f => has(f, key)).map(f => handIn(f, key).slots[0].x);
+        const xs = frames
+          .slice(reveal)
+          .filter(f => has(f, key))
+          .map(f => handIn(f, key).slots[0].x);
         expect([...new Set(xs)], `${key} across the payoff`).toEqual([xs[0]]);
       }
     });
@@ -647,13 +798,19 @@ test.describe('table messages', () => {
       const dealer = frames.findLast(f => f.dealer.cards.length > 0)?.dealer.cards ?? [];
       if (value(dealer[0]) !== 10 || total(dealer) <= 21) continue;
       const texts = log.filter(e => e.kind === 'toast').map(e => e.text);
-      expect(texts.filter(text => /no dealer blackjack|dealer busts/i.test(text)), `seed ${seed}`).toEqual([]);
+      expect(
+        texts.filter(text => /no dealer blackjack|dealer busts/i.test(text)),
+        `seed ${seed}`,
+      ).toEqual([]);
       return;
     }
     throw new Error('no seed between 30 and 90 dealt a ten that went on to bust');
   });
 
-  for (const [name, seed, extra] of [['the dealer checks for it', 43, {}], ['the dealer has no hole card', 14, { 'rules.noHoleCard': true }]]) {
+  for (const [name, seed, extra] of [
+    ['the dealer checks for it', 43, {}],
+    ['the dealer has no hole card', 14, { 'rules.noHoleCard': true }],
+  ]) {
     test(`announce a dealer blackjack once when ${name}`, async ({ page }) => {
       await openTable(page, { seed, settings: extra });
       const { frames, log } = await playRound(page);
@@ -661,7 +818,10 @@ test.describe('table messages', () => {
       expect(total(dealer)).toBe(21);
       expect(dealer).toHaveLength(2);
       const texts = log.filter(e => e.kind === 'toast').map(e => e.text);
-      expect(texts.filter(text => /dealer has blackjack/i.test(text)), `messages: ${JSON.stringify(texts)}`).toHaveLength(1);
+      expect(
+        texts.filter(text => /dealer has blackjack/i.test(text)),
+        `messages: ${JSON.stringify(texts)}`,
+      ).toHaveLength(1);
     });
   }
 });
@@ -681,11 +841,20 @@ test.describe('sounds', () => {
       expect(frames[click.f].shoeCards, `click at frame ${click.f}`).toBe(frames[click.f - 1].shoeCards - 1);
     }
     const split = firstIndex(frames, f => has(f, '1-1'));
-    const reveals = frames.map((f, i) => i).filter(i => i > 0
-      && frames[i].dealer.faceUp.filter(Boolean).length > frames[i - 1].dealer.faceUp.filter(Boolean).length
-      && frames[i].shoeCards === frames[i - 1].shoeCards);
+    const reveals = frames
+      .map((f, i) => i)
+      .filter(
+        i =>
+          i > 0 &&
+          frames[i].dealer.faceUp.filter(Boolean).length > frames[i - 1].dealer.faceUp.filter(Boolean).length &&
+          frames[i].shoeCards === frames[i - 1].shoeCards,
+      );
     expect(reveals.length).toBeGreaterThan(0);
-    for (const i of [split, ...reveals]) expect(sounds.filter(s => s.f === i), `frame ${i}`).toEqual([]);
+    for (const i of [split, ...reveals])
+      expect(
+        sounds.filter(s => s.f === i),
+        `frame ${i}`,
+      ).toEqual([]);
     expect(audio.filter(a => a.src.endsWith('click.mp3'))).toHaveLength(clicks.length);
   });
 
@@ -694,13 +863,24 @@ test.describe('sounds', () => {
     await openTable(page, {
       seed: 15,
       sound: true,
-      settings: { 'dealerErrors.noPayOnWin': true, 'dealerErrors.loseOnPush': true, 'dealerErrors.blackjackPayoff': true, 'dealerErrors.shouldHaveBusted': true },
+      settings: {
+        'dealerErrors.noPayOnWin': true,
+        'dealerErrors.loseOnPush': true,
+        'dealerErrors.blackjackPayoff': true,
+        'dealerErrors.shouldHaveBusted': true,
+      },
     });
     const foul = page.locator('.bet-overlay [data-action="foul"]');
     const claim = async () => {
-      await page.evaluate(() => { window.__cjSounds.length = 0; window.__cjAudio.length = 0; });
+      await page.evaluate(() => {
+        window.__cjSounds.length = 0;
+        window.__cjAudio.length = 0;
+      });
       await foul.click();
-      return page.evaluate(() => ({ sounds: window.__cjSounds.map(s => s.name), audio: window.__cjAudio.map(a => a.src.split('/').pop()) }));
+      return page.evaluate(() => ({
+        sounds: window.__cjSounds.map(s => s.name),
+        audio: window.__cjAudio.map(a => a.src.split('/').pop()),
+      }));
     };
     const missed = await claim();
     expect(missed).toEqual({ sounds: ['error'], audio: ['buzz.mp3'] });

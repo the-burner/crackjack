@@ -71,7 +71,8 @@ export function createTableRenderer(canvas) {
       drawBurns(ctx, layout, state.burns ?? [], state.spanish);
       const drawn = [];
       for (const hand of [state.dealer, ...state.hands]) {
-        if (hand) drawn.push({ hand, slots: drawHand(ctx, layout, hand, state.spanish, handsInSeat(state.hands, hand.seat)) });
+        if (hand)
+          drawn.push({ hand, slots: drawHand(ctx, layout, hand, state.spanish, handsInSeat(state.hands, hand.seat)) });
       }
       const pointer = drawPointer(ctx, layout, state, onPhotoLoad);
       if (globalThis.__cjRecordFrames) recordFrame(state, drawn, pointer);
@@ -79,7 +80,12 @@ export function createTableRenderer(canvas) {
 
     /** Resolves once the card sheet and the felt are available. */
     whenReady() {
-      return Promise.all([loadCardImages(), loadImage(FELT_SRC).ready, loadImage(RAIL_SRC).ready, loadImage(POINTER_SRC).ready]);
+      return Promise.all([
+        loadCardImages(),
+        loadImage(FELT_SRC).ready,
+        loadImage(RAIL_SRC).ready,
+        loadImage(POINTER_SRC).ready,
+      ]);
     },
   };
 }
@@ -135,7 +141,8 @@ function drawHand(ctx, layout, hand, spanish, handsInSeat = 0) {
  * How many hands the seat was split into, so a hand keeps its column while
  * the others are paid and swept around it.
  */
-const handsInSeat = (hands, seat) => Math.max(0, ...hands.filter(hand => hand.seat === seat).map(hand => hand.index + 1));
+const handsInSeat = (hands, seat) =>
+  Math.max(0, ...hands.filter(hand => hand.seat === seat).map(hand => hand.index + 1));
 
 /** The burn cards, in a row right of the tray. */
 function drawBurns(ctx, layout, burns, spanish) {
@@ -161,12 +168,16 @@ function drawShoe(ctx, layout, cards, onLoad) {
 function drawPointer(ctx, layout, { pointerHand, hands }, onLoad) {
   if (!pointerHand) return;
   const hand = hands.find(h => h.key === pointerHand);
-  const slot = cardSlot(layout, pointerHand, Math.max(0, (hand?.cards.length ?? 1) - 1), undefined, { handsInSeat: handsInSeat(hands, hand?.seat ?? 0) });
+  const slot = cardSlot(layout, pointerHand, Math.max(0, (hand?.cards.length ?? 1) - 1), undefined, {
+    handsInSeat: handsInSeat(hands, hand?.seat ?? 0),
+  });
   const pointer = loadImage(POINTER_SRC);
   if (!slot) return null;
   // Not loaded yet: draw it as soon as it is, rather than at the next redraw.
   if (!pointer.img.naturalWidth) {
-    pointer.ready.then(img => { if (img) onLoad(); });
+    pointer.ready.then(img => {
+      if (img) onLoad();
+    });
     return null;
   }
   const x = Math.round(slot.x + layout.cardWidth / 2 - POINTER_SIZE.width / 2);

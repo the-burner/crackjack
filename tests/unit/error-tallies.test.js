@@ -40,7 +40,13 @@ describe('recording strategy errors', () => {
 
   it('ignores a cell outside the ten by ten grid', () => {
     const errors = tallies();
-    for (const [row, column] of [[-1, 0], [10, 0], [0, -1], [0, 10]]) errors.record('hardStand', row, column);
+    for (const [row, column] of [
+      [-1, 0],
+      [10, 0],
+      [0, -1],
+      [0, 10],
+    ])
+      errors.record('hardStand', row, column);
     expect(errors.cells()).toEqual([]);
   });
 

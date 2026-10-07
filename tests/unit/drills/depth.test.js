@@ -1,18 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import {
-  depthGrid, depthLabel, generateDepthTest, trueCountFor, trayStyleFor, isTrueCountDrill, RESOLUTION_STEPS,
+  depthGrid,
+  depthLabel,
+  generateDepthTest,
+  trueCountFor,
+  trayStyleFor,
+  isTrueCountDrill,
+  RESOLUTION_STEPS,
 } from '../../../src/drills/depth/logic.js';
 import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
 import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
 import { seededRandom } from '../../../src/core/random.js';
 
-const highLow = buildStrategy(STRATEGY_FILES[30], { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
+const highLow = buildStrategy(STRATEGY_FILES[30], {
+  decks: 6,
+  hitSoft17: false,
+  doubleAfterSplit: false,
+  noHoleCard: false,
+  indexSet: 'all',
+});
 const tc = { division: 0, lastDeck: 1, rounding: 0 };
 
 /** The labels of a grid, row by row from the top. */
 function rows(grid) {
-  return Array.from({ length: grid.rows }, (_, row) => Array.from({ length: grid.columns }, (_, column) =>
-    grid.cells.find(c => c.row === row && c.column === column)?.label ?? ''));
+  return Array.from({ length: grid.rows }, (_, row) =>
+    Array.from(
+      { length: grid.columns },
+      (_, column) => grid.cells.find(c => c.row === row && c.column === column)?.label ?? '',
+    ),
+  );
 }
 
 describe('depth answer grid', () => {
@@ -94,8 +110,15 @@ describe('depthLabel', () => {
 
 describe('generateDepthTest', () => {
   const base = {
-    decks: 6, resolution: 'half', drill: 'halfDecksLeft', askInTray: false, trayStyle: 'sixDeckFront',
-    countRange: { min: -10, max: 15 }, strategy: highLow, trueCountSettings: tc, previousAnswer: null,
+    decks: 6,
+    resolution: 'half',
+    drill: 'halfDecksLeft',
+    askInTray: false,
+    trayStyle: 'sixDeckFront',
+    countRange: { min: -10, max: 15 },
+    strategy: highLow,
+    trueCountSettings: tc,
+    previousAnswer: null,
   };
 
   it('never asks for an empty or a full shoe', () => {
@@ -122,7 +145,9 @@ describe('generateDepthTest', () => {
   it('refuses a depth the tray cannot show', () => {
     // An eight-deck tray photo cannot show 7.5 decks or more in the tray.
     const random = () => 0;
-    expect(generateDepthTest({ ...base, decks: 8, resolution: 'quarter', trayStyle: 'eightDeckFront', random })).toBe(null);
+    expect(generateDepthTest({ ...base, decks: 8, resolution: 'quarter', trayStyle: 'eightDeckFront', random })).toBe(
+      null,
+    );
   });
 
   it('asks for a true count inside the grid, with the running count on the panel', () => {

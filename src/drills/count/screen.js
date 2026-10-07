@@ -14,8 +14,16 @@ import { drawGridIn } from '../shared/answer-grid.js';
 import { gradeAnswer } from '../shared/scoring.js';
 import { loadTrayImage, drawTray, trayImage } from '../shared/discard-tray.js';
 import {
-  flashSize, maxFlashSize, cardsUntilTest, flashRotated, flashLayout, flashPositions,
-  countAnswer, halfSteps, answerIndex, isAceCountDrill,
+  flashSize,
+  maxFlashSize,
+  cardsUntilTest,
+  flashRotated,
+  flashLayout,
+  flashPositions,
+  countAnswer,
+  halfSteps,
+  answerIndex,
+  isAceCountDrill,
 } from './logic.js';
 
 const PAUSE_AFTER_ANSWER_MS = 100;
@@ -57,7 +65,13 @@ export function countScreen(app) {
   const canvas = h('canvas', { class: 'drill__cards' });
   const gridCanvas = h('canvas', { class: 'drill__answers' });
   const gridWrap = h('div', { class: 'drill__answers-wrap' }, gridCanvas);
-  const nextButton = button('Next', { icon: 'forward', hidden: true, onClick: () => { if (!shell.paused) dealFlash(); } });
+  const nextButton = button('Next', {
+    icon: 'forward',
+    hidden: true,
+    onClick: () => {
+      if (!shell.paused) dealFlash();
+    },
+  });
 
   let run = -1;
   let shoe = null;
@@ -104,7 +118,11 @@ export function countScreen(app) {
     grid = null;
     tray = null;
     flash = null;
-    shoe = new DrillShoe({ decks: options.decks, strategy: options.strategy, trueCountSettings: options.trueCountSettings });
+    shoe = new DrillShoe({
+      decks: options.decks,
+      strategy: options.strategy,
+      trueCountSettings: options.trueCountSettings,
+    });
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
     drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: () => finishShoe() }).start();
@@ -282,7 +300,8 @@ export function countScreen(app) {
       ctx.fillRect(0, 0, width, height);
       // While paused the felt stays empty, so nothing can be studied.
       if (!shell.paused) {
-        if (tray && trayPicture?.complete) drawTray(ctx, trayPicture, { x: 0, y: 0, width, height }, tray.crop, options.thickness);
+        if (tray && trayPicture?.complete)
+          drawTray(ctx, trayPicture, { x: 0, y: 0, width, height }, tray.crop, options.thickness);
         else if (flash) drawFlash(ctx, width, height);
       }
       if (notice && !shell.paused) {
@@ -304,7 +323,12 @@ export function countScreen(app) {
 
   function drawFlash(ctx, width, height) {
     const { cards, cardWidth, cardHeight } = flashPositions({
-      layout: flash.layout, rotated: flash.rotated, cards: flash.ids.length, maxCards, width, height,
+      layout: flash.layout,
+      rotated: flash.rotated,
+      cards: flash.ids.length,
+      maxCards,
+      width,
+      height,
     });
     ctx.save();
     // A rotated flash is drawn in a space turned a quarter turn clockwise.
@@ -318,7 +342,9 @@ export function countScreen(app) {
 
   gridCanvas.addEventListener('click', tap);
   // In the count-down modes the player deals by tapping the cards as well.
-  canvas.addEventListener('click', () => { if (!auto && !grid) dealFlash(); });
+  canvas.addEventListener('click', () => {
+    if (!auto && !grid) dealFlash();
+  });
 
   loadCardImages().then(draw);
 

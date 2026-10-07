@@ -1,10 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateSideBet, evaluateHandBonus, sideBetSpots, ruleMatches, allowedAtCount } from '../../../src/game/engine/side-bets.js';
+import {
+  evaluateSideBet,
+  evaluateHandBonus,
+  sideBetSpots,
+  ruleMatches,
+  allowedAtCount,
+} from '../../../src/game/engine/side-bets.js';
 import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
 import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../src/data/side-bet-games.js';
 import { cardId } from '../../../src/core/cards.js';
 
-const SPADES = 0, CLUBS = 1, HEARTS = 2, DIAMONDS = 3;
+const SPADES = 0,
+  CLUBS = 1,
+  HEARTS = 2,
+  DIAMONDS = 3;
 const c = (rank, suit = SPADES) => cardId(rank, suit);
 
 /** Decodes a built-in game by its name in the game list. */
@@ -15,11 +24,18 @@ function game(name) {
   return decodeSideBetGame(definition);
 }
 
-function play(def, playerHandCards, dealerHandCards, { stake = 5, spot = 0, won = false, doubled = false, split = false, trueCount = 0 } = {}) {
+function play(
+  def,
+  playerHandCards,
+  dealerHandCards,
+  { stake = 5, spot = 0, won = false, doubled = false, split = false, trueCount = 0 } = {},
+) {
   const spots = sideBetSpots(def);
   if (spots.length === 0) return null;
   return evaluateSideBet({
-    game: def, ruleIndex: spots[spot].ruleIndex, stake,
+    game: def,
+    ruleIndex: spots[spot].ruleIndex,
+    stake,
     context: { playerHandCards, dealerHandCards, won, doubled, split, trueCount },
   });
 }
@@ -27,10 +43,18 @@ function play(def, playerHandCards, dealerHandCards, { stake = 5, spot = 0, won 
 /** The bonus a game pays on the main bet, for a $10 bet. */
 function bonus(def, playerHandCards, dealerHandCards, { playerTotal = 21, dealerTotal = 19, ...rest } = {}) {
   return evaluateHandBonus({
-    game: def, bet: 10,
+    game: def,
+    bet: 10,
     context: {
-      playerHandCards, dealerHandCards, won: false, doubled: false, split: false,
-      dealerBlackjack: false, playerTotal, dealerTotal, ...rest,
+      playerHandCards,
+      dealerHandCards,
+      won: false,
+      doubled: false,
+      split: false,
+      dealerBlackjack: false,
+      playerTotal,
+      dealerTotal,
+      ...rest,
     },
   });
 }
@@ -244,18 +268,27 @@ describe('Spanish 21 hand bonuses', () => {
   });
 
   it('pays a 21 that only tied the dealer', () => {
-    expect(bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(1, HEARTS)], { won: true, dealerTotal: 21 }))
-      .toEqual({ payout: 10, multiplier: 1 });
+    expect(bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(1, HEARTS)], { won: true, dealerTotal: 21 })).toEqual({
+      payout: 10,
+      multiplier: 1,
+    });
   });
 
   it('pays a 21 against a dealer blackjack', () => {
-    expect(bonus(def, [c(10), c(9), c(2)], [c(1, HEARTS), c(13, HEARTS)], { won: true, dealerTotal: 21, dealerBlackjack: true }))
-      .toEqual({ payout: 10, multiplier: 1 });
+    expect(
+      bonus(def, [c(10), c(9), c(2)], [c(1, HEARTS), c(13, HEARTS)], {
+        won: true,
+        dealerTotal: 21,
+        dealerBlackjack: true,
+      }),
+    ).toEqual({ payout: 10, multiplier: 1 });
   });
 
   it('pays double on a doubled 21', () => {
-    expect(bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(9, HEARTS)], { doubled: true }))
-      .toEqual({ payout: 20, multiplier: 2 });
+    expect(bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(9, HEARTS)], { doubled: true })).toEqual({
+      payout: 20,
+      multiplier: 2,
+    });
   });
 
   it('pays 3:2, 2:1 and 3:1 for a 21 of five, six and seven cards', () => {
@@ -266,8 +299,10 @@ describe('Spanish 21 hand bonuses', () => {
   });
 
   it('drops the card-count bonus on a doubled hand, leaving even money', () => {
-    expect(bonus(def, [c(5), c(4), c(3), c(2), c(7)], [c(10, HEARTS), c(9, HEARTS)], { doubled: true }))
-      .toEqual({ payout: 20, multiplier: 2 });
+    expect(bonus(def, [c(5), c(4), c(3), c(2), c(7)], [c(10, HEARTS), c(9, HEARTS)], { doubled: true })).toEqual({
+      payout: 20,
+      multiplier: 2,
+    });
   });
 
   it('pays 3:2 mixed, 2:1 suited and 3:1 in spades for a 6-7-8', () => {
@@ -285,13 +320,15 @@ describe('Spanish 21 hand bonuses', () => {
   });
 
   it('adds a flat super bonus to a spaded 7-7-7 against a dealer seven', () => {
-    expect(bonus(def, [c(7, SPADES), c(7, SPADES), c(7, SPADES)], [c(7, HEARTS), c(9, CLUBS)], { dealerTotal: 16 }))
-      .toEqual({ payout: 230, multiplier: 3 });
+    expect(
+      bonus(def, [c(7, SPADES), c(7, SPADES), c(7, SPADES)], [c(7, HEARTS), c(9, CLUBS)], { dealerTotal: 16 }),
+    ).toEqual({ payout: 230, multiplier: 3 });
   });
 
   it('pays double on a doubled 21 that only tied', () => {
-    expect(bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(1, HEARTS)], { won: true, doubled: true, dealerTotal: 21 }))
-      .toEqual({ payout: 20, multiplier: 2 });
+    expect(
+      bonus(def, [c(10), c(9), c(2)], [c(10, HEARTS), c(1, HEARTS)], { won: true, doubled: true, dealerTotal: 21 }),
+    ).toEqual({ payout: 20, multiplier: 2 });
   });
 
   it('pays nothing on a hand no bonus rule describes', () => {
@@ -308,8 +345,10 @@ describe('Spanish 21 without the 21-always-wins rule', () => {
   const def = game('Spanish 21');
 
   it('pays the card-count bonus alone, so a five-card 21 is only 1:2', () => {
-    expect(bonus(def, [c(5), c(4), c(3), c(2), c(7)], [c(10, HEARTS), c(9, HEARTS)]))
-      .toEqual({ payout: 5, multiplier: 0.5 });
+    expect(bonus(def, [c(5), c(4), c(3), c(2), c(7)], [c(10, HEARTS), c(9, HEARTS)])).toEqual({
+      payout: 5,
+      multiplier: 0.5,
+    });
   });
 
   it('pays nothing extra for a plain three-card 21', () => {
@@ -317,15 +356,23 @@ describe('Spanish 21 without the 21-always-wins rule', () => {
   });
 
   it('still pays the super bonus, on top of the spaded 7-7-7 multiplier', () => {
-    expect(bonus(def, [c(7, SPADES), c(7, SPADES), c(7, SPADES)], [c(7, HEARTS), c(9, CLUBS)], { dealerTotal: 16 }))
-      .toEqual({ payout: 220, multiplier: 2 });
+    expect(
+      bonus(def, [c(7, SPADES), c(7, SPADES), c(7, SPADES)], [c(7, HEARTS), c(9, CLUBS)], { dealerTotal: 16 }),
+    ).toEqual({ payout: 220, multiplier: 2 });
   });
 });
 
 describe('card conditions', () => {
   const rule = overrides => ({ ...game('Dare any Pair').rules[10], ...overrides });
-  const context = (playerHandCards, dealerHandCards, extra = {}) =>
-    ({ playerHandCards, dealerHandCards, won: false, doubled: false, split: false, trueCount: 0, ...extra });
+  const context = (playerHandCards, dealerHandCards, extra = {}) => ({
+    playerHandCards,
+    dealerHandCards,
+    won: false,
+    doubled: false,
+    split: false,
+    trueCount: 0,
+    ...extra,
+  });
 
   it('can pair the second player card with the second dealer card', () => {
     const second = rule({ mixMatch: [2, 2, 1] });
@@ -381,7 +428,14 @@ describe('rule gating', () => {
 
   it('respects a rule that requires a win', () => {
     const rule = { ...def.rules[sideBetSpots(def)[0].ruleIndex], winRequired: true };
-    const context = { playerHandCards: [c(8, CLUBS), c(8, HEARTS)], dealerHandCards: [c(5)], won: false, doubled: false, split: false, trueCount: 0 };
+    const context = {
+      playerHandCards: [c(8, CLUBS), c(8, HEARTS)],
+      dealerHandCards: [c(5)],
+      won: false,
+      doubled: false,
+      split: false,
+      trueCount: 0,
+    };
     expect(ruleMatches(rule, context)).toBe(false);
     expect(ruleMatches(rule, { ...context, won: true })).toBe(true);
   });
@@ -405,13 +459,27 @@ describe('rule gating', () => {
 
   it('refuses a rule the table bars after a split', () => {
     const rule = { ...def.rules[sideBetSpots(def)[0].ruleIndex], allowedAfterSplit: false };
-    const context = { playerHandCards: [c(8, CLUBS), c(8, HEARTS)], dealerHandCards: [c(5)], won: false, doubled: false, split: true, trueCount: 0 };
+    const context = {
+      playerHandCards: [c(8, CLUBS), c(8, HEARTS)],
+      dealerHandCards: [c(5)],
+      won: false,
+      doubled: false,
+      split: true,
+      trueCount: 0,
+    };
     expect(ruleMatches(rule, context)).toBe(false);
     expect(ruleMatches(rule, { ...context, split: false })).toBe(true);
   });
 
   it('ignores a disabled rule, and a missing one', () => {
-    const context = { playerHandCards: [c(8, CLUBS), c(8, HEARTS)], dealerHandCards: [c(5)], won: false, doubled: false, split: false, trueCount: 0 };
+    const context = {
+      playerHandCards: [c(8, CLUBS), c(8, HEARTS)],
+      dealerHandCards: [c(5)],
+      won: false,
+      doubled: false,
+      split: false,
+      trueCount: 0,
+    };
     expect(ruleMatches({ ...def.rules[10], enabled: false }, context)).toBe(false);
     expect(ruleMatches(undefined, context)).toBe(false);
   });
@@ -419,8 +487,16 @@ describe('rule gating', () => {
   it('treats a context with no count as a neutral count', () => {
     const pairs = game('Perfect Pairs');
     const result = evaluateSideBet({
-      game: pairs, ruleIndex: 10, stake: 5,
-      context: { playerHandCards: [c(8, SPADES), c(8, CLUBS)], dealerHandCards: [c(5, HEARTS)], won: false, doubled: false, split: false },
+      game: pairs,
+      ruleIndex: 10,
+      stake: 5,
+      context: {
+        playerHandCards: [c(8, SPADES), c(8, CLUBS)],
+        dealerHandCards: [c(5, HEARTS)],
+        won: false,
+        doubled: false,
+        split: false,
+      },
     });
     expect(result.multiplier).toBe(12);
   });

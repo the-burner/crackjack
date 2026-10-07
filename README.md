@@ -4,14 +4,14 @@ A comprehensive card counting training suite
 
 ## What's in it
 
-| Screen | What it does |
-|--------|--------------|
-| **Play Blackjack** | A full table: betting, side bets, dealer errors to catch, and warnings when a play or bet differs from your strategy. |
-| **Flash Drills** | Flash-card practice of playing decisions, with or without a count. |
-| **Depth Drills** | Estimate decks (or aces) remaining from a discard tray. |
-| **Count Drills** | Keep a running or true count as cards are dealt. |
-| **Full Table Drills** | Count a whole table of hands at once (landscape). |
-| **Settings** | One set of rules, playing strategy and true-count settings shared by the game and the drills, plus each drill's own options. |
+| Screen                | What it does                                                                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Play Blackjack**    | A full table: betting, side bets, dealer errors to catch, and warnings when a play or bet differs from your strategy.        |
+| **Flash Drills**      | Flash-card practice of playing decisions, with or without a count.                                                           |
+| **Depth Drills**      | Estimate decks (or aces) remaining from a discard tray.                                                                      |
+| **Count Drills**      | Keep a running or true count as cards are dealt.                                                                             |
+| **Full Table Drills** | Count a whole table of hands at once (landscape).                                                                            |
+| **Settings**          | One set of rules, playing strategy and true-count settings shared by the game and the drills, plus each drill's own options. |
 
 39 counting systems are built in (plus a hole-carding strategy). Everything
 works offline.

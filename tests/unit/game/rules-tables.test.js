@@ -2,8 +2,16 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  doubleAllowed, blackjackPremium, roundPremium, bustValue, rulesFrom,
-  splitAllowed, surrenderAllowed, earlySurrenderAllowed, charlieWin, insuranceOffered,
+  doubleAllowed,
+  blackjackPremium,
+  roundPremium,
+  bustValue,
+  rulesFrom,
+  splitAllowed,
+  surrenderAllowed,
+  earlySurrenderAllowed,
+  charlieWin,
+  insuranceOffered,
 } from '../../../src/game/engine/rules.js';
 import { Hand } from '../../../src/game/engine/hand.js';
 import { Settings } from '../../../src/settings/store.js';
@@ -11,7 +19,10 @@ import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
 import { Storage, MemoryBackend } from '../../../src/services/storage.js';
 import { cardId } from '../../../src/core/cards.js';
 
-const SPADES = 0, CLUBS = 1, HEARTS = 2, DIAMONDS = 3;
+const SPADES = 0,
+  CLUBS = 1,
+  HEARTS = 2,
+  DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
 
 function makeRules(overrides = {}) {
@@ -29,10 +40,24 @@ function hand(cards, extra = {}) {
 
 describe('doubling a hard hand', () => {
   const ranges = {
-    any: [[5, 'any total'], [8, 'eight'], [11, 'eleven'], [16, 'sixteen']],
-    '8-11': [[8, 'eight'], [11, 'eleven']],
-    '9-11': [[9, 'nine'], [11, 'eleven']],
-    '10-11': [[10, 'ten'], [11, 'eleven']],
+    any: [
+      [5, 'any total'],
+      [8, 'eight'],
+      [11, 'eleven'],
+      [16, 'sixteen'],
+    ],
+    '8-11': [
+      [8, 'eight'],
+      [11, 'eleven'],
+    ],
+    '9-11': [
+      [9, 'nine'],
+      [11, 'eleven'],
+    ],
+    '10-11': [
+      [10, 'ten'],
+      [11, 'eleven'],
+    ],
   };
 
   for (const [setting, allowed] of Object.entries(ranges)) {
@@ -112,7 +137,9 @@ describe('doubling a split hand', () => {
   const split = cards => hand(cards, { splitCount: 1 });
 
   it('needs double after split', () => {
-    expect(doubleAllowed(makeRules({ ...base, 'rules.doubleAfterSplit': false }), split([card(5), card(6)]))).toBe(false);
+    expect(doubleAllowed(makeRules({ ...base, 'rules.doubleAfterSplit': false }), split([card(5), card(6)]))).toBe(
+      false,
+    );
     expect(doubleAllowed(makeRules({ ...base, 'rules.doubleAfterSplit': true }), split([card(5), card(6)]))).toBe(true);
   });
 
@@ -142,7 +169,9 @@ describe('what a blackjack pays', () => {
 
   it('pays a bonus blackjack 2:1 whatever the table pays', () => {
     const diamonds = hand([card(1, DIAMONDS), card(13, DIAMONDS)]);
-    expect(blackjackPremium(makeRules({ 'bonuses.diamondBlackjack': true, 'rules.blackjackPayout': '6:5' }), diamonds)).toBe(1);
+    expect(
+      blackjackPremium(makeRules({ 'bonuses.diamondBlackjack': true, 'rules.blackjackPayout': '6:5' }), diamonds),
+    ).toBe(1);
 
     const suitedAceJack = hand([card(1, CLUBS), card(11, CLUBS)]);
     expect(blackjackPremium(makeRules({ 'bonuses.suitedAceJack': true }), suitedAceJack)).toBe(1);

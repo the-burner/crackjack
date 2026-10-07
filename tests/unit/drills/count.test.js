@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
-  FLASH_SIZES, maxFlashSize, flashSize, cardsUntilTest, flashRotated, flashLayout, flashPositions,
-  countAnswer, halfSteps, answerIndex, aceDrillSuits, isAceCountDrill,
+  FLASH_SIZES,
+  maxFlashSize,
+  flashSize,
+  cardsUntilTest,
+  flashRotated,
+  flashLayout,
+  flashPositions,
+  countAnswer,
+  halfSteps,
+  answerIndex,
+  aceDrillSuits,
+  isAceCountDrill,
 } from '../../../src/drills/count/logic.js';
 import { drillCounts, isAceNeutral } from '../../../src/drills/shared/count-answers.js';
 import { DrillShoe } from '../../../src/drills/shared/shoe.js';
@@ -57,7 +67,7 @@ describe('flashPositions', () => {
   it('stacks a vertical flash downwards, centred', () => {
     const { cards, cardWidth, cardHeight } = flashPositions({ ...box, layout: 'vertical', rotated: false, cards: 2 });
     expect(cardHeight).toBe(Math.floor(400 * 0.82));
-    expect(cardWidth).toBe(Math.floor(cardHeight * 150 / 215));
+    expect(cardWidth).toBe(Math.floor((cardHeight * 150) / 215));
     expect(cards[0]).toEqual({ x: (300 - cardWidth) / 2, y: 0 });
     expect(cards[1].y).toBe(400 - cardHeight);
     expect(cards[1].x).toBe(cards[0].x);
@@ -84,7 +94,14 @@ describe('flashPositions', () => {
   });
 
   it('centres a single card when only one is ever shown', () => {
-    const { cards, cardWidth, cardHeight } = flashPositions({ width: 300, height: 400, maxCards: 1, layout: 'diagonal', rotated: false, cards: 1 });
+    const { cards, cardWidth, cardHeight } = flashPositions({
+      width: 300,
+      height: 400,
+      maxCards: 1,
+      layout: 'diagonal',
+      rotated: false,
+      cards: 1,
+    });
     expect(cardHeight).toBe(400);
     expect(cards).toEqual([{ x: (300 - cardWidth) / 2, y: 0 }]);
   });
@@ -111,7 +128,16 @@ describe('the answer grid window', () => {
 });
 
 describe('countAnswer', () => {
-  const counts = { runningCount: 3, trueCount: 1, acesLeft: 20, aces: 4, betCount: 2, playCount: -1, insureCount: 0, tens: 7 };
+  const counts = {
+    runningCount: 3,
+    trueCount: 1,
+    acesLeft: 20,
+    aces: 4,
+    betCount: 2,
+    playCount: -1,
+    insureCount: 0,
+    tens: 7,
+  };
 
   it('reads the value of the chosen drill', () => {
     expect(countAnswer('runningCount', counts)).toBe(3);
@@ -152,7 +178,8 @@ describe('ace drills and the counting system', () => {
 });
 
 describe('drillCounts', () => {
-  const shoeFor = (strategy, seed) => new DrillShoe({ decks: 6, strategy, trueCountSettings: tc, random: seededRandom(seed) });
+  const shoeFor = (strategy, seed) =>
+    new DrillShoe({ decks: 6, strategy, trueCountSettings: tc, random: seededRandom(seed) });
 
   it('is whole numbers, so every answer lands on a grid cell', () => {
     for (const strategy of [highLow, hiOptI]) {

@@ -14,16 +14,30 @@ import { sideBetSpots } from './engine/side-bets.js';
 const BANKROLL_KEY = 'bankroll';
 const STATS_KEY = 'gameStats';
 
-const DIVISION = { full: TC_DIVISION.fullDeck, half: TC_DIVISION.halfDeck, quarter: TC_DIVISION.quarterDeck, exact: TC_DIVISION.exact };
+const DIVISION = {
+  full: TC_DIVISION.fullDeck,
+  half: TC_DIVISION.halfDeck,
+  quarter: TC_DIVISION.quarterDeck,
+  exact: TC_DIVISION.exact,
+};
 const LAST_DECK = { half: TC_LAST_DECK.halfDeck, quarter: TC_LAST_DECK.quarterDeck, exact: TC_LAST_DECK.exact };
 const ROUNDING = { round: TC_ROUNDING.round, truncate: TC_ROUNDING.truncate, floor: TC_ROUNDING.floor };
 
 /** Fresh statistics for a session. */
 const emptyStats = () => ({
-  rounds: 0, totalBet: 0, highBet: 0, lowBet: 0,
-  highBankroll: 0, lowBankroll: 0, bankrollSum: 0,
-  playDecisions: 0, playErrors: 0, betDecisions: 0, betErrors: 0,
-  foulDecisions: 0, foulErrors: 0,
+  rounds: 0,
+  totalBet: 0,
+  highBet: 0,
+  lowBet: 0,
+  highBankroll: 0,
+  lowBankroll: 0,
+  bankrollSum: 0,
+  playDecisions: 0,
+  playErrors: 0,
+  betDecisions: 0,
+  betErrors: 0,
+  foulDecisions: 0,
+  foulErrors: 0,
 });
 
 export class GameSession {
@@ -165,7 +179,8 @@ export class GameSession {
 
   humanSeats() {
     const seats = [];
-    for (let seat = 1; seat <= this.table.seatCount; seat++) if (!this.table.computerSeats.includes(seat)) seats.push(seat);
+    for (let seat = 1; seat <= this.table.seatCount; seat++)
+      if (!this.table.computerSeats.includes(seat)) seats.push(seat);
     return seats;
   }
 
@@ -217,8 +232,14 @@ export class GameSession {
   checkAction(hand, action) {
     if (!this.settings.get('strategy.warnOnError')) return;
     const check = checkPlay({
-      strategy: this.strategy, rules: this.rules, hand, upcard: this.game.dealer.cards[0],
-      counts: this.counts, shoe: this.game.shoe, handsInSeat: this.game.handsInSeat(hand.seat), action,
+      strategy: this.strategy,
+      rules: this.rules,
+      hand,
+      upcard: this.game.dealer.cards[0],
+      counts: this.counts,
+      shoe: this.game.shoe,
+      handsInSeat: this.game.handsInSeat(hand.seat),
+      action,
     });
     this.stats.playDecisions += 1;
     if (check.correct) return;
@@ -231,8 +252,12 @@ export class GameSession {
   checkInsuranceDecision(took) {
     if (!this.settings.get('strategy.warnOnError')) return;
     const check = checkInsurance({
-      strategy: this.strategy, counts: this.counts, hand: this.game.activeHand,
-      tenSideCount: this.settings.get('trueCount.tenSideCount') ? { tens: this.counter.tens, decks: this.table.decks } : null,
+      strategy: this.strategy,
+      counts: this.counts,
+      hand: this.game.activeHand,
+      tenSideCount: this.settings.get('trueCount.tenSideCount')
+        ? { tens: this.counter.tens, decks: this.table.decks }
+        : null,
       tookInsurance: took,
     });
     this.stats.playDecisions += 1;
@@ -281,8 +306,13 @@ export class GameSession {
     // Computer seats never give a hand up, as in the original, so the strategy is
     // asked for its best move with surrender taken away.
     const { action } = correctPlay({
-      strategy: this.strategy, rules: { ...this.rules, surrender: 'none' }, hand, upcard: dealerUpcard,
-      counts: this.counts, shoe: this.game.shoe, handsInSeat: this.game.handsInSeat(hand.seat),
+      strategy: this.strategy,
+      rules: { ...this.rules, surrender: 'none' },
+      hand,
+      upcard: dealerUpcard,
+      counts: this.counts,
+      shoe: this.game.shoe,
+      handsInSeat: this.game.handsInSeat(hand.seat),
     });
     return action === ACTION.surrender ? ACTION.stand : action;
   }
@@ -291,7 +321,8 @@ export class GameSession {
     if (this.game.state !== STATE.settled) return;
     this.stats.bankrollSum += this.game.bankroll;
     this.stats.highBankroll = Math.max(this.stats.highBankroll, this.game.bankroll);
-    this.stats.lowBankroll = this.stats.lowBankroll === 0 ? this.game.bankroll : Math.min(this.stats.lowBankroll, this.game.bankroll);
+    this.stats.lowBankroll =
+      this.stats.lowBankroll === 0 ? this.game.bankroll : Math.min(this.stats.lowBankroll, this.game.bankroll);
     this.save();
   }
 

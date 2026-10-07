@@ -29,8 +29,12 @@ const CASES = [
   {
     button: 'Basic Setup',
     screen: 'settings.setup',
-    async change(el) { await select(el, 'table.decks').selectOption({ label: 'Double Deck' }); },
-    async verify(el) { await expect(select(el, 'table.decks')).toHaveValue('Double Deck'); },
+    async change(el) {
+      await select(el, 'table.decks').selectOption({ label: 'Double Deck' });
+    },
+    async verify(el) {
+      await expect(select(el, 'table.decks')).toHaveValue('Double Deck');
+    },
   },
   {
     button: 'Common Rules',
@@ -47,32 +51,52 @@ const CASES = [
   {
     button: 'Rule Variations',
     screen: 'settings.ruleVariations',
-    async change(el) { await check(el, 'Triple Down').check(); },
-    async verify(el) { await expect(check(el, 'Triple Down')).toBeChecked(); },
+    async change(el) {
+      await check(el, 'Triple Down').check();
+    },
+    async verify(el) {
+      await expect(check(el, 'Triple Down')).toBeChecked();
+    },
   },
   {
     button: 'Speed/Mechanics',
     screen: 'settings.mechanics',
-    async change(el) { await check(el, 'Sound on').check(); },
-    async verify(el) { await expect(check(el, 'Sound on')).toBeChecked(); },
+    async change(el) {
+      await check(el, 'Sound on').check();
+    },
+    async verify(el) {
+      await expect(check(el, 'Sound on')).toBeChecked();
+    },
   },
   {
     button: 'Bonuses',
     screen: 'settings.bonuses',
-    async change(el) { await check(el, 'Blackjack pays 6:5').check(); },
-    async verify(el) { await expect(check(el, 'Blackjack pays 6:5')).toBeChecked(); },
+    async change(el) {
+      await check(el, 'Blackjack pays 6:5').check();
+    },
+    async verify(el) {
+      await expect(check(el, 'Blackjack pays 6:5')).toBeChecked();
+    },
   },
   {
     button: 'Play Variations',
     screen: 'settings.playVariations',
-    async change(el) { await check(el, 'Dealer wins ties').check(); },
-    async verify(el) { await expect(check(el, 'Dealer wins ties')).toBeChecked(); },
+    async change(el) {
+      await check(el, 'Dealer wins ties').check();
+    },
+    async verify(el) {
+      await expect(check(el, 'Dealer wins ties')).toBeChecked();
+    },
   },
   {
     button: 'Unusual Games',
     screen: 'settings.unusualGames',
-    async change(el) { await select(el, 'bonuses.game').selectOption({ label: 'Lucky Ladies' }); },
-    async verify(el) { await expect(select(el, 'bonuses.game')).toHaveValue('Lucky Ladies'); },
+    async change(el) {
+      await select(el, 'bonuses.game').selectOption({ label: 'Lucky Ladies' });
+    },
+    async verify(el) {
+      await expect(select(el, 'bonuses.game')).toHaveValue('Lucky Ladies');
+    },
   },
   {
     button: 'Dealer Errs/Biases',
@@ -101,7 +125,9 @@ const CASES = [
   {
     button: 'Appearance & Customization',
     screen: 'settings.appearance',
-    async change(el) { await select(el, 'display.theme').selectOption({ label: 'Catppuccin Latte' }); },
+    async change(el) {
+      await select(el, 'display.theme').selectOption({ label: 'Catppuccin Latte' });
+    },
     async verify(el) {
       await expect(select(el, 'display.theme')).toHaveValue('Catppuccin Latte');
       await expect(el.page().locator('html')).toHaveAttribute('data-theme', 'latte');

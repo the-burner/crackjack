@@ -8,6 +8,7 @@ const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../fixtu
 const cache = new Map();
 
 export function loadFixture(name) {
-  if (!cache.has(name)) cache.set(name, JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(DIR, `${name}.json.gz`)))));
+  if (!cache.has(name))
+    cache.set(name, JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(DIR, `${name}.json.gz`)))));
   return cache.get(name);
 }

@@ -9,7 +9,9 @@ describe('side-bet game data', () => {
   it('offers the standard game, two variants and nineteen side-bet games', () => {
     expect(BUILTIN_SIDE_BET_GAMES).toHaveLength(22);
     const withDefinitions = BUILTIN_SIDE_BET_GAMES.filter(({ id }) => id in SIDE_BET_GAME_DEFINITIONS);
-    expect(withDefinitions.map(({ id }) => id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
+    expect(withDefinitions.map(({ id }) => id)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    ]);
   });
 
   it('names every definition as the list does', () => {
@@ -17,8 +19,7 @@ describe('side-bet game data', () => {
       const definition = SIDE_BET_GAME_DEFINITIONS[id];
       if (!definition) continue;
       // The stored names drop punctuation the menu keeps ("21 + 3" / "21  3").
-      expect(sideBetGameName(definition).replaceAll(/[^a-z0-9]/gi, ''))
-        .toBe(name.replaceAll(/[^a-z0-9]/gi, ''));
+      expect(sideBetGameName(definition).replaceAll(/[^a-z0-9]/gi, '')).toBe(name.replaceAll(/[^a-z0-9]/gi, ''));
     }
   });
 });
@@ -39,7 +40,13 @@ describe('decodeSideBetGame', () => {
     expect(rules.map(rule => rule.payTenths)).toEqual([25, 25, 25, 25, 25, 25, 25]);
     // Player's two cards plus the up card, patterns in the order the definition lists them.
     expect(rules.map(rule => rule.mixMatch)).toEqual([
-      [3, 1, 5], [3, 1, 2], [3, 1, 7], [3, 1, 3], [3, 1, 4], [3, 1, 1], [3, 1, 6],
+      [3, 1, 5],
+      [3, 1, 2],
+      [3, 1, 7],
+      [3, 1, 3],
+      [3, 1, 4],
+      [3, 1, 1],
+      [3, 1, 6],
     ]);
     expect(rules[0].sideBetId).toBe('+3');
     expect(game.firstTwoCardsOnly).toBe(true);

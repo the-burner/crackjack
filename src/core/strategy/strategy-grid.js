@@ -41,28 +41,64 @@ const CODE_ALIAS = { 1098: 1017 };
  */
 export const TABLE_VIEWS = [
   {
-    key: 'hardStand', label: 'Hard Hit/Stand', table: 'hardStand', reversed: false, below: false,
-    rows: 8, extendedRows: 10, legend: ['Hit', 'Stand', 'Hit < Value', null],
+    key: 'hardStand',
+    label: 'Hard Hit/Stand',
+    table: 'hardStand',
+    reversed: false,
+    below: false,
+    rows: 8,
+    extendedRows: 10,
+    legend: ['Hit', 'Stand', 'Hit < Value', null],
   },
   {
-    key: 'softStand', label: 'Soft Hit/Stand', table: 'softStand', reversed: false, below: false,
-    rows: 8, extendedRows: 9, legend: ['Hit', 'Stand', 'Hit < Value', null],
+    key: 'softStand',
+    label: 'Soft Hit/Stand',
+    table: 'softStand',
+    reversed: false,
+    below: false,
+    rows: 8,
+    extendedRows: 9,
+    legend: ['Hit', 'Stand', 'Hit < Value', null],
   },
   {
-    key: 'hardDouble', label: 'Hard Double Down', table: 'hardDouble', reversed: true, below: false,
-    rows: 7, extendedRows: 7, legend: ['Double Down', 'No Double Down', 'DD >= Value', null],
+    key: 'hardDouble',
+    label: 'Hard Double Down',
+    table: 'hardDouble',
+    reversed: true,
+    below: false,
+    rows: 7,
+    extendedRows: 7,
+    legend: ['Double Down', 'No Double Down', 'DD >= Value', null],
   },
   {
-    key: 'softDouble', label: 'Soft Double Down', table: 'softDouble', reversed: true, below: false,
-    rows: 8, extendedRows: 9, legend: ['Double Down', 'No Double Down', 'DD >= Value', null],
+    key: 'softDouble',
+    label: 'Soft Double Down',
+    table: 'softDouble',
+    reversed: true,
+    below: false,
+    rows: 8,
+    extendedRows: 9,
+    legend: ['Double Down', 'No Double Down', 'DD >= Value', null],
   },
   {
-    key: 'split', label: 'Split', table: 'split', reversed: true, below: true,
-    rows: 10, extendedRows: 10, legend: ['Split', 'No Split', 'Split >= Value', 'Split < Value'],
+    key: 'split',
+    label: 'Split',
+    table: 'split',
+    reversed: true,
+    below: true,
+    rows: 10,
+    extendedRows: 10,
+    legend: ['Split', 'No Split', 'Split >= Value', 'Split < Value'],
   },
   {
-    key: 'surrender', label: 'Surrender', table: 'surrender', reversed: false, below: true,
-    rows: 10, extendedRows: 10, legend: ['Play', 'Surrender', 'Surr. >= Value', 'Surr. < Value'],
+    key: 'surrender',
+    label: 'Surrender',
+    table: 'surrender',
+    reversed: false,
+    below: true,
+    rows: 10,
+    extendedRows: 10,
+    legend: ['Play', 'Surrender', 'Surr. >= Value', 'Surr. < Value'],
   },
   { key: 'counts', label: 'Insurance/Counts', table: null },
 ];
@@ -146,7 +182,9 @@ export function gridCell({ value, view, selected = true, errorCount = null }) {
 
 /** The special code in a cell, or null. */
 export function specialCode(value) {
-  return value > FIRST_CODE - 1 && value < LAST_CODE + 1 && CODE_DESCRIPTIONS[CODE_ALIAS[value] ?? value] ? value : null;
+  return value > FIRST_CODE - 1 && value < LAST_CODE + 1 && CODE_DESCRIPTIONS[CODE_ALIAS[value] ?? value]
+    ? value
+    : null;
 }
 
 /** The short symbol shown in a cell for a special code, e.g. 1001 -> "A". */
@@ -200,14 +238,16 @@ const RED_ONLY = 10000;
  * @param {object} strategy  Result of buildStrategy().
  */
 export function countsTables(strategy) {
-  const { countValues, countValuesBlack, initialRunningCount, insuranceByDecks, insuranceByTotal, kiss, file } = strategy;
+  const { countValues, countValuesBlack, initialRunningCount, insuranceByDecks, insuranceByTotal, kiss, file } =
+    strategy;
   const tenth = v => trimNumber(v / 10);
   // A red-only card has no plain point value, so the Red column shows "*".
-  const point = (values, red) => range(10, i => {
-    if (kiss && i === 9) return `0/${tenth(values[10])}`;
-    if (countValues[i + 1] === RED_ONLY) return red ? '*' : tenth(values[i + 1]);
-    return tenth(values[i + 1]);
-  });
+  const point = (values, red) =>
+    range(10, i => {
+      if (kiss && i === 9) return `0/${tenth(values[10])}`;
+      if (countValues[i + 1] === RED_ONLY) return red ? '*' : tenth(values[i + 1]);
+      return tenth(values[i + 1]);
+    });
   return {
     pointValues: {
       caption: 'Card Point Values',
@@ -222,11 +262,13 @@ export function countsTables(strategy) {
       columns: range(8, i => String(i + 1)),
       rows: [{ values: range(8, i => String(initialRunningCount[i])) }],
     },
-    insuranceDecks: usesInsuranceDecksTable(file.insuranceCode) ? {
-      caption: 'Insurance Decks Table',
-      columns: range(8, i => String(i + 1)),
-      rows: [{ values: range(8, i => tenth(insuranceByDecks[i + 1])) }],
-    } : null,
+    insuranceDecks: usesInsuranceDecksTable(file.insuranceCode)
+      ? {
+          caption: 'Insurance Decks Table',
+          columns: range(8, i => String(i + 1)),
+          rows: [{ values: range(8, i => tenth(insuranceByDecks[i + 1])) }],
+        }
+      : null,
     insuranceHands: {
       caption: 'Insurance Hands Table',
       columns: ['<13', '13', '14', '15', '16', '17', '18', '19', '20', 'BJ'],

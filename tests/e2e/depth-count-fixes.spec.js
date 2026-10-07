@@ -33,42 +33,53 @@ async function launch(page, drill) {
 const statsText = screen => screen.locator('.drill__stats').innerText();
 
 /** How many pixels of a canvas are not the felt it was filled with. */
-const nonFeltPixels = canvas => canvas.evaluate(el => {
-  const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
-  let count = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    if (Math.abs(data[i] - data[0]) > 8 || Math.abs(data[i + 1] - data[1]) > 8 || Math.abs(data[i + 2] - data[2]) > 8) count += 1;
-  }
-  return count;
-});
+const nonFeltPixels = canvas =>
+  canvas.evaluate(el => {
+    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (Math.abs(data[i] - data[0]) > 8 || Math.abs(data[i + 1] - data[1]) > 8 || Math.abs(data[i + 2] - data[2]) > 8)
+        count += 1;
+    }
+    return count;
+  });
 
 /** The percentage of a box at the middle of a canvas that is felt (the corner is felt). */
-const feltAtCentre = canvas => canvas.evaluate(el => {
-  const ctx = el.getContext('2d');
-  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-  const box = { width: Math.round(el.width / 4), height: Math.round(el.height / 10) };
-  const { data } = ctx.getImageData(Math.round((el.width - box.width) / 2), Math.round((el.height - box.height) / 2), box.width, box.height);
-  let felt = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    if (Math.abs(data[i] - r) <= 8 && Math.abs(data[i + 1] - g) <= 8 && Math.abs(data[i + 2] - b) <= 8) felt += 1;
-  }
-  return Math.round((100 * felt) / (data.length / 4));
-});
+const feltAtCentre = canvas =>
+  canvas.evaluate(el => {
+    const ctx = el.getContext('2d');
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    const box = { width: Math.round(el.width / 4), height: Math.round(el.height / 10) };
+    const { data } = ctx.getImageData(
+      Math.round((el.width - box.width) / 2),
+      Math.round((el.height - box.height) / 2),
+      box.width,
+      box.height,
+    );
+    let felt = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (Math.abs(data[i] - r) <= 8 && Math.abs(data[i + 1] - g) <= 8 && Math.abs(data[i + 2] - b) <= 8) felt += 1;
+    }
+    return Math.round((100 * felt) / (data.length / 4));
+  });
 
 /**
  * Answers the one depth cell that can be right, then presses a drill button in
  * the same tick, so the press lands inside the pause before the next test.
  */
-const answerThen = (page, label) => page.evaluate(name => {
-  const screen = document.querySelector('[data-screen="drills.depth"]');
-  const answers = screen.querySelector('canvas.drill__answers');
-  const box = answers.getBoundingClientRect();
-  answers.dispatchEvent(new MouseEvent('click', {
-    clientX: box.left + box.width * 0.5,
-    clientY: box.top + box.height * 0.5,
-  }));
-  [...screen.querySelectorAll('button')].find(b => b.textContent.trim() === name)?.click();
-}, label);
+const answerThen = (page, label) =>
+  page.evaluate(name => {
+    const screen = document.querySelector('[data-screen="drills.depth"]');
+    const answers = screen.querySelector('canvas.drill__answers');
+    const box = answers.getBoundingClientRect();
+    answers.dispatchEvent(
+      new MouseEvent('click', {
+        clientX: box.left + box.width * 0.5,
+        clientY: box.top + box.height * 0.5,
+      }),
+    );
+    [...screen.querySelectorAll('button')].find(b => b.textContent.trim() === name)?.click();
+  }, label);
 
 /** Two decks at full resolution: the only answer is "1", half a column in. */
 const TWO_DECK_DEPTH = {
@@ -157,12 +168,20 @@ test.describe('count drill', () => {
       const answers = el.querySelector('canvas.drill__answers');
       const wrap = el.querySelector('.drill__answers-wrap');
       const cards = el.querySelector('canvas.drill__cards');
-      const sleep = ms => new Promise(resolve => { setTimeout(resolve, ms); });
+      const sleep = ms =>
+        new Promise(resolve => {
+          setTimeout(resolve, ms);
+        });
       const nonFelt = () => {
         const { data } = cards.getContext('2d').getImageData(0, 0, cards.width, cards.height);
         let count = 0;
         for (let i = 0; i < data.length; i += 4) {
-          if (Math.abs(data[i] - data[0]) > 8 || Math.abs(data[i + 1] - data[1]) > 8 || Math.abs(data[i + 2] - data[2]) > 8) count += 1;
+          if (
+            Math.abs(data[i] - data[0]) > 8 ||
+            Math.abs(data[i + 1] - data[1]) > 8 ||
+            Math.abs(data[i + 2] - data[2]) > 8
+          )
+            count += 1;
         }
         return count;
       };
@@ -180,10 +199,12 @@ test.describe('count drill', () => {
         const box = answers.getBoundingClientRect();
         for (let row = 0; row < 3; row++) {
           for (let column = 0; column < 6; column++) {
-            answers.dispatchEvent(new MouseEvent('click', {
-              clientX: box.left + (box.width / 6) * (column + 0.5),
-              clientY: box.top + (box.height / 3) * (row + 0.5),
-            }));
+            answers.dispatchEvent(
+              new MouseEvent('click', {
+                clientX: box.left + (box.width / 6) * (column + 0.5),
+                clientY: box.top + (box.height / 3) * (row + 0.5),
+              }),
+            );
           }
         }
         for (let wait = 0; wait < 50 && !wrap.hidden; wait++) await sleep(20);

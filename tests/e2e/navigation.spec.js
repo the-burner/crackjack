@@ -13,10 +13,14 @@ async function stackThree(page) {
   await expect(page.locator('[data-screen="settings.setup"]')).toBeVisible();
 }
 
-const showing = page => page.evaluate(() => {
-  const screens = [...document.querySelectorAll('[data-screen]')];
-  return screens.filter(el => !el.hidden).map(el => el.dataset.screen).join(',');
-});
+const showing = page =>
+  page.evaluate(() => {
+    const screens = [...document.querySelectorAll('[data-screen]')];
+    return screens
+      .filter(el => !el.hidden)
+      .map(el => el.dataset.screen)
+      .join(',');
+  });
 
 test('going back closes one screen at a time and never leaves the app', async ({ page }) => {
   await stackThree(page);
@@ -53,7 +57,7 @@ test('going forward reopens the screen that was closed', async ({ page }) => {
   expect(await showing(page)).toBe('settings.setup');
 });
 
-test('a history entry that is not the app\'s own is left alone', async ({ page }) => {
+test("a history entry that is not the app's own is left alone", async ({ page }) => {
   await stackThree(page);
   await page.evaluate(() => window.dispatchEvent(new PopStateEvent('popstate', { state: null })));
   await page.waitForTimeout(150);

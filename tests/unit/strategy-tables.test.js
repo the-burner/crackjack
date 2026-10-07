@@ -8,8 +8,13 @@ const toNumbers = table => table.map(row => row.map(v => (v === null || v === un
 
 function optionsFromFixture(c) {
   return {
-    decks: c.decks, hitSoft17: c.h17, doubleAfterSplit: c.das, noHoleCard: c.noHoleCard,
-    indexSet: INDEX_SETS[c.indexSet], rangeHigh: c.rangeHigh, rangeLow: c.rangeLow,
+    decks: c.decks,
+    hitSoft17: c.h17,
+    doubleAfterSplit: c.das,
+    noHoleCard: c.noHoleCard,
+    indexSet: INDEX_SETS[c.indexSet],
+    rangeHigh: c.rangeHigh,
+    rangeLow: c.rangeLow,
     forcedInitialRunningCount: c.forceRC ? c.forceRCValue : null,
   };
 }
@@ -53,24 +58,29 @@ function fromFile(system, options = {}, patch) {
 
 /** Writes a value into the same cell of every rule variant. */
 const everyVariant = (file, table, row, column, value) =>
-  file.tables.forEach(variant => { variant[table][row][column] = value; });
+  file.tables.forEach(variant => {
+    variant[table][row][column] = value;
+  });
 
 /** A custom index mask with every cell set the same way. */
-const maskOf = fill => Object.fromEntries(TABLE_NAMES.map(name =>
-  [name, Array.from({ length: 10 }, () => new Array(10).fill(fill))]));
+const maskOf = fill =>
+  Object.fromEntries(TABLE_NAMES.map(name => [name, Array.from({ length: 10 }, () => new Array(10).fill(fill))]));
 
 describe('buildStrategy index arithmetic', () => {
   it('rounds a fractional index half to even', () => {
     const s = fromFile(2, {}, f => {
       const row = f.tables[VARIANT.base][TABLE.hardStand][0];
-      [2.5, 3.5, -2.5, 2.25, 2.75].forEach((v, i) => { row[i] = v; });
+      [2.5, 3.5, -2.5, 2.25, 2.75].forEach((v, i) => {
+        row[i] = v;
+      });
     });
     expect(s.tables.hardStand[0].slice(0, 5)).toEqual([2, 4, -2, 2, 3]);
   });
 
   it('resolves a *QC cell from the deck count', () => {
-    const at = decks => fromFile(2, { decks }, f => everyVariant(f, TABLE.hardStand, 0, 0, CODE.quarterCountByDecks))
-      .tables.hardStand[0][0];
+    const at = decks =>
+      fromFile(2, { decks }, f => everyVariant(f, TABLE.hardStand, 0, 0, CODE.quarterCountByDecks)).tables
+        .hardStand[0][0];
     expect(at(1)).toBe(2);
     expect(at(6)).toBe(-6);
   });
@@ -119,17 +129,25 @@ describe('buildStrategy unbalanced systems', () => {
   });
 
   it('counts a card that only counts when red as 5 in the pivot sum', () => {
-    const redOnly = fromFile(50, { decks: 2 }, f => { f.countValues[2] = 10000; });
-    const asFive = fromFile(50, { decks: 2 }, f => { f.countValues[2] = 5; });
+    const redOnly = fromFile(50, { decks: 2 }, f => {
+      f.countValues[2] = 10000;
+    });
+    const asFive = fromFile(50, { decks: 2 }, f => {
+      f.countValues[2] = 5;
+    });
     expect(redOnly.pivot).toBe(asFive.pivot);
     expect(redOnly.unbalanced).toBe(asFive.unbalanced);
   });
 
   it('takes the insurance index from the pivot when the file asks for it', () => {
-    const one = fromFile(24, {}, f => { f.insuranceCode = INSURANCE.pivot; });
+    const one = fromFile(24, {}, f => {
+      f.insuranceCode = INSURANCE.pivot;
+    });
     expect(one.insurance).toBe(40);
     // A shoe adds two tenths.
-    const six = fromFile(24, { decks: 6 }, f => { f.insuranceCode = INSURANCE.pivot; });
+    const six = fromFile(24, { decks: 6 }, f => {
+      f.insuranceCode = INSURANCE.pivot;
+    });
     expect(six.insurance).toBe(260);
   });
 });
@@ -143,7 +161,12 @@ describe('buildStrategy index sets', () => {
     const limited = buildStrategy(STRATEGY_FILES[30], { ...SHOE, indexSet: 'illustrious18' });
     const fab4 = buildStrategy(STRATEGY_FILES[30], { ...SHOE, indexSet: 'illustrious18', fab4: true });
     // 15 vs 9, 10 and an ace, and 14 vs 10.
-    for (const [row, column] of [[2, 7], [2, 8], [2, 9], [3, 8]]) {
+    for (const [row, column] of [
+      [2, 7],
+      [2, 8],
+      [2, 9],
+      [3, 8],
+    ]) {
       expect(fab4.tables.surrender[row][column]).toBe(all.tables.surrender[row][column]);
       expect(limited.tables.surrender[row][column]).not.toBe(all.tables.surrender[row][column]);
     }
@@ -163,7 +186,10 @@ describe('buildStrategy index sets', () => {
   it('falls back to basic strategy for an extended strategy without indices', () => {
     const extended = buildStrategy(STRATEGY_FILES[92], { ...SHOE, indexSet: 'none' });
     for (const name of TABLE_NAMES) {
-      expect(extended.tables[name].map(row => row.slice(0, 10)), name).toEqual(extended.basicTables[name]);
+      expect(
+        extended.tables[name].map(row => row.slice(0, 10)),
+        name,
+      ).toEqual(extended.basicTables[name]);
     }
   });
 
@@ -179,7 +205,9 @@ describe('buildStrategy index sets', () => {
     const mask = maskOf(true);
     mask.surrender[8] = new Array(10).fill(false);
     const rules = { ...RULES, indexSet: 'custom', customMask: mask };
-    const custom = fromFile(97, rules, f => { f.earlySurrender = true; });
+    const custom = fromFile(97, rules, f => {
+      f.earlySurrender = true;
+    });
     const basic = buildStrategy(STRATEGY_FILES[97], { ...RULES, indexSet: 'none' });
     expect(custom.tables.surrender[6]).toEqual(basic.tables.surrender[8]);
     expect(custom.tables.surrender[8]).toEqual(buildStrategy(STRATEGY_FILES[97], RULES).tables.surrender[8]);

@@ -24,7 +24,11 @@ const HANDS = [
 ];
 
 export function playVariationsScreen(app) {
-  const { el, columns, form } = settingsScreen(app, { title: 'Play Variations', help: 'settings.playVariations', note: NOTE });
+  const { el, columns, form } = settingsScreen(app, {
+    title: 'Play Variations',
+    help: 'settings.playVariations',
+    note: NOTE,
+  });
   columns.append(group(form.checks(DEALER)), group(form.checks(HANDS)));
   return { el };
 }

@@ -69,10 +69,16 @@ function implicationsOf(key, read, set) {
   switch (key) {
     case 'rules.redouble':
       // Redoubling needs a third card and shows it.
-      if (read(key)) { set('rules.doubleOnThreeCards', true); set('table.doubleDownCardFaceUp', true); }
+      if (read(key)) {
+        set('rules.doubleOnThreeCards', true);
+        set('table.doubleDownCardFaceUp', true);
+      }
       break;
     case 'rules.doubleOnThreeCards':
-      if (!read(key)) { set('rules.redouble', false); set('rules.doubleAnyNumberOfCards', false); }
+      if (!read(key)) {
+        set('rules.redouble', false);
+        set('rules.doubleAnyNumberOfCards', false);
+      }
       break;
     case 'rules.doubleAnyNumberOfCards':
       if (read(key)) set('rules.doubleOnThreeCards', true);
@@ -92,7 +98,10 @@ function implicationsOf(key, read, set) {
       else set('rules.dealerPeeksTen', false);
       break;
     case 'rules.noHoleCard':
-      if (read(key)) { set('rules.dealerPeeksTen', false); set('rules.dealerPeeksAce', false); }
+      if (read(key)) {
+        set('rules.dealerPeeksTen', false);
+        set('rules.dealerPeeksAce', false);
+      }
       break;
     case 'rules.surrender':
       // Early surrender against a ten only makes sense before the dealer peeks.

@@ -200,7 +200,10 @@ describe('settings changed in another tab', () => {
     const backend = new MemoryBackend();
     const storage = new Storage(backend);
     const watchers = [];
-    storage.watch = (key, fn) => { watchers.push(fn); return () => {}; };
+    storage.watch = (key, fn) => {
+      watchers.push(fn);
+      return () => {};
+    };
 
     const settings = new Settings(schema, storage);
     expect(watchers).toHaveLength(1);

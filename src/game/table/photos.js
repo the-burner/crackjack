@@ -27,9 +27,10 @@ const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
  */
 export function trayPhoto(cards, silhouette) {
   const series = TRAY_SERIES[silhouette] ?? TRAY_SERIES['6deck'];
-  const number = cards <= 0
-    ? series.empty
-    : clamp(series.empty - 1 - Math.floor(cards / CARDS_PER_STEP), series.full, series.empty - 1);
+  const number =
+    cards <= 0
+      ? series.empty
+      : clamp(series.empty - 1 - Math.floor(cards / CARDS_PER_STEP), series.full, series.empty - 1);
   return { number, src: `assets/trays/table/${number}.jpg` };
 }
 
@@ -38,9 +39,8 @@ export function trayPhoto(cards, silhouette) {
  * @returns {{src: string, number: number}}
  */
 export function shoePhoto(cards) {
-  const number = cards <= 0
-    ? SHOE_EMPTY
-    : clamp(SHOE_EMPTY - Math.floor(cards / CARDS_PER_SHOE_STEP), SHOE_FULLEST, SHOE_EMPTY - 1);
+  const number =
+    cards <= 0 ? SHOE_EMPTY : clamp(SHOE_EMPTY - Math.floor(cards / CARDS_PER_SHOE_STEP), SHOE_FULLEST, SHOE_EMPTY - 1);
   return { number, src: `assets/shoe/${number}.jpg` };
 }
 

@@ -11,7 +11,13 @@ export const DEALER_KEY = '0-0';
  * @param {number} o.decks  Decks in the shoe, for the shoe photograph.
  */
 export function createTableState({ decks }) {
-  const emptyHand = key => ({ key, seat: Number(key.split('-')[0]), index: Number(key.split('-')[1]), cards: [], faceUp: [] });
+  const emptyHand = key => ({
+    key,
+    seat: Number(key.split('-')[0]),
+    index: Number(key.split('-')[1]),
+    cards: [],
+    faceUp: [],
+  });
 
   const state = {
     /** Player hands in play, in seat order. */
@@ -71,7 +77,12 @@ export function createTableState({ decks }) {
 
     /** Sets what each seat has wagered, so the chip labels can be drawn. */
     setBets(bets) {
-      state.chips = new Map(bets.map(({ seat, amount, sideBet = 0 }) => [seat, { base: amount, amount, sideBet, result: null, paid: null }]));
+      state.chips = new Map(
+        bets.map(({ seat, amount, sideBet = 0 }) => [
+          seat,
+          { base: amount, amount, sideBet, result: null, paid: null },
+        ]),
+      );
     },
 
     /** Clears the table for a new round. */
@@ -87,7 +98,8 @@ export function createTableState({ decks }) {
 
     /** A seat's chip label; computer seats get one only to show their results. */
     chipFor(seat) {
-      if (!state.chips.has(seat)) state.chips.set(seat, { base: 0, amount: 0, sideBet: 0, result: null, paid: null, computer: true });
+      if (!state.chips.has(seat))
+        state.chips.set(seat, { base: 0, amount: 0, sideBet: 0, result: null, paid: null, computer: true });
       return state.chips.get(seat);
     },
 

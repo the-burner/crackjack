@@ -9,7 +9,12 @@ export const ROWS = 3;
 /** Space between a tile and its cell edge, so neighbouring tiles sit 2 x TILE_GAP apart. */
 export const TILE_GAP = 2;
 /** Tile colours: custom property and Classic fallback. */
-export const TILE = { normal: ['--tile-bg', '#0000c4'], single: ['--tile-good', '#00ff00'], previous: ['--tile-previous', '#dc780c'], selected: ['--tile-bad', '#ff0000'] };
+export const TILE = {
+  normal: ['--tile-bg', '#0000c4'],
+  single: ['--tile-good', '#00ff00'],
+  previous: ['--tile-previous', '#dc780c'],
+  selected: ['--tile-bad', '#ff0000'],
+};
 
 /**
  * The bets the ramp offers, one per tile. Rows that repeat the row before them

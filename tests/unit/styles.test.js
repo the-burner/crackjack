@@ -20,18 +20,18 @@ const COLOUR = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/;
  */
 const withoutComments = text => text.replace(/\/\*[\s\S]*?\*\//g, '');
 
-const definitions = text => withoutComments(text).split(/[;{}]/)
-  .map(part => /^\s*(--[a-z0-9-]+)\s*:\s*(.+)$/s.exec(part))
-  .filter(Boolean)
-  .map(match => [match[0], match[1], match[2]]);
+const definitions = text =>
+  withoutComments(text)
+    .split(/[;{}]/)
+    .map(part => /^\s*(--[a-z0-9-]+)\s*:\s*(.+)$/s.exec(part))
+    .filter(Boolean)
+    .map(match => [match[0], match[1], match[2]]);
 
 /** The custom properties a theme block sets. */
 function themeBlock(name) {
   const start = ALL.indexOf(`[data-theme='${name}']`);
   expect(start, `no ${name} theme block`).toBeGreaterThan(-1);
-  return new Set(
-    [...ALL.slice(start).matchAll(/(--[a-z0-9-]+)\s*:/g)].map(match => match[1]),
-  );
+  return new Set([...ALL.slice(start).matchAll(/(--[a-z0-9-]+)\s*:/g)].map(match => match[1]));
 }
 
 describe('custom properties', () => {
@@ -45,9 +45,16 @@ describe('custom properties', () => {
     const used = new Set([...ALL.matchAll(/var\((--[a-z0-9-]+)/g)].map(match => match[1]));
     // Canvas code reads some of them by name instead.
     const fromScript = new Set();
-    for (const file of ['src/game/table/bet-grid.js', 'src/drills/shared/answer-grid.js',
-      'src/game/table/renderer.js', 'src/drills/full/screen.js', 'src/drills/depth/screen.js',
-      'src/drills/count/screen.js', 'src/game/screens/table.js', 'src/ui/theme.js']) {
+    for (const file of [
+      'src/game/table/bet-grid.js',
+      'src/drills/shared/answer-grid.js',
+      'src/game/table/renderer.js',
+      'src/drills/full/screen.js',
+      'src/drills/depth/screen.js',
+      'src/drills/count/screen.js',
+      'src/game/screens/table.js',
+      'src/ui/theme.js',
+    ]) {
       for (const match of readFileSync(file, 'utf8').matchAll(/(--[a-z0-9-]+)/g)) fromScript.add(match[1]);
     }
     const defined = definitions(CSS['app.css']).map(match => match[1]);
@@ -96,12 +103,14 @@ describe('the themes', () => {
 
 describe('hard-coded colours', () => {
   /** A colour outside a custom-property definition cannot be themed. */
-  const offenders = text => text.split('\n')
-    .map((line, index) => ({ line: line.trim(), number: index + 1 }))
-    .filter(({ line }) => COLOUR.test(line))
-    .filter(({ line }) => !/^--[a-z0-9-]+\s*:/.test(line))
-    // A mask is a stencil, not a colour: only its alpha matters.
-    .filter(({ line }) => !line.includes('mask-image'));
+  const offenders = text =>
+    text
+      .split('\n')
+      .map((line, index) => ({ line: line.trim(), number: index + 1 }))
+      .filter(({ line }) => COLOUR.test(line))
+      .filter(({ line }) => !/^--[a-z0-9-]+\s*:/.test(line))
+      // A mask is a stencil, not a colour: only its alpha matters.
+      .filter(({ line }) => !line.includes('mask-image'));
 
   for (const name of FILES) {
     it(`${name} sets colours only through custom properties`, () => {
@@ -113,12 +122,16 @@ describe('hard-coded colours', () => {
 describe('type', () => {
   /** The project's weights are 400, 500 and 600; `bold` and 700 are not on it. */
   const SCALE = ['400', '500', '600'];
-  const offScale = text => withoutComments(text).split('\n')
-    .flatMap((line, index) => [...line.matchAll(/font(?:-weight)?:\s*([a-z0-9]+)/g)]
-      .map(match => match[1])
-      .filter(weight => /^(bold|bolder|lighter|normal|\d00)$/.test(weight))
-      .filter(weight => !SCALE.includes(weight))
-      .map(weight => `${index + 1}: ${weight}`));
+  const offScale = text =>
+    withoutComments(text)
+      .split('\n')
+      .flatMap((line, index) =>
+        [...line.matchAll(/font(?:-weight)?:\s*([a-z0-9]+)/g)]
+          .map(match => match[1])
+          .filter(weight => /^(bold|bolder|lighter|normal|\d00)$/.test(weight))
+          .filter(weight => !SCALE.includes(weight))
+          .map(weight => `${index + 1}: ${weight}`),
+      );
 
   for (const name of FILES) {
     it(`${name} sets weights only from the project's scale`, () => {
@@ -150,7 +163,8 @@ describe('canvas colours', () => {
   for (const file of FILES_WITH_CANVAS) {
     it(`${file.split('/').pop()} pairs every colour with a custom property`, () => {
       const allowed = KNOWN_LITERALS[file] ?? [];
-      const bare = readFileSync(file, 'utf8').split('\n')
+      const bare = readFileSync(file, 'utf8')
+        .split('\n')
         .map((line, index) => ({ line: line.trim(), number: index + 1 }))
         .filter(({ line }) => /'#[0-9a-fA-F]{3,8}'|'rgba?\(/.test(line))
         // The property name sits on the same line as its fallback.
@@ -172,7 +186,8 @@ describe('the table canvas', () => {
   const FELT_ARTWORK = ['--felt-fallback', '--bet-circle'];
 
   it('pairs every colour with the custom property it falls back from', () => {
-    const bare = renderer.split('\n')
+    const bare = renderer
+      .split('\n')
       .map((line, index) => ({ line: line.trim(), number: index + 1 }))
       .filter(({ line }) => /'#[0-9a-fA-F]{3,8}'|'rgba?\(/.test(line))
       .filter(({ line }) => !line.includes('--'));

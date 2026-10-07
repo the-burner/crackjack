@@ -25,11 +25,13 @@ export function gameStatsScreen(app, { session } = {}) {
   const { el, body } = standardScreen(app, { title: 'Statistics', help: 'game.stats', className: 'game-stats' });
   const table = h('table', { class: 'stats-table' });
 
-  const checks = checkList(DISPLAY_OPTIONS.map(([key, label]) => ({
-    label,
-    checked: settings.get(key),
-    onChange: on => settings.set(key, on),
-  })));
+  const checks = checkList(
+    DISPLAY_OPTIONS.map(([key, label]) => ({
+      label,
+      checked: settings.get(key),
+      onChange: on => settings.set(key, on),
+    })),
+  );
 
   /** A section heading row, shown across both columns. */
   const section = name => ({ label: name, value: name, head: true });
@@ -72,12 +74,16 @@ export function gameStatsScreen(app, { session } = {}) {
   }
 
   function render() {
-    replaceChildren(table, h('tbody', {}, rows().map(({ label, value, head }) => h(
-      'tr',
-      { class: head ? 'stats-table__head' : null },
-      h('th', {}, label),
-      h('td', {}, String(value)),
-    ))));
+    replaceChildren(
+      table,
+      h(
+        'tbody',
+        {},
+        rows().map(({ label, value, head }) =>
+          h('tr', { class: head ? 'stats-table__head' : null }, h('th', {}, label), h('td', {}, String(value))),
+        ),
+      ),
+    );
   }
 
   async function resetStats() {
@@ -86,10 +92,15 @@ export function gameStatsScreen(app, { session } = {}) {
     render();
   }
 
-  body.append(h('div', { class: 'column column--wide' },
-    table,
-    button('Reset Stats', { block: true, icon: 'refresh', onClick: resetStats, 'data-action': 'reset-stats' }),
-    checks));
+  body.append(
+    h(
+      'div',
+      { class: 'column column--wide' },
+      table,
+      button('Reset Stats', { block: true, icon: 'refresh', onClick: resetStats, 'data-action': 'reset-stats' }),
+      checks,
+    ),
+  );
 
   render();
   return { el, onShow: render };

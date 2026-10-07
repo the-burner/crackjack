@@ -10,8 +10,12 @@ import { advisePlay, ACTION, SECTION, PROBE, NO_INDEX_MARKER } from '../../core/
 export const SITUATIONS = ['hardStand', 'softStand', 'hardDouble', 'softDouble', 'split', 'surrender'];
 
 export const SITUATION_LABELS = {
-  hardStand: 'Hard H/S', softStand: 'Soft H/S', hardDouble: 'Hard DD',
-  softDouble: 'Soft DD', split: 'Split', surrender: 'Surrender',
+  hardStand: 'Hard H/S',
+  softStand: 'Soft H/S',
+  hardDouble: 'Hard DD',
+  softDouble: 'Soft DD',
+  split: 'Split',
+  surrender: 'Surrender',
 };
 
 /** Rows of each table, top to bottom, as the hand value the row stands for. */
@@ -41,23 +45,99 @@ const entry = (kind, upcard, value) => ({ kind, upcard, value });
  * Each line is one dealer upcard and the hand values drilled against it.
  */
 const DEFAULT_HANDS = [
-  ['hardStand', [[2, [15, 14, 13, 12]], [3, [14, 13, 12]], [4, [14, 13, 12]], [5, [13, 12]], [6, [13, 12]],
-    [7, [16]], [8, [16, 16, 15]], [9, [16, 16, 15, 15, 14]], [10, [16, 16, 15, 15, 14, 14]], [1, [16, 16, 15, 15]]]],
-  ['hardDouble', [[2, [9]], [3, [9]], [4, [9]], [5, [9]], [6, [9, 8]], [7, [10, 9, 8]], [8, [10, 9]],
-    [9, [11, 10]], [10, [11, 10]], [1, [11, 10]]]],
-  ['softDouble', [[5, [8, 7, 6, 5, 4, 3, 2]], [2, [6, 5, 4]], [3, [6, 5, 4, 3, 2]], [4, [6, 5, 4, 3, 2]],
-    [6, [7, 6, 5, 4, 3, 2]]]],
-  ['split', [[2, [9, 7, 6, 3, 2]], [3, [9, 7, 6, 3, 2]], [4, [10, 9, 7, 6, 3, 2]], [5, [10, 9, 7, 6, 5, 4, 2]],
-    [6, [10, 9, 7, 6, 5, 4]], [7, [9, 7]], [8, [9, 7]], [9, [1, 9, 7]], [10, [1, 8]], [1, [1, 8]]]],
-  ['softStand', [[6, [7, 6]], [7, [7, 6]], [8, [7]], [9, [8, 7]], [10, [8, 7]], [1, [8, 7]]]],
+  [
+    'hardStand',
+    [
+      [2, [15, 14, 13, 12]],
+      [3, [14, 13, 12]],
+      [4, [14, 13, 12]],
+      [5, [13, 12]],
+      [6, [13, 12]],
+      [7, [16]],
+      [8, [16, 16, 15]],
+      [9, [16, 16, 15, 15, 14]],
+      [10, [16, 16, 15, 15, 14, 14]],
+      [1, [16, 16, 15, 15]],
+    ],
+  ],
+  [
+    'hardDouble',
+    [
+      [2, [9]],
+      [3, [9]],
+      [4, [9]],
+      [5, [9]],
+      [6, [9, 8]],
+      [7, [10, 9, 8]],
+      [8, [10, 9]],
+      [9, [11, 10]],
+      [10, [11, 10]],
+      [1, [11, 10]],
+    ],
+  ],
+  [
+    'softDouble',
+    [
+      [5, [8, 7, 6, 5, 4, 3, 2]],
+      [2, [6, 5, 4]],
+      [3, [6, 5, 4, 3, 2]],
+      [4, [6, 5, 4, 3, 2]],
+      [6, [7, 6, 5, 4, 3, 2]],
+    ],
+  ],
+  [
+    'split',
+    [
+      [2, [9, 7, 6, 3, 2]],
+      [3, [9, 7, 6, 3, 2]],
+      [4, [10, 9, 7, 6, 3, 2]],
+      [5, [10, 9, 7, 6, 5, 4, 2]],
+      [6, [10, 9, 7, 6, 5, 4]],
+      [7, [9, 7]],
+      [8, [9, 7]],
+      [9, [1, 9, 7]],
+      [10, [1, 8]],
+      [1, [1, 8]],
+    ],
+  ],
+  [
+    'softStand',
+    [
+      [6, [7, 6]],
+      [7, [7, 6]],
+      [8, [7]],
+      [9, [8, 7]],
+      [10, [8, 7]],
+      [1, [8, 7]],
+    ],
+  ],
 ].flatMap(([kind, byUpcard]) => byUpcard.flatMap(([upcard, values]) => values.map(v => entry(kind, upcard, v))));
 
 /** The Illustrious 18 playing indices (insurance is not a playing decision). */
 const ILLUSTRIOUS_18_HANDS = [
-  ...[[2, 13], [2, 12], [3, 13], [3, 12], [4, 12], [5, 12], [6, 12], [9, 16], [10, 16], [10, 15]]
-    .map(([u, v]) => entry('hardStand', u, v)),
-  ...[[2, 9], [7, 9], [10, 10], [1, 11], [1, 10]].map(([u, v]) => entry('hardDouble', u, v)),
-  ...[[5, 10], [6, 10]].map(([u, v]) => entry('split', u, v)),
+  ...[
+    [2, 13],
+    [2, 12],
+    [3, 13],
+    [3, 12],
+    [4, 12],
+    [5, 12],
+    [6, 12],
+    [9, 16],
+    [10, 16],
+    [10, 15],
+  ].map(([u, v]) => entry('hardStand', u, v)),
+  ...[
+    [2, 9],
+    [7, 9],
+    [10, 10],
+    [1, 11],
+    [1, 10],
+  ].map(([u, v]) => entry('hardDouble', u, v)),
+  ...[
+    [5, 10],
+    [6, 10],
+  ].map(([u, v]) => entry('split', u, v)),
 ];
 
 /** Hand lists that are not built from the strategy tables. */
@@ -84,7 +164,14 @@ function scanTables(situations, keep) {
 }
 
 /** Which kind of player hand each situation's rows stand for. */
-const HAND_TYPE = { hardStand: 'hard', hardDouble: 'hard', surrender: 'hard', softStand: 'soft', softDouble: 'soft', split: 'pair' };
+const HAND_TYPE = {
+  hardStand: 'hard',
+  hardDouble: 'hard',
+  surrender: 'hard',
+  softStand: 'soft',
+  softDouble: 'soft',
+  split: 'pair',
+};
 
 /**
  * Every distinct player hand against every dealer card, for the chosen
@@ -186,9 +273,18 @@ export function fillHand(first, total, maxCards, random) {
       const card = n === maxCards ? total - sum : randomRank(maxCards, random);
       cards.push(card);
       sum += card;
-      if (sum === 21) { restart = true; break; }
-      if (sum === 11 && cards.includes(1)) { restart = true; break; }
-      if (sum > total || card < 1) { restart = true; break; }
+      if (sum === 21) {
+        restart = true;
+        break;
+      }
+      if (sum === 11 && cards.includes(1)) {
+        restart = true;
+        break;
+      }
+      if (sum > total || card < 1) {
+        restart = true;
+        break;
+      }
       if (sum === total) break;
     }
     if (restart) continue;
@@ -280,35 +376,55 @@ export function dealHand(list, options, random) {
 
 /** The hand as the advisor wants it. */
 const advisorHand = hand => ({
-  total: hand.total, hardTotal: hand.hardTotal, card1: hand.cards[0], card2: hand.cards[1],
-  cardCount: hand.cardCount, cardIds: hand.cardIds,
+  total: hand.total,
+  hardTotal: hand.hardTotal,
+  card1: hand.cards[0],
+  card2: hand.cards[1],
+  cardCount: hand.cardCount,
+  cardIds: hand.cardIds,
 });
 
 const advisorContext = (hand, trueCount, allowed, probe) => ({
-  upcard: hand.upcard, trueCount, runningCount: trueCount, decks: 1, cardsDealt: 0, allowed, probe,
+  upcard: hand.upcard,
+  trueCount,
+  runningCount: trueCount,
+  decks: 1,
+  cardsDealt: 0,
+  allowed,
+  probe,
 });
 
 /** Only the hand's own situation is allowed, so its own table decides. */
 function ownSituation(kind) {
   return {
-    double: kind === 'hardDouble', softDouble: kind === 'softDouble',
-    split: kind === 'split', surrender: kind === 'surrender',
+    double: kind === 'hardDouble',
+    softDouble: kind === 'softDouble',
+    split: kind === 'split',
+    surrender: kind === 'surrender',
   };
 }
 
 const allowedFrom = situations => ({
-  double: situations.hardDouble, softDouble: situations.softDouble,
-  split: situations.split, surrender: situations.surrender,
+  double: situations.hardDouble,
+  softDouble: situations.softDouble,
+  split: situations.split,
+  surrender: situations.surrender,
 });
 
 /** The index the hand's own tables hold, before the grid range is applied. */
 function rawIndex(strategy, hand, situations) {
-  const probe = advisePlay(strategy, advisorHand(hand),
-    advisorContext(hand, 99, ownSituation(hand.kind), PROBE.section));
+  const probe = advisePlay(
+    strategy,
+    advisorHand(hand),
+    advisorContext(hand, 99, ownSituation(hand.kind), PROBE.section),
+  );
   let index = probe.threshold;
   if (index === ALWAYS || index === NO_INDEX_MARKER) {
-    index = advisePlay(strategy, advisorHand(hand),
-      advisorContext(hand, 99, { ...allowedFrom(situations), surrender: false }, PROBE.none)).threshold;
+    index = advisePlay(
+      strategy,
+      advisorHand(hand),
+      advisorContext(hand, 99, { ...allowedFrom(situations), surrender: false }, PROBE.none),
+    ).threshold;
   }
   if (index === NEVER || index === ALWAYS || index === NO_INDEX_MARKER || index === null) return null;
   return index;
@@ -362,12 +478,12 @@ export function correctPlay(strategy, hand, { count, situations, doubleAnyCards,
   }
   // With more than two cards a soft hand is reduced to "ace plus the rest", and
   // splits and surrender are no longer possible.
-  const multi = hand.soft
-    ? { ...advisorHand(hand), card1: 1, card2: hand.total - 11 }
-    : advisorHand(hand);
+  const multi = hand.soft ? { ...advisorHand(hand), card1: 1, card2: hand.total - 11 } : advisorHand(hand);
   const multiAllowed = {
-    double: doubleAnyCards && situations.hardDouble, softDouble: doubleAnyCards && situations.softDouble,
-    split: false, surrender: false,
+    double: doubleAnyCards && situations.hardDouble,
+    softDouble: doubleAnyCards && situations.softDouble,
+    split: false,
+    surrender: false,
   };
   return advisePlay(strategy, multi, advisorContext(hand, count, multiAllowed, PROBE.none));
 }
@@ -381,8 +497,12 @@ function sectionForAction(action, soft) {
 }
 
 const SECTION_TABLES = {
-  [SECTION.surrender]: 'surrender', [SECTION.split]: 'split', [SECTION.softDouble]: 'softDouble',
-  [SECTION.hardDouble]: 'hardDouble', [SECTION.softStand]: 'softStand', [SECTION.hardStand]: 'hardStand',
+  [SECTION.surrender]: 'surrender',
+  [SECTION.split]: 'split',
+  [SECTION.softDouble]: 'softDouble',
+  [SECTION.hardDouble]: 'hardDouble',
+  [SECTION.softStand]: 'softStand',
+  [SECTION.hardStand]: 'hardStand',
 };
 
 /**
@@ -441,11 +561,10 @@ export function errorSummary(cells) {
   const hands = entries
     .map(e => ({ entry: e, count: e.count, share: share(e.count) }))
     .sort((a, b) => b.count - a.count);
-  const situations = SITUATIONS
-    .map(kind => {
-      const count = entries.filter(e => e.kind === kind).reduce((sum, e) => sum + e.count, 0);
-      return { kind, label: SITUATION_LABELS[kind], count, share: share(count) };
-    })
+  const situations = SITUATIONS.map(kind => {
+    const count = entries.filter(e => e.kind === kind).reduce((sum, e) => sum + e.count, 0);
+    return { kind, label: SITUATION_LABELS[kind], count, share: share(count) };
+  })
     .filter(s => s.count > 0)
     .sort((a, b) => b.count - a.count);
   return { total, hands, situations };
@@ -456,8 +575,11 @@ export const percent = share => (share > 0 && share < 0.005 ? '<1%' : `${Math.ro
 
 /** "Hard 16 v 10" for a hand-list entry. */
 export function describeEntry(e) {
-  const hand = e.kind === 'split' ? `Pair of ${valueName(e.value)}s`
-    : e.kind === 'softStand' || e.kind === 'softDouble' ? `A,${e.value}`
-      : String(e.value);
+  const hand =
+    e.kind === 'split'
+      ? `Pair of ${valueName(e.value)}s`
+      : e.kind === 'softStand' || e.kind === 'softDouble'
+        ? `A,${e.value}`
+        : String(e.value);
   return `${SITUATION_LABELS[e.kind]} ${hand} v ${valueName(e.upcard)}`;
 }

@@ -39,7 +39,9 @@ export function swipeAction({ dx, dy, insurance = false, minDistance = MIN_SWIPE
 export function attachSwipes(el, onSwipe, { insurance = () => false } = {}) {
   let start = null;
   const doubleTap = doubleTapDetector();
-  const down = event => { start = { x: event.clientX, y: event.clientY }; };
+  const down = event => {
+    start = { x: event.clientX, y: event.clientY };
+  };
   const up = event => {
     if (!start) return;
     const dx = event.clientX - start.x;
@@ -53,7 +55,9 @@ export function attachSwipes(el, onSwipe, { insurance = () => false } = {}) {
     const action = swipeAction({ dx, dy, insurance: insurance() });
     if (action) onSwipe(action, event);
   };
-  const cancel = () => { start = null; };
+  const cancel = () => {
+    start = null;
+  };
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', cancel);

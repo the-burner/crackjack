@@ -2,15 +2,31 @@
 
 import { alert } from '../../ui/dialogs.js';
 import {
-  drillOptionsScreen, group, row, section, COUNT_DOWN_HALT_OPTION,
-  DECK_OPTIONS, ACCURACY_OPTIONS, TRAY_OPTIONS, BIAS_OPTIONS, END_WARNING_OPTIONS,
+  drillOptionsScreen,
+  group,
+  row,
+  section,
+  COUNT_DOWN_HALT_OPTION,
+  DECK_OPTIONS,
+  ACCURACY_OPTIONS,
+  TRAY_OPTIONS,
+  BIAS_OPTIONS,
+  END_WARNING_OPTIONS,
 } from '../shared/options-screen.js';
 import { drillStrategy } from '../shared/drill-settings.js';
 import { trayStyleFor, TRAY_CAPACITY } from '../depth/logic.js';
 import { COUNT_DRILL_LABELS, aceDrillSuits, ACE_DRILLS } from './logic.js';
 
-const DRILL_OPTIONS = ['runningCount', 'trueCount', 'acesLeft', 'acesDealt', 'aceBetCount', 'acePlayCount', 'aceInsureCount', 'tenSideCount']
-  .map(value => ({ value, label: `Drill: ${COUNT_DRILL_LABELS[value]}` }));
+const DRILL_OPTIONS = [
+  'runningCount',
+  'trueCount',
+  'acesLeft',
+  'acesDealt',
+  'aceBetCount',
+  'acePlayCount',
+  'aceInsureCount',
+  'tenSideCount',
+].map(value => ({ value, label: `Drill: ${COUNT_DRILL_LABELS[value]}` }));
 
 const TEST_OPTIONS = [
   { value: 'everyCard', label: 'Test: Every Card' },
@@ -44,14 +60,13 @@ const POSITION_OPTIONS = [
 ];
 
 /** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
-const MODE_OPTIONS = [
-  { value: 'auto', label: 'Timer Mode: Shoe' },
-  COUNT_DOWN_HALT_OPTION,
-];
+const MODE_OPTIONS = [{ value: 'auto', label: 'Timer Mode: Shoe' }, COUNT_DOWN_HALT_OPTION];
 
 export function countOptionsScreen(app) {
   const screen = drillOptionsScreen(app, {
-    title: 'Count Options', help: 'drills.count.options', drill: 'drills.count',
+    title: 'Count Options',
+    help: 'drills.count.options',
+    drill: 'drills.count',
     onLaunch: () => launch(app),
   });
   const { form } = screen;
@@ -69,30 +84,32 @@ export function countOptionsScreen(app) {
   const twoCounts = form.checks([{ label: 'Two Counts', key: 'twoCounts' }]);
 
   screen.append(
-    section('Drill', group(
-      form.select('drill', DRILL_OPTIONS),
-      form.select('testEvery', TEST_OPTIONS),
-      accuracy,
-      twoCounts,
-      form.select('cardsPerFlash', CARDS_OPTIONS),
-      form.select('decks', DECK_OPTIONS),
-    )),
-    section('Dealing', group(
-      form.select('orientation', ORIENTATION_OPTIONS),
-      positions,
-      form.select('endWarning', END_WARNING_OPTIONS),
-      form.select('bias', BIAS_OPTIONS),
-      trayStyle,
-      thickness,
-    )),
-    section('Timer', group(
-      form.select('timerMode', MODE_OPTIONS),
-      perTest,
-      drillTime,
-      dealByHand,
-      dealSpeed,
-      progressive,
-    )),
+    section(
+      'Drill',
+      group(
+        form.select('drill', DRILL_OPTIONS),
+        form.select('testEvery', TEST_OPTIONS),
+        accuracy,
+        twoCounts,
+        form.select('cardsPerFlash', CARDS_OPTIONS),
+        form.select('decks', DECK_OPTIONS),
+      ),
+    ),
+    section(
+      'Dealing',
+      group(
+        form.select('orientation', ORIENTATION_OPTIONS),
+        positions,
+        form.select('endWarning', END_WARNING_OPTIONS),
+        form.select('bias', BIAS_OPTIONS),
+        trayStyle,
+        thickness,
+      ),
+    ),
+    section(
+      'Timer',
+      group(form.select('timerMode', MODE_OPTIONS), perTest, drillTime, dealByHand, dealSpeed, progressive),
+    ),
   );
 
   form.watch(() => {
@@ -130,9 +147,11 @@ async function launch(app) {
   const drill = s.get('drills.count.drill');
   const { strategy } = drillStrategy(app, decks);
   if (!aceDrillSuits(drill, strategy)) {
-    await alert(ACE_DRILLS[drill] === 'neutral'
-      ? 'The Ace Bet Count only helps with a counting system that gives aces no value. Choose another drill or another strategy.'
-      : 'The Ace Play and Ace Insure Counts only apply to a counting system that counts aces. Choose another drill or another strategy.');
+    await alert(
+      ACE_DRILLS[drill] === 'neutral'
+        ? 'The Ace Bet Count only helps with a counting system that gives aces no value. Choose another drill or another strategy.'
+        : 'The Ace Play and Ace Insure Counts only apply to a counting system that counts aces. Choose another drill or another strategy.',
+    );
     return;
   }
   app.open('drills.count');

@@ -2,7 +2,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.js';
-import { rulesFrom, surrenderAllowed, splitAcesMayDraw, splitAcesMayHit, bustValue } from '../../../src/game/engine/rules.js';
+import {
+  rulesFrom,
+  surrenderAllowed,
+  splitAcesMayDraw,
+  splitAcesMayHit,
+  bustValue,
+} from '../../../src/game/engine/rules.js';
 import { settleHand, handBonus, RESULT } from '../../../src/game/engine/settlement.js';
 import { Hand } from '../../../src/game/engine/hand.js';
 import { Settings } from '../../../src/settings/store.js';
@@ -11,7 +17,9 @@ import { Storage, MemoryBackend } from '../../../src/services/storage.js';
 import { cardId } from '../../../src/core/cards.js';
 import { seededRandom } from '../../../src/core/random.js';
 
-const SPADES = 0, CLUBS = 1, HEARTS = 2;
+const SPADES = 0,
+  CLUBS = 1,
+  HEARTS = 2;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
 
 function makeRules(overrides = {}) {
@@ -90,12 +98,22 @@ describe('player blackjack always wins', () => {
 
   it('pays 3:2 against a dealer blackjack instead of pushing', () => {
     const rules = makeRules({ 'rules.playerBlackjackAlwaysWins': true });
-    const settled = settleHand({ rules, hand: hand(natural), dealer: hand([card(1, CLUBS), card(12, CLUBS)]), dealerBlackjack: true });
+    const settled = settleHand({
+      rules,
+      hand: hand(natural),
+      dealer: hand([card(1, CLUBS), card(12, CLUBS)]),
+      dealerBlackjack: true,
+    });
     expect(settled).toMatchObject({ payout: 25, result: RESULT.win });
   });
 
   it('pushes when the rule is off', () => {
-    const settled = settleHand({ rules: makeRules(), hand: hand(natural), dealer: hand([card(1, CLUBS), card(12, CLUBS)]), dealerBlackjack: true });
+    const settled = settleHand({
+      rules: makeRules(),
+      hand: hand(natural),
+      dealer: hand([card(1, CLUBS), card(12, CLUBS)]),
+      dealerBlackjack: true,
+    });
     expect(settled).toMatchObject({ payout: 10, result: RESULT.push });
   });
 });
@@ -123,8 +141,9 @@ describe('surrender', () => {
   it('returns half of everything wagered, so a rescued double gets half of both bets', () => {
     const rules = makeRules({ 'rules.doubleDownRescue': true });
     const rescued = hand([card(5), card(6), card(9)], { doubled: true, doubleBet: 10, surrendered: true });
-    expect(settleHand({ rules, hand: rescued, dealer: hand([card(10), card(8)]), dealerBlackjack: false }))
-      .toMatchObject({ payout: 10, result: RESULT.surrender });
+    expect(
+      settleHand({ rules, hand: rescued, dealer: hand([card(10), card(8)]), dealerBlackjack: false }),
+    ).toMatchObject({ payout: 10, result: RESULT.surrender });
   });
 
   it('offers a rescue in the game once the double card is out', () => {
@@ -335,7 +354,10 @@ describe('a hand the dealer wrongly busts', () => {
   it('is never asked about a computer seat', () => {
     const asked = [];
     const game = riggedGame([], { table: { seatCount: 2, computerSeats: [2], computerBet: 5 } });
-    game.onGoodHandBusted = hand => { asked.push(hand.owner); return false; };
+    game.onGoodHandBusted = hand => {
+      asked.push(hand.owner);
+      return false;
+    };
     game.startRound([{ seat: 1, bet: 10 }]);
     game.act(ACTION.hit);
     expect(asked.every(owner => owner === 'human')).toBe(true);

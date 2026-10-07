@@ -8,8 +8,15 @@ import { select, checkList } from '../../ui/components.js';
 import { standardScreen } from '../../ui/screen.js';
 import { strategyOptions } from '../../settings/strategies.js';
 import {
-  TABLE_VIEWS, viewByKey, rowCount, rowLabels, columnLabels, gridCell,
-  specialtyPlays, countsTables, GRID_COLOR,
+  TABLE_VIEWS,
+  viewByKey,
+  rowCount,
+  rowLabels,
+  columnLabels,
+  gridCell,
+  specialtyPlays,
+  countsTables,
+  GRID_COLOR,
 } from '../../core/strategy/strategy-grid.js';
 
 const BASE_COLUMNS = 10;
@@ -53,7 +60,10 @@ export function strategyTablesScreen(app, params = {}) {
   // ignored while the custom-index mask is edited.
   const pickingIndices = editingMask && maskKey === 'strategy.customIndexMask';
   const options = strategyOptions(settings, decks);
-  const strategy = strategies.build(system, pickingIndices ? { ...options, indexSet: 'all', customMask: null } : options);
+  const strategy = strategies.build(
+    system,
+    pickingIndices ? { ...options, indexSet: 'all', customMask: null } : options,
+  );
   const columns = strategy.extended ? EXTENDED_COLUMNS : BASE_COLUMNS;
   const extended = strategy.extended;
 
@@ -69,26 +79,40 @@ export function strategyTablesScreen(app, params = {}) {
   const viewSelect = select(
     TABLE_VIEWS.map(v => ({ value: v.key, label: v.label })),
     view.key,
-    key => { view = viewByKey(key); render(); },
+    key => {
+      view = viewByKey(key);
+      render();
+    },
     { mini: true },
   );
-  const errorCheck = checkList([{
-    label: 'Shade error counts',
-    checked: false,
-    onChange: on => { showErrors = on; tallies = on ? errorTallies.load() : null; render(); },
-  }]);
+  const errorCheck = checkList([
+    {
+      label: 'Shade error counts',
+      checked: false,
+      onChange: on => {
+        showErrors = on;
+        tallies = on ? errorTallies.load() : null;
+        render();
+      },
+    },
+  ]);
   const grid = h('div', { class: 'tables__scroll' });
   const legend = h('div', { class: 'tables__legend' });
   const specialty = h('div', { class: 'tables__specialty' });
   const below = h('div', { class: 'tables__below' }, legend, specialty);
   const hint = h('div', { class: 'tables__hint' });
 
-  body.append(h('div', { class: 'column column--wide' },
-    h('div', { class: 'tables__head' },
-      h('div', { class: 'tables__name' }, strategy.name),
-      viewSelect),
-    grid, below, hint, errorCheck,
-  ));
+  body.append(
+    h(
+      'div',
+      { class: 'column column--wide' },
+      h('div', { class: 'tables__head' }, h('div', { class: 'tables__name' }, strategy.name), viewSelect),
+      grid,
+      below,
+      hint,
+      errorCheck,
+    ),
+  );
 
   grid.addEventListener('click', event => {
     const cell = event.target.closest('td[data-row]');
@@ -123,7 +147,9 @@ export function strategyTablesScreen(app, params = {}) {
     replaceChildren(grid, tableView());
     replaceChildren(legend, legendBoxes());
     replaceChildren(specialty, specialtyList());
-    hint.textContent = editingMask ? `${selectedCount()} of ${rowCount(view, { extended }) * BASE_COLUMNS} cells selected` : '';
+    hint.textContent = editingMask
+      ? `${selectedCount()} of ${rowCount(view, { extended }) * BASE_COLUMNS} cells selected`
+      : '';
     legend.hidden = showErrors;
   }
 
@@ -142,39 +168,75 @@ export function strategyTablesScreen(app, params = {}) {
     const heads = columnLabels({ extended });
     const picked = editingMask ? mask()[view.table] : null;
     const errors = showErrors ? tallies[view.table] : null;
-    const rows = labels.map((label, row) => h('tr', {},
-      h('td', { class: 'grid__label' }, label),
-      heads.map((_, column) => {
-        const cell = gridCell({
-          value: table[row][column],
-          view,
-          selected: !picked || Boolean(picked[row]?.[column]),
-          errorCount: errors ? (errors[row]?.[column] ?? 0) : null,
-        });
-        const marked = highlight && highlight.row === row && highlight.column === column;
-        return h('td', {
-          class: marked ? 'grid__cell--marked' : null,
-          dataset: { row: String(row), col: String(column) },
-          style: { backgroundColor: themed(cell.background), color: themed(cell.color) },
-        }, cell.text);
-      })));
-    return h('table', { class: `grid tables__grid${editingMask ? ' tables__grid--editable' : ''}` },
-      h('thead', {}, h('tr', {}, h('th', { style: { width: '11%' } }), heads.map(label => h('th', {}, label)))),
-      h('tbody', {}, rows));
+    const rows = labels.map((label, row) =>
+      h(
+        'tr',
+        {},
+        h('td', { class: 'grid__label' }, label),
+        heads.map((_, column) => {
+          const cell = gridCell({
+            value: table[row][column],
+            view,
+            selected: !picked || Boolean(picked[row]?.[column]),
+            errorCount: errors ? (errors[row]?.[column] ?? 0) : null,
+          });
+          const marked = highlight && highlight.row === row && highlight.column === column;
+          return h(
+            'td',
+            {
+              class: marked ? 'grid__cell--marked' : null,
+              dataset: { row: String(row), col: String(column) },
+              style: { backgroundColor: themed(cell.background), color: themed(cell.color) },
+            },
+            cell.text,
+          );
+        }),
+      ),
+    );
+    return h(
+      'table',
+      { class: `grid tables__grid${editingMask ? ' tables__grid--editable' : ''}` },
+      h(
+        'thead',
+        {},
+        h(
+          'tr',
+          {},
+          h('th', { style: { width: '11%' } }),
+          heads.map(label => h('th', {}, label)),
+        ),
+      ),
+      h('tbody', {}, rows),
+    );
   }
 
   function legendBoxes() {
-    return view.legend.map((label, i) => (label === null ? null : h('div', {
-      class: 'tables__legend-box',
-      style: { backgroundColor: themed(LEGEND_COLORS[i]), color: themed(LEGEND_TEXT_COLORS[i]) },
-    }, label)));
+    return view.legend.map((label, i) =>
+      label === null
+        ? null
+        : h(
+            'div',
+            {
+              class: 'tables__legend-box',
+              style: { backgroundColor: themed(LEGEND_COLORS[i]), color: themed(LEGEND_TEXT_COLORS[i]) },
+            },
+            label,
+          ),
+    );
   }
 
   function specialtyList() {
     const plays = specialtyPlays(strategy.tables[view.table], view, { extended, columns });
-    return h('table', { class: 'grid' },
+    return h(
+      'table',
+      { class: 'grid' },
       h('thead', {}, h('tr', {}, h('th', {}, 'Specialty Plays'))),
-      h('tbody', {}, (plays.length ? plays : ['none']).map(text => h('tr', {}, h('td', { class: 'grid__label' }, text)))));
+      h(
+        'tbody',
+        {},
+        (plays.length ? plays : ['none']).map(text => h('tr', {}, h('td', { class: 'grid__label' }, text))),
+      ),
+    );
   }
 
   return {
@@ -190,12 +252,41 @@ export function strategyTablesScreen(app, params = {}) {
 /** The four small tables of the Insurance/Counts view. */
 function countsView(counts) {
   const tables = [counts.pointValues, counts.startingCount, counts.insuranceDecks, counts.insuranceHands];
-  return h('div', { class: 'tables__counts' }, tables.filter(Boolean).map(t => h('div', {},
-    h('div', { class: 'tables__caption' }, t.caption),
-    h('table', { class: 'grid' },
-      h('thead', {}, h('tr', {}, t.rows[0].label !== undefined ? h('th', {}) : null, t.columns.map(c => h('th', {}, c)))),
-      h('tbody', {}, t.rows.map(r => h('tr', {},
-        r.label !== undefined ? h('td', { class: 'grid__label' }, r.label) : null,
-        r.values.map(v => h('td', { class: 'grid__label' }, v)))))),
-  )));
+  return h(
+    'div',
+    { class: 'tables__counts' },
+    tables.filter(Boolean).map(t =>
+      h(
+        'div',
+        {},
+        h('div', { class: 'tables__caption' }, t.caption),
+        h(
+          'table',
+          { class: 'grid' },
+          h(
+            'thead',
+            {},
+            h(
+              'tr',
+              {},
+              t.rows[0].label !== undefined ? h('th', {}) : null,
+              t.columns.map(c => h('th', {}, c)),
+            ),
+          ),
+          h(
+            'tbody',
+            {},
+            t.rows.map(r =>
+              h(
+                'tr',
+                {},
+                r.label !== undefined ? h('td', { class: 'grid__label' }, r.label) : null,
+                r.values.map(v => h('td', { class: 'grid__label' }, v)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

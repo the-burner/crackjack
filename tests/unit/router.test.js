@@ -1,10 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { Router } from '../../src/app/router.js';
 
-
 /** Minimal DOM stand-ins: elements with `hidden`, `remove()` and `classList`. */
 function element() {
-  return { hidden: false, dataset: {}, classList: { add() {}, remove() {} }, removed: false, remove() { this.removed = true; } };
+  return {
+    hidden: false,
+    dataset: {},
+    classList: { add() {}, remove() {} },
+    removed: false,
+    remove() {
+      this.removed = true;
+    },
+  };
 }
 
 /**
@@ -17,23 +24,39 @@ function fakeHistory() {
   let listener = null;
   return {
     entries,
-    get index() { return index; },
+    get index() {
+      return index;
+    },
     /** Entries ahead of the pointer, which a forward gesture could reach. */
-    get ahead() { return entries.length - 1 - index; },
-    get state() { return entries[index]; },
+    get ahead() {
+      return entries.length - 1 - index;
+    },
+    get state() {
+      return entries[index];
+    },
     pushState(state) {
       entries.length = index + 1;
       entries.push(state);
       index += 1;
     },
-    replaceState(state) { entries[index] = state; },
-    back() { this.go(-1); },
-    forward() { this.go(1); },
+    replaceState(state) {
+      entries[index] = state;
+    },
+    back() {
+      this.go(-1);
+    },
+    forward() {
+      this.go(1);
+    },
     go(delta) {
       index = Math.min(entries.length - 1, Math.max(0, index + delta));
       queueMicrotask(() => listener?.({ state: entries[index] }));
     },
-    window: { addEventListener: (type, fn) => { if (type === 'popstate') listener = fn; } },
+    window: {
+      addEventListener: (type, fn) => {
+        if (type === 'popstate') listener = fn;
+      },
+    },
   };
 }
 
@@ -135,7 +158,10 @@ describe('Router', () => {
   it('reopens a screen with the params it was given', async () => {
     const { router, history } = setup();
     const seen = [];
-    router.register('topic', (app, params) => { seen.push(params); return { el: element() }; });
+    router.register('topic', (app, params) => {
+      seen.push(params);
+      return { el: element() };
+    });
     router.open('home');
     router.open('topic', { topic: 'rules', page: 2 });
 
@@ -144,7 +170,10 @@ describe('Router', () => {
     history.forward();
     await settle();
     expect(names(router)).toEqual(['home', 'topic']);
-    expect(seen).toEqual([{ topic: 'rules', page: 2 }, { topic: 'rules', page: 2 }]);
+    expect(seen).toEqual([
+      { topic: 'rules', page: 2 },
+      { topic: 'rules', page: 2 },
+    ]);
   });
 
   it('does not rebuild a screen whose params cannot be stored', async () => {
@@ -197,11 +226,15 @@ describe('Router', () => {
   it('closes an open dialog instead of the screen behind it', async () => {
     const history = fakeHistory();
     let overlays = 1;
-    const router = new Router({ append() {} }, {}, {
-      history,
-      window: history.window,
-      dismissOverlay: () => (overlays > 0 ? (overlays -= 1, true) : false),
-    });
+    const router = new Router(
+      { append() {} },
+      {},
+      {
+        history,
+        window: history.window,
+        dismissOverlay: () => (overlays > 0 ? ((overlays -= 1), true) : false),
+      },
+    );
     for (const name of ['home', 'a']) router.register(name, () => ({ el: element() }));
     router.open('home');
     router.open('a');
@@ -220,11 +253,15 @@ describe('Router', () => {
   it('closes an open dialog when the app itself goes back, leaving the history alone', () => {
     const history = fakeHistory();
     let overlays = 1;
-    const router = new Router({ append() {} }, {}, {
-      history,
-      window: history.window,
-      dismissOverlay: () => (overlays > 0 ? (overlays -= 1, true) : false),
-    });
+    const router = new Router(
+      { append() {} },
+      {},
+      {
+        history,
+        window: history.window,
+        dismissOverlay: () => (overlays > 0 ? ((overlays -= 1), true) : false),
+      },
+    );
     for (const name of ['home', 'a']) router.register(name, () => ({ el: element() }));
     router.open('home');
     router.open('a');
@@ -252,7 +289,12 @@ describe('Router', () => {
     const { router } = setup();
     router.open('home');
     const el = element();
-    router.register('broken', () => ({ el, destroy() { throw new Error('boom'); } }));
+    router.register('broken', () => ({
+      el,
+      destroy() {
+        throw new Error('boom');
+      },
+    }));
     router.open('broken');
     expect(() => router.closeTop()).toThrow('boom');
     // The element is gone, so it cannot sit over the screen below catching taps.
@@ -377,11 +419,15 @@ describe('Router with a dialog over the bottom screen', () => {
   /** A router showing home, with one dialog open over it. */
   const atHome = history => {
     const overlays = { count: 1 };
-    const router = new Router({ append() {} }, {}, {
-      history,
-      window: history.window,
-      dismissOverlay: () => (overlays.count > 0 ? (overlays.count -= 1, true) : false),
-    });
+    const router = new Router(
+      { append() {} },
+      {},
+      {
+        history,
+        window: history.window,
+        dismissOverlay: () => (overlays.count > 0 ? ((overlays.count -= 1), true) : false),
+      },
+    );
     router.register('home', () => ({ el: element() }));
     router.open('home');
     return { router, overlays };
@@ -439,7 +485,15 @@ describe('Router reconciling an entry it cannot honour', () => {
     for (const name of ['home', 'a']) router.register(name, () => ({ el: element() }));
     router.open('home');
     // An entry left by an older version of the app, naming a screen that is gone.
-    router.onPopState({ state: { screens: [{ name: 'home', params: {} }, { name: 'a', params: {} }, { name: 'ghost', params: {} }] } });
+    router.onPopState({
+      state: {
+        screens: [
+          { name: 'home', params: {} },
+          { name: 'a', params: {} },
+          { name: 'ghost', params: {} },
+        ],
+      },
+    });
     expect(names(router)).toEqual(['home', 'a']);
   });
 });

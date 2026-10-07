@@ -23,7 +23,8 @@ function fields(definition) {
   if (start === -1) throw new Error('Side-bet definition has no field list');
   // The replacement order matters: `)` expands to text containing `#`, and both
   // `)` and `(` expand to `@`, which only becomes a field in the last step.
-  const expanded = definition.slice(start)
+  const expanded = definition
+    .slice(start)
     .replaceAll(')', '@@#')
     .replaceAll('(', '@'.repeat(10))
     .replaceAll(']', '|-1')

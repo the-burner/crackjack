@@ -40,11 +40,13 @@ export class AnswerGrid {
   cellAt(x, y, width, height) {
     const cellWidth = width / this.columns;
     const row = Math.floor((y / height) * this.rows);
-    return this.cells.find(cell => {
-      if (cell.row !== row || cell.label === '') return false;
-      const left = cellLeft(cell) * cellWidth;
-      return x >= left && x < left + cellWidth;
-    }) ?? null;
+    return (
+      this.cells.find(cell => {
+        if (cell.row !== row || cell.label === '') return false;
+        const left = cellLeft(cell) * cellWidth;
+        return x >= left && x < left + cellWidth;
+      }) ?? null
+    );
   }
 
   mark(cell, state) {
@@ -64,11 +66,20 @@ export class AnswerGrid {
     ctx.font = `600 ${smallText ? 18 : 24}px ${cssVar('--font', 'Helvetica, Arial, sans-serif')}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const colors = Object.fromEntries(Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]));
+    const colors = Object.fromEntries(
+      Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]),
+    );
     for (const cell of this.cells) {
       if (cell.label === '') continue;
-      drawTile(ctx, cellLeft(cell) * cellWidth, cell.row * cellHeight, cellWidth, cellHeight,
-        cell.label, colors[this.states.get(cell) ?? 'idle']);
+      drawTile(
+        ctx,
+        cellLeft(cell) * cellWidth,
+        cell.row * cellHeight,
+        cellWidth,
+        cellHeight,
+        cell.label,
+        colors[this.states.get(cell) ?? 'idle'],
+      );
     }
     return ctx;
   }

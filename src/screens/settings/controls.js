@@ -50,11 +50,14 @@ function settingsForm(app) {
      */
     checks(items, options) {
       const checked = item => (item.value === undefined ? Boolean(get(item.key)) : get(item.key) === item.value);
-      const el = checkList(items.map(item => ({
-        label: item.label,
-        checked: checked(item),
-        onChange: on => write(item.key, item.value === undefined ? on : (on ? item.value : item.off)),
-      })), options);
+      const el = checkList(
+        items.map(item => ({
+          label: item.label,
+          checked: checked(item),
+          onChange: on => write(item.key, item.value === undefined ? on : on ? item.value : item.off),
+        })),
+        options,
+      );
       controls.push(() => el.refresh(i => checked(items[i])));
       return el;
     },
@@ -77,7 +80,12 @@ function settingsForm(app) {
      */
     number(label, key, { prompt, format, clamp = value => value } = {}) {
       const { min, max } = app.settings.schema[key];
-      const el = valueButton(get(key), value => write(key, clamp(value)), { prompt: prompt ?? label, min, max, format });
+      const el = valueButton(get(key), value => write(key, clamp(value)), {
+        prompt: prompt ?? label,
+        min,
+        max,
+        format,
+      });
       controls.push(() => el.setValue(get(key)));
       return row(label, el);
     },

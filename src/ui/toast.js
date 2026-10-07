@@ -11,7 +11,9 @@ let current = null;
  */
 export function toast(message, { position = 'bottom', tone = 'plain', ms = 1800 } = {}) {
   current?.remove();
-  const classes = ['toast', position === 'top' && 'toast--top', tone !== 'plain' && `toast--${tone}`].filter(Boolean).join(' ');
+  const classes = ['toast', position === 'top' && 'toast--top', tone !== 'plain' && `toast--${tone}`]
+    .filter(Boolean)
+    .join(' ');
   const el = h('div', { class: classes, role: 'status' }, message);
   document.body.append(el);
   current = el;

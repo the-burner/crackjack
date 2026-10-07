@@ -18,10 +18,17 @@ test('records each frame the table draws, when a test asks it to', async ({ page
   await page.addInitScript(() => {
     window.__cjRecordFrames = true;
     localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify({
-      'mechanics.dealerSpeed': 99, 'mechanics.otherPlayerSpeed': 99, 'mechanics.payoffSpeed': 99,
-      'display.hideActionButtons': false, 'table.seatCount': 1, 'table.computerSeats': [false, false, false, false, false, false],
-    }));
+    localStorage.setItem(
+      'cj.settings',
+      JSON.stringify({
+        'mechanics.dealerSpeed': 99,
+        'mechanics.otherPlayerSpeed': 99,
+        'mechanics.payoffSpeed': 99,
+        'display.hideActionButtons': false,
+        'table.seatCount': 1,
+        'table.computerSeats': [false, false, false, false, false, false],
+      }),
+    );
   });
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();

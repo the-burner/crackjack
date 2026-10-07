@@ -1,8 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import {
-  DEALER_ERROR, ERROR_CHANCE, UNPEEKED_BLACKJACK_CHANCE, SUPPORTED_ERRORS, enabledErrors,
-  dealerErrorsOn, pickDealerError, claimFoul, missedMessage, dealerStandsByMistake,
-  bustsGoodHandByMistake, bustedGoodHandShortfall, errorHandFrom,
+  DEALER_ERROR,
+  ERROR_CHANCE,
+  UNPEEKED_BLACKJACK_CHANCE,
+  SUPPORTED_ERRORS,
+  enabledErrors,
+  dealerErrorsOn,
+  pickDealerError,
+  claimFoul,
+  missedMessage,
+  dealerStandsByMistake,
+  bustsGoodHandByMistake,
+  bustedGoodHandShortfall,
+  errorHandFrom,
 } from '../../../src/game/dealer-errors.js';
 import { Hand } from '../../../src/game/engine/hand.js';
 import { cardId } from '../../../src/core/cards.js';
@@ -10,8 +20,17 @@ import { cardId } from '../../../src/core/cards.js';
 const settingsWith = on => ({ get: key => on.includes(key) });
 
 const hand = (over = {}) => ({
-  key: '1-0', bet: 10, insuranceBet: 0, payout: 20, total: 20, cardCount: 3,
-  doubled: false, isNatural: false, splitCount: 0, result: 'Win', ...over,
+  key: '1-0',
+  bet: 10,
+  insuranceBet: 0,
+  payout: 20,
+  total: 20,
+  cardCount: 3,
+  doubled: false,
+  isNatural: false,
+  splitCount: 0,
+  result: 'Win',
+  ...over,
 });
 
 const dealerAt = (total, over = {}) => ({ total, cardCount: 4, busted: total > 21, ...over });
@@ -41,19 +60,29 @@ describe('enabled errors', () => {
 
 describe('picking an error', () => {
   it('makes nothing happen when no option is on', () => {
-    expect(pickDealerError({ hands: [hand()], dealer: dealerAt(19), dealerBlackjack: false, enabled: [], random: always })).toBe(null);
+    expect(
+      pickDealerError({ hands: [hand()], dealer: dealerAt(19), dealerBlackjack: false, enabled: [], random: always }),
+    ).toBe(null);
   });
 
   it('respects the per-error chance', () => {
-    const args = { hands: [hand({ result: 'Push', payout: 10 })], dealer: dealerAt(20), dealerBlackjack: false, enabled: [DEALER_ERROR.chipsOnPush] };
+    const args = {
+      hands: [hand({ result: 'Push', payout: 10 })],
+      dealer: dealerAt(20),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.chipsOnPush],
+    };
     expect(pickDealerError({ ...args, random: never })).toBe(null);
     expect(pickDealerError({ ...args, random: () => ERROR_CHANCE.chipsOnPush - 0.01 })).not.toBe(null);
   });
 
   it('takes the chips on a push: the player is short the bet', () => {
     const error = pickDealerError({
-      hands: [hand({ result: 'Push', payout: 10 })], dealer: dealerAt(20),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.chipsOnPush], random: always,
+      hands: [hand({ result: 'Push', payout: 10 })],
+      dealer: dealerAt(20),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.chipsOnPush],
+      random: always,
     });
     expect(error).toMatchObject({ type: DEALER_ERROR.chipsOnPush, amount: 10 });
     expect(error.hands).toEqual([{ key: '1-0', shortfall: 10, result: 'Lose' }]);
@@ -69,7 +98,10 @@ describe('picking an error', () => {
   it('pays a blackjack at even money: the player is short the premium', () => {
     const error = pickDealerError({
       hands: [hand({ isNatural: true, cardCount: 2, payout: 25, total: 21, result: '21' })],
-      dealer: dealerAt(19), dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
+      random: always,
     });
     expect(error.amount).toBe(5);
     expect(error.hands[0].result).toBe('Win');
@@ -78,7 +110,9 @@ describe('picking an error', () => {
   it('mispays a blackjack more often when the dealer never peeked', () => {
     const base = {
       hands: [hand({ isNatural: true, cardCount: 2, payout: 25, total: 21, result: '21' })],
-      dealer: dealerAt(19), dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
     };
     const between = () => ERROR_CHANCE.blackjackMispaid + 0.01;
     expect(pickDealerError({ ...base, dealerPeeked: true, random: between })).toBe(null);
@@ -89,77 +123,127 @@ describe('picking an error', () => {
   });
 
   it('does not mispay a blackjack that already pays even money', () => {
-    expect(pickDealerError({
-      hands: [hand({ isNatural: true, cardCount: 2, payout: 20, total: 21, result: '21' })],
-      dealer: dealerAt(19), dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ isNatural: true, cardCount: 2, payout: 20, total: 21, result: '21' })],
+        dealer: dealerAt(19),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.blackjackMispaid],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('pays insurance at 1:1: the player is short the insurance stake', () => {
     const error = pickDealerError({
-      hands: [hand({ insuranceBet: 5, payout: 15, result: 'Lose' })], dealer: dealerAt(21, { cardCount: 2, busted: false }),
-      dealerBlackjack: true, enabled: [DEALER_ERROR.insuranceMispaid], random: always,
+      hands: [hand({ insuranceBet: 5, payout: 15, result: 'Lose' })],
+      dealer: dealerAt(21, { cardCount: 2, busted: false }),
+      dealerBlackjack: true,
+      enabled: [DEALER_ERROR.insuranceMispaid],
+      random: always,
     });
     expect(error.amount).toBe(5);
   });
 
   it('only mispays insurance when the dealer has blackjack', () => {
-    expect(pickDealerError({
-      hands: [hand({ insuranceBet: 5 })], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.insuranceMispaid], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ insuranceBet: 5 })],
+        dealer: dealerAt(19),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.insuranceMispaid],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('only mispays insurance on a hand the blackjack beat', () => {
-    const base = { dealer: dealerAt(21, { cardCount: 2, busted: false }), dealerBlackjack: true, enabled: [DEALER_ERROR.insuranceMispaid], random: always };
+    const base = {
+      dealer: dealerAt(21, { cardCount: 2, busted: false }),
+      dealerBlackjack: true,
+      enabled: [DEALER_ERROR.insuranceMispaid],
+      random: always,
+    };
     // A natural pushes the blackjack, so there is nothing to short.
-    expect(pickDealerError({ ...base, hands: [hand({ insuranceBet: 5, payout: 25, isNatural: true, cardCount: 2, total: 21, result: 'Push' })] })).toBe(null);
+    expect(
+      pickDealerError({
+        ...base,
+        hands: [hand({ insuranceBet: 5, payout: 25, isNatural: true, cardCount: 2, total: 21, result: 'Push' })],
+      }),
+    ).toBe(null);
     // A split hand keeps its stake against the blackjack.
     expect(pickDealerError({ ...base, hands: [hand({ insuranceBet: 5, payout: 25, result: 'Push' })] })).toBe(null);
     expect(pickDealerError({ ...base, hands: [hand({ insuranceBet: 5, payout: 35, result: 'Win' })] })).toBe(null);
   });
 
   it('does not mispay insurance when blackjacks pay even money', () => {
-    expect(pickDealerError({
-      hands: [hand({ insuranceBet: 5, payout: 15, result: 'Lose' })], dealer: dealerAt(21, { cardCount: 2, busted: false }),
-      dealerBlackjack: true, blackjackBonus: false, enabled: [DEALER_ERROR.insuranceMispaid], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ insuranceBet: 5, payout: 15, result: 'Lose' })],
+        dealer: dealerAt(21, { cardCount: 2, busted: false }),
+        dealerBlackjack: true,
+        blackjackBonus: false,
+        enabled: [DEALER_ERROR.insuranceMispaid],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('never busts a good hand at the payoff: that mistake is made during the hand', () => {
-    expect(pickDealerError({
-      hands: [hand({ total: 21, cardCount: 4, payout: 20 })], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.bustedGoodHand], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ total: 21, cardCount: 4, payout: 20 })],
+        dealer: dealerAt(19),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.bustedGoodHand],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('does not pay a hand that won by one point', () => {
     const error = pickDealerError({
-      hands: [hand({ total: 20, payout: 20, result: 'Win' })], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.winNotPaid], random: always,
+      hands: [hand({ total: 20, payout: 20, result: 'Win' })],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.winNotPaid],
+      random: always,
     });
     expect(error.amount).toBe(10);
     expect(error.hands[0].result).toBe('Push');
   });
 
   it('only shorts a one-point win', () => {
-    expect(pickDealerError({
-      hands: [hand({ total: 20, payout: 20, result: 'Win' })], dealer: dealerAt(18),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.winNotPaid], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ total: 20, payout: 20, result: 'Win' })],
+        dealer: dealerAt(18),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.winNotPaid],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('pays every hand when the dealer busts, so nothing is short', () => {
-    expect(pickDealerError({
-      hands: [hand({ total: 20, payout: 20, result: 'Win' })], dealer: dealerAt(22),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.winNotPaid], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ total: 20, payout: 20, result: 'Win' })],
+        dealer: dealerAt(22),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.winNotPaid],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('claims 21 when the dealer busts with 22', () => {
     const error = pickDealerError({
       hands: [hand({ key: '1-0', total: 18, payout: 20 }), hand({ key: '2-0', total: 21, payout: 20 })],
-      dealer: dealerAt(22), dealerBlackjack: false, enabled: [DEALER_ERROR.shouldHaveBusted], random: always,
+      dealer: dealerAt(22),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.shouldHaveBusted],
+      random: always,
     });
     // The 18 loses its whole payout; the 21 is pushed, so it keeps its stake.
     expect(error.hands).toEqual([
@@ -170,7 +254,12 @@ describe('picking an error', () => {
   });
 
   it('needs four dealer cards for 22 and five for 23', () => {
-    const base = { hands: [hand({ total: 18, payout: 20 })], dealerBlackjack: false, enabled: [DEALER_ERROR.shouldHaveBusted], random: always };
+    const base = {
+      hands: [hand({ total: 18, payout: 20 })],
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.shouldHaveBusted],
+      random: always,
+    };
     expect(pickDealerError({ ...base, dealer: dealerAt(22, { cardCount: 3 }) })).toBe(null);
     expect(pickDealerError({ ...base, dealer: dealerAt(22, { cardCount: 4 }) })).not.toBe(null);
     expect(pickDealerError({ ...base, dealer: dealerAt(23, { cardCount: 4 }) })).toBe(null);
@@ -178,23 +267,36 @@ describe('picking an error', () => {
   });
 
   it('does not claim 21 on a two-card dealer bust or a wild total', () => {
-    const base = { hands: [hand({ total: 18, payout: 20 })], dealerBlackjack: false, enabled: [DEALER_ERROR.shouldHaveBusted], random: always };
+    const base = {
+      hands: [hand({ total: 18, payout: 20 })],
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.shouldHaveBusted],
+      random: always,
+    };
     expect(pickDealerError({ ...base, dealer: dealerAt(22, { cardCount: 2 }) })).toBe(null);
     expect(pickDealerError({ ...base, dealer: dealerAt(25) })).toBe(null);
     expect(pickDealerError({ ...base, dealer: dealerAt(24, { cardCount: 6 }) })).toBe(null);
   });
 
   it('leaves a natural alone when the dealer claims 21', () => {
-    expect(pickDealerError({
-      hands: [hand({ isNatural: true, cardCount: 2, total: 21, payout: 25 })],
-      dealer: dealerAt(22), dealerBlackjack: false, enabled: [DEALER_ERROR.shouldHaveBusted], random: always,
-    })).toBe(null);
+    expect(
+      pickDealerError({
+        hands: [hand({ isNatural: true, cardCount: 2, total: 21, payout: 25 })],
+        dealer: dealerAt(22),
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.shouldHaveBusted],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('makes at most one error, taking the first that applies', () => {
     const error = pickDealerError({
-      hands: [hand({ result: 'Push', payout: 10 })], dealer: dealerAt(20), dealerBlackjack: false,
-      enabled: [DEALER_ERROR.blackjackMispaid, DEALER_ERROR.chipsOnPush], random: always,
+      hands: [hand({ result: 'Push', payout: 10 })],
+      dealer: dealerAt(20),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid, DEALER_ERROR.chipsOnPush],
+      random: always,
     });
     expect(error.type).toBe(DEALER_ERROR.chipsOnPush);
   });
@@ -222,12 +324,13 @@ describe('claiming and missing', () => {
 });
 
 describe('standing on 16 and unpaid bonuses', () => {
-  const standing = (over = {}) => dealerStandsByMistake({
-    dealer: { total: 16, hardTotal: 16, cardCount: 4, ...(over.dealer ?? {}) },
-    playerTotal: over.playerTotal ?? 15,
-    enabled: over.enabled ?? [DEALER_ERROR.stoodOn16],
-    random: over.random ?? (() => 0),
-  });
+  const standing = (over = {}) =>
+    dealerStandsByMistake({
+      dealer: { total: 16, hardTotal: 16, cardCount: 4, ...(over.dealer ?? {}) },
+      playerTotal: over.playerTotal ?? 15,
+      enabled: over.enabled ?? [DEALER_ERROR.stoodOn16],
+      random: over.random ?? (() => 0),
+    });
 
   it('stands on 16 only when that mistake is enabled', () => {
     expect(standing()).toBe(true);
@@ -256,9 +359,45 @@ describe('standing on 16 and unpaid bonuses', () => {
 
   it('charges the hands that lost to a dealer who stood on 16', () => {
     const hands = [
-      { key: '1-0', bet: 10, insuranceBet: 0, payout: 0, total: 15, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Lose', sideBetWin: 0 },
-      { key: '2-0', bet: 10, insuranceBet: 0, payout: 20, total: 20, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Win', sideBetWin: 0 },
-      { key: '3-0', bet: 10, insuranceBet: 0, payout: 0, total: 16, cardCount: 3, doubled: true, isNatural: false, splitCount: 0, result: 'Lose', sideBetWin: 0 },
+      {
+        key: '1-0',
+        bet: 10,
+        insuranceBet: 0,
+        payout: 0,
+        total: 15,
+        cardCount: 2,
+        doubled: false,
+        isNatural: false,
+        splitCount: 0,
+        result: 'Lose',
+        sideBetWin: 0,
+      },
+      {
+        key: '2-0',
+        bet: 10,
+        insuranceBet: 0,
+        payout: 20,
+        total: 20,
+        cardCount: 2,
+        doubled: false,
+        isNatural: false,
+        splitCount: 0,
+        result: 'Win',
+        sideBetWin: 0,
+      },
+      {
+        key: '3-0',
+        bet: 10,
+        insuranceBet: 0,
+        payout: 0,
+        total: 16,
+        cardCount: 3,
+        doubled: true,
+        isNatural: false,
+        splitCount: 0,
+        result: 'Lose',
+        sideBetWin: 0,
+      },
     ];
     const error = pickDealerError({
       hands,
@@ -274,18 +413,48 @@ describe('standing on 16 and unpaid bonuses', () => {
   });
 
   it('charges nothing for standing on 16 unless the dealer actually stood', () => {
-    const hands = [{ key: '1-0', bet: 10, insuranceBet: 0, payout: 0, total: 15, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Lose', sideBetWin: 0 }];
-    expect(pickDealerError({
-      hands,
-      dealer: { total: 16, cardCount: 4, busted: false },
-      dealerBlackjack: false,
-      enabled: [DEALER_ERROR.stoodOn16],
-      random: always,
-    })).toBe(null);
+    const hands = [
+      {
+        key: '1-0',
+        bet: 10,
+        insuranceBet: 0,
+        payout: 0,
+        total: 15,
+        cardCount: 2,
+        doubled: false,
+        isNatural: false,
+        splitCount: 0,
+        result: 'Lose',
+        sideBetWin: 0,
+      },
+    ];
+    expect(
+      pickDealerError({
+        hands,
+        dealer: { total: 16, cardCount: 4, busted: false },
+        dealerBlackjack: false,
+        enabled: [DEALER_ERROR.stoodOn16],
+        random: always,
+      }),
+    ).toBe(null);
   });
 
   it('charges an unpaid winning side bet', () => {
-    const hands = [{ key: '1-0', bet: 10, insuranceBet: 0, payout: 20, total: 20, cardCount: 2, doubled: false, isNatural: false, splitCount: 0, result: 'Win', sideBetWin: 45 }];
+    const hands = [
+      {
+        key: '1-0',
+        bet: 10,
+        insuranceBet: 0,
+        payout: 20,
+        total: 20,
+        cardCount: 2,
+        doubled: false,
+        isNatural: false,
+        splitCount: 0,
+        result: 'Win',
+        sideBetWin: 45,
+      },
+    ];
     const error = pickDealerError({
       hands,
       dealer: { total: 18, cardCount: 2, busted: false },
@@ -321,8 +490,12 @@ describe('busting a good hand, as the card lands', () => {
   });
 
   it('leaves a doubled 21 alone but not a doubled 20', () => {
-    expect(bustsGoodHandByMistake({ hand: drawn({ total: 21, doubled: true }), enabled: on, random: always })).toBe(false);
-    expect(bustsGoodHandByMistake({ hand: drawn({ total: 20, doubled: true }), enabled: on, random: always })).toBe(true);
+    expect(bustsGoodHandByMistake({ hand: drawn({ total: 21, doubled: true }), enabled: on, random: always })).toBe(
+      false,
+    );
+    expect(bustsGoodHandByMistake({ hand: drawn({ total: 20, doubled: true }), enabled: on, random: always })).toBe(
+      true,
+    );
   });
 
   it('owes double the bet when the dealer was behind, the bet when level, nothing when ahead', () => {
@@ -346,8 +519,18 @@ describe('reading an engine hand', () => {
 
   it('copies the fields the error check reads', () => {
     expect(errorHandFrom(settledHand())).toEqual({
-      key: '2-1', sideBetWin: 0, sideBetPaid: 0, bet: 10, insuranceBet: 5, payout: 25, total: 21,
-      cardCount: 2, doubled: false, isNatural: true, splitCount: 0, result: '21',
+      key: '2-1',
+      sideBetWin: 0,
+      sideBetPaid: 0,
+      bet: 10,
+      insuranceBet: 5,
+      payout: 25,
+      total: 21,
+      cardCount: 2,
+      doubled: false,
+      isNatural: true,
+      splitCount: 0,
+      result: '21',
     });
   });
 
@@ -358,31 +541,47 @@ describe('reading an engine hand', () => {
 
   it('describes the hand well enough to find a mispaid blackjack', () => {
     const error = pickDealerError({
-      hands: [errorHandFrom(settledHand())], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
+      hands: [errorHandFrom(settledHand())],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
+      random: always,
     });
     expect(error).toMatchObject({ type: DEALER_ERROR.blackjackMispaid, amount: 5 });
   });
 });
 
 describe('a mispaid blackjack with a side bet', () => {
-  const natural = (over = {}) => hand({
-    isNatural: true, bet: 10, payout: 25, total: 21, cardCount: 2, result: 'Win', ...over,
-  });
+  const natural = (over = {}) =>
+    hand({
+      isNatural: true,
+      bet: 10,
+      payout: 25,
+      total: 21,
+      cardCount: 2,
+      result: 'Win',
+      ...over,
+    });
 
   it('shorts only the blackjack premium, not the side bet the hand also won', () => {
     // $10 bet paid 3:2 is $25; a $12.50 side-bet win rides along in payout.
     const error = pickDealerError({
-      hands: [natural({ payout: 37.5, sideBetWin: 12.5 })], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
+      hands: [natural({ payout: 37.5, sideBetWin: 12.5 })],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
+      random: always,
     });
     expect(error.amount).toBe(5);
   });
 
   it('shorts the premium when there is no side bet', () => {
     const error = pickDealerError({
-      hands: [natural()], dealer: dealerAt(19),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
+      hands: [natural()],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
+      random: always,
     });
     expect(error.amount).toBe(5);
   });
@@ -395,22 +594,33 @@ describe('a dealer that stood on 16 by mistake', () => {
   it('always counts as an error, without a second roll', () => {
     // The dealer has already stood: whether it was a mistake is not in doubt.
     const error = pickDealerError({
-      hands: [lost], dealer: stood(), dealerBlackjack: false, enabled: [DEALER_ERROR.stoodOn16], random: never,
+      hands: [lost],
+      dealer: stood(),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.stoodOn16],
+      random: never,
     });
     expect(error).toMatchObject({ type: DEALER_ERROR.stoodOn16, amount: 10 });
   });
 
   it('has already cost the player their bet, so it is not charged again', () => {
     const error = pickDealerError({
-      hands: [lost], dealer: stood(), dealerBlackjack: false, enabled: [DEALER_ERROR.stoodOn16], random: always,
+      hands: [lost],
+      dealer: stood(),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.stoodOn16],
+      random: always,
     });
     expect(error.alreadyPaid).toBe(true);
   });
 
   it('is charged at the payoff for a mistake made there', () => {
     const error = pickDealerError({
-      hands: [hand({ total: 20, payout: 20, result: 'Push', cardCount: 3 })], dealer: dealerAt(20),
-      dealerBlackjack: false, enabled: [DEALER_ERROR.chipsOnPush], random: always,
+      hands: [hand({ total: 20, payout: 20, result: 'Push', cardCount: 3 })],
+      dealer: dealerAt(20),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.chipsOnPush],
+      random: always,
     });
     expect(error.alreadyPaid).toBe(false);
   });
@@ -420,8 +630,22 @@ describe('a mispaid blackjack beside a winning side bet', () => {
   it('shorts only the premium: the side bet’s stake and winnings are both its own', () => {
     // A $10 natural paid 3:2 is $25; a $10 side bet at 1:1 returns $20 more.
     const error = pickDealerError({
-      hands: [hand({ isNatural: true, bet: 10, payout: 45, total: 21, cardCount: 2, result: 'Win', sideBetWin: 10, sideBetPaid: 20 })],
-      dealer: dealerAt(19), dealerBlackjack: false, enabled: [DEALER_ERROR.blackjackMispaid], random: always,
+      hands: [
+        hand({
+          isNatural: true,
+          bet: 10,
+          payout: 45,
+          total: 21,
+          cardCount: 2,
+          result: 'Win',
+          sideBetWin: 10,
+          sideBetPaid: 20,
+        }),
+      ],
+      dealer: dealerAt(19),
+      dealerBlackjack: false,
+      enabled: [DEALER_ERROR.blackjackMispaid],
+      random: always,
     });
     expect(error.amount).toBe(5);
   });

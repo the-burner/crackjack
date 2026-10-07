@@ -5,10 +5,13 @@ import { test, expect } from '@playwright/test';
 test.use({ serviceWorkers: 'block' });
 
 /** Boolean grids shaped like the strategy tables. */
-const emptyMask = () => Object.fromEntries(
-  ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender']
-    .map(name => [name, Array.from({ length: 10 }, () => new Array(10).fill(false))]),
-);
+const emptyMask = () =>
+  Object.fromEntries(
+    ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender'].map(name => [
+      name,
+      Array.from({ length: 10 }, () => new Array(10).fill(false)),
+    ]),
+  );
 
 /** Opens the app with the given settings already saved. */
 async function open(page, settings = {}) {
@@ -42,14 +45,15 @@ async function launch(page, drill) {
 const statsText = screen => screen.locator('.drill__stats').innerText();
 
 /** How many near-white pixels a canvas holds, i.e. whether cards are on it. */
-const whitePixels = canvas => canvas.evaluate(el => {
-  const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
-  let white = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
-  }
-  return white;
-});
+const whitePixels = canvas =>
+  canvas.evaluate(el => {
+    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+    let white = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
+    }
+    return white;
+  });
 
 /** Taps the cell at (row, column) of an answer grid. */
 async function tapCell(screen, { row, column, rows, columns, offset = 0 }) {
@@ -99,7 +103,14 @@ test.describe('flash drill', () => {
     return {
       'drills.flash.hands': 'custom',
       'drills.flash.customHands': mask,
-      'drills.flash.situations': { hardStand: true, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: false },
+      'drills.flash.situations': {
+        hardStand: true,
+        softStand: false,
+        hardDouble: false,
+        softDouble: false,
+        split: false,
+        surrender: false,
+      },
       'drills.flash.countMode': 'fixed',
       'drills.flash.fixedCount': 0,
       'drills.flash.maxCards': 2,
@@ -180,7 +191,9 @@ test.describe('flash drill', () => {
     const options = page.locator('[data-screen="drills.flash.options"]');
     const toggle = options.getByRole('checkbox', { name: 'Non-blocking error pop-ups' });
     await expect(toggle).toBeVisible();
-    await options.locator('select[name="drills.flash.testMode"]').selectOption({ label: 'Test Mode: Number of errors only at end' });
+    await options
+      .locator('select[name="drills.flash.testMode"]')
+      .selectOption({ label: 'Test Mode: Number of errors only at end' });
     await expect(toggle).toBeHidden();
   });
 
@@ -243,7 +256,12 @@ test.describe('flash drill', () => {
   });
 
   test('Infinite counts the time up and does not end', async ({ page }) => {
-    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.timerMode': 'infinite', 'drills.flash.timePerHand': false, 'drills.flash.handsPerDrill': 10 });
+    await open(page, {
+      ...FIXED_16_V_TEN(),
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+      'drills.flash.handsPerDrill': 10,
+    });
     const screen = await launch(page, DRILLS[0]);
     expect(await statsText(screen)).toMatch(/Time: 00:00:0[01]/);
     // More hands than a Rounds drill of 10 would allow.
@@ -255,7 +273,14 @@ test.describe('flash drill', () => {
   test('Round Robin deals hands from the selected situations', async ({ page }) => {
     await open(page, {
       'drills.flash.hands': 'roundRobin',
-      'drills.flash.situations': { hardStand: false, softStand: false, hardDouble: false, softDouble: false, split: true, surrender: false },
+      'drills.flash.situations': {
+        hardStand: false,
+        softStand: false,
+        hardDouble: false,
+        softDouble: false,
+        split: true,
+        surrender: false,
+      },
       'drills.flash.timerMode': 'infinite',
       'drills.flash.timePerHand': false,
       'drills.flash.testMode': 'errorsAtEnd',
@@ -270,7 +295,14 @@ test.describe('flash drill', () => {
   test('counts finished Round Robin rounds', async ({ page }) => {
     await open(page, {
       'drills.flash.hands': 'roundRobin',
-      'drills.flash.situations': { hardStand: false, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: true },
+      'drills.flash.situations': {
+        hardStand: false,
+        softStand: false,
+        hardDouble: false,
+        softDouble: false,
+        split: false,
+        surrender: true,
+      },
       'drills.flash.timerMode': 'infinite',
       'drills.flash.timePerHand': false,
       'drills.flash.testMode': 'errorsAtEnd',
@@ -334,7 +366,14 @@ test.describe('flash drill', () => {
 
   test('refuses to launch without a situation, and with no tests on a clock', async ({ page }) => {
     await open(page, {
-      'drills.flash.situations': { hardStand: false, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: false },
+      'drills.flash.situations': {
+        hardStand: false,
+        softStand: false,
+        hardDouble: false,
+        softDouble: false,
+        split: false,
+        surrender: false,
+      },
     });
     await page.getByRole('button', { name: 'Flash Drills' }).click();
     await page.locator('[data-action="launch"]').click();
@@ -382,7 +421,12 @@ test.describe('depth drill', () => {
   });
 
   test('grades taps on the depth grid and counts the errors', async ({ page }) => {
-    await open(page, { 'drills.depth.decks': 2, 'drills.depth.resolution': 'full', 'drills.depth.seconds': 60, 'drills.depth.accuracy': 0 });
+    await open(page, {
+      'drills.depth.decks': 2,
+      'drills.depth.resolution': 'full',
+      'drills.depth.seconds': 60,
+      'drills.depth.accuracy': 0,
+    });
     const screen = await launch(page, DRILLS[1]);
     expect(await statsText(screen)).toContain('Tests: 1');
 
@@ -393,7 +437,12 @@ test.describe('depth drill', () => {
   });
 
   test('counts a wrong tap as an error', async ({ page }) => {
-    await open(page, { 'drills.depth.decks': 6, 'drills.depth.resolution': 'full', 'drills.depth.seconds': 60, 'drills.depth.accuracy': 0 });
+    await open(page, {
+      'drills.depth.decks': 6,
+      'drills.depth.resolution': 'full',
+      'drills.depth.seconds': 60,
+      'drills.depth.accuracy': 0,
+    });
     const screen = await launch(page, DRILLS[1]);
     // Six decks at full resolution offer 1..5. Tapping each in turn reaches the
     // right one, and every tap before it is an error. The answer is random, so
@@ -449,7 +498,9 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await sheet.getByRole('button', { name: 'Done' }).click();
   await expect(sheet).toBeHidden();
   await expect(row).toHaveText('00:05:01');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['drills.flash.drillSeconds'])).toBe(301);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['drills.flash.drillSeconds'])).toBe(
+    301,
+  );
 
   // Cancel leaves the setting alone.
   await row.click();
@@ -523,7 +574,10 @@ test.describe('count drill', () => {
     // The countdown sits over the card area, not the buttons.
     const countdown = screen.locator('.drill__countdown');
     await expect(countdown).toBeVisible();
-    const [area, number] = await Promise.all([screen.locator('.drill__display').boundingBox(), countdown.boundingBox()]);
+    const [area, number] = await Promise.all([
+      screen.locator('.drill__display').boundingBox(),
+      countdown.boundingBox(),
+    ]);
     expect(number.y + number.height).toBeLessThanOrEqual(area.y + area.height + 1);
     await expect(countdown).toBeHidden({ timeout: 5000 });
     await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
@@ -628,7 +682,14 @@ test('the drills record errors that the Flash options screen can clear', async (
   await open(page, {
     'drills.flash.hands': 'custom',
     'drills.flash.customHands': mask,
-    'drills.flash.situations': { hardStand: true, softStand: false, hardDouble: false, softDouble: false, split: false, surrender: false },
+    'drills.flash.situations': {
+      hardStand: true,
+      softStand: false,
+      hardDouble: false,
+      softDouble: false,
+      split: false,
+      surrender: false,
+    },
     'drills.flash.countMode': 'fixed',
     'drills.flash.maxCards': 2,
     'drills.flash.seconds': 60,

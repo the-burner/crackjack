@@ -72,6 +72,15 @@ export function drawTray(ctx, image, { x, y, width, height }, crop, thicknessPer
   const scale = Math.min(width / crop.width, height / (sourceHeight * (thicknessPercent / 100)));
   const drawWidth = crop.width * scale;
   const drawHeight = sourceHeight * (thicknessPercent / 100) * scale;
-  ctx.drawImage(image, 0, 0, crop.width, sourceHeight,
-    x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    crop.width,
+    sourceHeight,
+    x + (width - drawWidth) / 2,
+    y + (height - drawHeight) / 2,
+    drawWidth,
+    drawHeight,
+  );
 }

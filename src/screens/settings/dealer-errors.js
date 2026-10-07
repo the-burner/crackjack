@@ -26,7 +26,11 @@ const ERRORS = [
 ];
 
 export function dealerErrorsScreen(app) {
-  const { el, columns, form } = settingsScreen(app, { title: 'Errs/Biases', help: 'settings.dealerErrors', note: NOTE });
+  const { el, columns, form } = settingsScreen(app, {
+    title: 'Errs/Biases',
+    help: 'settings.dealerErrors',
+    note: NOTE,
+  });
   columns.append(group(form.select('dealerErrors.dealingBias', BIASES)), group(form.checks(ERRORS)));
   return { el };
 }

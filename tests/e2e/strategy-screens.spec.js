@@ -72,7 +72,12 @@ test.describe('Strategy tables', () => {
 
     await el.locator('select').selectOption('Split');
     await expect(el.locator('.tables__grid tbody tr')).toHaveCount(10);
-    await expect(el.locator('.tables__legend-box')).toHaveText(['Split', 'No Split', 'Split >= Value', 'Split < Value']);
+    await expect(el.locator('.tables__legend-box')).toHaveText([
+      'Split',
+      'No Split',
+      'Split >= Value',
+      'Split < Value',
+    ]);
 
     await el.locator('select').selectOption('Insurance/Counts');
     await expect(el.locator('.tables__counts')).toContainText('Card Point Values');
@@ -102,7 +107,9 @@ test.describe('Strategy tables', () => {
 
   test('shades cells by error count', async ({ page }) => {
     await openHub(page);
-    await page.evaluate(() => { window.app.errorTallies.record('hardStand', 1, 8); });
+    await page.evaluate(() => {
+      window.app.errorTallies.record('hardStand', 1, 8);
+    });
     const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
@@ -166,7 +173,11 @@ test.describe('Allowed Bets', () => {
     await expect(el.locator('.bet-table tbody tr').nth(2).locator('td').nth(1)).toHaveText('3x25');
     expect(await setting(page, 'betting.ramp')).toEqual({
       minCount: 0,
-      rows: [{ chips: 1, hands: 1 }, { chips: 2, hands: 1 }, { chips: 25, hands: 3 }],
+      rows: [
+        { chips: 1, hands: 1 },
+        { chips: 2, hands: 1 },
+        { chips: 25, hands: 3 },
+      ],
     });
   });
 
@@ -191,7 +202,9 @@ test.describe('Allowed Bets', () => {
 
 test('opens a named table with one cell marked', async ({ page }) => {
   await page.goto('/index.html');
-  await page.evaluate(() => window.app.open('strategy.tables', { view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }));
+  await page.evaluate(() =>
+    window.app.open('strategy.tables', { view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }),
+  );
   const screen = page.locator('[data-screen="strategy.tables"]:not([hidden])');
   await expect(screen.locator('.topbar__title')).toHaveText('Last Error');
   await expect(screen.locator('.tables__grid .grid__cell--marked')).toHaveCount(1);
