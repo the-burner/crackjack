@@ -44,12 +44,17 @@ const nonFeltPixels = canvas =>
     return count;
   });
 
-/** The percentage of a box at the middle of a canvas that is felt (the corner is felt). */
+/**
+ * The percentage of a small box at the middle of a canvas that is felt (the
+ * corner is felt). The box is a fixed size, smaller than the warning's plate on
+ * any screen.
+ */
 const feltAtCentre = canvas =>
   canvas.evaluate(el => {
     const ctx = el.getContext('2d');
     const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-    const box = { width: Math.round(el.width / 4), height: Math.round(el.height / 10) };
+    const scale = el.width / el.clientWidth;
+    const box = { width: Math.round(60 * scale), height: Math.round(16 * scale) };
     const { data } = ctx.getImageData(
       Math.round((el.width - box.width) / 2),
       Math.round((el.height - box.height) / 2),

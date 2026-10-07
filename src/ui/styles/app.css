@@ -584,6 +584,11 @@ body {
   margin: 0;
   -webkit-appearance: none;
 }
+/* Keyboard focus (an iPad keyboard, say); taps show nothing. */
+:where(button, select, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 .slider__value:focus {
   outline: 2px solid var(--focus);
   outline-offset: 0;

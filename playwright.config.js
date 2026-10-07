@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/** Every test runs on an iPhone 13 profile, in both engines the app meets. */
+/** Every test runs on an iPhone 13 profile in both engines the app meets, and on an iPad in WebKit. */
 const iPhone = devices['iPhone 13'];
+const iPad = devices['iPad Pro 11'];
 
 /**
  * Most tests run against the dev server, whose unbundled modules they can
@@ -21,6 +22,7 @@ export default defineConfig({
     { name: 'chromium', grepInvert: /@build/, use: { browserName: 'chromium' } },
     // WebKit is Safari's engine, so it is the closest check on what the iPhone runs.
     { name: 'webkit', grepInvert: /@build/, use: { browserName: 'webkit' } },
+    { name: 'ipad', grepInvert: /@build/, use: { ...iPad, browserName: 'webkit' } },
     // Chromium only: Playwright's WebKit build crashes when offline.
     { name: 'build', grep: /@build/, use: { browserName: 'chromium', baseURL: BUILD } },
   ],
