@@ -28,7 +28,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npx vite --host 127.0.0.1 --port 5174 --strictPort',
+      command: 'E2E=1 npx vite --host 127.0.0.1 --port 5174 --strictPort',
       url: `${DEV}/index.html`,
       reuseExistingServer: !process.env.CI,
     },

@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => ({
   // Relative URLs, so the build works under any path and inside Capacitor.
   base: './',
   preview: previewFor(mode),
+  // The e2e server serves edits without reloading pages under a running test.
+  server: process.env.E2E ? { hmr: false } : undefined,
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   plugins: [
     react(),
