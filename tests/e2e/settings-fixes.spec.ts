@@ -135,3 +135,17 @@ test('Game Options keeps its sections and Play button in one centred column in l
   }
   expect(Math.abs(play.x + play.width / 2 - 844 / 2)).toBeLessThan(40);
 });
+
+test('a focused select shows the pressed shade, not a ring its group would clip to two bars', async ({ page }) => {
+  await openHub(page);
+  const el = await openFromHub(page, 'Appearance & Sound', 'settings.appearance');
+  const select = el.getByRole('combobox', { name: 'Theme' });
+  const before = await select.evaluate(e => getComputedStyle(e).backgroundColor);
+  await select.focus();
+  const focused = await select.evaluate(e => ({
+    outline: getComputedStyle(e).outlineStyle,
+    bg: getComputedStyle(e).backgroundColor,
+  }));
+  expect(focused.outline).toBe('none');
+  expect(focused.bg).not.toBe(before);
+});
