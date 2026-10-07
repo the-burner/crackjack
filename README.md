@@ -94,7 +94,7 @@ rename the Mac, delete `.certs/` and repeat the setup.
 Settings live in the browser's local storage under the `cj.` prefix, so they
 survive reloads and app updates. Deleting the installed app (or clearing Safari's
 data for the site) clears them, and the app starts from the defaults in
-`src/settings/schema.js` — edit that file if you want different defaults.
+`src/settings/schema.ts` — edit that file if you want different defaults.
 
 ## Development
 
