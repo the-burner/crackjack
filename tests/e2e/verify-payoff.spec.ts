@@ -3,6 +3,11 @@
 // chosen by replaying the engine offline for the deal each test needs.
 
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import type { Frame } from './globals.d.ts';
+import { seedRandom } from './support/app.ts';
+import type { SavedSettings } from './support/app.ts';
+import type { PillLook, Rect, TableLogEntry } from './support/types.ts';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
@@ -11,27 +16,27 @@ const LANDSCAPE = { width: 844, height: 390 };
 const TWO_HUMAN = [false, false, true, true, false, false];
 
 /** Speed s waits (101 - s) / 120 seconds per step. */
-const pauseFor = speed => Math.round(((101 - speed) / 120) * 1000);
+const pauseFor = (speed: number) => Math.round(((101 - speed) / 120) * 1000);
 
 /** Logs, from page load, every seat label, bankroll, readout and pop-up change. */
 function recorder() {
   window.__cjRecordFrames = true;
-  const log = (window.__cjLog = []);
+  const log: TableLogEntry[] = (window.__cjLog = []);
   const frameCount = () => window.__cjFrames?.length ?? 0;
-  const seen = new Map();
-  const toasts = new Map();
-  const changed = (key, sig) => {
+  const seen = new Map<string, string>();
+  const toasts = new Map<Element, TableLogEntry>();
+  const changed = (key: string, sig: string) => {
     if (seen.get(key) === sig) return false;
     seen.set(key, sig);
     return true;
   };
-  const pillLook = pill => {
+  const pillLook = (pill: HTMLElement): PillLook => {
     const c = getComputedStyle(pill);
-    const chip = pill.parentElement;
-    const felt = document.querySelector('.table__felt');
+    const chip = pill.parentElement!;
+    const felt = document.querySelector('.table__felt')!;
     const range = document.createRange();
     range.selectNodeContents(pill);
-    const rect = r => ({
+    const rect = (r: DOMRect): Rect => ({
       left: r.left,
       right: r.right,
       top: r.top,
@@ -61,17 +66,17 @@ function recorder() {
   const scan = () => {
     const t = performance.now();
     const f = frameCount();
-    for (const chip of document.querySelectorAll('.table__chip')) {
-      const pill = chip.querySelector('.table__result');
+    for (const chip of document.querySelectorAll<HTMLElement>('.table__chip')) {
+      const pill = chip.querySelector<HTMLElement>('.table__result');
       const state = {
         pill: pill ? pill.textContent : null,
         tone: pill?.dataset.tone ?? null,
-        text: pill ? '' : chip.textContent,
+        text: pill ? '' : (chip.textContent ?? ''),
       };
       if (!changed(`chip${chip.dataset.seat}`, JSON.stringify(state))) continue;
       log.push({ kind: 'chip', t, f, seat: Number(chip.dataset.seat), ...state, look: pill ? pillLook(pill) : null });
     }
-    const offered = [...document.querySelectorAll('.table__actions [data-action]')]
+    const offered = [...document.querySelectorAll<HTMLElement>('.table__actions [data-action]')]
       .filter(el => !el.hidden)
       .map(el => el.dataset.action)
       .join(',');
@@ -79,17 +84,18 @@ function recorder() {
     for (const [kind, selector] of [
       ['bankroll', '.table__bankroll'],
       ['counts', '.table__counts'],
-    ]) {
+    ] as const) {
       const el = document.querySelector(selector);
-      if (el && changed(kind, el.textContent)) log.push({ kind, t, f, text: el.textContent });
+      const text = el?.textContent ?? '';
+      if (el && changed(kind, text)) log.push({ kind, t, f, text });
     }
     for (const el of document.querySelectorAll('.toast')) {
       if (!toasts.has(el)) {
-        const entry = {
+        const entry: TableLogEntry = {
           kind: 'toast',
           t,
           f,
-          text: el.textContent,
+          text: el.textContent ?? '',
           className: el.className,
           leaving: null,
           removed: null,
@@ -97,7 +103,7 @@ function recorder() {
         toasts.set(el, entry);
         log.push(entry);
       }
-      const entry = toasts.get(el);
+      const entry = toasts.get(el)!;
       if (entry.leaving === null && el.classList.contains('is-leaving')) entry.leaving = t;
     }
     for (const [el, entry] of toasts) if (entry.removed === null && !el.isConnected) entry.removed = t;
@@ -112,33 +118,30 @@ function recorder() {
 }
 
 /** Records every sound the table asks for, and every audio file actually started. */
-async function recordSounds(page) {
+async function recordSounds(page: Page) {
   await page.evaluate(() => {
     window.__cjAudio = [];
     window.app.sound.output = file => window.__cjAudio.push({ src: file, t: performance.now() });
-    window.__cjSounds = [];
+    window.__cjPlays = [];
     const play = window.app.sound.play.bind(window.app.sound);
     window.app.sound.play = name => {
-      window.__cjSounds.push({ name, t: performance.now(), f: window.__cjFrames?.length ?? 0 });
+      window.__cjPlays.push({ name, t: performance.now(), f: window.__cjFrames?.length ?? 0 });
       play(name);
     };
   });
 }
 
-async function openTable(page, { seed, settings = {}, size = PORTRAIT, sound = false } = {}) {
+async function openTable(
+  page: Page,
+  {
+    seed,
+    settings = {},
+    size = PORTRAIT,
+    sound = false,
+  }: { seed: number; settings?: SavedSettings; size?: typeof PORTRAIT; sound?: boolean },
+) {
   await page.setViewportSize(size);
-  await page.addInitScript(start => {
-    let a = start;
-    // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
-    const libraryRandom = Math.random;
-    Math.random = () => {
-      if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }, seed);
+  await seedRandom(page, seed);
   await page.addInitScript(recorder);
   await page.addInitScript(
     overrides => {
@@ -170,9 +173,12 @@ async function openTable(page, { seed, settings = {}, size = PORTRAIT, sound = f
   await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 15000 });
 }
 
-const overlay = page => page.locator('.bet-overlay');
-const actionButton = (page, name) => page.locator(`.table__actions [data-action="${name}"]`);
+const overlay = (page: Page) => page.locator('.bet-overlay');
+const actionButton = (page: Page, name: string) => page.locator(`.table__actions [data-action="${name}"]`);
 const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender', 'insure', 'pass'];
+
+/** A choice, given the actions on offer and the cards of the hand in play; null waits. */
+type Policy = (offered: string[], cards: number[]) => string | null;
 
 /** Choices, given the actions on offer; null waits. */
 const POLICY = {
@@ -181,7 +187,7 @@ const POLICY = {
   double: offered => (offered.includes('double') ? 'double' : 'stand'),
   surrender: offered => (offered.includes('surrender') ? 'surrender' : 'stand'),
   splitAll: offered => (offered.includes('split') ? 'split' : 'stand'),
-  splitOnce: () => {
+  splitOnce: (): Policy => {
     let split = false;
     return offered => {
       if (!split && offered.includes('split')) {
@@ -195,18 +201,25 @@ const POLICY = {
     offered.includes('pass') ? 'pass' : offered.includes('hit') && total(cards) < 17 ? 'hit' : 'stand',
   // Lets the insurance offer run out by itself.
   waitOutInsurance: offered => (offered.includes('pass') ? null : 'stand'),
-};
+} satisfies Record<string, Policy | (() => Policy)>;
+
+/** Makes sure the pointer image has arrived, as it has once a player has taken a moment over the bet. */
+const pointerImageLoaded = (page: Page) =>
+  page.evaluate(async () => {
+    const url = '/src/game/table/photos.ts';
+    const { loadImage }: typeof import('../../src/game/table/photos.ts') = await import(url);
+    await loadImage('assets/table/pointer.png').ready;
+  });
 
 /**
  * Clears the logs, bets the first tile and plays the round with `choose`
  * until betting opens again. Returns what the round drew and logged.
  */
-async function playRound(page, choose = POLICY.stand, { timeout = 45000, betDelay = 0 } = {}) {
-  if (betDelay) await page.waitForTimeout(betDelay);
+async function playRound(page: Page, choose: Policy = POLICY.stand, { timeout = 45000 } = {}) {
   await page.evaluate(() => {
     window.__cjFrames = [];
     window.__cjLog.length = 0;
-    if (window.__cjSounds) window.__cjSounds.length = 0;
+    if (window.__cjPlays) window.__cjPlays.length = 0;
     if (window.__cjAudio) window.__cjAudio.length = 0;
   });
   await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
@@ -216,10 +229,10 @@ async function playRound(page, choose = POLICY.stand, { timeout = 45000, betDela
     if (await overlay(page).isVisible()) break;
     // Read every button at once, so a step finishing mid-read cannot hide one.
     const { offered, cards } = await page.evaluate(names => {
-      const last = window.__cjFrames.at(-1);
+      const last = window.__cjFrames?.at(-1);
       return {
         offered: names.filter(name => {
-          const el = document.querySelector(`.table__actions [data-action="${name}"]`);
+          const el = document.querySelector<HTMLElement>(`.table__actions [data-action="${name}"]`);
           return el && !el.hidden && el.offsetParent !== null;
         }),
         cards: last?.hands.find(hand => hand.key === last.pointer?.hand)?.cards ?? [],
@@ -230,45 +243,60 @@ async function playRound(page, choose = POLICY.stand, { timeout = 45000, betDela
       await actionButton(page, pick)
         .click()
         .catch(() => {});
-    else await page.waitForTimeout(40);
+    // Nothing to do yet: wait until the buttons on offer change, or betting opens.
+    else
+      await page.waitForFunction(
+        ({ names, before }) => {
+          const bets = document.querySelector('.bet-overlay')?.getBoundingClientRect();
+          if (bets && bets.width > 0 && bets.height > 0) return true;
+          const now = names.filter(name => {
+            const el = document.querySelector<HTMLElement>(`.table__actions [data-action="${name}"]`);
+            return el && !el.hidden && el.offsetParent !== null;
+          });
+          return now.join() !== before;
+        },
+        { names: ACTIONS, before: offered.join() },
+        { timeout: Math.max(1, end - Date.now()) },
+      );
   }
   await expect(overlay(page)).toBeVisible();
   return page.evaluate(() => ({
-    frames: window.__cjFrames,
+    frames: window.__cjFrames ?? [],
     log: window.__cjLog,
-    sounds: window.__cjSounds ?? [],
+    sounds: window.__cjPlays ?? [],
     audio: window.__cjAudio ?? [],
   }));
 }
 
 // --- reading the logs -------------------------------------------------------
 
-const has = (frame, key) => frame.hands.some(hand => hand.key === key);
-const handIn = (frame, key) => frame.hands.find(hand => hand.key === key);
+const has = (frame: Frame, key: string) => frame.hands.some(hand => hand.key === key);
+const handIn = (frame: Frame, key: string) => frame.hands.find(hand => hand.key === key)!;
 /** The frame the dealer's hole card (or, with no hole card, its second card) is first shown face up. */
-const dealerPlays = frames => frames.findIndex(f => f.dealer.cards.length >= 2 && f.dealer.faceUp[1] === true);
-const firstIndex = (frames, pred, from = 0) => {
+const dealerPlays = (frames: Frame[]) =>
+  frames.findIndex(f => f.dealer.cards.length >= 2 && f.dealer.faceUp[1] === true);
+const firstIndex = (frames: Frame[], pred: (frame: Frame, index: number) => unknown, from = 0) => {
   for (let i = from; i < frames.length; i++) if (pred(frames[i], i)) return i;
   return -1;
 };
 /** The first frame a hand that was on the table is missing from it. */
-const goneAt = (frames, key) => {
+const goneAt = (frames: Frame[], key: string) => {
   const there = firstIndex(frames, f => has(f, key));
   return there < 0 ? -1 : firstIndex(frames, f => !has(f, key), there);
 };
-const chipLog = (log, seat) => log.filter(e => e.kind === 'chip' && e.seat === seat);
-const pillsOn = (log, seat) => chipLog(log, seat).filter(e => e.pill !== null);
-const value = id => Math.min(((id - 1) % 13) + 1, 10);
-const total = cards => {
+const chipLog = (log: TableLogEntry[], seat: number) => log.filter(e => e.kind === 'chip' && e.seat === seat);
+const pillsOn = (log: TableLogEntry[], seat: number) => chipLog(log, seat).filter(e => e.pill !== null);
+const value = (id: number) => Math.min(((id - 1) % 13) + 1, 10);
+const total = (cards: number[]) => {
   const hard = cards.reduce((sum, id) => sum + value(id), 0);
   return cards.some(id => value(id) === 1) && hard + 10 <= 21 ? hard + 10 : hard;
 };
 /** How long the pointer stayed on a hand from the first frame it was drawn there. */
-const dwell = (frames, key) => {
+const dwell = (frames: Frame[], key: string) => {
   const start = firstIndex(frames, f => f.pointer?.hand === key);
   if (start < 0) return 0;
   const end = firstIndex(frames, f => f.pointer?.hand !== key, start);
-  return (end < 0 ? frames.at(-1).t : frames[end].t) - frames[start].t;
+  return (end < 0 ? frames.at(-1)!.t : frames[end].t) - frames[start].t;
 };
 
 // --- 1. the payoff ----------------------------------------------------------
@@ -346,7 +374,7 @@ test.describe('the payoff at the end of a round', () => {
     // The bankroll does not move from the first computer result to the end of the round.
     const computerFrom = pillsOn(log, 3)[0].t;
     const bank = log.filter(e => e.kind === 'bankroll');
-    const atStart = bank.filter(e => e.t <= computerFrom).at(-1).text;
+    const atStart = bank.filter(e => e.t <= computerFrom).at(-1)!.text;
     expect(
       bank
         .filter(e => e.t > computerFrom)
@@ -365,7 +393,14 @@ test.describe('a hand settled during play', () => {
   const speeds = { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60 };
 
   /** Asserts `key` showed `result` and left the table before `beforeIndex`. */
-  function sweptBefore(frames, log, key, result, beforeIndex, label) {
+  function sweptBefore(
+    frames: Frame[],
+    log: TableLogEntry[],
+    key: string,
+    result: string,
+    beforeIndex: number,
+    label: string,
+  ) {
     const seat = Number(key.split('-')[0]);
     const gone = goneAt(frames, key);
     expect(gone, `${key} swept`).toBeGreaterThan(0);
@@ -468,7 +503,7 @@ test.describe('the result label', () => {
   for (const [name, size] of [
     ['portrait', PORTRAIT],
     ['landscape', LANDSCAPE],
-  ]) {
+  ] as const) {
     test(`is a pill like the app's pop-ups for a win, a loss and a push, unclipped and sized to its text, in ${name}`, async ({
       page,
     }) => {
@@ -477,9 +512,10 @@ test.describe('the result label', () => {
       const pills = log.filter(e => e.kind === 'chip' && e.pill !== null);
       expect(new Set(pills.map(e => e.tone))).toEqual(new Set(['win', 'lose', 'push']));
       const popUps = await page.evaluate(async () => {
-        const { toast } = await import('/src/ui/toast.ts');
-        const out = {};
-        for (const tone of ['good', 'error', 'plain']) {
+        const url = '/src/ui/toast.ts';
+        const { toast }: typeof import('../../src/ui/toast.ts') = await import(url);
+        const out: Record<string, PillLook['style']> = {};
+        for (const tone of ['good', 'error', 'plain'] as const) {
           const el = toast('x', { tone });
           const c = getComputedStyle(el);
           out[tone] = {
@@ -495,11 +531,11 @@ test.describe('the result label', () => {
         }
         return out;
       });
-      const toneOf = { win: 'good', lose: 'error', push: 'plain' };
+      const toneOf: Record<string, string> = { win: 'good', lose: 'error', push: 'plain' };
       for (const entry of pills) {
-        const { look } = entry;
+        const look = entry.look!;
         const label = `${entry.pill} on seat ${entry.seat}`;
-        expect(look.style, label).toEqual(popUps[toneOf[entry.tone]]);
+        expect(look.style, label).toEqual(popUps[toneOf[entry.tone!]]);
         // Not cut off by the seat's label box, nor by the edge of the table.
         if (look.chipOverflow !== 'visible') {
           expect(look.pill.left, label).toBeGreaterThanOrEqual(look.chip.left - 0.5);
@@ -542,7 +578,8 @@ test.describe('the turn pointer', () => {
       },
     });
     // Bet as a player would, after a moment: the first turn's pointer is checked on its own below.
-    const { frames } = await playRound(page, POLICY.stand, { betDelay: 2000 });
+    await pointerImageLoaded(page);
+    const { frames } = await playRound(page, POLICY.stand);
     for (const key of ['1-0', '2-0', '3-0', '4-0']) {
       expect(
         frames.some(f => f.pointer?.hand === key),
@@ -551,7 +588,7 @@ test.describe('the turn pointer', () => {
     }
     expect(
       handIn(
-        frames.findLast(f => has(f, '4-0') && f.dealer.faceUp[1] !== true),
+        frames.findLast(f => has(f, '4-0') && f.dealer.faceUp[1] !== true)!,
         '4-0',
       ).cards,
     ).toHaveLength(2);
@@ -869,12 +906,12 @@ test.describe('sounds', () => {
     const foul = page.locator('.bet-overlay [data-action="foul"]');
     const claim = async () => {
       await page.evaluate(() => {
-        window.__cjSounds.length = 0;
+        window.__cjPlays.length = 0;
         window.__cjAudio.length = 0;
       });
       await foul.click();
       return page.evaluate(() => ({
-        sounds: window.__cjSounds.map(s => s.name),
+        sounds: window.__cjPlays.map(s => s.name),
         audio: window.__cjAudio.map(a => a.src.split('/').pop()),
       }));
     };

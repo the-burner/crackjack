@@ -1,215 +1,193 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
-import { act } from 'react';
-import { createServices } from '../../../src/app/app.ts';
-import type { App, Screen } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
-import { flashOptionsScreen } from '../../../src/drills/flash/options.tsx';
-import { depthOptionsScreen } from '../../../src/drills/depth/options.tsx';
-import { countOptionsScreen } from '../../../src/drills/count/options.tsx';
-import { fullOptionsScreen } from '../../../src/drills/full/options.tsx';
-import { flashErrorsScreen } from '../../../src/drills/flash/errors.tsx';
+import { describe, it, expect } from 'vitest';
+import { act, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { FlashOptions, flashOptionsScreen } from '../../../src/drills/flash/options.tsx';
+import { DepthOptions } from '../../../src/drills/depth/options.tsx';
+import { CountOptions } from '../../../src/drills/count/options.tsx';
+import { FullOptions } from '../../../src/drills/full/options.tsx';
+import { FlashErrors } from '../../../src/drills/flash/errors.tsx';
+import { SITUATIONS, SITUATION_LABELS } from '../../../src/drills/flash/logic.ts';
+import { renderScreen } from '../../support/render.tsx';
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-function makeApp(): App {
-  const services = createServices({ backend: new MemoryBackend() });
-  return { ...services, router: null as never, help: vi.fn(), open: vi.fn(), back: vi.fn(() => true) };
-}
-
-const selectOf = (screen: Screen, name: string) => {
-  const el = screen.el.querySelector<HTMLSelectElement>(`select[name="${name}"]`);
-  if (!el) throw new Error(`no select ${name}`);
-  return el;
+// The option selects carry no label of their own (each option names the
+// setting), so a select is found by one of its options.
+const selectHolding = (option: string) => {
+  const select = screen
+    .getAllByRole('combobox', { hidden: true })
+    .find(el => within(el).queryByRole('option', { name: option, hidden: true }));
+  if (!select) throw new Error(`no select holding ${option}`);
+  return select;
 };
 
-/** Picks the option with `label`, as the user would. */
-function choose(screen: Screen, name: string, label: string) {
-  const el = selectOf(screen, name);
-  const index = [...el.options].findIndex(o => o.text === label);
-  if (index < 0) throw new Error(`no option ${label}`);
-  act(() => {
-    el.selectedIndex = index;
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
+/** Picks `option` in the select holding it, as the user would. */
+const choose = (user: ReturnType<typeof userEvent.setup>, option: string) =>
+  user.selectOptions(selectHolding(option), option);
 
-const selectHidden = (screen: Screen, name: string) =>
-  selectOf(screen, name).closest('.select')?.hasAttribute('hidden');
+/** A checkbox or a duration button, hidden or not. */
+const control = (label: string) => screen.getByLabelText(label);
 
-/** Whether the control labelled `label` (a checkbox, a duration row or a field) is hidden. */
-function hidden(screen: Screen, label: string): boolean {
-  const owner = [...screen.el.querySelectorAll('label.check, .settings-row, .field')].find(
-    el => el.querySelector(':scope > span')?.textContent === label,
-  );
-  if (!owner) throw new Error(`no control ${label}`);
-  const wrapper = owner.closest('.checklist') ?? owner;
-  return wrapper.hasAttribute('hidden');
-}
-
-const button = (screen: Screen, text: string) => {
-  const el = [...screen.el.querySelectorAll('button')].find(b => b.textContent === text);
-  if (!el) throw new Error(`no button ${text}`);
-  return el;
-};
+// A hidden element has no accessible name, so hidden buttons are found by their text.
+const button = (text: string) => screen.getByText(text, { selector: 'button' });
 
 describe('drill options screens', () => {
-  it('share the shell: title bar, sections and the launch button last', () => {
-    const app = makeApp();
-    const screen = fullOptionsScreen(app, {});
-    expect(screen.el.className).toBe('drill-options');
-    expect(screen.el.querySelector('.topbar__title')?.textContent).toBe('Full Table Options');
-    const column = screen.el.querySelector('.screen__body > .column');
-    expect(
-      [...(column?.querySelectorAll(':scope > .section > .section__title') ?? [])].map(h => h.textContent),
-    ).toEqual(['Drill', 'Timer']);
-    const launch = column?.lastElementChild;
-    expect(launch?.getAttribute('data-action')).toBe('launch');
-    act(() => (launch as HTMLButtonElement).click());
+  it('share the shell: title bar, sections and the launch button last', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<FullOptions />);
+    expect(flashOptionsScreen(app, {}).el).toHaveClass('drill-options');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Full Table Options');
+    expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual(['Drill', 'Timer']);
+    const launch = screen.getByRole('button', { name: 'Launch the Drill' });
+    expect(screen.getAllByRole('button').at(-1)).toBe(launch);
+    await user.click(launch);
     expect(app.open).toHaveBeenCalledWith('drills.full');
   });
 
-  it('flash shows the set count, Select and the per-hand timer only where they apply', () => {
-    const app = makeApp();
-    const screen = flashOptionsScreen(app, {});
-    expect(hidden(screen, 'Non-blocking error pop-ups')).toBe(false);
-    choose(screen, 'drills.flash.testMode', 'Test Mode: Number of errors only at end');
-    expect(hidden(screen, 'Non-blocking error pop-ups')).toBe(true);
+  it('flash shows the set count, Select and the per-hand timer only where they apply', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<FlashOptions />);
+    expect(control('Non-blocking error pop-ups')).toBeVisible();
+    await choose(user, 'Test Mode: Number of errors only at end');
+    expect(control('Non-blocking error pop-ups')).not.toBeVisible();
 
-    const countButton = selectOf(screen, 'drills.flash.countMode').closest('.drill-options__pair')?.lastElementChild;
-    expect(countButton?.hasAttribute('hidden')).toBe(true);
-    choose(screen, 'drills.flash.countMode', 'Count: Set Count to:');
-    expect(countButton?.hasAttribute('hidden')).toBe(false);
+    // The set count, next to the count select.
+    expect(button('0')).not.toBeVisible();
+    await choose(user, 'Count: Set Count to:');
+    expect(button('0')).toBeVisible();
 
-    expect(button(screen, 'Select').hidden).toBe(true);
-    choose(screen, 'drills.flash.hands', 'Hands: Custom');
-    expect(button(screen, 'Select').hidden).toBe(false);
+    expect(button('Select')).not.toBeVisible();
+    await choose(user, 'Hands: Custom');
+    expect(button('Select')).toBeVisible();
 
     // Count Down & Halt is the default.
-    expect(hidden(screen, 'Time limit per hand')).toBe(true);
-    expect(hidden(screen, 'Drill time')).toBe(false);
-    choose(screen, 'drills.flash.timerMode', 'Timer Mode: Infinite');
-    expect(hidden(screen, 'Time limit per hand')).toBe(false);
-    expect(hidden(screen, 'Time per hand')).toBe(false);
-    expect(hidden(screen, 'Drill time')).toBe(true);
-    expect(button(screen, '50').hidden).toBe(true);
-    choose(screen, 'drills.flash.timerMode', 'Timer Mode: Rounds');
-    expect(button(screen, '50').hidden).toBe(false);
+    expect(control('Time limit per hand')).not.toBeVisible();
+    expect(control('Drill time')).toBeVisible();
+    await choose(user, 'Timer Mode: Infinite');
+    expect(control('Time limit per hand')).toBeVisible();
+    expect(control('Time per hand')).toBeVisible();
+    expect(control('Drill time')).not.toBeVisible();
+    // The number of rounds.
+    expect(button('50')).not.toBeVisible();
+    await choose(user, 'Timer Mode: Rounds');
+    expect(button('50')).toBeVisible();
     act(() => app.settings.set('drills.flash.timePerHand', false));
-    expect(hidden(screen, 'Time per hand')).toBe(true);
-    expect(hidden(screen, 'Progressive Speed')).toBe(true);
+    expect(control('Time per hand')).not.toBeVisible();
+    expect(control('Progressive Speed')).not.toBeVisible();
   });
 
-  it('flash writes the deck count and Spanish decks from one select', () => {
-    const app = makeApp();
-    const screen = flashOptionsScreen(app, {});
-    choose(screen, 'drills.flash.decks', 'Four Spanish Decks');
+  it('flash writes the deck count and Spanish decks from one select', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<FlashOptions />);
+    await choose(user, 'Four Spanish Decks');
     expect(app.settings.get('drills.flash.decks')).toBe(4);
     expect(app.settings.get('drills.flash.spanishDecks')).toBe(true);
-    choose(screen, 'drills.flash.decks', 'Double Decks');
+    await choose(user, 'Double Decks');
     expect(app.settings.get('drills.flash.decks')).toBe(2);
     expect(app.settings.get('drills.flash.spanishDecks')).toBe(false);
-    expect(selectOf(screen, 'drills.flash.decks').selectedIndex).toBe(1);
+    expect(selectHolding('Double Decks')).toHaveDisplayValue('Double Decks');
   });
 
-  it('flash situations are chips writing one flag each', () => {
-    const app = makeApp();
-    const screen = flashOptionsScreen(app, {});
-    const chips = screen.el.querySelectorAll<HTMLInputElement>('.checklist--chips input');
+  it('flash situations are chips writing one flag each', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<FlashOptions />);
+    const chips = SITUATIONS.map(flag => screen.getByRole('checkbox', { name: SITUATION_LABELS[flag] }));
     expect(chips).toHaveLength(6);
-    act(() => chips[0].click());
+    await user.click(chips[0]);
     const situations = app.settings.get('drills.flash.situations');
     expect(Object.values(situations).filter(on => !on)).toHaveLength(1);
   });
 
-  it('flash shows a summary when Drill Errors is chosen', () => {
-    const screen = flashOptionsScreen(makeApp(), {});
-    choose(screen, 'drills.flash.hands', 'Hands: Drill Errors');
-    expect(document.body.querySelector('.toast')?.textContent).toBe('No errors have been recorded yet.');
+  it('flash shows a summary when Drill Errors is chosen', async () => {
+    const user = userEvent.setup();
+    renderScreen(<FlashOptions />);
+    await choose(user, 'Hands: Drill Errors');
+    expect(screen.getByRole('status')).toHaveTextContent('No errors have been recorded yet.');
   });
 
   it('flash follows settings written by other screens', () => {
-    const app = makeApp();
-    const screen = flashOptionsScreen(app, {});
+    const { app } = renderScreen(<FlashOptions />);
     act(() => app.settings.set('drills.flash.maxCards', 4));
-    expect(selectOf(screen, 'drills.flash.maxCards').selectedIndex).toBe(2);
+    expect(selectHolding('Cards: Two to Four')).toHaveDisplayValue('Cards: Two to Four');
   });
 
-  it('depth swaps the answers card for the count range on the TC drills', () => {
-    const screen = depthOptionsScreen(makeApp(), {});
-    const titles = () => [...screen.el.querySelectorAll('.section__title')].map(h => h.textContent);
+  it('depth swaps the answers card for the count range on the TC drills', async () => {
+    const user = userEvent.setup();
+    renderScreen(<DepthOptions />);
+    const titles = () => screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
     expect(titles()).toEqual(['Drill', 'Answers', 'Timer']);
-    expect(hidden(screen, 'Minimum count')).toBe(true);
-    expect(hidden(screen, 'Decks or Aces in Tray')).toBe(false);
-    choose(screen, 'drills.depth.drill', 'Drill: TC Conversion');
+    expect(screen.getByText('Minimum count')).not.toBeVisible();
+    expect(control('Decks or Aces in Tray')).toBeVisible();
+    await choose(user, 'Drill: TC Conversion');
     expect(titles()).toEqual(['Drill', 'Count Range', 'Timer']);
-    expect(hidden(screen, 'Minimum count')).toBe(false);
-    expect(hidden(screen, 'Maximum count')).toBe(false);
-    expect(hidden(screen, 'Decks or Aces in Tray')).toBe(true);
+    expect(screen.getByText('Minimum count')).toBeVisible();
+    expect(screen.getByText('Maximum count')).toBeVisible();
+    expect(control('Decks or Aces in Tray')).not.toBeVisible();
 
-    expect(hidden(screen, 'Time per test')).toBe(true);
-    choose(screen, 'drills.depth.timerMode', 'Timer Mode: Rounds');
-    expect(hidden(screen, 'Time per test')).toBe(false);
-    expect(hidden(screen, 'Progressive Speed')).toBe(false);
-    expect(hidden(screen, 'Drill time')).toBe(true);
+    expect(control('Time per test')).not.toBeVisible();
+    await choose(user, 'Timer Mode: Rounds');
+    expect(control('Time per test')).toBeVisible();
+    expect(control('Progressive Speed')).toBeVisible();
+    expect(control('Drill time')).not.toBeVisible();
   });
 
-  it('count hides what no tests, dealing by hand or a single card leave unused', () => {
-    const app = makeApp();
-    const screen = countOptionsScreen(app, {});
-    expect(hidden(screen, 'Time per test')).toBe(true);
-    expect(hidden(screen, 'Drill time')).toBe(false);
-    choose(screen, 'drills.count.timerMode', 'Timer Mode: Shoe');
-    expect(hidden(screen, 'Time per test')).toBe(false);
-    expect(hidden(screen, 'Drill time')).toBe(true);
+  it('count hides what no tests, dealing by hand or a single card leave unused', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<CountOptions />);
+    expect(control('Time per test')).not.toBeVisible();
+    expect(control('Drill time')).toBeVisible();
+    await choose(user, 'Timer Mode: Shoe');
+    expect(control('Time per test')).toBeVisible();
+    expect(control('Drill time')).not.toBeVisible();
 
     act(() => app.settings.set('drills.count.dealByHand', true));
-    expect(hidden(screen, 'Deal speed')).toBe(true);
-    expect(hidden(screen, 'Progressive Speed')).toBe(true);
+    expect(control('Deal speed')).not.toBeVisible();
+    expect(control('Progressive Speed')).not.toBeVisible();
 
-    choose(screen, 'drills.count.testEvery', 'Test: No Tests');
-    expect(selectHidden(screen, 'drills.count.accuracy')).toBe(true);
-    expect(selectHidden(screen, 'drills.count.trayStyle')).toBe(true);
-    expect(hidden(screen, 'Thickness:')).toBe(true);
-    expect(hidden(screen, 'Two Counts')).toBe(true);
-    expect(hidden(screen, 'Time per test')).toBe(true);
+    await choose(user, 'Test: No Tests');
+    expect(selectHolding('Accuracy: Exact')).not.toBeVisible();
+    expect(selectHolding('Six-deck tray, front')).not.toBeVisible();
+    expect(screen.getByText('Thickness:')).not.toBeVisible();
+    expect(control('Two Counts')).not.toBeVisible();
+    expect(control('Time per test')).not.toBeVisible();
 
-    expect(selectHidden(screen, 'drills.count.positions')).toBe(false);
-    choose(screen, 'drills.count.cardsPerFlash', 'Cards: One');
-    expect(selectHidden(screen, 'drills.count.positions')).toBe(true);
+    const positions = selectHolding('Positions: Diagonal');
+    expect(positions).toBeVisible();
+    await choose(user, 'Cards: One');
+    expect(positions).not.toBeVisible();
   });
 
   it('count shows the deal speed in tenths of a second', () => {
-    const screen = countOptionsScreen(makeApp(), {});
-    expect(screen.el.querySelector('[aria-label="Deal speed"]')?.textContent).toBe('0.8 s');
-    expect(screen.el.querySelector('[aria-label="Drill time"]')?.textContent).toBe('00:03:00');
+    renderScreen(<CountOptions />);
+    expect(control('Deal speed')).toHaveTextContent(/^0\.8 s$/);
+    expect(control('Drill time')).toHaveTextContent(/^00:03:00$/);
   });
 
-  it('full hides what Two Tables and Running Count do not use', () => {
-    const screen = fullOptionsScreen(makeApp(), {});
-    expect(hidden(screen, 'Two Counts')).toBe(true);
-    choose(screen, 'drills.full.drill', 'Drill: Aces Left');
-    expect(hidden(screen, 'Two Counts')).toBe(false);
-    expect(selectHidden(screen, 'drills.full.endWarning')).toBe(true);
-    choose(screen, 'drills.full.timerMode', 'Timer Mode: Shoe');
-    expect(selectHidden(screen, 'drills.full.endWarning')).toBe(false);
-    choose(screen, 'drills.full.drill', 'Drill: Two Tables');
-    expect(selectHidden(screen, 'drills.full.handStyle')).toBe(true);
-    expect(selectHidden(screen, 'drills.full.endWarning')).toBe(true);
-    expect(hidden(screen, 'Two Counts')).toBe(true);
+  it('full hides what Two Tables and Running Count do not use', async () => {
+    const user = userEvent.setup();
+    renderScreen(<FullOptions />);
+    expect(control('Two Counts')).not.toBeVisible();
+    await choose(user, 'Drill: Aces Left');
+    expect(control('Two Counts')).toBeVisible();
+    const endWarning = selectHolding('End warning: None');
+    expect(endWarning).not.toBeVisible();
+    await choose(user, 'Timer Mode: Shoe');
+    expect(endWarning).toBeVisible();
+    await choose(user, 'Drill: Two Tables');
+    expect(selectHolding('Hands: First Two Cards')).not.toBeVisible();
+    expect(endWarning).not.toBeVisible();
+    expect(control('Two Counts')).not.toBeVisible();
   });
 });
 
 describe('flash error history', () => {
   it('says when nothing has been recorded, and re-reads the tallies when shown', () => {
-    const app = makeApp();
-    const screen = flashErrorsScreen(app, {});
-    expect(screen.el.querySelector('.column')?.innerHTML).toBe('<p class="note">No errors have been recorded yet.</p>');
-    act(() => {
-      app.errorTallies.record('hardStand', 6, 8);
-      screen.onShow?.();
-    });
-    expect(screen.el.querySelector('.stat-summary')?.textContent).toBe('Total errors1');
-    expect(screen.el.querySelectorAll('.stat-row').length).toBeGreaterThan(0);
+    const { app, show } = renderScreen(<FlashErrors />);
+    expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    app.errorTallies.record('hardStand', 6, 8);
+    show();
+    expect(screen.getByText('Total errors')).toBeInTheDocument();
+    // The one error is all of its situation's and its hand's.
+    expect(screen.getByText('Hard H/S')).toBeInTheDocument();
+    expect(screen.getAllByText('1 · 100%')).toHaveLength(2);
   });
 });

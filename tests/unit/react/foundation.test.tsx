@@ -1,27 +1,18 @@
-// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { act } from 'react';
-import { createServices } from '../../../src/app/app.ts';
-import type { App } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
+import { act, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { reactScreen, useOnBack, useOnShow } from '../../../src/react/screen.tsx';
 import { useSettings } from '../../../src/react/app-context.ts';
 import { Select } from '../../../src/react/components.tsx';
 import { SettingChecks, SettingSlider } from '../../../src/react/settings-form.tsx';
-
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-function makeApp(): App {
-  const services = createServices({ backend: new MemoryBackend() });
-  return { ...services, router: null as never, help: vi.fn(), open: vi.fn(), back: vi.fn(() => true) };
-}
+import { createTestApp, renderScreen } from '../../support/render.tsx';
 
 describe('reactScreen', () => {
   it('renders before the factory returns, with the section class', () => {
-    const screen = reactScreen(() => <p>hello</p>, { className: 'settings' })(makeApp(), {});
-    expect(screen.el.tagName).toBe('SECTION');
-    expect(screen.el.className).toBe('settings');
-    expect(screen.el.textContent).toBe('hello');
+    const { el } = reactScreen(() => <p>hello</p>, { className: 'settings' })(createTestApp(), {});
+    expect(el.tagName).toBe('SECTION');
+    expect(el).toHaveClass('settings', { exact: true });
+    expect(el).toHaveTextContent(/^hello$/);
   });
 
   it('passes the router lifecycle to the hooks', () => {
@@ -32,25 +23,24 @@ describe('reactScreen', () => {
       useOnBack(() => handleBack);
       return null;
     }
-    const screen = reactScreen(Screen)(makeApp(), {});
-    screen.onShow?.();
+    const factoryScreen = reactScreen(Screen)(createTestApp(), {});
+    factoryScreen.onShow?.();
     expect(shown).toHaveBeenCalledTimes(1);
-    expect(screen.onBack?.()).toBe(false);
+    expect(factoryScreen.onBack?.()).toBe(false);
     handleBack = true;
-    expect(screen.onBack?.()).toBe(true);
+    expect(factoryScreen.onBack?.()).toBe(true);
   });
 });
 
 describe('useSettings', () => {
   it('re-renders when a setting changes, json values included', () => {
-    const app = makeApp();
-    function Screen() {
+    function Decks() {
       const settings = useSettings();
       return <p>{settings.get('table.decks')}</p>;
     }
-    const screen = reactScreen(Screen)(app, {});
+    const { app } = renderScreen(<Decks />);
     act(() => app.settings.set('table.decks', 2));
-    expect(screen.el.textContent).toBe('2');
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 });
 
@@ -60,30 +50,31 @@ describe('controls', () => {
       { value: 1, label: 'One' },
       { value: 2, label: 'Two' },
     ];
-    const screen = reactScreen(() => <Select options={options} value={3} onChange={() => {}} />)(makeApp(), {});
-    expect(screen.el.querySelector('select')?.selectedIndex).toBe(-1);
+    renderScreen(<Select options={options} value={3} onChange={() => {}} />);
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.queryByRole('option', { selected: true })).not.toBeInTheDocument();
   });
 
-  it('setting checkboxes write the setting and show it', () => {
-    const app = makeApp();
-    const screen = reactScreen(() => <SettingChecks items={[{ label: 'Sound on', key: 'display.sound' }]} />)(app, {});
-    const before = app.settings.get('display.sound');
-    act(() => screen.el.querySelector('input')?.click());
-    expect(app.settings.get('display.sound')).toBe(!before);
-    expect(screen.el.querySelector('label')?.classList.contains('is-on')).toBe(!before);
+  it('setting checkboxes write the setting and show it', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<SettingChecks items={[{ label: 'Sound on', key: 'display.sound' }]} />);
+    const box = screen.getByRole('checkbox', { name: 'Sound on' });
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    expect(app.settings.get('display.sound')).toBe(true);
+    expect(box).toBeChecked();
+    // eslint-disable-next-line testing-library/no-node-access -- the row's look comes from its class
+    expect(box.closest('label')).toHaveClass('is-on');
   });
 
-  it('a slider commits on change, clamped and stepped', () => {
-    const app = makeApp();
-    const screen = reactScreen(() => <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />)(app, {});
-    const box = screen.el.querySelector<HTMLInputElement>('input[type="number"]');
-    if (!box) throw new Error('no box');
-    act(() => {
-      box.value = '1000';
-      box.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+  it('a slider commits on change, clamped and stepped', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />);
+    const box = screen.getByRole('spinbutton', { name: 'Dealer Speed' });
+    await user.clear(box);
+    await user.type(box, '1000{Enter}');
     const { max } = app.settings.schema['mechanics.dealerSpeed'];
     expect(app.settings.get('mechanics.dealerSpeed')).toBe(max);
-    expect(box.value).toBe(String(max));
+    expect(box).toHaveValue(max);
   });
 });

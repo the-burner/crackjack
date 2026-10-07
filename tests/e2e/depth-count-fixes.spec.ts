@@ -2,40 +2,19 @@
 // cards must be covered when a test starts, a pending next test must not
 // outlive Pause or Restart, and the end of a shoe must show its last cards.
 import { test, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { openWithSettings as open } from './support/app.ts';
+import { DRILLS, launchDrill as launch, statsText } from './support/drills.ts';
+
+const DEPTH = DRILLS.depth;
+const COUNT = DRILLS.count;
 
 test.use({ serviceWorkers: 'block' });
 
-/** Opens the app with the given settings already saved. */
-async function open(page, settings = {}) {
-  await page.addInitScript(values => {
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify(values));
-  }, settings);
-  await page.goto('/index.html');
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
-}
-
-const DEPTH = { button: 'Depth Drills', options: 'drills.depth.options', play: 'drills.depth' };
-const COUNT = { button: 'Count Drills', options: 'drills.count.options', play: 'drills.count' };
-
-/** Launches a drill and waits out the "2, 1" countdown. */
-async function launch(page, drill) {
-  await page.getByRole('button', { name: drill.button }).click();
-  const options = page.locator(`[data-screen="${drill.options}"]`);
-  await expect(options).toBeVisible();
-  await options.locator('[data-action="launch"]').click();
-  const screen = page.locator(`[data-screen="${drill.play}"]`);
-  await expect(screen).toBeVisible();
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
-  return screen;
-}
-
-const statsText = screen => screen.locator('.drill__stats').innerText();
-
 /** How many pixels of a canvas are not the felt it was filled with. */
-const nonFeltPixels = canvas =>
-  canvas.evaluate(el => {
-    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+const nonFeltPixels = (canvas: Locator) =>
+  canvas.evaluate((el: HTMLCanvasElement) => {
+    const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
     let count = 0;
     for (let i = 0; i < data.length; i += 4) {
       if (Math.abs(data[i] - data[0]) > 8 || Math.abs(data[i + 1] - data[1]) > 8 || Math.abs(data[i + 2] - data[2]) > 8)
@@ -49,9 +28,9 @@ const nonFeltPixels = canvas =>
  * corner is felt). The box is a fixed size, smaller than the warning's plate on
  * any screen.
  */
-const feltAtCentre = canvas =>
-  canvas.evaluate(el => {
-    const ctx = el.getContext('2d');
+const feltAtCentre = (canvas: Locator) =>
+  canvas.evaluate((el: HTMLCanvasElement) => {
+    const ctx = el.getContext('2d')!;
     const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
     const scale = el.width / el.clientWidth;
     const box = { width: Math.round(60 * scale), height: Math.round(16 * scale) };
@@ -72,10 +51,10 @@ const feltAtCentre = canvas =>
  * Answers the one depth cell that can be right, then presses a drill button in
  * the same tick, so the press lands inside the pause before the next test.
  */
-const answerThen = (page, label) =>
+const answerThen = (page: Page, label: string) =>
   page.evaluate(name => {
-    const screen = document.querySelector('[data-screen="drills.depth"]');
-    const answers = screen.querySelector('canvas.drill__answers');
+    const screen = document.querySelector('[data-screen="drills.depth"]')!;
+    const answers = screen.querySelector('canvas.drill__answers')!;
     const box = answers.getBoundingClientRect();
     answers.dispatchEvent(
       new MouseEvent('click', {
@@ -83,7 +62,7 @@ const answerThen = (page, label) =>
         clientY: box.top + box.height * 0.5,
       }),
     );
-    [...screen.querySelectorAll('button')].find(b => b.textContent.trim() === name)?.click();
+    [...screen.querySelectorAll('button')].find(b => b.textContent?.trim() === name)?.click();
   }, label);
 
 /** Two decks at full resolution: the only answer is "1", half a column in. */
@@ -99,6 +78,7 @@ const TWO_DECK_DEPTH = {
 
 test.describe('depth drill', () => {
   test('a paused drill stays blank, with no test waiting from the answer before it', async ({ page }) => {
+    await page.clock.install();
     await open(page, TWO_DECK_DEPTH);
     const screen = await launch(page, DEPTH);
     const tray = screen.locator('canvas.drill__tray');
@@ -107,27 +87,30 @@ test.describe('depth drill', () => {
     await answerThen(page, 'Pause');
     await expect(screen.getByRole('button', { name: 'Continue' })).toBeVisible();
     // Past the pause the answer leaves before the next test is built.
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
     expect(await nonFeltPixels(tray)).toBe(0);
   });
 
   test('a restarted drill shows no test during its countdown', async ({ page }) => {
+    await page.clock.install();
     await open(page, TWO_DECK_DEPTH);
     const screen = await launch(page, DEPTH);
 
     await answerThen(page, 'Restart');
     await expect(screen.locator('.drill__countdown')).toBeVisible();
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
     expect(await nonFeltPixels(screen.locator('canvas.drill__tray'))).toBe(0);
   });
 
   test('counts one test for two quick taps on the right answer', async ({ page }) => {
+    await page.clock.install();
     await open(page, TWO_DECK_DEPTH);
     const screen = await launch(page, DEPTH);
     expect(await statsText(screen)).toContain('Tests: 1');
 
     await screen.locator('canvas.drill__answers').dblclick({ position: await rightCell(screen) });
-    await page.waitForTimeout(400);
+    // Past the pause after an answer, by which a second advance would have come.
+    await page.clock.runFor(400);
     expect(await statsText(screen)).toContain('Tests: 2');
   });
 
@@ -147,8 +130,8 @@ test.describe('depth drill', () => {
 });
 
 /** The middle of the only answer cell of a two-deck full-resolution grid. */
-async function rightCell(screen) {
-  const box = await screen.locator('canvas.drill__answers').boundingBox();
+async function rightCell(screen: Locator) {
+  const box = (await screen.locator('canvas.drill__answers').boundingBox())!;
   return { x: box.width * 0.5, y: box.height * 0.5 };
 }
 
@@ -169,16 +152,16 @@ test.describe('count drill', () => {
     // The deepest test of the shoe is past the last tray photo, so nothing can
     // be shown with it - least of all the cards it is about.
     const run = await screen.evaluate(async el => {
-      const next = [...el.querySelectorAll('button')].find(b => b.textContent.trim() === 'Next');
-      const answers = el.querySelector('canvas.drill__answers');
-      const wrap = el.querySelector('.drill__answers-wrap');
-      const cards = el.querySelector('canvas.drill__cards');
-      const sleep = ms =>
+      const next = [...el.querySelectorAll('button')].find(b => b.textContent?.trim() === 'Next')!;
+      const answers = el.querySelector('canvas.drill__answers')!;
+      const wrap = el.querySelector<HTMLElement>('.drill__answers-wrap')!;
+      const cards = el.querySelector('canvas.drill__cards')!;
+      const sleep = (ms: number) =>
         new Promise(resolve => {
           setTimeout(resolve, ms);
         });
       const nonFelt = () => {
-        const { data } = cards.getContext('2d').getImageData(0, 0, cards.width, cards.height);
+        const { data } = cards.getContext('2d')!.getImageData(0, 0, cards.width, cards.height);
         let count = 0;
         for (let i = 0; i < data.length; i += 4) {
           if (
@@ -191,7 +174,7 @@ test.describe('count drill', () => {
         return count;
       };
       let tests = 0;
-      let last = null;
+      let last: number | null = null;
       for (let step = 0; step < 2000; step++) {
         if (wrap.hidden) {
           if (next.hidden) break;
@@ -270,21 +253,22 @@ test.describe('count drill', () => {
 });
 
 /** Records when each drill card is dealt, in `window.__cjDeals`. */
-const recordDeals = page =>
+const recordDeals = (page: Page) =>
   page.evaluate(async () => {
-    const { DrillShoe } = await import('/src/drills/shared/shoe.ts');
+    const url = '/src/drills/shared/shoe.ts';
+    const { DrillShoe }: typeof import('../../src/drills/shared/shoe.ts') = await import(url);
     const deal = DrillShoe.prototype.deal;
     window.__cjDeals = [];
-    DrillShoe.prototype.deal = function recordedDeal() {
+    DrillShoe.prototype.deal = function recordedDeal(this: InstanceType<typeof DrillShoe>) {
       window.__cjDeals.push(performance.now());
       return deal.call(this);
     };
   });
 
 /** Taps every cell of a count grid twice in one tick, so the right one is among them. */
-const tapEveryCellTwice = page =>
+const tapEveryCellTwice = (page: Page) =>
   page.evaluate(() => {
-    const answers = document.querySelector('[data-screen="drills.count"] canvas.drill__answers');
+    const answers = document.querySelector('[data-screen="drills.count"] canvas.drill__answers')!;
     const box = answers.getBoundingClientRect();
     for (let pass = 0; pass < 2; pass++) {
       for (let row = 0; row < 3; row++) {
@@ -325,6 +309,7 @@ test.describe('count drill answers', () => {
   });
 
   test('a Restart right after a right answer deals at the set speed', async ({ page }) => {
+    await page.clock.install();
     await open(page, {
       'drills.count.decks': 1,
       'drills.count.cardsPerFlash': '1',
@@ -340,7 +325,7 @@ test.describe('count drill answers', () => {
     await screen.getByRole('button', { name: 'Restart' }).click();
     await recordDeals(page);
     await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
-    await page.waitForTimeout(2000);
+    await page.clock.runFor(2000);
     const deals = await page.evaluate(() => window.__cjDeals);
     const gaps = deals.slice(1).map((t, i) => t - deals[i]);
     // Every half second, never two deal loops at once.

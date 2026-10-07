@@ -2,61 +2,36 @@
 // crash at the end of a Two Tables run, double taps, pausing, the portrait
 // cover, Two Counts and the test left on screen when time runs out.
 import { test, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { openWithSettings as open } from './support/app.ts';
+import { DRILLS, launchDrill, whitePixels } from './support/drills.ts';
 
 test.use({ serviceWorkers: 'block' });
 
 const LANDSCAPE = { width: 844, height: 390 };
 
-/** Opens the app with the given settings already saved. */
-async function open(page, settings = {}) {
-  await page.addInitScript(values => {
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify(values));
-  }, settings);
-  await page.goto('/index.html');
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
-}
+const launch = (page: Page) => launchDrill(page, DRILLS.full);
 
-/** Launches the Full Table drill and waits out the "2, 1" countdown. */
-async function launch(page) {
-  await page.getByRole('button', { name: 'Full Table Drills' }).click();
-  const options = page.locator('[data-screen="drills.full.options"]');
-  await expect(options).toBeVisible();
-  await options.locator('[data-action="launch"]').click();
-  const screen = page.locator('[data-screen="drills.full"]');
-  await expect(screen).toBeVisible();
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
-  return screen;
-}
-
-const testsCount = async screen => {
+const testsCount = async (screen: Locator) => {
   const text = await screen.locator('.drill__stats').innerText();
-  return Number(/Tests: (\d+)/.exec(text)[1]);
+  return Number(/Tests: (\d+)/.exec(text)?.[1]);
 };
 
-/** How many near-white pixels a canvas holds, i.e. whether cards are on it. */
-const whitePixels = canvas =>
-  canvas.evaluate(el => {
-    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
-    let white = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
-    }
-    return white;
-  });
+const cellPosition = (box: { width: number; height: number }, row: number, column: number) => ({
+  x: (box.width / 6) * (column + 0.5),
+  y: (box.height / 3) * (row + 0.5),
+});
 
-const cellPosition = (box, row, column) => ({ x: (box.width / 6) * (column + 0.5), y: (box.height / 3) * (row + 0.5) });
-
-async function tapCell(screen, row, column, { twice = false } = {}) {
+async function tapCell(screen: Locator, row: number, column: number, { twice = false } = {}) {
   const canvas = screen.locator('canvas.drill__answers');
-  const box = await canvas.boundingBox();
+  const box = (await canvas.boundingBox())!;
   const options = { position: cellPosition(box, row, column), timeout: 3000 };
   if (twice) await canvas.dblclick(options);
   else await canvas.click(options);
 }
 
-/** Taps cells until the test count moves on, since the right answer is unknown. */
-async function answerUntilNextTest(page, screen, taps = 18) {
+/** Taps cells until the test count moves on, since the right answer is unknown. Needs the clock installed. */
+async function answerUntilNextTest(page: Page, screen: Locator, taps = 18) {
   const grid = screen.locator('canvas.drill__answers');
   const before = await testsCount(screen);
   for (let i = 0; i < taps; i++) {
@@ -67,15 +42,17 @@ async function answerUntilNextTest(page, screen, taps = 18) {
       // The shoe can run out between the check and the tap, taking the grid away.
       return;
     }
-    await page.waitForTimeout(80);
+    // Past the pause after a right answer, so the test has moved on if it was.
+    await page.clock.runFor(120);
     if ((await testsCount(screen)) !== before) return;
   }
 }
 
 test('Two Tables runs its shoe out without crashing', async ({ page }) => {
   test.setTimeout(180000);
-  const errors = [];
+  const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.clock.install();
   await open(page, {
     'drills.full.drill': 'twoTables',
     'drills.full.decks': 1,
@@ -98,6 +75,7 @@ test('Two Tables runs its shoe out without crashing', async ({ page }) => {
 });
 
 test('a double tap on the right answer moves on by one test, not two', async ({ page }) => {
+  await page.clock.install();
   await open(page, {
     'drills.full.timerMode': 'auto',
     'drills.full.testSeconds': 40,
@@ -109,12 +87,14 @@ test('a double tap on the right answer moves on by one test, not two', async ({ 
   await expect(screen.locator('canvas.drill__answers')).toBeVisible();
   for (let i = 0; i < 18 && (await testsCount(screen)) === 1; i++) {
     await tapCell(screen, i % 3, Math.floor(i / 3), { twice: true });
-    await page.waitForTimeout(150);
+    // Past the pause after a right answer, by which a second advance would have come.
+    await page.clock.runFor(150);
   }
   expect(await testsCount(screen)).toBe(2);
 });
 
 test('resuming after a pause gives back only the time that was left', async ({ page }) => {
+  await page.clock.install();
   await open(page, { 'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 40, 'drills.full.flashSpeed': 8 });
   await page.setViewportSize(LANDSCAPE);
   const screen = await launch(page);
@@ -122,21 +102,22 @@ test('resuming after a pause gives back only the time that was left', async ({ p
   expect(await whitePixels(cards)).toBeGreaterThan(0);
 
   // Pause with about two seconds of the flash left.
-  await page.waitForTimeout(6000);
+  await page.clock.runFor(6000);
   await screen.getByRole('button', { name: 'Pause' }).click();
   expect(await whitePixels(cards)).toBe(0);
   await screen.getByRole('button', { name: 'Continue' }).click();
   await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
   expect(await whitePixels(cards)).toBeGreaterThan(0);
-  await page.waitForTimeout(3500);
+  await page.clock.runFor(3500);
   expect(await whitePixels(cards)).toBe(0);
 });
 
 test('nothing is dealt or timed while the turn-sideways cover is up', async ({ page }) => {
+  await page.clock.install();
   await open(page, { 'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 1, 'drills.full.flashSpeed': 1 });
   const screen = await launch(page);
   await expect(screen.locator('.drill__cover')).toBeVisible();
-  await page.waitForTimeout(4000);
+  await page.clock.runFor(4000);
   expect(await testsCount(screen)).toBe(0);
 
   await page.setViewportSize(LANDSCAPE);
@@ -146,6 +127,7 @@ test('nothing is dealt or timed while the turn-sideways cover is up', async ({ p
 
 test('Two Counts asks two answers for one test, flashed once', async ({ page }) => {
   test.setTimeout(90000);
+  await page.clock.install();
   await open(page, {
     'drills.full.twoCounts': true,
     'drills.full.drill': 'acesDealt',

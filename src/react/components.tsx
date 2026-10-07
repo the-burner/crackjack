@@ -113,11 +113,13 @@ export type SelectProps<T> = {
   onChange: (value: T) => void;
   mini?: boolean;
   name?: string;
+  /** Accessible name, for a select whose visible label is beside it. */
+  label?: string;
   hidden?: boolean;
 };
 
 /** A native select styled like the rest of the UI. A value none of the options has selects nothing. */
-export function Select<T>({ options, value, onChange, mini = false, name, hidden }: SelectProps<T>) {
+export function Select<T>({ options, value, onChange, mini = false, name, label, hidden }: SelectProps<T>) {
   const ref = useRef<HTMLSelectElement>(null);
   const index = selectedIndexFor(options, value);
   // Set on the element: a controlled select cannot show "no option".
@@ -129,6 +131,7 @@ export function Select<T>({ options, value, onChange, mini = false, name, hidden
       <select
         ref={ref}
         name={name}
+        aria-label={label}
         onChange={event => {
           onChange(options[event.currentTarget.selectedIndex].value);
           // Back to the current value: a new one re-renders, a rejected one does not.

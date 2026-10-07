@@ -14,7 +14,7 @@ const BUILD = 'http://127.0.0.1:4173';
 
 export default defineConfig({
   testDir: 'tests',
-  testMatch: ['e2e/**/*.spec.js'],
+  testMatch: ['e2e/**/*.spec.ts'],
   fullyParallel: true,
   reporter: 'list',
   use: { ...iPhone, baseURL: DEV },

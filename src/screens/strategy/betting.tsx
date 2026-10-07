@@ -56,6 +56,7 @@ export function Betting() {
           <div className="tc-row">
             <span className="label">Chip Value:</span>
             <Select
+              label="Chip Value:"
               options={CHIP_OPTIONS}
               value={settings.get('betting.chipValue')}
               onChange={value => settings.set('betting.chipValue', value)}
@@ -137,7 +138,7 @@ export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>)
           In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the
           number of spots at the top first. You can also enter a custom bet at the bottom.
         </div>
-        <div className="bet-pad__row">
+        <div className="bet-pad__row" role="group" aria-label="Spots">
           {HAND_CHOICES.map(n => (
             <button
               key={n}
@@ -150,7 +151,7 @@ export function BetSelect({ params: { row = 0 } }: ScreenProps<BetSelectParams>)
             </button>
           ))}
         </div>
-        <div className="bet-pad__chips">
+        <div className="bet-pad__chips" role="group" aria-label="Chips">
           {chunk(CHIP_CHOICES, HAND_CHOICES.length).map((cells, i) => (
             <div key={i} className="bet-pad__row">
               {cells.map(n => (

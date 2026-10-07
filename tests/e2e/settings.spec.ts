@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { openFromHub } from './support/settings.ts';
 
 test.use({ serviceWorkers: 'block' });
 
 /** Opens the app on a clean install and shows the settings hub. */
-async function openHub(page, { fresh = false } = {}) {
+async function openHub(page: Page, { fresh = false } = {}) {
   await page.goto('/index.html');
   if (fresh) {
     await page.evaluate(() => localStorage.clear());
@@ -13,19 +15,16 @@ async function openHub(page, { fresh = false } = {}) {
   await expect(page.locator('[data-screen="settings"]')).toBeVisible();
 }
 
-/** Opens one option screen from the hub. */
-async function openOption(page, button, screen) {
-  await page.locator('[data-screen="settings"]').getByRole('button', { name: button, exact: true }).click();
-  const el = page.locator(`[data-screen="${screen}"]`);
-  await expect(el).toBeVisible();
-  return el;
-}
-
-const select = (screen, key) => screen.locator(`select[name="${key}"]`);
-const check = (screen, label) => screen.getByRole('checkbox', { name: label });
+const select = (screen: Locator, key: string) => screen.locator(`select[name="${key}"]`);
+const check = (screen: Locator, label: string) => screen.getByRole('checkbox', { name: label });
 
 /** One case per option screen: a change to make and the state it must keep. */
-const CASES = [
+const CASES: {
+  button: string;
+  screen: string;
+  change(el: Locator): Promise<void>;
+  verify(el: Locator): Promise<void>;
+}[] = [
   {
     button: 'Basic Setup',
     screen: 'settings.setup',
@@ -138,7 +137,7 @@ const CASES = [
 test('the hub reaches every option screen', async ({ page }) => {
   await openHub(page, { fresh: true });
   for (const { button, screen } of CASES) {
-    await openOption(page, button, screen);
+    await openFromHub(page, button, screen);
     await page.locator(`[data-screen="${screen}"] [data-action="back"]`).click();
     await expect(page.locator('[data-screen="settings"]')).toBeVisible();
   }
@@ -155,17 +154,17 @@ test('the hub reaches every option screen', async ({ page }) => {
 for (const testCase of CASES) {
   test(`${testCase.button} keeps its settings across a reload`, async ({ page }) => {
     await openHub(page, { fresh: true });
-    await testCase.change(await openOption(page, testCase.button, testCase.screen));
+    await testCase.change(await openFromHub(page, testCase.button, testCase.screen));
 
     await page.reload();
     await openHub(page);
-    await testCase.verify(await openOption(page, testCase.button, testCase.screen));
+    await testCase.verify(await openFromHub(page, testCase.button, testCase.screen));
   });
 }
 
 test('turning off the ace peek turns off the ten peek', async ({ page }) => {
   await openHub(page, { fresh: true });
-  const el = await openOption(page, 'Play Variations', 'settings.playVariations');
+  const el = await openFromHub(page, 'Play Variations', 'settings.playVariations');
   await expect(check(el, 'Dealer peeks on ten')).toBeChecked();
   await check(el, 'Dealer peeks on ace').uncheck();
   await expect(check(el, 'Dealer peeks on ten')).not.toBeChecked();
@@ -173,7 +172,7 @@ test('turning off the ace peek turns off the ten peek', async ({ page }) => {
 
 test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
   await openHub(page, { fresh: true });
-  const el = await openOption(page, 'Bonuses', 'settings.bonuses');
+  const el = await openFromHub(page, 'Bonuses', 'settings.bonuses');
   await check(el, 'Blackjack pays 2:1').check();
   await check(el, 'No Blackjack bonus').check();
   await expect(check(el, 'Blackjack pays 2:1')).not.toBeChecked();
@@ -182,15 +181,15 @@ test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
 
 test('Double Exposure applies its rule bundle', async ({ page }) => {
   await openHub(page, { fresh: true });
-  const games = await openOption(page, 'Unusual Games', 'settings.unusualGames');
+  const games = await openFromHub(page, 'Unusual Games', 'settings.unusualGames');
   await select(games, 'bonuses.game').selectOption({ label: 'Double Exposure' });
   await games.locator('[data-action="back"]').click();
 
-  const rules = await openOption(page, 'Common Rules', 'settings.commonRules');
+  const rules = await openFromHub(page, 'Common Rules', 'settings.commonRules');
   await expect(select(rules, 'rules.insurance')).toHaveValue('No Insurance');
   await rules.locator('[data-action="back"]').click();
 
-  const play = await openOption(page, 'Play Variations', 'settings.playVariations');
+  const play = await openFromHub(page, 'Play Variations', 'settings.playVariations');
   await expect(check(play, 'Dealer wins ties')).toBeChecked();
 });
 
@@ -207,7 +206,7 @@ test('Play Blackjack keeps the saved seat count and opens the table', async ({ p
 
 test('going back closes an open dialog, not the screen behind it', async ({ page }) => {
   await openHub(page, { fresh: true });
-  const el = await openOption(page, 'Basic Setup', 'settings.setup');
+  const el = await openFromHub(page, 'Basic Setup', 'settings.setup');
   await el.locator('.value-btn').first().click();
   await expect(page.locator('.dialog-overlay')).toBeVisible();
 
@@ -221,11 +220,11 @@ test('going back closes an open dialog, not the screen behind it', async ({ page
 
 test('a slider value can be typed into its number box', async ({ page }) => {
   await openHub(page, { fresh: true });
-  const el = await openOption(page, 'Speed/Mechanics', 'settings.mechanics');
+  const el = await openFromHub(page, 'Speed/Mechanics', 'settings.mechanics');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
   const range = el.locator('.slider').filter({ hasText: 'Dealer Speed' }).locator('input[type="range"]');
   const saved = () =>
-    page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings')).values['mechanics.dealerSpeed']);
+    page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').values['mechanics.dealerSpeed']);
 
   await box.fill('72');
   await box.press('Enter');

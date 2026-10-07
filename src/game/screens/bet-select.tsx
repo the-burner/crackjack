@@ -53,7 +53,7 @@ export function BetSelect({
       <div className="column bet-select__body">
         <p className="note">{HELP_TEXT}</p>
         {!sideBet && (
-          <div className="bet-select__hands">
+          <div className="bet-select__hands" role="group" aria-label="Spots">
             {HAND_CHOICES.map(count => (
               <Button
                 key={count}
@@ -66,7 +66,7 @@ export function BetSelect({
             ))}
           </div>
         )}
-        <div className="bet-select__chips">
+        <div className="bet-select__chips" role="group" aria-label="Chips">
           {CHIP_CHOICES.map(chips => (
             <Button
               key={chips}

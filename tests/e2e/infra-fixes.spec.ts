@@ -63,7 +63,7 @@ test('a dialog dismissed by its own button leaves the back button working', asyn
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'Screen Info' }).click();
-  await page.getByRole('button', { name: 'OK' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click();
   await expect(page.locator('.dialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Settings' }).click();

@@ -1,11 +1,12 @@
 // The browser's back and forward moves (the phone's edge swipes) against the
 // screen stack, in both engines.
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 test.use({ serviceWorkers: 'block' });
 
 /** Opens Settings, then Basic Setup, so three screens are stacked. */
-async function stackThree(page) {
+async function stackThree(page: Page) {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.getByRole('button', { name: 'Settings' }).click();
@@ -13,9 +14,9 @@ async function stackThree(page) {
   await expect(page.locator('[data-screen="settings.setup"]')).toBeVisible();
 }
 
-const showing = page =>
+const showing = (page: Page) =>
   page.evaluate(() => {
-    const screens = [...document.querySelectorAll('[data-screen]')];
+    const screens = [...document.querySelectorAll<HTMLElement>('[data-screen]')];
     return screens
       .filter(el => !el.hidden)
       .map(el => el.dataset.screen)
@@ -59,7 +60,20 @@ test('going forward reopens the screen that was closed', async ({ page }) => {
 
 test("a history entry that is not the app's own is left alone", async ({ page }) => {
   await stackThree(page);
-  await page.evaluate(() => window.dispatchEvent(new PopStateEvent('popstate', { state: null })));
-  await page.waitForTimeout(150);
+  // The router moves only by traversing the history, so asking for none means nothing happens later either.
+  const traversals = await page.evaluate(() => {
+    const asked: string[] = [];
+    const moves = history as unknown as Record<string, (...args: unknown[]) => void>;
+    for (const name of ['back', 'forward', 'go', 'pushState', 'replaceState']) {
+      const move = moves[name].bind(history);
+      moves[name] = (...args) => {
+        asked.push(name);
+        move(...args);
+      };
+    }
+    window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+    return asked;
+  });
+  expect(traversals).toEqual([]);
   expect(await showing(page)).toBe('settings.setup');
 });

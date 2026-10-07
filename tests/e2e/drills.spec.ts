@@ -1,64 +1,25 @@
 // The four drills, driven through the running app: launch, answer right and
 // wrong, watch the stats, pause, restart and go back.
 import { test, expect } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { openWithSettings as open } from './support/app.ts';
+import { DRILLS, emptyMask, launchDrill as launch, statsText, whitePixels } from './support/drills.ts';
 
 test.use({ serviceWorkers: 'block' });
 
-/** Boolean grids shaped like the strategy tables. */
-const emptyMask = () =>
-  Object.fromEntries(
-    ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender'].map(name => [
-      name,
-      Array.from({ length: 10 }, () => new Array(10).fill(false)),
-    ]),
-  );
-
-/** Opens the app with the given settings already saved. */
-async function open(page, settings = {}) {
-  await page.addInitScript(values => {
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify(values));
-  }, settings);
-  await page.goto('/index.html');
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
-}
-
-const DRILLS = [
-  { button: 'Flash Drills', options: 'drills.flash.options', play: 'drills.flash', title: 'Flash Options' },
-  { button: 'Depth Drills', options: 'drills.depth.options', play: 'drills.depth', title: 'Depth Options' },
-  { button: 'Count Drills', options: 'drills.count.options', play: 'drills.count', title: 'Count Options' },
-  { button: 'Full Table Drills', options: 'drills.full.options', play: 'drills.full', title: 'Full Table Options' },
-];
-
-/** Launches a drill and waits out the "2, 1" countdown. */
-async function launch(page, drill) {
-  await page.getByRole('button', { name: drill.button }).click();
-  const options = page.locator(`[data-screen="${drill.options}"]`);
-  await expect(options).toBeVisible();
-  await options.locator('[data-action="launch"]').click();
-  const screen = page.locator(`[data-screen="${drill.play}"]`);
-  await expect(screen).toBeVisible();
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
-  return screen;
-}
-
-const statsText = screen => screen.locator('.drill__stats').innerText();
-
-/** How many near-white pixels a canvas holds, i.e. whether cards are on it. */
-const whitePixels = canvas =>
-  canvas.evaluate(el => {
-    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
-    let white = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) white += 1;
-    }
-    return white;
-  });
-
 /** Taps the cell at (row, column) of an answer grid. */
-async function tapCell(screen, { row, column, rows, columns, offset = 0 }) {
+async function tapCell(
+  screen: Locator,
+  {
+    row,
+    column,
+    rows,
+    columns,
+    offset = 0,
+  }: { row: number; column: number; rows: number; columns: number; offset?: number },
+) {
   const canvas = screen.locator('canvas.drill__answers');
-  const box = await canvas.boundingBox();
+  const box = (await canvas.boundingBox())!;
   await canvas.click({
     position: { x: (box.width / columns) * (column + offset + 0.5), y: (box.height / rows) * (row + 0.5) },
   });
@@ -66,14 +27,15 @@ async function tapCell(screen, { row, column, rows, columns, offset = 0 }) {
 
 /**
  * Taps cells of a 3 x 6 count grid until the test moves on, so the right answer
- * is certainly among them.
+ * is certainly among them. Needs the clock installed.
  */
-async function tapEveryCell(page, screen, grid) {
+async function tapEveryCell(page: Page, screen: Locator, grid: Locator) {
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 6; column++) {
       if (!(await grid.isVisible())) return;
       await tapCell(screen, { row, column, rows: 3, columns: 6 });
-      await page.waitForTimeout(120);
+      // Past the pause after a right answer, so the test has moved on if it was.
+      await page.clock.runFor(120);
       if (!(await statsText(screen)).includes('Tests: 1')) return;
     }
   }
@@ -81,7 +43,7 @@ async function tapEveryCell(page, screen, grid) {
 
 test('the home screen opens every drill options screen', async ({ page }) => {
   await open(page);
-  for (const drill of DRILLS) {
+  for (const drill of Object.values(DRILLS)) {
     await page.getByRole('button', { name: drill.button }).click();
     const screen = page.locator(`[data-screen="${drill.options}"]`);
     await expect(screen).toBeVisible();
@@ -124,7 +86,7 @@ test.describe('flash drill', () => {
   test('counts every hand and ends after the last one', async ({ page }) => {
     // Ten hands is the smallest a drill may be.
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd', 'drills.flash.handsPerDrill': 10 });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     await expect(screen.locator('.drill__stats')).toContainText('Hands: 1');
 
     await screen.locator('[data-action="hit"]').click();
@@ -143,7 +105,7 @@ test.describe('flash drill', () => {
 
   test('explains a wrong answer and keeps the hand until it is right', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
 
     await screen.locator('[data-action="hit"]').click();
     const dialog = page.locator('.dialog');
@@ -165,14 +127,14 @@ test.describe('flash drill', () => {
 
   test('non-blocking pop-ups say what was wrong and let play continue', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'drills.flash.nonBlockingErrors': true });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
 
     await screen.locator('[data-action="hit"]').click();
     const toast = page.locator('.toast');
     await expect(toast).toHaveText('Hit is incorrect');
     // At the top of the screen, with no dialog and no answer given away.
     const box = await toast.boundingBox();
-    expect(box.y).toBeLessThan(page.viewportSize().height / 2);
+    expect(box!.y).toBeLessThan(page.viewportSize()!.height / 2);
     await expect(page.locator('.dialog-overlay')).toHaveCount(0);
     await expect(screen.locator('[data-action="stand"]')).not.toHaveClass(/is-correct/);
 
@@ -199,7 +161,7 @@ test.describe('flash drill', () => {
 
   test('shows the strategy table for a wrong answer', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     await screen.locator('[data-action="hit"]').click();
     await page.locator('.dialog').getByRole('button', { name: 'Table' }).click();
     const tables = page.locator('[data-screen="strategy.tables"]');
@@ -213,9 +175,9 @@ test.describe('flash drill', () => {
 
   test('a double tap on the cards is Surrender; diagonal swipes do nothing', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     const cards = screen.locator('canvas.drill__cards');
-    const box = await cards.boundingBox();
+    const box = (await cards.boundingBox())!;
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
 
@@ -262,7 +224,7 @@ test.describe('flash drill', () => {
       'drills.flash.timePerHand': false,
       'drills.flash.handsPerDrill': 10,
     });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     expect(await statsText(screen)).toMatch(/Time: 00:00:0[01]/);
     // More hands than a Rounds drill of 10 would allow.
     for (let i = 0; i < 12; i++) await screen.locator('[data-action="stand"]').click();
@@ -285,7 +247,7 @@ test.describe('flash drill', () => {
       'drills.flash.timePerHand': false,
       'drills.flash.testMode': 'errorsAtEnd',
     });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     // Only pairs are in play, so every hand dealt is one Split can answer.
     for (let i = 0; i < 6; i++) await screen.locator('[data-action="split"]').click();
     expect(await statsText(screen)).toContain('Hands: 7');
@@ -307,7 +269,7 @@ test.describe('flash drill', () => {
       'drills.flash.timePerHand': false,
       'drills.flash.testMode': 'errorsAtEnd',
     });
-    await page.getByRole('button', { name: DRILLS[0].button }).click();
+    await page.getByRole('button', { name: DRILLS.flash.button }).click();
     await page.locator('[data-screen="drills.flash.options"] [data-action="launch"]').click();
     // Shown from the countdown on, not only once the first hand is dealt.
     expect(await statsText(page.locator('[data-screen="drills.flash"]'))).toContain('Hands: 0, Rounds: 0');
@@ -334,7 +296,7 @@ test.describe('flash drill', () => {
   test('pauses, restarts and goes back', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.handsPerDrill': 50, 'drills.flash.testMode': 'errorsAtEnd' });
     // Pause is unavailable during the opening countdown, as it is after Restart.
-    await page.getByRole('button', { name: DRILLS[0].button }).click();
+    await page.getByRole('button', { name: DRILLS.flash.button }).click();
     await page.locator('[data-screen="drills.flash.options"] [data-action="launch"]').click();
     await expect(page.locator('[data-screen="drills.flash"]').getByRole('button', { name: 'Pause' })).toBeDisabled();
     const screen = page.locator('[data-screen="drills.flash"]');
@@ -388,7 +350,7 @@ test.describe('flash drill', () => {
       'drills.flash.countMode': 'indexTest',
       'drills.flash.seconds': 60,
     });
-    const screen = await launch(page, DRILLS[0]);
+    const screen = await launch(page, DRILLS.flash);
     await expect(screen.locator('canvas.drill__answers')).toBeVisible();
     await expect(screen.locator('[data-action="stand"]')).toBeHidden();
     await expect(screen.locator('.drill__count')).not.toBeEmpty();
@@ -400,7 +362,7 @@ test.describe('depth drill', () => {
     await open(page);
     await page.getByRole('button', { name: 'Depth Drills' }).click();
     const options = page.locator('[data-screen="drills.depth.options"]');
-    const visible = name => options.getByRole('button', { name, exact: true }).isVisible();
+    const visible = (name: string) => options.getByRole('button', { name, exact: true }).isVisible();
 
     // Count Down & Halt: a drill time, no rounds or per-test time.
     expect(await visible('Drill time')).toBe(true);
@@ -427,7 +389,7 @@ test.describe('depth drill', () => {
       'drills.depth.seconds': 60,
       'drills.depth.accuracy': 0,
     });
-    const screen = await launch(page, DRILLS[1]);
+    const screen = await launch(page, DRILLS.depth);
     expect(await statsText(screen)).toContain('Tests: 1');
 
     // Two decks at full resolution offer one answer: "1", offset half a column.
@@ -437,13 +399,14 @@ test.describe('depth drill', () => {
   });
 
   test('counts a wrong tap as an error', async ({ page }) => {
+    await page.clock.install();
     await open(page, {
       'drills.depth.decks': 6,
       'drills.depth.resolution': 'full',
       'drills.depth.seconds': 60,
       'drills.depth.accuracy': 0,
     });
-    const screen = await launch(page, DRILLS[1]);
+    const screen = await launch(page, DRILLS.depth);
     // Six decks at full resolution offer 1..5. Tapping each in turn reaches the
     // right one, and every tap before it is an error. The answer is random, so
     // the first tap may happen to be right; keep going until a test has had a
@@ -451,7 +414,8 @@ test.describe('depth drill', () => {
     for (let test = 1; test <= 5; test++) {
       for (let column = 1; column < 6; column++) {
         await tapCell(screen, { row: 0, column, rows: 1, columns: 6, offset: -0.5 });
-        await page.waitForTimeout(200);
+        // Past the pause after a right answer, so the test has moved on if it was.
+        await page.clock.runFor(200);
         if ((await statsText(screen)).includes(`Tests: ${test + 1}`)) break;
       }
       if (!(await statsText(screen)).includes('Accuracy: 100%')) break;
@@ -461,7 +425,7 @@ test.describe('depth drill', () => {
 
   test('restarts and goes back', async ({ page }) => {
     await open(page, { 'drills.depth.seconds': 60 });
-    const screen = await launch(page, DRILLS[1]);
+    const screen = await launch(page, DRILLS.depth);
     await screen.getByRole('button', { name: 'Restart' }).click();
     await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
     expect(await statsText(screen)).toContain('Tests: 1');
@@ -499,7 +463,9 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await expect(sheet).toBeHidden();
   await expect(row).toHaveText('00:05:01');
   expect(
-    await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings')).values['drills.flash.drillSeconds']),
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').values['drills.flash.drillSeconds'],
+    ),
   ).toBe(301);
 
   // Cancel leaves the setting alone.
@@ -509,14 +475,15 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
 });
 
 test('a drill stops while another screen covers it, and counts down on return', async ({ page }) => {
+  await page.clock.install();
   await open(page, { 'drills.count.testEvery': 'never' });
-  const screen = await launch(page, DRILLS[2]);
+  const screen = await launch(page, DRILLS.count);
   const time = () => screen.locator('.drill__stats td').nth(2).innerText();
   const before = await time();
 
   await screen.getByRole('button', { name: 'Help' }).click();
   await expect(page.locator('[data-screen="help"]')).toBeVisible();
-  await page.waitForTimeout(2500);
+  await page.clock.runFor(2500);
   // The clock did not run on behind the help screen.
   expect(await time()).toBe(before);
 
@@ -532,8 +499,8 @@ test.describe('count drill', () => {
     await open(page);
     await page.getByRole('button', { name: 'Count Drills' }).click();
     const options = page.locator('[data-screen="drills.count.options"]');
-    const button = name => options.getByRole('button', { name, exact: true });
-    const check = name => options.getByRole('checkbox', { name });
+    const button = (name: string) => options.getByRole('button', { name, exact: true });
+    const check = (name: string) => options.getByRole('checkbox', { name });
 
     // Count Down & Halt, dealt automatically.
     await expect(button('Drill time')).toBeVisible();
@@ -560,7 +527,7 @@ test.describe('count drill', () => {
 
   test('pauses with the cards covered, and counts down before continuing', async ({ page }) => {
     await open(page, { 'drills.count.testEvery': 'never' });
-    const screen = await launch(page, DRILLS[2]);
+    const screen = await launch(page, DRILLS.count);
     const cards = screen.locator('canvas.drill__cards');
     await expect.poll(() => whitePixels(cards)).toBeGreaterThan(0);
     // Count Down & Halt counts down from the 3:00 drill time.
@@ -578,7 +545,7 @@ test.describe('count drill', () => {
       screen.locator('.drill__display').boundingBox(),
       countdown.boundingBox(),
     ]);
-    expect(number.y + number.height).toBeLessThanOrEqual(area.y + area.height + 1);
+    expect(number!.y + number!.height).toBeLessThanOrEqual(area!.y + area!.height + 1);
     await expect(countdown).toBeHidden({ timeout: 5000 });
     await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
     await expect.poll(() => whitePixels(cards)).toBeGreaterThan(0);
@@ -589,6 +556,7 @@ test.describe('count drill', () => {
   });
 
   test('deals flashes, asks for the count and grades the answer', async ({ page }) => {
+    await page.clock.install();
     await open(page, {
       'drills.count.testEvery': 'everyCard',
       'drills.count.dealTenths': 2,
@@ -596,7 +564,7 @@ test.describe('count drill', () => {
       'drills.count.accuracy': 0,
       'strategy.system': 30,
     });
-    const screen = await launch(page, DRILLS[2]);
+    const screen = await launch(page, DRILLS.count);
     const grid = screen.locator('canvas.drill__answers');
     await expect(grid).toBeVisible({ timeout: 5000 });
     expect(await statsText(screen)).toContain('Tests: 1');
@@ -610,7 +578,7 @@ test.describe('count drill', () => {
 
   test('lets the player deal by hand', async ({ page }) => {
     await open(page, { 'drills.count.dealByHand': true, 'drills.count.testEvery': 'never' });
-    const screen = await launch(page, DRILLS[2]);
+    const screen = await launch(page, DRILLS.count);
     const next = screen.getByRole('button', { name: 'Next' });
     const cards = screen.locator('canvas.drill__cards');
     await expect(next).toBeVisible();
@@ -623,7 +591,7 @@ test.describe('count drill', () => {
 test.describe('full table drill', () => {
   test('asks for a wide screen while the device is upright', async ({ page }) => {
     await open(page);
-    const screen = await launch(page, DRILLS[3]);
+    const screen = await launch(page, DRILLS.full);
     await expect(screen.locator('.drill__cover')).toBeVisible();
     await expect(screen.locator('.drill__cover')).toContainText('Turn the device sideways');
     // The title bar stays usable over the cover.
@@ -632,9 +600,10 @@ test.describe('full table drill', () => {
   });
 
   test('deals a table and grades the count in landscape', async ({ page }) => {
+    await page.clock.install();
     await open(page, { 'drills.full.testSeconds': 40, 'drills.full.accuracy': 0 });
     await page.setViewportSize({ width: 844, height: 390 });
-    const screen = await launch(page, DRILLS[3]);
+    const screen = await launch(page, DRILLS.full);
     await expect(screen.locator('.drill__cover')).toBeHidden();
     const grid = screen.locator('canvas.drill__answers');
     await expect(grid).toBeVisible();
@@ -648,8 +617,8 @@ test.describe('full table drill', () => {
     await open(page);
     await page.getByRole('button', { name: 'Full Table Drills' }).click();
     const options = page.locator('[data-screen="drills.full.options"]');
-    const button = name => options.getByRole('button', { name, exact: true });
-    const select = key => options.locator(`select[name="drills.full.${key}"]`);
+    const button = (name: string) => options.getByRole('button', { name, exact: true });
+    const select = (key: string) => options.locator(`select[name="drills.full.${key}"]`);
 
     // Count Down & Halt: a drill time and no end-of-shoe warning.
     await expect(button('Drill time')).toBeVisible();
@@ -671,7 +640,7 @@ test.describe('full table drill', () => {
   test('Two Tables starts even with scattered cards saved, since it deals its own hands', async ({ page }) => {
     await open(page, { 'drills.full.drill': 'twoTables', 'drills.full.handStyle': 'scattered' });
     await page.setViewportSize({ width: 844, height: 390 });
-    const screen = await launch(page, DRILLS[3]);
+    const screen = await launch(page, DRILLS.full);
     await expect(screen.locator('canvas.drill__answers')).toBeVisible();
   });
 });
@@ -696,7 +665,7 @@ test('the drills record errors that the Flash options screen can clear', async (
     'drills.flash.testMode': 'errorsAtEnd',
     'strategy.system': 30,
   });
-  const screen = await launch(page, DRILLS[0]);
+  const screen = await launch(page, DRILLS.flash);
   await screen.locator('[data-action="hit"]').click();
   await screen.locator('.drill__bar button').first().click();
 

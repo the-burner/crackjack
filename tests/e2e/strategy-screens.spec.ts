@@ -1,11 +1,13 @@
 // Playing strategy, strategy tables, true count and betting, driven through
 // the UI.
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { answerDialog, openFromHub, setting } from './support/settings.ts';
 
 test.use({ serviceWorkers: 'block' });
 
 /** Opens the settings hub on a clean install. */
-async function openHub(page) {
+async function openHub(page: Page) {
   await page.goto('/index.html');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -13,32 +15,10 @@ async function openHub(page) {
   await expect(page.locator('[data-screen="settings"]')).toBeVisible();
 }
 
-async function openScreen(page, button, screen) {
-  await page.locator('[data-screen="settings"]').getByRole('button', { name: button, exact: true }).click();
-  const el = page.locator(`[data-screen="${screen}"]`);
-  await expect(el).toBeVisible();
-  return el;
-}
-
-/**
- * Answers the next dialog with `text` (or just OK when text is null) and waits
- * for that dialog to go away — a dialog may be replaced by another one.
- */
-async function answerDialog(page, text = null) {
-  const overlay = page.locator('.dialog-overlay').first();
-  await expect(overlay).toBeVisible();
-  const handle = await overlay.elementHandle();
-  if (text !== null) await overlay.locator('.dialog__input').fill(text);
-  await overlay.getByRole('button').first().click();
-  await page.waitForFunction(el => !el.isConnected, handle);
-}
-
-const setting = (page, key) => page.evaluate(k => window.app.settings.get(k), key);
-
 test.describe('Playing Strategy', () => {
   test('changes the strategy, the index set, the range and the rules', async ({ page }) => {
     await openHub(page);
-    const el = await openScreen(page, 'Playing Strategies', 'settings.strategy');
+    const el = await openFromHub(page, 'Playing Strategies', 'settings.strategy');
 
     await el.locator('select').first().selectOption('Halves');
     expect(await setting(page, 'strategy.system')).toBe(32);
@@ -59,7 +39,7 @@ test.describe('Strategy tables', () => {
   test('shows the selected strategy and switches between the views', async ({ page }) => {
     await openHub(page);
     await page.evaluate(() => window.app.settings.set('strategy.system', 30));
-    const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
+    const strategy = await openFromHub(page, 'Playing Strategies', 'settings.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
@@ -86,7 +66,7 @@ test.describe('Strategy tables', () => {
 
   test('picks custom index cells and uses them for the Custom index set', async ({ page }) => {
     await openHub(page);
-    const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
+    const strategy = await openFromHub(page, 'Playing Strategies', 'settings.strategy');
     await strategy.locator('[data-action="select-indices"]').click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
@@ -110,7 +90,7 @@ test.describe('Strategy tables', () => {
     await page.evaluate(() => {
       window.app.errorTallies.record('hardStand', 1, 8);
     });
-    const strategy = await openScreen(page, 'Playing Strategies', 'settings.strategy');
+    const strategy = await openFromHub(page, 'Playing Strategies', 'settings.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
@@ -123,7 +103,7 @@ test.describe('Strategy tables', () => {
 
 test('True Count Calcs writes every control', async ({ page }) => {
   await openHub(page);
-  const el = await openScreen(page, 'True Count Calcs', 'settings.trueCount');
+  const el = await openFromHub(page, 'True Count Calcs', 'settings.trueCount');
 
   await el.locator('select').nth(0).selectOption('Quarter Deck');
   await el.locator('select').nth(2).selectOption('Floor');
@@ -142,7 +122,7 @@ test('True Count Calcs writes every control', async ({ page }) => {
 test.describe('Allowed Bets', () => {
   test('shows the count column only when betting errors are flagged', async ({ page }) => {
     await openHub(page);
-    const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
     // Warning on betting errors is on by default.
     await expect(el.locator('.bet-table tbody td').first()).toHaveText('<=0');
     await expect(el.getByText('Minimum bet count:')).toBeVisible();
@@ -153,7 +133,7 @@ test.describe('Allowed Bets', () => {
 
   test('resizes the table and edits a row', async ({ page }) => {
     await openHub(page);
-    const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
     // The default ramp has six bets: 1, 2, 4, 6, 12 and 16 chips.
     await expect(el.locator('.bet-table tbody tr')).toHaveCount(6);
 
@@ -183,7 +163,7 @@ test.describe('Allowed Bets', () => {
 
   test('takes a custom bet', async ({ page }) => {
     await openHub(page);
-    const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
     await el.locator('.bet-table tbody tr').first().click();
     const pad = page.locator('[data-screen="settings.betting.select"]');
     await pad.locator('[data-action="custom-bet"]').click();
@@ -194,7 +174,7 @@ test.describe('Allowed Bets', () => {
 
   test('sets the chip value', async ({ page }) => {
     await openHub(page);
-    const el = await openScreen(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
     await el.locator('select').selectOption('$25');
     expect(await setting(page, 'betting.chipValue')).toBe(25);
   });

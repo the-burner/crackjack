@@ -29,7 +29,7 @@ test('runs offline after the first visit', { tag: '@build' }, async ({ page, con
   await page.locator('[data-action="play"]').click();
   await expect(page.locator('.bet-overlay')).toBeVisible();
 
-  const failed = [];
+  const failed: string[] = [];
   page.on('requestfailed', request => failed.push(request.url()));
   await page.reload();
   await expect(page.locator('[data-screen="home"]')).toBeVisible();

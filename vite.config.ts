@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, type PreviewOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -28,4 +29,34 @@ export default defineConfig(({ mode }) => ({
       injectManifest: { globPatterns: ['**/*.{html,js,css,png,jpg,svg,mp3,webmanifest}'] },
     }),
   ],
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: { name: 'unit', include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          include: ['tests/unit/**/*.test.tsx'],
+          environment: 'jsdom',
+          setupFiles: ['tests/setup/dom.ts'],
+        },
+      },
+    ],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      // events.ts holds only types.
+      exclude: ['src/data/**', 'src/sw.ts', 'src/game/engine/events.ts'],
+      reporter: ['text-summary', 'html'],
+      // Just under the current numbers, so a drop fails the run.
+      thresholds: {
+        'src/core/**': { statements: 99, branches: 99, functions: 99, lines: 99 },
+        'src/game/engine/**': { statements: 98, branches: 98, functions: 99, lines: 99 },
+        'src/settings/**': { statements: 99, branches: 98, functions: 99, lines: 99 },
+      },
+    },
+  },
 }));

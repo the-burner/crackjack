@@ -3,28 +3,22 @@
 // frame log (window.__cjFrames) and assert order and duration.
 
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import type { Frame } from './globals.d.ts';
+import { seedRandom, visibleOneOf } from './support/app.ts';
+import type { SavedSettings } from './support/app.ts';
+import { readoutRunningCount as readout, statsRunningCount as statsCount, tapBetTile } from './support/table.ts';
 
 /** Opens the table with a seeded deal and the frame, overlay and chip logs on. */
-async function openTable(page, { settings = {}, seed = 7 } = {}) {
+async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: SavedSettings; seed?: number } = {}) {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(start => {
-    let a = start;
-    // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
-    const libraryRandom = Math.random;
-    Math.random = () => {
-      if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }, seed);
+  await seedRandom(page, seed);
   await page.addInitScript(overrides => {
     window.__cjRecordFrames = true;
     // When the betting menu shows and hides.
     window.__cjOverlay = [];
     new MutationObserver(() => {
-      const el = document.querySelector('.bet-overlay');
+      const el = document.querySelector<HTMLElement>('.bet-overlay');
       const visible = Boolean(el && !el.hidden);
       const log = window.__cjOverlay;
       if (log.at(-1)?.visible !== visible) log.push({ t: performance.now(), visible });
@@ -65,39 +59,26 @@ async function openTable(page, { settings = {}, seed = 7 } = {}) {
   await expect(page.locator('.bet-overlay')).toBeVisible({ timeout: 20000 });
 }
 
-const overlay = page => page.locator('.bet-overlay');
-const action = (page, name) => page.locator(`.table__actions [data-action="${name}"]`);
-const frames = page => page.evaluate(() => window.__cjFrames ?? []);
-const overlayLog = page => page.evaluate(() => window.__cjOverlay);
-const clearLogs = page =>
+const overlay = (page: Page) => page.locator('.bet-overlay');
+const action = (page: Page, name: string) => page.locator(`.table__actions [data-action="${name}"]`);
+const frames = (page: Page) => page.evaluate(() => window.__cjFrames ?? []);
+const overlayLog = (page: Page) => page.evaluate(() => window.__cjOverlay);
+const clearLogs = (page: Page) =>
   page.evaluate(() => {
     window.__cjFrames = [];
     window.__cjOverlay = [];
     window.__cjChip = [];
   });
 
-/** The running count the table's readout shows. */
-const readout = async page => (await page.locator('.table__counts').textContent()).match(/RC: (-?[\d.]+)/)?.[1];
-
-/** The running count the Statistics screen reports: the session's own. */
-async function statsCount(page) {
-  await page.locator('.table__bar [data-action="stats"]').click();
-  await expect(page.locator('[data-screen="game.stats"]')).toBeVisible();
-  const row = page.locator('tr', { has: page.getByText('Running Count', { exact: true }) });
-  const value = (await row.locator('td').last().textContent()).trim();
-  await page.locator('[data-screen="game.stats"] [data-action="back"]').click();
-  await expect(page.locator('[data-screen="game.table"]')).toBeVisible();
-  return value;
-}
-
 /** What a fresh shoe's running count is after seeing `cards`, by the selected strategy. */
-const countOf = (page, cards) =>
+const countOf = (page: Page, cards: number[]) =>
   page.evaluate(async seen => {
-    const { Counter } = await import('/src/core/counting.ts');
+    const url = '/src/core/counting.ts';
+    const { Counter }: typeof import('../../src/core/counting.ts') = await import(url);
     const decks = window.app.settings.get('table.decks');
     const counter = new Counter(window.app.strategies.current(window.app.settings, decks), {
       division: 0,
-      lastDeck: 0,
+      lastDeck: 1,
       rounding: 0,
     });
     counter.reset(decks);
@@ -106,25 +87,40 @@ const countOf = (page, cards) =>
   }, cards);
 
 /** The first frame at or after index `from` that matches. */
-const findFrom = (list, from, test) => {
+const findFrom = <T>(list: T[], from: number, test: (item: T, index: number) => boolean) => {
   for (let i = from; i < list.length; i++) if (test(list[i], i)) return i;
   return -1;
 };
 
-const cardCount = frame => frame.dealer.cards.length + frame.hands.reduce((sum, hand) => sum + hand.cards.length, 0);
-const rankOf = id => ((id - 1) % 13) + 1;
-const valueOf = id => Math.min(rankOf(id), 10);
+const cardCount = (frame: Frame) =>
+  frame.dealer.cards.length + frame.hands.reduce((sum, hand) => sum + hand.cards.length, 0);
+const rankOf = (id: number) => ((id - 1) % 13) + 1;
+const valueOf = (id: number) => Math.min(rankOf(id), 10);
 
 /**
  * Bets the smallest amount and plays the round out, clearing the logs first, so
  * the frames returned are this round's, up to and including the next shuffle.
  */
-async function playRound(page, { prefer = ['stand'], insure = false, onTurn = null } = {}) {
+async function playRound(
+  page: Page,
+  {
+    prefer = ['stand'],
+    insure = false,
+    onTurn = null,
+  }: { prefer?: string[]; insure?: boolean; onTurn?: (() => Promise<void>) | null } = {},
+) {
   await clearLogs(page);
-  await page.locator('.bet-overlay__grid').click({ position: { x: 25, y: 25 } });
-  await expect(overlay(page)).toBeHidden();
+  await tapBetTile(page);
+  const dialog = page.locator('.dialog-overlay');
   for (let step = 0; step < 300; step++) {
-    const dialog = page.locator('.dialog-overlay');
+    // Until the table wants something: the cards may still be coming.
+    await expect(
+      visibleOneOf(
+        dialog,
+        overlay(page),
+        ...['pass', 'hit', 'stand', 'double', 'split'].map(name => action(page, name)),
+      ),
+    ).toBeVisible();
     if (await dialog.isVisible()) {
       await dialog.locator('button').first().click();
       continue;
@@ -134,7 +130,7 @@ async function playRound(page, { prefer = ['stand'], insure = false, onTurn = nu
       await action(page, insure ? 'insure' : 'pass').click();
       continue;
     }
-    const offered = [];
+    const offered: string[] = [];
     for (const name of ['hit', 'stand', 'double', 'split']) {
       if (await action(page, name).isVisible()) offered.push(name);
     }
@@ -142,15 +138,13 @@ async function playRound(page, { prefer = ['stand'], insure = false, onTurn = nu
     if (pick) {
       if (onTurn) await onTurn();
       await action(page, pick).click();
-    } else {
-      await page.waitForTimeout(50);
     }
   }
   throw new Error('the round never came back to the betting menu');
 }
 
 /** True for a frame showing a fresh shoe: nothing drawn yet. */
-const freshShoe = (frame, decks) =>
+const freshShoe = (frame: Frame, decks: number) =>
   frame.shoeCards === decks * 52 && cardCount(frame) === 0 && frame.burns.length === 0;
 
 test.describe('opening the table', () => {
@@ -177,7 +171,7 @@ test.describe('opening the table', () => {
 test.describe('counting the burn card', () => {
   test('counts a burn card that is shown, before the first bet', async ({ page }) => {
     await openTable(page, { settings: { 'table.burnCards': 1, 'table.showBurnCards': true } });
-    const burn = (await frames(page)).find(f => f.burns.length === 1).burns[0];
+    const burn = (await frames(page)).find(f => f.burns.length === 1)!.burns[0];
     expect(burn.faceUp).toBe(true);
     const expected = await countOf(page, [burn.card]);
     // This seed's burn has a count value, so counting it shows.
@@ -206,8 +200,8 @@ test.describe('the number of burn cards', () => {
     await openTable(page, { settings: { 'table.burnCards': 0 } });
     const log = await frames(page);
     expect(log.some(f => f.burns.length > 0)).toBe(false);
-    expect(log.at(-1).trayCards).toBe(0);
-    expect(log.at(-1).shoeCards).toBe(312);
+    expect(log.at(-1)!.trayCards).toBe(0);
+    expect(log.at(-1)!.shoeCards).toBe(312);
     expect(await readout(page)).toBe('0');
   });
 
@@ -218,7 +212,7 @@ test.describe('the number of burn cards', () => {
     expect(three).toBeGreaterThanOrEqual(0);
     expect(log[three].burns.every(b => b.faceUp)).toBe(true);
     expect(findFrom(log, three, f => f.burns.length === 0 && f.trayCards === 3)).toBeGreaterThan(three);
-    expect(log.at(-1).shoeCards).toBe(309);
+    expect(log.at(-1)!.shoeCards).toBe(309);
     const expected = await countOf(
       page,
       log[three].burns.map(b => b.card),
@@ -241,7 +235,7 @@ test.describe('between shoes', () => {
       },
     });
     const first = await frames(page);
-    const firstBurn = first.find(f => f.burns.length === 1).burns[0].card;
+    const firstBurn = first.find(f => f.burns.length === 1)!.burns[0].card;
 
     const round = await playRound(page);
     const dealt = findFrom(round, 0, f => cardCount(f) > 0);
@@ -264,7 +258,7 @@ test.describe('between shoes', () => {
           .flatMap(f =>
             [f.dealer, ...f.hands]
               .flatMap(hand => hand.cards.map((card, i) => (hand.faceUp[i] ? `${hand.key}:${i}:${card}` : null)))
-              .filter(Boolean),
+              .filter((entry): entry is string => entry !== null),
           ),
       ),
     ].map(entry => (typeof entry === 'number' ? entry : Number(entry.split(':')[2])));
@@ -302,7 +296,7 @@ test.describe('the Shuffle button', () => {
     await expect
       .poll(
         async () => {
-          const last = (await frames(page)).at(-1);
+          const last = (await frames(page)).at(-1)!;
           return { burns: last.burns.length, tray: last.trayCards };
         },
         { timeout: 5000 },
@@ -318,7 +312,7 @@ test.describe('insurance', () => {
     await openTable(page, {
       settings: { 'rules.insurance': 'normal', 'rules.dealerPeeksAce': true, 'mechanics.payoffSpeed': 60 },
     });
-    let checked = null;
+    let checked: { log: Frame[]; chip: Window['__cjChip']; reveal?: number; missing?: boolean } | null = null;
     for (let round = 0; round < 60 && !checked; round++) {
       const log = await playRound(page, { insure: true });
       const chip = await page.evaluate(() => window.__cjChip);
@@ -326,19 +320,19 @@ test.describe('insurance', () => {
         const up = log.find(f => f.dealer.cards.length === 2)?.dealer.cards[0];
         // An ace up must offer insurance; anything else is a round to skip.
         if (up && valueOf(up) === 1) {
-          const hole = log.find(f => f.dealer.cards.length === 2).dealer.cards[1];
+          const hole = log.find(f => f.dealer.cards.length === 2)!.dealer.cards[1];
           const blackjack = valueOf(hole) === 10;
           if (!blackjack) checked = { log, chip, missing: true };
         }
         continue;
       }
       const reveal = log.findIndex(f => f.dealer.faceUp[1] === true && f.dealer.faceUp[0] === true);
-      const hole = log.find(f => f.dealer.cards.length === 2).dealer.cards[1];
+      const hole = log.find(f => f.dealer.cards.length === 2)!.dealer.cards[1];
       if (valueOf(hole) === 10) continue;
       checked = { log, chip, reveal };
     }
     expect(checked, 'a round with insurance against an ace and no blackjack').not.toBeNull();
-    const { chip, log, reveal, missing } = checked;
+    const { chip, log, reveal, missing } = checked!;
     // Insurance was bought: the bankroll paid half the $5 bet.
     const banks = chip.map(c => Number(c.bank?.replace(/[$,]/g, '')));
     expect(
@@ -354,12 +348,12 @@ test.describe('insurance', () => {
     const back = findFrom(chip, insured, c => c.text === '$5');
     expect(back, 'the insurance stake comes off the label').toBeGreaterThan(insured);
     // Before the dealer's hand is played out at the end of the round.
-    expect(chip[back].t).toBeLessThan(log[reveal].t);
+    expect(chip[back].t).toBeLessThan(log[reveal!].t);
   });
 });
 
 /** Indices of frames where the dealer's hole card flashed up and went back down. */
-function holeCardFlash(log) {
+function holeCardFlash(log: Frame[]) {
   const up = log.findIndex(f => f.dealer.cards.length === 2 && f.dealer.faceUp[1] === true);
   if (up < 0) return null;
   const down = findFrom(log, up, f => f.dealer.cards.length === 2 && f.dealer.faceUp[1] === false);
@@ -373,11 +367,11 @@ test.describe('peeking at the hole card', () => {
       const log = await playRound(page);
       const flash = holeCardFlash(log);
       expect(flash, `round ${round}: the hole card flashed`).not.toBeNull();
-      const ms = log[flash.down].t - log[flash.up].t;
+      const ms = log[flash!.down].t - log[flash!.up].t;
       expect(ms, `round ${round}: flash length`).toBeGreaterThan(350);
       expect(ms, `round ${round}: flash length`).toBeLessThan(800);
       // During the deal: the player has not been asked to act yet.
-      expect(log.slice(0, flash.down).some(f => f.pointer)).toBe(false);
+      expect(log.slice(0, flash!.down).some(f => f.pointer)).toBe(false);
       expect(await readout(page), `round ${round}: readout against the session's count`).toBe(await statsCount(page));
     }
   });
@@ -395,7 +389,7 @@ test.describe('peeking at the hole card', () => {
     const seen = { checked: 0, other: 0 };
     for (let round = 0; round < 20; round++) {
       const log = await playRound(page);
-      const up = log.find(f => f.dealer.cards.length === 2).dealer.cards[0];
+      const up = log.find(f => f.dealer.cards.length === 2)!.dealer.cards[0];
       const flashed = holeCardFlash(log) !== null;
       const checks = valueOf(up) === 1 || valueOf(up) === 10;
       expect(flashed, `round ${round}: upcard ${valueOf(up)}`).toBe(checks);
@@ -418,7 +412,7 @@ test.describe('peeking at the hole card', () => {
     let tens = 0;
     for (let round = 0; round < 15; round++) {
       const log = await playRound(page);
-      const up = log.find(f => f.dealer.cards.length === 2).dealer.cards[0];
+      const up = log.find(f => f.dealer.cards.length === 2)!.dealer.cards[0];
       expect(holeCardFlash(log) !== null, `round ${round}: upcard ${valueOf(up)}`).toBe(valueOf(up) === 1);
       if (valueOf(up) === 10) tens += 1;
     }
@@ -434,24 +428,24 @@ const FACE_DOWN = {
 };
 
 /** The frame at the end of the initial deal: every hand has two cards. */
-const endOfDeal = log =>
+const endOfDeal = (log: Frame[]) =>
   log.findIndex(f => f.dealer.cards.length === 2 && f.hands.length >= 4 && f.hands.every(h => h.cards.length === 2));
 
 test.describe('peeking right and left', () => {
   test("deals the neighbour's cards face up and counts them; other seats stay face down", async ({ page }) => {
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true } });
-    const burn = (await frames(page)).find(f => f.burns.length === 1).burns[0].card;
+    const burn = (await frames(page)).find(f => f.burns.length === 1)!.burns[0].card;
     for (let round = 0; round < 3; round++) {
-      let atTurn = null;
+      let atTurn = null as { frame: Frame; rc: string | undefined } | null;
       const log = await playRound(page, {
         onTurn: async () => {
           if (atTurn) return;
-          atTurn = { frame: (await frames(page)).at(-1), rc: await readout(page) };
+          atTurn = { frame: (await frames(page)).at(-1)!, rc: await readout(page) };
         },
       });
       const deal = endOfDeal(log);
       expect(deal).toBeGreaterThanOrEqual(0);
-      const hand = key => log[deal].hands.find(h => h.key === key);
+      const hand = (key: string) => log[deal].hands.find(h => h.key === key)!;
       expect(hand('2-0').faceUp, `round ${round}: the neighbour in seat 2`).toEqual([true, true]);
       expect(hand('3-0').faceUp, `round ${round}: seat 3`).toEqual([false, false]);
       expect(hand('4-0').faceUp, `round ${round}: seat 4`).toEqual([false, false]);
@@ -470,12 +464,12 @@ test.describe('peeking right and left', () => {
   test("randomize card turns up the neighbour's cards one by one, at random", async ({ page }) => {
     test.setTimeout(120000);
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true, 'peeking.randomizeCard': true } });
-    const patterns = new Set();
+    const patterns = new Set<string>();
     for (let round = 0; round < 10; round++) {
       const log = await playRound(page);
       const deal = endOfDeal(log);
-      patterns.add(JSON.stringify(log[deal].hands.find(h => h.key === '2-0').faceUp));
-      expect(log[deal].hands.find(h => h.key === '3-0').faceUp).toEqual([false, false]);
+      patterns.add(JSON.stringify(log[deal].hands.find(h => h.key === '2-0')!.faceUp));
+      expect(log[deal].hands.find(h => h.key === '3-0')!.faceUp).toEqual([false, false]);
       expect(await readout(page), `round ${round}`).toBe(await statsCount(page));
     }
     // Some cards up and some down, and at least once a hand split between the two.
@@ -487,11 +481,11 @@ test.describe('peeking right and left', () => {
   test("randomize hand turns up the whole neighbour's hand or none of it", async ({ page }) => {
     test.setTimeout(120000);
     await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true, 'peeking.randomizeHand': true } });
-    const patterns = new Set();
+    const patterns = new Set<string>();
     for (let round = 0; round < 10; round++) {
       const log = await playRound(page);
       const deal = endOfDeal(log);
-      patterns.add(JSON.stringify(log[deal].hands.find(h => h.key === '2-0').faceUp));
+      patterns.add(JSON.stringify(log[deal].hands.find(h => h.key === '2-0')!.faceUp));
       expect(await readout(page), `round ${round}`).toBe(await statsCount(page));
     }
     expect([...patterns].sort()).toEqual(['[false,false]', '[true,true]']);
@@ -515,11 +509,14 @@ test.describe('a face-down game', () => {
       // The dealer's hole card turning up marks the showdown.
       const showdown = findFrom(log, deal, f => f.dealer.cards.length >= 2 && f.dealer.faceUp[1] === true);
       expect(showdown).toBeGreaterThan(deal);
-      const mine = f => f.hands.find(h => h.key === '1-0');
+      const mine = (f: Frame) => f.hands.find(h => h.key === '1-0');
       const turn = findFrom(log, deal, f => f.pointer?.hand === '1-0');
       if (turn >= 0) {
-        expect(mine(log[turn]).faceUp.every(Boolean), `round ${round}: face up for its turn`).toBe(true);
-        const hidden = findFrom(log, turn, f => mine(f) && mine(f).cards.length > 0 && mine(f).faceUp.every(up => !up));
+        expect(mine(log[turn])!.faceUp.every(Boolean), `round ${round}: face up for its turn`).toBe(true);
+        const hidden = findFrom(log, turn, f => {
+          const hand = mine(f);
+          return !!hand && hand.cards.length > 0 && hand.faceUp.every(up => !up);
+        });
         expect(hidden, `round ${round}: face down again after standing`).toBeGreaterThan(turn);
         expect(hidden).toBeLessThan(showdown);
       }
@@ -535,7 +532,7 @@ test.describe('a face-down game', () => {
       const atShowdown = log[showdown].hands.filter(h => h.cards.length > 0).map(h => h.key);
       for (const key of atShowdown) {
         const last = log.findLastIndex(f => f.hands.some(h => h.key === key && h.cards.length > 0));
-        const hand = log[last].hands.find(h => h.key === key);
+        const hand = log[last].hands.find(h => h.key === key)!;
         expect(hand.faceUp.every(Boolean), `round ${round}: ${key} when it was paid`).toBe(true);
       }
       expect(await readout(page), `round ${round}`).toBe(await statsCount(page));
@@ -553,15 +550,15 @@ test.describe('the double-down card face down', () => {
         'table.computerSeats': [false, true, true, true, false, false],
       },
     });
-    let doubled = null;
+    let doubled: { log: Frame[]; at: number; key: string } | null = null;
     for (let round = 0; round < 25 && !doubled; round++) {
       const log = await playRound(page, { prefer: ['double'] });
       const at = log.findIndex(f => f.hands.some(h => h.cards.length >= 3 && h.faceUp[2] === false));
       if (at >= 0)
-        doubled = { log, at, key: log[at].hands.find(h => h.cards.length >= 3 && h.faceUp[2] === false).key };
+        doubled = { log, at, key: log[at].hands.find(h => h.cards.length >= 3 && h.faceUp[2] === false)!.key };
     }
     expect(doubled, 'a hand was doubled').not.toBeNull();
-    const { log, at, key } = doubled;
+    const { log, at, key } = doubled!;
     const showdown = findFrom(log, at, f => f.dealer.cards.length >= 2 && f.dealer.faceUp[1] === true);
     expect(showdown).toBeGreaterThan(at);
     for (const f of log.slice(at, showdown)) {
@@ -569,7 +566,7 @@ test.describe('the double-down card face down', () => {
       if (hand) expect(hand.faceUp[2], `${key} before the showdown`).toBe(false);
     }
     const last = log.findLastIndex(f => f.hands.some(h => h.key === key && h.cards.length >= 3));
-    expect(log[last].hands.find(h => h.key === key).faceUp[2], `${key}'s double card when it was paid`).toBe(true);
+    expect(log[last].hands.find(h => h.key === key)!.faceUp[2], `${key}'s double card when it was paid`).toBe(true);
     expect(await readout(page)).toBe(await statsCount(page));
   });
 });
@@ -588,7 +585,7 @@ test.describe('players come and go', () => {
         'table.computerSeats': [false, true, true, true, false, false],
       },
     });
-    const seatings = [];
+    const seatings: string[] = [];
     for (let round = 0; round < 60; round++) {
       const log = await playRound(page);
       const seats = new Set(
@@ -607,8 +604,8 @@ test.describe('players come and go', () => {
 
 test.describe('the cut card', () => {
   /** Plays rounds, noting the cards drawn from the shoe by the end of each and whether it was reshuffled after. */
-  async function shoeRounds(page, count) {
-    const rounds = [];
+  async function shoeRounds(page: Page, count: number) {
+    const rounds: { drawn: number; reshuffled: boolean; midRound: boolean }[] = [];
     for (let round = 0; round < count; round++) {
       const log = await playRound(page);
       const cleared = log.findLastIndex(f => cardCount(f) > 0);
@@ -676,15 +673,15 @@ test.describe('extra findings', () => {
       },
     });
     // In a face-up game every card dealt is seen by the end of its round.
-    const seen = [(await frames(page)).find(f => f.burns.length === 1).burns[0].card];
+    const seen = [(await frames(page)).find(f => f.burns.length === 1)!.burns[0].card];
     let splits = 0;
     for (let round = 0; round < 80 && splits < 4; round++) {
       const log = await playRound(page, { prefer: ['split'] });
       // Each hand's cards as last drawn, which takes in split hands.
       const keys = new Set(log.flatMap(f => [f.dealer, ...f.hands].filter(h => h.cards.length > 0).map(h => h.key)));
       for (const key of keys) {
-        const last = log.findLast(f => [f.dealer, ...f.hands].some(h => h.key === key && h.cards.length > 0));
-        seen.push(...[last.dealer, ...last.hands].find(h => h.key === key).cards);
+        const last = log.findLast(f => [f.dealer, ...f.hands].some(h => h.key === key && h.cards.length > 0))!;
+        seen.push(...[last.dealer, ...last.hands].find(h => h.key === key)!.cards);
       }
       const expected = await countOf(page, seen);
       if (!log.some(f => f.hands.some(h => h.key.endsWith('-1')))) {
@@ -699,7 +696,7 @@ test.describe('extra findings', () => {
             `${key}: ${log
               .findLast(f => f.hands.some(h => h.key === key && h.cards.length))
               ?.hands.find(h => h.key === key)
-              .cards.map(rankOf)
+              ?.cards.map(rankOf)
               .join(' ')}`,
         )
         .join('; ');
@@ -722,7 +719,7 @@ test.describe('extra findings', () => {
         if (last < 0 || last >= showdown) continue;
         // Swept in play: it busted.
         busts += 1;
-        const hand = log[last].hands.find(h => h.key === key);
+        const hand = log[last].hands.find(h => h.key === key)!;
         expect(hand.faceUp, `round ${round}: ${key} ${JSON.stringify(hand.cards)} as it was swept`).toEqual(
           hand.cards.map(() => true),
         );

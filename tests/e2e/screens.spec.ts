@@ -2,12 +2,14 @@
 // plus the behaviour of the screens the other specs only pass through.
 
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import type { SettingKey } from '../../src/settings/schema.ts';
 
 test.use({ serviceWorkers: 'block' });
 
 /** Collects anything the page reports as an error, for expectNoErrors(). */
-function watchErrors(page) {
-  const errors = [];
+function watchErrors(page: Page) {
+  const errors: string[] = [];
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
   page.on('console', msg => {
     if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
@@ -15,10 +17,10 @@ function watchErrors(page) {
   return errors;
 }
 
-const expectNoErrors = errors => expect(errors).toEqual([]);
+const expectNoErrors = (errors: string[]) => expect(errors).toEqual([]);
 
 /** Opens the app on a clean install, leaving later reloads to keep what was saved. */
-async function openApp(page) {
+async function openApp(page: Page) {
   await page.goto('/index.html');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -26,7 +28,7 @@ async function openApp(page) {
 }
 
 /** The visible copy of a screen; screens below it stay in the DOM, hidden. */
-const showing = (page, name) => page.locator(`[data-screen="${name}"]:not([hidden])`);
+const showing = (page: Page, name: string) => page.locator(`[data-screen="${name}"]:not([hidden])`);
 
 /**
  * The screens that can be opened on their own, each with its title and a
@@ -34,6 +36,11 @@ const showing = (page, name) => page.locator(`[data-screen="${name}"]:not([hidde
  * caller's callback, so they are driven through the UI below or in game.spec.js
  * and drills.spec.js.
  */
+/** The router keeps its factories to itself. */
+const registeredScreens = () => [
+  ...(window.app.router as unknown as { factories: Map<string, unknown> }).factories.keys(),
+];
+
 const SCREENS = [
   { name: 'settings', title: 'Options', control: '.settings-hub' },
   { name: 'settings.setup', title: 'Basic Setup', control: 'select[name="table.decks"]' },
@@ -72,7 +79,7 @@ const DRIVEN_ELSEWHERE = [
 
 test('every registered screen is either opened here or driven through the UI', async ({ page }) => {
   await openApp(page);
-  const registered = await page.evaluate(() => [...window.app.router.factories.keys()]);
+  const registered = await page.evaluate(registeredScreens);
   expect(registered.sort()).toEqual([...SCREENS.map(s => s.name), ...DRIVEN_ELSEWHERE].sort());
 });
 
@@ -92,7 +99,11 @@ for (const { name, title, control } of SCREENS) {
 test('every screen with a Help button has help text behind it', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const topics = await page.evaluate(() => import('/src/data/help.ts').then(m => Object.keys(m.HELP)));
+  const topics = await page.evaluate(async () => {
+    const help = '/src/data/help.ts';
+    const { HELP }: typeof import('../../src/data/help.ts') = await import(help);
+    return Object.keys(HELP);
+  });
   expect(topics.length).toBeGreaterThan(20);
 
   for (const topic of topics) {
@@ -106,17 +117,17 @@ test('every screen with a Help button has help text behind it', async ({ page })
 
 test('every screen a Help button names is a screen the app registers', async ({ page }) => {
   await openApp(page);
-  const { topics, registered } = await page.evaluate(() =>
-    import('/src/data/help.ts').then(m => ({
-      topics: Object.keys(m.HELP),
-      registered: [...window.app.router.factories.keys()],
-    })),
-  );
+  const topics = await page.evaluate(async () => {
+    const help = '/src/data/help.ts';
+    const { HELP }: typeof import('../../src/data/help.ts') = await import(help);
+    return Object.keys(HELP);
+  });
+  const registered = await page.evaluate(registeredScreens);
   expect(topics.filter(topic => !registered.includes(topic))).toEqual([]);
 });
 
 /** Opens one screen from the settings hub, the way the user does. */
-async function openFromHub(page, button, screen) {
+async function openFromHub(page: Page, button: string, screen: string) {
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.locator('[data-screen="settings"]').getByRole('button', { name: button, exact: true }).click();
   const el = showing(page, screen);
@@ -124,7 +135,7 @@ async function openFromHub(page, button, screen) {
   return el;
 }
 
-const saved = (page, key) =>
+const saved = (page: Page, key: string) =>
   page.evaluate(k => (JSON.parse(localStorage.getItem('cj.settings') ?? '{}').values ?? {})[k], key);
 
 test('the theme dropdown switches the theme and keeps it across a reload', async ({ page }) => {
@@ -184,7 +195,7 @@ test('the two peek modes exclude each other and survive a reload', async ({ page
 test('choosing an unusual game applies its rules and leaving it puts them back', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const setting = key => page.evaluate(k => window.app.settings.get(k), key);
+  const setting = (key: SettingKey) => page.evaluate(k => window.app.settings.get(k), key);
   const el = await openFromHub(page, 'Unusual Games', 'settings.unusualGames');
   const game = el.locator('select[name="bonuses.game"]');
   expect(await setting('rules.playerBlackjackAlwaysWins')).toBe(false);

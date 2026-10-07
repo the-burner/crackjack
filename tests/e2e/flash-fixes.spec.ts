@@ -2,17 +2,11 @@
 // sits, and what the clock, the Pause button and the grid do once a drill is
 // over or has no tests to grade.
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { openWithSettings as open } from './support/app.ts';
+import { DRILLS, emptyMask, launchDrill, statsText } from './support/drills.ts';
 
 test.use({ serviceWorkers: 'block' });
-
-/** Boolean grids shaped like the strategy tables. */
-const emptyMask = () =>
-  Object.fromEntries(
-    ['split', 'hardStand', 'softDouble', 'hardDouble', 'softStand', 'surrender'].map(name => [
-      name,
-      Array.from({ length: 10 }, () => new Array(10).fill(false)),
-    ]),
-  );
 
 const ONLY_HARD_STAND = {
   hardStand: true,
@@ -23,26 +17,7 @@ const ONLY_HARD_STAND = {
   surrender: false,
 };
 
-/** Opens the app with the given settings already saved. */
-async function open(page, settings = {}) {
-  await page.addInitScript(values => {
-    localStorage.clear();
-    localStorage.setItem('cj.settings', JSON.stringify(values));
-  }, settings);
-  await page.goto('/index.html');
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
-}
-
-/** Launches the Flash drill and waits out the "2, 1" countdown. */
-async function launch(page) {
-  await page.getByRole('button', { name: 'Flash Drills' }).click();
-  await page.locator('[data-screen="drills.flash.options"] [data-action="launch"]').click();
-  const screen = page.locator('[data-screen="drills.flash"]');
-  await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
-  return screen;
-}
-
-const statsText = screen => screen.locator('.drill__stats').innerText();
+const launch = (page: Page) => launchDrill(page, DRILLS.flash);
 
 /** Every hand is 16 against a ten at a count of zero, so Stand is right. */
 const FIXED_16_V_TEN = () => {
@@ -91,7 +66,7 @@ test('the random count straddles zero for a balanced system', async ({ page }) =
   });
   const screen = await launch(page);
   const hit = screen.locator('[data-action="hit"]');
-  const counts = [];
+  const counts: number[] = [];
   for (let hand = 0; hand < 40; hand++) {
     counts.push(Number((await screen.locator('.drill__count').innerText()).replace('Count: ', '')));
     await hit.click();
@@ -113,6 +88,7 @@ test('pause is off once the drill has finished', async ({ page }) => {
 });
 
 test('the clock stops while the strategy table covers the drill', async ({ page }) => {
+  await page.clock.install();
   await open(page, {
     ...FIXED_16_V_TEN(),
     'drills.flash.testMode': 'warn',
@@ -123,7 +99,7 @@ test('the clock stops while the strategy table covers the drill', async ({ page 
   await screen.locator('[data-action="hit"]').click();
   await page.locator('.dialog').getByRole('button', { name: 'Table' }).click();
   await expect(page.locator('[data-screen="strategy.tables"]')).toBeVisible();
-  await page.waitForTimeout(4000);
+  await page.clock.runFor(4000);
   await page.locator('[data-screen="strategy.tables"] [data-action="back"]').click();
   await expect(screen.locator('.drill__countdown')).toBeHidden({ timeout: 5000 });
   expect(await statsText(screen)).toMatch(/Time: 00:00:0[0-2]/);
@@ -139,7 +115,7 @@ test('no tests mode neither grades the index test nor records an error', async (
   });
   const screen = await launch(page);
   const grid = screen.locator('canvas.drill__answers');
-  const box = await grid.boundingBox();
+  const box = (await grid.boundingBox())!;
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 6; column++) {
       await grid.click({ position: { x: (box.width / 6) * (column + 0.5), y: (box.height / 3) * (row + 0.5) } });
@@ -178,22 +154,22 @@ test('the index test grid leaves the cards on screen in landscape', async ({ pag
     await page.setViewportSize(size);
     const screen = page.locator('[data-screen="drills.flash"]');
     if (!(await screen.count())) await launch(page);
-    const display = await screen.locator('.drill__display').boundingBox();
+    const display = (await screen.locator('.drill__display').boundingBox())!;
     expect(display.y + display.height, `${size.width}x${size.height}`).toBeLessThanOrEqual(size.height);
   }
 });
 
 test('the closing text is set in the app font', async ({ page }) => {
   await page.addInitScript(() => {
-    const { get, set } = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font');
+    const { get, set } = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font')!;
     window.canvasFonts = [];
     Object.defineProperty(CanvasRenderingContext2D.prototype, 'font', {
-      get() {
-        return get.call(this);
+      get(this: CanvasRenderingContext2D) {
+        return get!.call(this);
       },
-      set(value) {
+      set(this: CanvasRenderingContext2D, value: string) {
         window.canvasFonts.push(value);
-        set.call(this, value);
+        set!.call(this, value);
       },
     });
   });
