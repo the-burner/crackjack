@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HELP } from '../../src/data/help.ts';
+import { HELP } from '@/data/help';
 
 /** Tags that are closed without being open, or left open, in one help page. */
 function tagProblems(html: string) {
@@ -61,7 +61,7 @@ describe('the unusual games help', () => {
   });
 
   it('describes only games the app offers', async () => {
-    const { BUILTIN_SIDE_BET_GAMES } = await import('../../src/data/side-bet-games.ts');
+    const { BUILTIN_SIDE_BET_GAMES } = await import('@/data/side-bet-games');
     // The help abbreviates "blackjack" to "BJ", so normalise both.
     const key = (name: string) =>
       name

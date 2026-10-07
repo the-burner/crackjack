@@ -1,13 +1,13 @@
 // Full table drills: a whole table of hands is dealt at once and the player is
 // asked for a count. This module owns the table layout and the dealing rules.
 
-import { valueOf } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import type { Random } from '../../core/random.ts';
-import { CARD_ASPECT } from '../../ui/card-sprites.ts';
-import type { DrillCounts } from '../shared/count-answers.ts';
+import { valueOf } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { Random } from '@/core/random';
+import { CARD_ASPECT } from '@/ui/card-sprites';
+import type { DrillCounts } from '@/drills/shared/count-answers';
 
-export { isAceCountDrill } from '../shared/count-answers.ts';
+export { isAceCountDrill } from '@/drills/shared/count-answers';
 
 export type FullDrill = 'runningCount' | 'acesLeft' | 'acesDealt' | 'tenSideCount' | 'twoTables';
 export type HandStyle = 'twoToFourCards' | 'firstTwoCards' | 'scattered';

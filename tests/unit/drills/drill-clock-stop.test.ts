@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DrillClock, TIMER_MODE } from '../../../src/drills/shared/drill-clock.ts';
+import { DrillClock, TIMER_MODE } from '@/drills/shared/drill-clock';
 
 describe('a DrillClock stopped while paused', () => {
   it('stays stopped when resumed', () => {

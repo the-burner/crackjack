@@ -2,12 +2,12 @@
 // events show it, and the error waiting to be called. No DOM and no bankroll:
 // the table screen changes the bankroll through the session.
 
-import { valueOf } from '../core/cards.ts';
-import type { CardId } from '../core/cards.ts';
-import { dealerPeeks } from './engine/rules.ts';
-import type { Rules } from './engine/rules.ts';
-import type { Hand, HandKey } from './engine/hand.ts';
-import type { GameEvent, GameEventOf } from './engine/events.ts';
+import { valueOf } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { dealerPeeks } from './engine/rules';
+import type { Rules } from './engine/rules';
+import type { Hand, HandKey } from './engine/hand';
+import type { GameEvent, GameEventOf } from './engine/events';
 import {
   pickDealerError,
   errorHandFrom,
@@ -17,8 +17,8 @@ import {
   claimFoul,
   DEALER_ERROR,
   ERROR_LABELS,
-} from './dealer-errors.ts';
-import type { DealerError, DealerErrorType } from './dealer-errors.ts';
+} from './dealer-errors';
+import type { DealerError, DealerErrorType } from './dealer-errors';
 
 /** True when a blackjack could still be under an ace or ten the dealer never checked. */
 export function blackjackUnknown(rules: Rules, upcard: CardId | undefined): boolean {

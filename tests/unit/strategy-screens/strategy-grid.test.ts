@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE } from '../../../src/core/strategy/strategy-tables.ts';
-import type { Strategy, TableOptions } from '../../../src/core/strategy/strategy-tables.ts';
-import type { OneBased } from '../../../src/core/strategy/strategy-file.ts';
-import { NEVER, ALWAYS, NO_ENTRY } from '../../../src/core/strategy/strategy-file.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
+import { buildStrategy, CODE } from '@/core/strategy/strategy-tables';
+import type { Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import type { OneBased } from '@/core/strategy/strategy-file';
+import { NEVER, ALWAYS, NO_ENTRY } from '@/core/strategy/strategy-file';
+import { STRATEGY_FILES } from '@/data/strategy-files';
 import {
   GRID_COLOR,
   TABLE_VIEWS,
@@ -18,8 +18,8 @@ import {
   specialCode,
   specialtyPlays,
   viewByKey,
-} from '../../../src/core/strategy/strategy-grid.ts';
-import type { TableGridView } from '../../../src/core/strategy/strategy-grid.ts';
+} from '@/core/strategy/strategy-grid';
+import type { TableGridView } from '@/core/strategy/strategy-grid';
 
 // Every key used below names a grid view, not the counts view.
 const view = (key: string) => viewByKey(key) as TableGridView;

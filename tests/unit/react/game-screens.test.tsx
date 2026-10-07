@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { GameSession } from '../../../src/game/session.ts';
-import { GameStats } from '../../../src/game/screens/stats.tsx';
-import { BetSelect } from '../../../src/game/screens/bet-select.tsx';
-import { createTestApp, renderScreen } from '../../support/render.tsx';
+import { GameSession } from '@/game/session';
+import { GameStats } from '@/game/screens/stats';
+import { BetSelect } from '@/game/screens/bet-select';
+import { createTestApp, renderScreen } from '../../support/render';
 
 /** The value shown in the stats row labelled `label`, or null without one. */
 function stat(label: string): string | null {

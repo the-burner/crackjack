@@ -1,8 +1,8 @@
 // A single hand at the table.
 
-import { handTotals, valueOf, rankOf, suitOf } from '../../core/cards.ts';
-import type { CardId, HandTotals } from '../../core/cards.ts';
-import type { Result } from './settlement.ts';
+import { handTotals, valueOf, rankOf, suitOf } from '@/core/cards';
+import type { CardId, HandTotals } from '@/core/cards';
+import type { Result } from './settlement';
 
 /** Who is playing a hand. */
 export const PLAYER = { human: 'human', computer: 'computer' } as const;

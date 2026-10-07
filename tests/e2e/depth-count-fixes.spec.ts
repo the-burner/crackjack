@@ -3,8 +3,8 @@
 // outlive Pause or Restart, and the end of a shoe must show its last cards.
 import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { openWithSettings as open } from './support/app.ts';
-import { DRILLS, launchDrill as launch, statsText } from './support/drills.ts';
+import { openWithSettings as open } from './support/app';
+import { DRILLS, launchDrill as launch, statsText } from './support/drills';
 
 const DEPTH = DRILLS.depth;
 const COUNT = DRILLS.count;
@@ -256,7 +256,7 @@ test.describe('count drill', () => {
 const recordDeals = (page: Page) =>
   page.evaluate(async () => {
     const url = '/src/drills/shared/shoe.ts';
-    const { DrillShoe }: typeof import('../../src/drills/shared/shoe.ts') = await import(url);
+    const { DrillShoe }: typeof import('@/drills/shared/shoe') = await import(url);
     const deal = DrillShoe.prototype.deal;
     window.__cjDeals = [];
     DrillShoe.prototype.deal = function recordedDeal(this: InstanceType<typeof DrillShoe>) {

@@ -1,8 +1,8 @@
 // Speed/Mechanics: the three speed sliders and the operational switches.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingSlider, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingSlider, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
 
 const NOTE = 'Operational controls are found here. Move speed controls to the right for faster operation.';
 

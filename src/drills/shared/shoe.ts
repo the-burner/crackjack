@@ -1,13 +1,13 @@
 // A shoe of cards for the counting drills: shuffled card ids dealt in order,
 // with the running count kept by a Counter.
 
-import { CARDS_PER_DECK } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import { shuffle as shuffleArray, defaultRandom } from '../../core/random.ts';
-import type { Random } from '../../core/random.ts';
-import { Counter } from '../../core/counting.ts';
-import type { CounterSettings } from '../../core/counting.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
+import { CARDS_PER_DECK } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { shuffle as shuffleArray, defaultRandom } from '@/core/random';
+import type { Random } from '@/core/random';
+import { Counter } from '@/core/counting';
+import type { CounterSettings } from '@/core/counting';
+import type { Strategy } from '@/core/strategy/strategy-tables';
 
 /** Which sign of count value the drills deal more of. */
 export type Bias = 'none' | 'negative' | 'positive';

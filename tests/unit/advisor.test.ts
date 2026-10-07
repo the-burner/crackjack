@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, INDEX_SETS } from '../../src/core/strategy/strategy-tables.ts';
-import { advisePlay, adviseInsurance } from '../../src/core/strategy/advisor.ts';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
-import { loadFixture } from '../support/fixtures.ts';
-import type { Probe } from '../../src/core/strategy/advisor.ts';
+import { buildStrategy, INDEX_SETS } from '@/core/strategy/strategy-tables';
+import { advisePlay, adviseInsurance } from '@/core/strategy/advisor';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { loadFixture } from '../support/fixtures';
+import type { Probe } from '@/core/strategy/advisor';
 
 interface RecordedConfig {
   system: number;

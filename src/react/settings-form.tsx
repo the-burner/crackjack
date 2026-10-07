@@ -5,11 +5,11 @@
 // shows the result.
 
 import type { ReactNode } from 'react';
-import { applyRuleChange } from '../settings/rules-logic.ts';
-import type { SettingKey, SettingValues } from '../settings/schema.ts';
-import type { SelectOption } from '../ui/components.ts';
-import { useSettings } from './app-context.ts';
-import { CheckList, Select, Slider, StandardScreen, ValueButton } from './components.tsx';
+import { applyRuleChange } from '@/settings/rules-logic';
+import type { SettingKey, SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
+import { useSettings } from './app-context';
+import { CheckList, Select, Slider, StandardScreen, ValueButton } from './components';
 
 /** Writes a setting and whatever rules it implies. */
 export function useWriteSetting() {

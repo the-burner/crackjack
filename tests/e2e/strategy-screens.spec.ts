@@ -2,7 +2,7 @@
 // the UI.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { answerDialog, openFromHub, setting } from './support/settings.ts';
+import { answerDialog, openFromHub, setting } from './support/settings';
 
 test.use({ serviceWorkers: 'block' });
 

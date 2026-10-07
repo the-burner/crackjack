@@ -2,7 +2,7 @@
 // what the table drew and for how long.
 
 import { test, expect } from '@playwright/test';
-import { seedRandom } from './support/app.ts';
+import { seedRandom } from './support/app';
 
 test('records each frame the table draws, when a test asks it to', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

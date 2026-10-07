@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FlashOptions, flashOptionsScreen } from '../../../src/drills/flash/options.tsx';
-import { DepthOptions } from '../../../src/drills/depth/options.tsx';
-import { CountOptions } from '../../../src/drills/count/options.tsx';
-import { FullOptions } from '../../../src/drills/full/options.tsx';
-import { FlashErrors } from '../../../src/drills/flash/errors.tsx';
-import { SITUATIONS, SITUATION_LABELS } from '../../../src/drills/flash/logic.ts';
-import { renderScreen } from '../../support/render.tsx';
+import { FlashOptions, flashOptionsScreen } from '@/drills/flash/options';
+import { DepthOptions } from '@/drills/depth/options';
+import { CountOptions } from '@/drills/count/options';
+import { FullOptions } from '@/drills/full/options';
+import { FlashErrors } from '@/drills/flash/errors';
+import { SITUATIONS, SITUATION_LABELS } from '@/drills/flash/logic';
+import { renderScreen } from '../../support/render';
 
 // The option selects carry no label of their own (each option names the
 // setting), so a select is found by one of its options.

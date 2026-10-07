@@ -1,9 +1,9 @@
 // The blackjack game: the table and the screens reached from it.
 
-import { tableScreen } from './screens/table.ts';
-import { betSelectScreen } from './screens/bet-select.tsx';
-import { gameStatsScreen } from './screens/stats.tsx';
-import type { Router } from '../app/router.ts';
+import { tableScreen } from './screens/table';
+import { betSelectScreen } from './screens/bet-select';
+import { gameStatsScreen } from './screens/stats';
+import type { Router } from '@/app/router';
 
 export function registerGameScreens(router: Router): Router {
   return router

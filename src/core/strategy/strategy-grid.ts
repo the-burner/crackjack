@@ -2,10 +2,10 @@
 // table has, what each cell shows, and which colour it gets. Pure functions so
 // the rendering rules can be unit tested.
 
-import { NEVER, ALWAYS, NO_ENTRY } from './strategy-file.ts';
-import type { TableName } from './strategy-file.ts';
-import { CODE_DESCRIPTIONS, SPLIT_PLUS3_PER_DECK } from './strategy-tables.ts';
-import type { Strategy } from './strategy-tables.ts';
+import { NEVER, ALWAYS, NO_ENTRY } from './strategy-file';
+import type { TableName } from './strategy-file';
+import { CODE_DESCRIPTIONS, SPLIT_PLUS3_PER_DECK } from './strategy-tables';
+import type { Strategy } from './strategy-tables';
 
 /** Cell colours. */
 export const GRID_COLOR = {

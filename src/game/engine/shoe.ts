@@ -1,10 +1,10 @@
 // The shoe: cards still available, drawn in random order, with the cut card
 // and shuffle rules.
 
-import { CARDS_PER_DECK } from '../../core/cards.ts';
-import { defaultRandom } from '../../core/random.ts';
-import type { Random } from '../../core/random.ts';
-import type { CardId } from '../../core/cards.ts';
+import { CARDS_PER_DECK } from '@/core/cards';
+import { defaultRandom } from '@/core/random';
+import type { Random } from '@/core/random';
+import type { CardId } from '@/core/cards';
 
 export const SHUFFLE_MODE = { cutCard: 'cutCard', rounds: 'rounds' } as const;
 export type ShuffleMode = (typeof SHUFFLE_MODE)[keyof typeof SHUFFLE_MODE];

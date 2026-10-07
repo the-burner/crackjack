@@ -1,23 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Setup } from '../../../src/screens/settings/setup.tsx';
-import { CommonRules } from '../../../src/screens/settings/common-rules.tsx';
-import { PlayVariations } from '../../../src/screens/settings/play-variations.tsx';
-import { Bonuses } from '../../../src/screens/settings/bonuses.tsx';
-import { UnusualGames } from '../../../src/screens/settings/unusual-games.tsx';
-import { SettingsHub } from '../../../src/screens/settings/hub.tsx';
-import { Home } from '../../../src/screens/home.tsx';
-import { Help } from '../../../src/screens/help.tsx';
-import { createTestApp, renderScreen } from '../../support/render.tsx';
+import { Setup } from '@/screens/settings/setup';
+import { CommonRules } from '@/screens/settings/common-rules';
+import { PlayVariations } from '@/screens/settings/play-variations';
+import { Bonuses } from '@/screens/settings/bonuses';
+import { UnusualGames } from '@/screens/settings/unusual-games';
+import { SettingsHub } from '@/screens/settings/hub';
+import { Home } from '@/screens/home';
+import { Help } from '@/screens/help';
+import { createTestApp, renderScreen } from '../../support/render';
 
-vi.mock('../../../src/ui/dialogs.ts', async importOriginal => ({
-  ...(await importOriginal<typeof import('../../../src/ui/dialogs.ts')>()),
+vi.mock('@/ui/dialogs', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/ui/dialogs')>()),
   confirm: vi.fn(async () => true),
 }));
 
-vi.mock('../../../src/data/help.ts', async importOriginal => {
-  const { HELP } = await importOriginal<typeof import('../../../src/data/help.ts')>();
+vi.mock('@/data/help', async importOriginal => {
+  const { HELP } = await importOriginal<typeof import('@/data/help')>();
   return { HELP: { ...HELP, 'test.links': '<p><a href="https://example.com">site</a></p>' } };
 });
 

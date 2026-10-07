@@ -1,11 +1,11 @@
 // Dealer Errs/Biases: deliberate dealer mistakes and a
 // non-random dealing bias.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
 
 const NOTE = 'The dealer can be made to deal cards non-randomly or make errors. Catching errors is important.';
 

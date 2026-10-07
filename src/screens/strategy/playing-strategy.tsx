@@ -2,14 +2,14 @@
 // of its indices to use, the rules the tables are built for, and the table
 // display.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { Button, CheckList, Select, StandardScreen, ValueButton } from '../../react/components.tsx';
-import { SettingChecks } from '../../react/settings-form.tsx';
-import { applyIndexRangeChange } from '../../settings/rules-logic.ts';
-import { INDEX_SETS } from '../../core/strategy/strategy-tables.ts';
-import type { IndexSet } from '../../core/strategy/strategy-tables.ts';
-import type { SettingCheck } from '../../react/settings-form.tsx';
+import { reactScreen } from '@/react/screen';
+import { useApp, useSettings } from '@/react/app-context';
+import { Button, CheckList, Select, StandardScreen, ValueButton } from '@/react/components';
+import { SettingChecks } from '@/react/settings-form';
+import { applyIndexRangeChange } from '@/settings/rules-logic';
+import { INDEX_SETS } from '@/core/strategy/strategy-tables';
+import type { IndexSet } from '@/core/strategy/strategy-tables';
+import type { SettingCheck } from '@/react/settings-form';
 
 const INDEX_SET_LABELS: Record<IndexSet, string> = {
   all: 'All Indices',

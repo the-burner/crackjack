@@ -5,9 +5,9 @@
 // one kind of counting system each: the bet count for systems that ignore aces,
 // the play and insurance counts for systems that count them.
 
-import { COUNT_UNIT, roundTrueCount } from '../../core/counting.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import type { DrillShoe } from './shoe.ts';
+import { COUNT_UNIT, roundTrueCount } from '@/core/counting';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { DrillShoe } from './shoe';
 
 /** True-count units per deck, by COUNT_UNIT; running-count-only systems have none. */
 export const UNITS_PER_DECK: Readonly<Partial<Record<number, number>>> = {

@@ -1,8 +1,8 @@
 // Bonuses: blackjack payouts and oddball bonus payouts.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
 
 const NOTE = 'Oddball bonuses are found here.';
 

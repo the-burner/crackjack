@@ -1,11 +1,11 @@
 // Count Drills: Options.
 
-import type { App } from '../../app/app.ts';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { reactScreen } from '../../react/screen.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
-import { alert } from '../../ui/dialogs.ts';
+import type { App } from '@/app/app';
+import { useApp, useSettings } from '@/react/app-context';
+import { reactScreen } from '@/react/screen';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
+import { alert } from '@/ui/dialogs';
 import {
   DrillOptionsScreen,
   Group,
@@ -21,10 +21,10 @@ import {
   TRAY_OPTIONS,
   BIAS_OPTIONS,
   END_WARNING_OPTIONS,
-} from '../shared/options-screen.tsx';
-import { drillStrategy } from '../shared/drill-settings.ts';
-import { trayStyleFor, TRAY_CAPACITY } from '../depth/logic.ts';
-import { COUNT_DRILL_LABELS, aceDrillSuits, ACE_DRILLS } from './logic.ts';
+} from '@/drills/shared/options-screen';
+import { drillStrategy } from '@/drills/shared/drill-settings';
+import { trayStyleFor, TRAY_CAPACITY } from '@/drills/depth/logic';
+import { COUNT_DRILL_LABELS, aceDrillSuits, ACE_DRILLS } from './logic';
 
 type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
 

@@ -2,18 +2,18 @@
 // filling and emptying between rounds.
 
 import { describe, it, expect, vi } from 'vitest';
-import { BlackjackGame } from '../../../src/game/engine/game.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { PLAYER } from '../../../src/game/engine/hand.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { Random } from '../../../src/core/random.ts';
-import type { Rules } from '../../../src/game/engine/rules.ts';
-import type { GameOptions, PeekingOptions, TableConfig } from '../../../src/game/engine/game.ts';
-import type { SettingValues } from '../../../src/settings/schema.ts';
+import { BlackjackGame } from '@/game/engine/game';
+import { rulesFrom } from '@/game/engine/rules';
+import { PLAYER } from '@/game/engine/hand';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { Random } from '@/core/random';
+import type { Rules } from '@/game/engine/rules';
+import type { GameOptions, PeekingOptions, TableConfig } from '@/game/engine/game';
+import type { SettingValues } from '@/settings/schema';
 
 function makeRules(overrides: Partial<SettingValues> = {}) {
   const settings = new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));

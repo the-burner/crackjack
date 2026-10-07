@@ -65,7 +65,7 @@
   --text-secondary: #555;
   --toggle-off: rgba(0, 0, 0, 0.16);
   --toggle-knob: #fff;
-  --accent: var(--nav-bg);
+  --link: var(--nav-bg);
   --logo-crack: var(--chrome);
   --logo-jack: var(--nav-bg);
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -191,7 +191,7 @@ body {
   min-height: 40px;
   padding: 0 8px;
   background: transparent;
-  color: var(--accent);
+  color: var(--link);
   font: 400 17px var(--font);
 }
 .topbar .btn--nav:active {
@@ -596,7 +596,7 @@ body {
 .slider input[type='range'] {
   flex: 1;
   min-width: 0;
-  accent-color: var(--accent);
+  accent-color: var(--link);
 }
 
 /* Dialogs. */

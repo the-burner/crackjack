@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { GameSession } from '../../../src/game/session.ts';
-import { createServices } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
+import { GameSession } from '@/game/session';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
 
 function makeApp(backend = new MemoryBackend()) {
   const app = createServices({ backend });

@@ -11,9 +11,9 @@ import {
   normalizeDownload,
   sideBetUrl,
   strategyUrl,
-} from '../../tools/bundle-import.ts';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../src/data/side-bet-games.ts';
+} from '../../tools/bundle-import';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
 
 const read = (file: string) => fs.readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 const sources = () => ({ files: read('src/data/strategy-files.ts'), catalog: read('src/settings/strategies.ts') });

@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.ts';
-import type { GameOptions, TableConfig } from '../../../src/game/engine/game.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { SettingsPatch } from '../../../src/settings/schema.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import { decodeSideBetGame } from '../../../src/settings/side-bet-games.ts';
-import { sideBetSpots } from '../../../src/game/engine/side-bets.ts';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.ts';
+import { BlackjackGame, STATE, ACTION } from '@/game/engine/game';
+import type { GameOptions, TableConfig } from '@/game/engine/game';
+import { rulesFrom } from '@/game/engine/rules';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { SettingsPatch } from '@/settings/schema';
+import { seededRandom } from '@/core/random';
+import { decodeSideBetGame } from '@/settings/side-bet-games';
+import { sideBetSpots } from '@/game/engine/side-bets';
+import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
 
 const SPADES = 0,
   HEARTS = 2,
@@ -560,8 +560,8 @@ describe('side bets through the engine', () => {
 
 describe('GameSession', () => {
   it('plays a round, keeps the count, and persists the bankroll', async () => {
-    const { GameSession } = await import('../../../src/game/session.ts');
-    const { createServices } = await import('../../../src/app/app.ts');
+    const { GameSession } = await import('@/game/session');
+    const { createServices } = await import('@/app/app');
     const app = createServices({ backend: new MemoryBackend() });
     // A silent stand-in for the Web Audio player.
     app.sound = { play() {} } as unknown as typeof app.sound;

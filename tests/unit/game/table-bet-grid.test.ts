@@ -9,8 +9,8 @@ import {
   ROWS,
   TILE,
   TILE_GAP,
-} from '../../../src/game/table/bet-grid.ts';
-import { trayPhoto, shoePhoto } from '../../../src/game/table/photos.ts';
+} from '@/game/table/bet-grid';
+import { trayPhoto, shoePhoto } from '@/game/table/photos';
 
 const ramp = (...rows: (number | [chips: number, hands: number])[]) => ({
   minCount: 0,

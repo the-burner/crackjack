@@ -1,13 +1,13 @@
 // Downloads a strategy or side-bet game by its export code and bundles it into the app.
 //
-//   node tools/bundle-import.ts strategy <code> [--name "Display name"]
-//   node tools/bundle-import.ts side-bet <code> [--name "Display name"]
+//   npx tsx tools/bundle-import.ts strategy <code> [--name "Display name"]
+//   npx tsx tools/bundle-import.ts side-bet <code> [--name "Display name"]
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseStrategyFile } from '../src/core/strategy/strategy-file.ts';
-import { decodeSideBetGame, sideBetGameName } from '../src/settings/side-bet-games.ts';
+import { parseStrategyFile } from '@/core/strategy/strategy-file';
+import { decodeSideBetGame, sideBetGameName } from '@/settings/side-bet-games';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STRATEGY_FILES = 'src/data/strategy-files.ts';
@@ -140,7 +140,7 @@ async function main([kind, code, ...rest]: string[]) {
   const nameAt = rest.indexOf('--name');
   const name = nameAt === -1 ? undefined : rest[nameAt + 1];
   if (!['strategy', 'side-bet'].includes(kind) || !code || (nameAt !== -1 && !name)) {
-    throw new Error('usage: node tools/bundle-import.ts <strategy|side-bet> <code> [--name "Display name"]');
+    throw new Error('usage: npx tsx tools/bundle-import.ts <strategy|side-bet> <code> [--name "Display name"]');
   }
   let added;
   if (kind === 'strategy') {

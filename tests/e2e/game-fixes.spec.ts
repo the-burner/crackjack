@@ -2,9 +2,9 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { seedRandom, visibleOneOf } from './support/app.ts';
-import type { SavedSettings } from './support/app.ts';
-import { readoutRunningCount as feltCount, statsRunningCount } from './support/table.ts';
+import { seedRandom, visibleOneOf } from './support/app';
+import type { SavedSettings } from './support/app';
+import { readoutRunningCount as feltCount, statsRunningCount } from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
 
@@ -155,7 +155,7 @@ test.describe('the result shown on a seat at the payoff', () => {
         const el = document.querySelector<HTMLElement>('.table__result')!;
         const tone = el.dataset.tone;
         const url = '/src/ui/toast.ts';
-        const { toast }: typeof import('../../src/ui/toast.ts') = await import(url);
+        const { toast }: typeof import('@/ui/toast') = await import(url);
         const pop = toast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain' });
         const pick = (node: Element) => {
           const c = getComputedStyle(node);

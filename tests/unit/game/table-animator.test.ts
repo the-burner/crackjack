@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { planSteps, pauseForSpeed, createAnimator } from '../../../src/game/table/animator.ts';
-import { swipeAction, MIN_SWIPE } from '../../../src/game/table/gestures.ts';
-import type { Step } from '../../../src/game/table/animator.ts';
-import type { GameEvent } from '../../../src/game/engine/events.ts';
-import type { HandKey } from '../../../src/game/engine/hand.ts';
-import type { Result } from '../../../src/game/engine/settlement.ts';
+import { planSteps, pauseForSpeed, createAnimator } from '@/game/table/animator';
+import { swipeAction, MIN_SWIPE } from '@/game/table/gestures';
+import type { Step } from '@/game/table/animator';
+import type { GameEvent } from '@/game/engine/events';
+import type { HandKey } from '@/game/engine/hand';
+import type { Result } from '@/game/engine/settlement';
 
 // The events here carry only the fields the planner reads, and the steps are
 // read back without narrowing each event first.

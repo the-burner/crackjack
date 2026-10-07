@@ -1,23 +1,23 @@
 // Count drills: cards are flashed, then a discard tray and a grid of counts.
 
-import { h } from '../../ui/dom.ts';
-import { button } from '../../ui/components.ts';
-import { setupCanvas, drawCard, loadCardImages } from '../../ui/card-sprites.ts';
-import { cssVar } from '../../ui/theme.ts';
-import type { App, Screen } from '../../app/app.ts';
-import type { CardId } from '../../core/cards.ts';
-import { drillShell, drillClockFor } from '../shared/drill-screen.ts';
-import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.ts';
-import { drillStrategy } from '../shared/drill-settings.ts';
-import { DrillShoe } from '../shared/shoe.ts';
-import { drillCounts, testsPossible } from '../shared/count-answers.ts';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../shared/count-grid.ts';
-import { drawGridIn } from '../shared/answer-grid.ts';
-import type { AnswerGrid } from '../shared/answer-grid.ts';
-import { AnswerPause, gridAnswers } from '../shared/grid-answers.ts';
-import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '../shared/end-warning.ts';
-import { loadTrayImage, drawTray, trayImage } from '../shared/discard-tray.ts';
-import type { TrayPhoto } from '../shared/discard-tray.ts';
+import { h } from '@/ui/dom';
+import { button } from '@/ui/components';
+import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
+import { cssVar } from '@/ui/theme';
+import type { App, Screen } from '@/app/app';
+import type { CardId } from '@/core/cards';
+import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
+import { drillStrategy } from '@/drills/shared/drill-settings';
+import { DrillShoe } from '@/drills/shared/shoe';
+import { drillCounts, testsPossible } from '@/drills/shared/count-answers';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '@/drills/shared/count-grid';
+import { drawGridIn } from '@/drills/shared/answer-grid';
+import type { AnswerGrid } from '@/drills/shared/answer-grid';
+import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
+import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '@/drills/shared/end-warning';
+import { loadTrayImage, drawTray, trayImage } from '@/drills/shared/discard-tray';
+import type { TrayPhoto } from '@/drills/shared/discard-tray';
 import {
   flashSize,
   maxFlashSize,
@@ -28,8 +28,8 @@ import {
   countAnswer,
   halfSteps,
   answerIndex,
-} from './logic.ts';
-import type { FlashLayout } from './logic.ts';
+} from './logic';
+import type { FlashLayout } from './logic';
 
 /** One group of cards on the felt. */
 interface Flash {

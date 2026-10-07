@@ -1,8 +1,8 @@
 // Play Variations: dealer behavior and unusual rules.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
 
 const NOTE = 'Dealer behavior and unusual rules.';
 

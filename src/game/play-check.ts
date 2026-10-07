@@ -1,18 +1,18 @@
 // Checks the player's decisions against their chosen strategy, and their bet
 // against their bet ramp.
 
-import { advisePlay, adviseInsurance, ACTION as ADVICE, SECTION } from '../core/strategy/advisor.ts';
-import type { Action as Advice, PlayAdvice, Section } from '../core/strategy/advisor.ts';
-import type { Strategy } from '../core/strategy/strategy-tables.ts';
-import type { TableName } from '../core/strategy/strategy-file.ts';
-import { ACTION } from './engine/game.ts';
-import type { GameAction } from './engine/game.ts';
-import { valueOf } from '../core/cards.ts';
-import type { CardId } from '../core/cards.ts';
-import { doubleAllowed, splitAllowed, surrenderAllowed } from './engine/rules.ts';
-import type { Rules } from './engine/rules.ts';
-import type { Hand } from './engine/hand.ts';
-import type { Ramp } from '../settings/bet-ramp.ts';
+import { advisePlay, adviseInsurance, ACTION as ADVICE, SECTION } from '@/core/strategy/advisor';
+import type { Action as Advice, PlayAdvice, Section } from '@/core/strategy/advisor';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { TableName } from '@/core/strategy/strategy-file';
+import { ACTION } from './engine/game';
+import type { GameAction } from './engine/game';
+import { valueOf } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { doubleAllowed, splitAllowed, surrenderAllowed } from './engine/rules';
+import type { Rules } from './engine/rules';
+import type { Hand } from './engine/hand';
+import type { Ramp } from '@/settings/bet-ramp';
 
 /** The counts a decision is judged at. */
 export interface PlayCounts {

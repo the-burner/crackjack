@@ -2,27 +2,20 @@
 // (tests/fixtures/drills-*.json.gz, captured by tools/capture-drill-fixtures.mjs).
 
 import { describe, it, expect } from 'vitest';
-import { loadFixture } from '../../support/fixtures.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '../../../src/core/counting.ts';
-import { emptyTallies } from '../../../src/services/error-tallies.ts';
-import {
-  buildHandList,
-  handIndex,
-  correctPlay,
-  errorCell,
-  columnOf,
-  SITUATIONS,
-} from '../../../src/drills/flash/logic.ts';
-import { depthGrid, trueCountFor } from '../../../src/drills/depth/logic.ts';
-import { trayImage, TRAY_STYLES } from '../../../src/drills/shared/discard-tray.ts';
-import { drillCounts } from '../../../src/drills/shared/count-answers.ts';
-import { DrillShoe } from '../../../src/drills/shared/shoe.ts';
-import type { CustomMask } from '../../../src/core/strategy/strategy-tables.ts';
-import type { TcDivision, TcLastDeck, TcRounding } from '../../../src/core/counting.ts';
-import type { Entry, FlashHand, HandList, Situation, Situations } from '../../../src/drills/flash/logic.ts';
-import type { DepthGridOptions } from '../../../src/drills/depth/logic.ts';
+import { loadFixture } from '../../support/fixtures';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '@/core/counting';
+import { emptyTallies } from '@/services/error-tallies';
+import { buildHandList, handIndex, correctPlay, errorCell, columnOf, SITUATIONS } from '@/drills/flash/logic';
+import { depthGrid, trueCountFor } from '@/drills/depth/logic';
+import { trayImage, TRAY_STYLES } from '@/drills/shared/discard-tray';
+import { drillCounts } from '@/drills/shared/count-answers';
+import { DrillShoe } from '@/drills/shared/shoe';
+import type { CustomMask } from '@/core/strategy/strategy-tables';
+import type { TcDivision, TcLastDeck, TcRounding } from '@/core/counting';
+import type { Entry, FlashHand, HandList, Situation, Situations } from '@/drills/flash/logic';
+import type { DepthGridOptions } from '@/drills/depth/logic';
 
 /** The table rules a recording ran with. */
 interface RecordedConfig {

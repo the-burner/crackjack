@@ -12,16 +12,16 @@ import {
   answerIndex,
   aceDrillSuits,
   isAceCountDrill,
-} from '../../../src/drills/count/logic.ts';
-import { drillCounts, isAceNeutral } from '../../../src/drills/shared/count-answers.ts';
-import { DrillShoe } from '../../../src/drills/shared/shoe.ts';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import type { Strategy, TableOptions } from '../../../src/core/strategy/strategy-tables.ts';
-import type { CounterSettings } from '../../../src/core/counting.ts';
-import type { Bias } from '../../../src/drills/shared/shoe.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { seededRandom } from '../../../src/core/random.ts';
+} from '@/drills/count/logic';
+import { drillCounts, isAceNeutral } from '@/drills/shared/count-answers';
+import { DrillShoe } from '@/drills/shared/shoe';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '@/drills/shared/count-grid';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import type { Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import type { CounterSettings } from '@/core/counting';
+import type { Bias } from '@/drills/shared/shoe';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { seededRandom } from '@/core/random';
 
 const options: TableOptions = {
   decks: 6,

@@ -3,8 +3,8 @@
 // over or has no tests to grade.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { openWithSettings as open } from './support/app.ts';
-import { DRILLS, emptyMask, launchDrill, statsText } from './support/drills.ts';
+import { openWithSettings as open } from './support/app';
+import { DRILLS, emptyMask, launchDrill, statsText } from './support/drills';
 
 test.use({ serviceWorkers: 'block' });
 

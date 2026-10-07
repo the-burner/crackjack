@@ -1,7 +1,7 @@
 // A dropdown must not claim a value it was never given.
 
 import { describe, it, expect } from 'vitest';
-import { selectedIndexFor } from '../../src/ui/components.ts';
+import { selectedIndexFor } from '@/ui/components';
 
 describe('a dropdown holding a value that is not one of its options', () => {
   const options = [

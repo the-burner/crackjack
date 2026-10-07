@@ -4,14 +4,14 @@
 // The felt, rail and circles never change while the layout holds still, so they
 // are built once into a background buffer and copied in front of every frame.
 
-import { setupCanvas, drawCard, loadCardImages } from '../../ui/card-sprites.ts';
-import { cardSlot, RAIL_SIZE } from './layout.ts';
-import type { Point, TableLayout } from './layout.ts';
-import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage } from './photos.ts';
-import { cssVar } from '../../ui/theme.ts';
-import { DEALER_KEY } from './table-state.ts';
-import type { BurnCard, ShownHand } from './table-state.ts';
-import type { HandKey } from '../engine/hand.ts';
+import { setupCanvas, drawCard, loadCardImages } from '@/ui/card-sprites';
+import { cardSlot, RAIL_SIZE } from './layout';
+import type { Point, TableLayout } from './layout';
+import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage } from './photos';
+import { cssVar } from '@/ui/theme';
+import { DEALER_KEY } from './table-state';
+import type { BurnCard, ShownHand } from './table-state';
+import type { HandKey } from '@/game/engine/hand';
 
 const FELT_SRC = 'assets/table/felt.jpg';
 const RAIL_SRC = 'assets/table/rail.png';

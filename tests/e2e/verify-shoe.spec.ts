@@ -4,10 +4,10 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import type { Frame } from './globals.d.ts';
-import { seedRandom, visibleOneOf } from './support/app.ts';
-import type { SavedSettings } from './support/app.ts';
-import { readoutRunningCount as readout, statsRunningCount as statsCount, tapBetTile } from './support/table.ts';
+import type { Frame } from './globals.d';
+import { seedRandom, visibleOneOf } from './support/app';
+import type { SavedSettings } from './support/app';
+import { readoutRunningCount as readout, statsRunningCount as statsCount, tapBetTile } from './support/table';
 
 /** Opens the table with a seeded deal and the frame, overlay and chip logs on. */
 async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: SavedSettings; seed?: number } = {}) {
@@ -74,7 +74,7 @@ const clearLogs = (page: Page) =>
 const countOf = (page: Page, cards: number[]) =>
   page.evaluate(async seen => {
     const url = '/src/core/counting.ts';
-    const { Counter }: typeof import('../../src/core/counting.ts') = await import(url);
+    const { Counter }: typeof import('@/core/counting') = await import(url);
     const decks = window.app.settings.get('table.decks');
     const counter = new Counter(window.app.strategies.current(window.app.settings, decks), {
       division: 0,

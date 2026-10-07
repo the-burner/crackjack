@@ -4,10 +4,10 @@ import type { ReactElement, ReactNode } from 'react';
 import { act, render } from '@testing-library/react';
 import { vi } from 'vitest';
 import type { Mock } from 'vitest';
-import { createServices } from '../../src/app/app.ts';
-import type { App } from '../../src/app/app.ts';
-import { MemoryBackend } from '../../src/services/storage.ts';
-import { createLifecycle, ScreenProviders } from '../../src/react/screen.tsx';
+import { createServices } from '@/app/app';
+import type { App } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { createLifecycle, ScreenProviders } from '@/react/screen';
 
 /** An app whose navigation is mocked, so tests can assert on it. */
 export type TestApp = App & { open: Mock<App['open']>; back: Mock<App['back']>; help: Mock<App['help']> };

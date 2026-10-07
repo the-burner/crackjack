@@ -8,19 +8,19 @@ import {
   withDealerError,
   bustedGoodHandError,
   createDealerErrorRound,
-} from '../../../src/game/dealer-error-round.ts';
-import { DEALER_ERROR } from '../../../src/game/dealer-errors.ts';
-import type { DealerError } from '../../../src/game/dealer-errors.ts';
-import type { GameEvent, GameEventOf } from '../../../src/game/engine/events.ts';
-import type { HandKey } from '../../../src/game/engine/hand.ts';
-import type { Result } from '../../../src/game/engine/settlement.ts';
-import type { SettingValues } from '../../../src/settings/schema.ts';
-import { Hand } from '../../../src/game/engine/hand.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
+} from '@/game/dealer-error-round';
+import { DEALER_ERROR } from '@/game/dealer-errors';
+import type { DealerError } from '@/game/dealer-errors';
+import type { GameEvent, GameEventOf } from '@/game/engine/events';
+import type { HandKey } from '@/game/engine/hand';
+import type { Result } from '@/game/engine/settlement';
+import type { SettingValues } from '@/settings/schema';
+import { Hand } from '@/game/engine/hand';
+import { rulesFrom } from '@/game/engine/rules';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
 
 const card = (rank: number, suit = 0) => cardId(rank, suit);
 

@@ -1,8 +1,8 @@
 // Standard screen layout: title bar plus a scrolling body.
 
-import { h } from './dom.ts';
-import { topBar } from './components.ts';
-import type { Children } from './dom.ts';
+import { h } from './dom';
+import { topBar } from './components';
+import type { Children } from './dom';
 
 /** What a standard screen needs of the app. */
 export type ScreenApp = {

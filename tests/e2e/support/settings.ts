@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import type { SettingKey, SettingValues } from '../../../src/settings/schema.ts';
+import type { SettingKey, SettingValues } from '@/settings/schema';
 
 /** Opens one option screen from the settings hub, which must be showing. */
 export async function openFromHub(page: Page, button: string, screen: string): Promise<Locator> {

@@ -8,11 +8,11 @@
 // The refund for a caught error and the cost reported for
 // a missed one are the same number: exactly what the player was short.
 
-import { money } from '../core/money.ts';
-import type { Random } from '../core/random.ts';
-import type { AppSettings, SettingKey } from '../settings/schema.ts';
-import type { Hand, HandKey } from './engine/hand.ts';
-import type { Result } from './engine/settlement.ts';
+import { money } from '@/core/money';
+import type { Random } from '@/core/random';
+import type { AppSettings, SettingKey } from '@/settings/schema';
+import type { Hand, HandKey } from './engine/hand';
+import type { Result } from './engine/settlement';
 
 /** The mistakes a dealer can make. */
 export const DEALER_ERROR = {

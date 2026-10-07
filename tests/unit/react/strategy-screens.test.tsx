@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Betting, BetSelect } from '../../../src/screens/strategy/betting.tsx';
-import { StrategyTables } from '../../../src/screens/strategy/tables.tsx';
-import { TrueCount } from '../../../src/screens/strategy/true-count.tsx';
-import { PlayingStrategy } from '../../../src/screens/strategy/playing-strategy.tsx';
-import { createTestApp, renderScreen } from '../../support/render.tsx';
+import { Betting, BetSelect } from '@/screens/strategy/betting';
+import { StrategyTables } from '@/screens/strategy/tables';
+import { TrueCount } from '@/screens/strategy/true-count';
+import { PlayingStrategy } from '@/screens/strategy/playing-strategy';
+import { createTestApp, renderScreen } from '../../support/render';
 
 /** The body rows of the first table on the screen (its first row is the header). */
 const bodyRows = () => within(screen.getAllByRole('table')[0]).getAllByRole('row').slice(1);

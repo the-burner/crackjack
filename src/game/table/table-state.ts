@@ -4,11 +4,11 @@
 // screen cannot render the engine's hands directly: it replays the engine's
 // events into this model one at a time and draws that instead.
 
-import { handKey, parseHandKey } from '../engine/hand.ts';
-import type { HandKey } from '../engine/hand.ts';
-import type { GameEvent } from '../engine/events.ts';
-import type { Result } from '../engine/settlement.ts';
-import type { CardId } from '../../core/cards.ts';
+import { handKey, parseHandKey } from '@/game/engine/hand';
+import type { HandKey } from '@/game/engine/hand';
+import type { GameEvent } from '@/game/engine/events';
+import type { Result } from '@/game/engine/settlement';
+import type { CardId } from '@/core/cards';
 
 export const DEALER_KEY = handKey(0, 0);
 

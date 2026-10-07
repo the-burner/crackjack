@@ -13,12 +13,12 @@ import {
   bustsGoodHandByMistake,
   bustedGoodHandShortfall,
   errorHandFrom,
-} from '../../../src/game/dealer-errors.ts';
-import { Hand } from '../../../src/game/engine/hand.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { DealerError, DealerErrorType, ErrorDealer, ErrorHand } from '../../../src/game/dealer-errors.ts';
-import type { Random } from '../../../src/core/random.ts';
-import type { AppSettings } from '../../../src/settings/schema.ts';
+} from '@/game/dealer-errors';
+import { Hand } from '@/game/engine/hand';
+import { cardId } from '@/core/cards';
+import type { DealerError, DealerErrorType, ErrorDealer, ErrorHand } from '@/game/dealer-errors';
+import type { Random } from '@/core/random';
+import type { AppSettings } from '@/settings/schema';
 
 // A boolean-only stand-in for the settings the dealer errors read.
 const settingsWith = (on: string[]) => ({ get: (key: string) => on.includes(key) }) as Pick<AppSettings, 'get'>;

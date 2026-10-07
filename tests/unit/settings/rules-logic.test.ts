@@ -5,14 +5,14 @@ import {
   type SettingReader,
   type SettingValues,
   type SettingsPatch,
-} from '../../../src/settings/schema.ts';
+} from '@/settings/schema';
 import {
   applyGameChange,
   applyIndexRangeChange,
   applyRuleChange,
   gameVariant,
   prepareLaunch,
-} from '../../../src/settings/rules-logic.ts';
+} from '@/settings/rules-logic';
 
 /** A reader over the schema defaults with the given overrides. */
 function reader(overrides: SettingsPatch = {}): SettingReader {

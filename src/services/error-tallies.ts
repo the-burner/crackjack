@@ -2,9 +2,9 @@
 // ("Drill Errors" hands). Each table is a 10 x 10 grid indexed like the
 // strategy tables: [row][dealer column].
 
-import { TABLE_NAMES } from '../core/strategy/strategy-file.ts';
-import type { TableName } from '../core/strategy/strategy-file.ts';
-import type { Storage } from './storage.ts';
+import { TABLE_NAMES } from '@/core/strategy/strategy-file';
+import type { TableName } from '@/core/strategy/strategy-file';
+import type { Storage } from './storage';
 
 const STORAGE_KEY = 'errorTallies';
 

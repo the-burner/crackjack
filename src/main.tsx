@@ -1,11 +1,13 @@
 // Entry point: creates the app, registers screens and shows the home screen.
 
-import { createApp } from './app/app.ts';
-import type { App } from './app/app.ts';
-import { registerScreens } from './screens/index.ts';
-import { applyTheme } from './ui/theme.ts';
-import { toast } from './ui/toast.ts';
-import { confirm } from './ui/dialogs.ts';
+import './index.css';
+
+import { createApp } from './app/app';
+import type { App } from './app/app';
+import { registerScreens } from './screens/index';
+import { applyTheme } from './ui/theme';
+import { toast } from './ui/toast';
+import { confirm } from './ui/dialogs';
 import { registerSW } from 'virtual:pwa-register';
 
 declare global {

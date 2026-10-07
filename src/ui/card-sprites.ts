@@ -2,7 +2,7 @@
 // of 150 x 215 cells. Rows are spades, clubs, hearts, diamonds; columns 0..12
 // are A..K and column 13 holds a joker, two card backs and the cut card.
 
-import { suitOf, rankOf } from '../core/cards.ts';
+import { suitOf, rankOf } from '@/core/cards';
 
 export const CARD_WIDTH = 150;
 export const CARD_HEIGHT = 215;

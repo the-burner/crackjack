@@ -1,9 +1,9 @@
 // Full Table Drills: Options.
 
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { reactScreen } from '../../react/screen.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
+import { useApp, useSettings } from '@/react/app-context';
+import { reactScreen } from '@/react/screen';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
 import {
   DrillOptionsScreen,
   Group,
@@ -16,8 +16,8 @@ import {
   ACCURACY_OPTIONS,
   BIAS_OPTIONS,
   END_WARNING_OPTIONS,
-} from '../shared/options-screen.tsx';
-import { FULL_DRILL_LABELS } from './logic.ts';
+} from '@/drills/shared/options-screen';
+import { FULL_DRILL_LABELS } from './logic';
 
 type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
 

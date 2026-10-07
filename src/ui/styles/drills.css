@@ -140,7 +140,7 @@
   border-left: 1px solid var(--separator);
   border-radius: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--link);
   font-weight: 500;
 }
 .drill-options__pair > .btn:active {

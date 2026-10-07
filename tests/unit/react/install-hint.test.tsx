@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Home } from '../../../src/screens/home.tsx';
-import { installHintWanted, INSTALL_HINT_KEY } from '../../../src/ui/install-hint.ts';
-import { renderScreen } from '../../support/render.tsx';
+import { Home } from '@/screens/home';
+import { installHintWanted, INSTALL_HINT_KEY } from '@/ui/install-hint';
+import { renderScreen } from '../../support/render';
 
 /** iOS Safari's navigator.standalone; undefined everywhere else. */
 function setStandalone(value: boolean | undefined) {

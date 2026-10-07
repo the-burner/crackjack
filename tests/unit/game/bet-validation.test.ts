@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { betError, sideBetOverTheMultiple } from '../../../src/game/bet-validation.ts';
+import { betError, sideBetOverTheMultiple } from '@/game/bet-validation';
 
 const check = (over = {}) =>
   betError({ amount: 25, hands: 1, limits: [5, 1000], bankroll: 500, sideBets: {}, spots: [], ...over });

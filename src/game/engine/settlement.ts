@@ -5,9 +5,9 @@
 // push returns the stake, an even-money win returns twice it, and a loss
 // returns nothing.
 
-import { blackjackPremium, roundPremium, charlieWin, isSuited678, sevensKind } from './rules.ts';
-import type { Rules } from './rules.ts';
-import type { Hand } from './hand.ts';
+import { blackjackPremium, roundPremium, charlieWin, isSuited678, sevensKind } from './rules';
+import type { Rules } from './rules';
+import type { Hand } from './hand';
 
 export const RESULT = {
   win: 'Win',

@@ -2,11 +2,11 @@
 // strategy, trueCount, display) are used by both the game and the drills;
 // drills.* groups belong to one drill each.
 
-import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategies.ts';
-import { BUILTIN_SIDE_BET_GAMES } from '../data/side-bet-games.ts';
-import { isRamp } from './bet-ramp.ts';
-import type { Ramp } from './bet-ramp.ts';
-import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues } from './store.ts';
+import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategies';
+import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
+import { isRamp } from './bet-ramp';
+import type { Ramp } from './bet-ramp';
+import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues } from './store';
 
 const bool = (value: boolean): BoolDef => ({ type: 'bool', default: value });
 const int = (value: number, min?: number, max?: number): NumberDef => ({ type: 'int', default: value, min, max });

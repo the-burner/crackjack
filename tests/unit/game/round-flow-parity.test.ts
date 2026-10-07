@@ -1,15 +1,15 @@
 // When the shoe is shuffled, what the burn cards do, and where the cut card falls.
 
 import { describe, it, expect, vi } from 'vitest';
-import { BlackjackGame, ACTION } from '../../../src/game/engine/game.ts';
-import type { GameOptions, TableConfig } from '../../../src/game/engine/game.ts';
-import { Shoe, SHUFFLE_MODE } from '../../../src/game/engine/shoe.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import type { SettingsPatch } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { seededRandom } from '../../../src/core/random.ts';
+import { BlackjackGame, ACTION } from '@/game/engine/game';
+import type { GameOptions, TableConfig } from '@/game/engine/game';
+import { Shoe, SHUFFLE_MODE } from '@/game/engine/shoe';
+import { rulesFrom } from '@/game/engine/rules';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import type { SettingsPatch } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { seededRandom } from '@/core/random';
 
 function makeRules(overrides: SettingsPatch = {}) {
   const settings = new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));

@@ -5,9 +5,9 @@
 // side bets, paid on their own wager. A rule matches when every condition it
 // sets is satisfied; the first match pays, unless the game accumulates.
 
-import { rankOf, suitOf, valueOf, handTotals } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import type { SideBetGame, SideBetRule } from '../../settings/side-bet-games.ts';
+import { rankOf, suitOf, valueOf, handTotals } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { SideBetGame, SideBetRule } from '@/settings/side-bet-games';
 
 /** What a rule is judged against. */
 export interface SideBetContext {

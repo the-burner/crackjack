@@ -1,8 +1,8 @@
 // Bugs found on the settings and strategy screens, each driven through the UI.
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import type { SavedSettings } from './support/app.ts';
-import { answerDialog, openFromHub, setting } from './support/settings.ts';
+import type { SavedSettings } from './support/app';
+import { answerDialog, openFromHub, setting } from './support/settings';
 
 test.use({ serviceWorkers: 'block' });
 

@@ -2,14 +2,14 @@
 // for a count. This module decides how many cards a flash holds, where they go,
 // how often a test comes and what the answer is.
 
-import { randomInt } from '../../core/random.ts';
-import type { Random } from '../../core/random.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import { CARD_ASPECT } from '../../ui/card-sprites.ts';
-import { isAceNeutral } from '../shared/count-answers.ts';
-import type { DrillCounts } from '../shared/count-answers.ts';
+import { randomInt } from '@/core/random';
+import type { Random } from '@/core/random';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import { CARD_ASPECT } from '@/ui/card-sprites';
+import { isAceNeutral } from '@/drills/shared/count-answers';
+import type { DrillCounts } from '@/drills/shared/count-answers';
 
-export { isAceCountDrill } from '../shared/count-answers.ts';
+export { isAceCountDrill } from '@/drills/shared/count-answers';
 
 /** The "Cards" option: how many cards a flash holds. */
 export type FlashSizeOption = '1' | '2' | '3' | '4' | '1-2' | '1-3' | '1-4';

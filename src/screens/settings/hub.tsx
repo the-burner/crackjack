@@ -1,8 +1,8 @@
 // The settings hub: navigation to every option screen.
 
-import { useApp } from '../../react/app-context.ts';
-import { Button, StandardScreen } from '../../react/components.tsx';
-import { reactScreen } from '../../react/screen.tsx';
+import { useApp } from '@/react/app-context';
+import { Button, StandardScreen } from '@/react/components';
+import { reactScreen } from '@/react/screen';
 
 const NOTE = 'The playing strategy and true count settings are also used by the drills.';
 

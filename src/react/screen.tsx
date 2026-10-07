@@ -5,8 +5,8 @@ import { createContext, useContext, useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import type { App, Screen, ScreenFactory, ScreenParams } from '../app/app.ts';
-import { AppContext } from './app-context.ts';
+import type { App, Screen, ScreenFactory, ScreenParams } from '@/app/app';
+import { AppContext } from './app-context';
 
 type Handler = () => boolean | void;
 /** The handlers a screen's components registered for the router's calls. */

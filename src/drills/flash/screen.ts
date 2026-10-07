@@ -1,23 +1,23 @@
 // Flash drills: a hand and a count are flashed and the player picks the play.
 
-import { h } from '../../ui/dom.ts';
-import { button } from '../../ui/components.ts';
-import { confirm } from '../../ui/dialogs.ts';
-import { toast } from '../../ui/toast.ts';
-import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '../../ui/card-sprites.ts';
-import { doubleTapDetector } from '../../ui/double-tap.ts';
-import { cssVar } from '../../ui/theme.ts';
-import { valueName } from '../../core/cards.ts';
-import { ACTION } from '../../core/strategy/advisor.ts';
-import type { Action, PlayAdvice } from '../../core/strategy/advisor.ts';
-import type { App, Screen } from '../../app/app.ts';
-import { drillShell, drillClockFor } from '../shared/drill-screen.ts';
-import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.ts';
-import { drillStrategy } from '../shared/drill-settings.ts';
-import { countGrid, countWindow, INITIAL_WINDOW } from '../shared/count-grid.ts';
-import { drawGridIn } from '../shared/answer-grid.ts';
-import type { AnswerGrid } from '../shared/answer-grid.ts';
-import { AnswerPause, cellAtEvent } from '../shared/grid-answers.ts';
+import { h } from '@/ui/dom';
+import { button } from '@/ui/components';
+import { confirm } from '@/ui/dialogs';
+import { toast } from '@/ui/toast';
+import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/ui/card-sprites';
+import { doubleTapDetector } from '@/ui/double-tap';
+import { cssVar } from '@/ui/theme';
+import { valueName } from '@/core/cards';
+import { ACTION } from '@/core/strategy/advisor';
+import type { Action, PlayAdvice } from '@/core/strategy/advisor';
+import type { App, Screen } from '@/app/app';
+import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
+import { drillStrategy } from '@/drills/shared/drill-settings';
+import { countGrid, countWindow, INITIAL_WINDOW } from '@/drills/shared/count-grid';
+import { drawGridIn } from '@/drills/shared/answer-grid';
+import type { AnswerGrid } from '@/drills/shared/answer-grid';
+import { AnswerPause, cellAtEvent } from '@/drills/shared/grid-answers';
 import {
   buildHandList,
   dealHand,
@@ -32,8 +32,8 @@ import {
   columnOf,
   ACTION_LABELS,
   SITUATION_LABELS,
-} from './logic.ts';
-import type { Entry, FlashHand } from './logic.ts';
+} from './logic';
+import type { Entry, FlashHand } from './logic';
 
 /** A hand a pause interrupted, with what the player had already done. */
 interface HeldHand {

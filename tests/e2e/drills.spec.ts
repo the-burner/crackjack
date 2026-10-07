@@ -2,8 +2,8 @@
 // wrong, watch the stats, pause, restart and go back.
 import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { openWithSettings as open } from './support/app.ts';
-import { DRILLS, emptyMask, launchDrill as launch, statsText, whitePixels } from './support/drills.ts';
+import { openWithSettings as open } from './support/app';
+import { DRILLS, emptyMask, launchDrill as launch, statsText, whitePixels } from './support/drills';
 
 test.use({ serviceWorkers: 'block' });
 

@@ -4,11 +4,11 @@
 // it in a 6 x 10 x 10 boolean mask held in a setting.
 
 import { useState } from 'react';
-import { reactScreen } from '../../react/screen.tsx';
-import type { ScreenProps } from '../../react/screen.tsx';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { CheckList, Select, StandardScreen } from '../../react/components.tsx';
-import { strategyOptions } from '../../settings/strategies.ts';
+import { reactScreen } from '@/react/screen';
+import type { ScreenProps } from '@/react/screen';
+import { useApp, useSettings } from '@/react/app-context';
+import { CheckList, Select, StandardScreen } from '@/react/components';
+import { strategyOptions } from '@/settings/strategies';
 import {
   TABLE_VIEWS,
   viewByKey,
@@ -19,10 +19,10 @@ import {
   specialtyPlays,
   countsTables,
   GRID_COLOR,
-} from '../../core/strategy/strategy-grid.ts';
-import type { CountsTables, TableGridView } from '../../core/strategy/strategy-grid.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import type { Tallies } from '../../services/error-tallies.ts';
+} from '@/core/strategy/strategy-grid';
+import type { CountsTables, TableGridView } from '@/core/strategy/strategy-grid';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { Tallies } from '@/services/error-tallies';
 
 const BASE_COLUMNS = 10;
 const EXTENDED_COLUMNS = 23;

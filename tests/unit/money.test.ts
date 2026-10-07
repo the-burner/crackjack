@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { money, dollars } from '../../src/core/money.ts';
+import { money, dollars } from '@/core/money';
 
 describe('money', () => {
   it('drops the cents of whole dollars and groups thousands', () => {

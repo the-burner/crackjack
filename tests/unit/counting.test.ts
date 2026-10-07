@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy } from '../../src/core/strategy/strategy-tables.ts';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
 import {
   Counter,
   decksRemaining,
@@ -8,12 +8,12 @@ import {
   TC_DIVISION,
   TC_LAST_DECK,
   TC_ROUNDING,
-} from '../../src/core/counting.ts';
-import { cardId, suitOf } from '../../src/core/cards.ts';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
-import { loadFixture } from '../support/fixtures.ts';
-import type { TcDivision, TcLastDeck, TcRounding } from '../../src/core/counting.ts';
-import type { Strategy } from '../../src/core/strategy/strategy-tables.ts';
+} from '@/core/counting';
+import { cardId, suitOf } from '@/core/cards';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { loadFixture } from '../support/fixtures';
+import type { TcDivision, TcLastDeck, TcRounding } from '@/core/counting';
+import type { Strategy } from '@/core/strategy/strategy-tables';
 
 interface RecordedShoe {
   config: {

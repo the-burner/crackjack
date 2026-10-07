@@ -1,15 +1,15 @@
 // Home screen: the four drills, the game and the settings.
 
 import { useState } from 'react';
-import { useApp } from '../react/app-context.ts';
-import { Button, StandardScreen } from '../react/components.tsx';
-import { reactScreen } from '../react/screen.tsx';
-import type { App } from '../app/app.ts';
-import { confirm, alert } from '../ui/dialogs.ts';
-import { toast } from '../ui/toast.ts';
-import { openTable } from '../game/launch.ts';
-import { WORDMARK_SVG } from '../ui/wordmark.ts';
-import { currentNavigator, installHintWanted, INSTALL_HINT_KEY } from '../ui/install-hint.ts';
+import { useApp } from '@/react/app-context';
+import { Button, StandardScreen } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import type { App } from '@/app/app';
+import { confirm, alert } from '@/ui/dialogs';
+import { toast } from '@/ui/toast';
+import { openTable } from '@/game/launch';
+import { WORDMARK_SVG } from '@/ui/wordmark';
+import { currentNavigator, installHintWanted, INSTALL_HINT_KEY } from '@/ui/install-hint';
 
 export const APP_VERSION = '3.0.0';
 

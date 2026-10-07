@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Shoe, SHUFFLE_MODE } from '../../../src/game/engine/shoe.ts';
-import type { ShoeOptions } from '../../../src/game/engine/shoe.ts';
-import { CARDS_PER_DECK } from '../../../src/core/cards.ts';
-import { seededRandom } from '../../../src/core/random.ts';
+import { Shoe, SHUFFLE_MODE } from '@/game/engine/shoe';
+import type { ShoeOptions } from '@/game/engine/shoe';
+import { CARDS_PER_DECK } from '@/core/cards';
+import { seededRandom } from '@/core/random';
 
 const shoe = (over: Partial<ShoeOptions> = {}) => new Shoe({ decks: 2, random: seededRandom(1), ...over });
 

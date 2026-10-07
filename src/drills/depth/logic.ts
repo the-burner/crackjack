@@ -1,17 +1,17 @@
 // Depth drills: a photo of a discard tray is shown and the player says how
 // deep the shoe is (or converts a running count to a true count).
 
-import { decksRemaining, roundTrueCount } from '../../core/counting.ts';
-import type { CounterSettings } from '../../core/counting.ts';
-import { CARDS_PER_DECK } from '../../core/cards.ts';
-import type { Random } from '../../core/random.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import { AnswerGrid } from '../shared/answer-grid.ts';
-import type { GridCell } from '../shared/answer-grid.ts';
-import { UNITS_PER_DECK } from '../shared/count-answers.ts';
-import { trayImage } from '../shared/discard-tray.ts';
-import type { TrayPhoto } from '../shared/discard-tray.ts';
-import { mixedNumber } from '../shared/format.ts';
+import { decksRemaining, roundTrueCount } from '@/core/counting';
+import type { CounterSettings } from '@/core/counting';
+import { CARDS_PER_DECK } from '@/core/cards';
+import type { Random } from '@/core/random';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import { AnswerGrid } from '@/drills/shared/answer-grid';
+import type { GridCell } from '@/drills/shared/answer-grid';
+import { UNITS_PER_DECK } from '@/drills/shared/count-answers';
+import { trayImage } from '@/drills/shared/discard-tray';
+import type { TrayPhoto } from '@/drills/shared/discard-tray';
+import { mixedNumber } from '@/drills/shared/format';
 
 export type DepthDrill =
   'decksLeft' | 'halfDecksLeft' | 'quarterDecksLeft' | 'acesLeft' | 'trueCount' | 'trueCountAndDecks';

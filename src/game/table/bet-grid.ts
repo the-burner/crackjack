@@ -1,9 +1,9 @@
 // The canvas grid of bet buttons: a 6 x 3 block of tiles, one per bet
 // the player's ramp allows, plus the drawing and hit-testing it needs.
 
-import { normalizeRamp } from '../../settings/bet-ramp.ts';
-import type { Ramp } from '../../settings/bet-ramp.ts';
-import { cssVar } from '../../ui/theme.ts';
+import { normalizeRamp } from '@/settings/bet-ramp';
+import type { Ramp } from '@/settings/bet-ramp';
+import { cssVar } from '@/ui/theme';
 
 export const COLUMNS = 6;
 export const ROWS = 3;

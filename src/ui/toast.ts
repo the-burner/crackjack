@@ -1,7 +1,7 @@
 // A short message that appears briefly at the bottom (or top) of the screen,
 // without stopping anything: taps go straight through it.
 
-import { h } from './dom.ts';
+import { h } from './dom';
 
 export type ToastOptions = {
   position?: 'bottom' | 'top';

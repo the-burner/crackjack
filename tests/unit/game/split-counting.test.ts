@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, ACTION } from '../../../src/game/engine/game.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import { seededRandom } from '../../../src/core/random.ts';
+import { BlackjackGame, ACTION } from '@/game/engine/game';
+import { rulesFrom } from '@/game/engine/rules';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { seededRandom } from '@/core/random';
 
 const card = (rank: number) => cardId(rank, 0);
 

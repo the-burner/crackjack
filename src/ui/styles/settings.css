@@ -49,7 +49,7 @@
 .settings-group > .btn,
 .drill-options__group > .btn {
   justify-content: flex-start;
-  color: var(--accent);
+  color: var(--link);
   font-weight: 400;
 }
 .settings-group > .checklist--horizontal,
@@ -118,7 +118,7 @@
   border-left: 1px solid var(--separator);
   border-radius: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--link);
   font-weight: 500;
 }
 .settings-row > .value-btn:active {
@@ -207,7 +207,7 @@
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: var(--accent);
+  background: var(--link);
 }
 .stat-summary {
   padding-right: 14px;

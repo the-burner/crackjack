@@ -1,11 +1,11 @@
 // True Count Calcs: how the running count is turned into a true
 // count. The arithmetic itself lives in core/counting.js.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { useSettings } from '../../react/app-context.ts';
-import { CheckList, Select, StandardScreen, ValueButton } from '../../react/components.tsx';
-import { SettingsGroup } from '../../react/settings-form.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
+import { reactScreen } from '@/react/screen';
+import { useSettings } from '@/react/app-context';
+import { CheckList, Select, StandardScreen, ValueButton } from '@/react/components';
+import { SettingsGroup } from '@/react/settings-form';
+import type { SettingValues } from '@/settings/schema';
 
 type Row<K extends keyof SettingValues> = {
   label: string;

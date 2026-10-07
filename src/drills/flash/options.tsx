@@ -1,13 +1,13 @@
 // Flash Drills: Options.
 
-import type { App } from '../../app/app.ts';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { Button, CheckList, Select } from '../../react/components.tsx';
-import { reactScreen } from '../../react/screen.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
-import { alert, confirm } from '../../ui/dialogs.ts';
-import { toast } from '../../ui/toast.ts';
+import type { App } from '@/app/app';
+import { useApp, useSettings } from '@/react/app-context';
+import { Button, CheckList, Select } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
+import { alert, confirm } from '@/ui/dialogs';
+import { toast } from '@/ui/toast';
 import {
   DrillOptionsScreen,
   Group,
@@ -18,9 +18,9 @@ import {
   Pair,
   Section,
   COUNT_DOWN_HALT_OPTION,
-} from '../shared/options-screen.tsx';
-import { drillStrategy } from '../shared/drill-settings.ts';
-import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic.ts';
+} from '@/drills/shared/options-screen';
+import { drillStrategy } from '@/drills/shared/drill-settings';
+import { buildHandList, SITUATIONS, SITUATION_LABELS, errorCellsAsHands, describeEntry } from './logic';
 
 type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
 

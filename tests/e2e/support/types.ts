@@ -1,6 +1,6 @@
 // What the specs record in the page, in the `window.__cj*` logs.
 
-import type { SoundName } from '../../../src/services/sound.ts';
+import type { SoundName } from '@/services/sound';
 
 export interface Rect {
   left: number;

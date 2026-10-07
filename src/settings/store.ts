@@ -1,6 +1,6 @@
 // Schema-driven settings: typed values with defaults, persisted as one object.
 
-import type { Storage } from '../services/storage.ts';
+import type { Storage } from '@/services/storage';
 
 const STORAGE_KEY = 'settings';
 

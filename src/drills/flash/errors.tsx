@@ -3,11 +3,11 @@
 
 import { useReducer } from 'react';
 import type { ReactNode } from 'react';
-import { useApp } from '../../react/app-context.ts';
-import { StandardScreen } from '../../react/components.tsx';
-import { reactScreen, useOnShow } from '../../react/screen.tsx';
-import { Section } from '../shared/options-screen.tsx';
-import { errorSummary, describeEntry, percent } from './logic.ts';
+import { useApp } from '@/react/app-context';
+import { StandardScreen } from '@/react/components';
+import { reactScreen, useOnShow } from '@/react/screen';
+import { Section } from '@/drills/shared/options-screen';
+import { errorSummary, describeEntry, percent } from './logic';
 
 /** One statistic: a label, the count and share on the right, and a bar under them. */
 const StatRow = ({ label, count, share }: { label: string; count: number; share: number }) => (

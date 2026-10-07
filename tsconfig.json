@@ -8,13 +8,13 @@
     "types": ["vite/client", "vite-plugin-pwa/client"],
     "allowJs": true,
     "checkJs": false,
-    "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src"],
   "exclude": ["src/sw.ts"]

@@ -6,9 +6,9 @@
 // so the labels show halves and the "within 1" tolerance means within half a
 // point.
 
-import { numberGrid, windowContaining } from './answer-grid.ts';
-import type { AnswerGrid } from './answer-grid.ts';
-import { mixedNumber } from './format.ts';
+import { numberGrid, windowContaining } from './answer-grid';
+import type { AnswerGrid } from './answer-grid';
+import { mixedNumber } from './format';
 
 const GRID_ROWS = 3;
 const GRID_COLUMNS = 6;

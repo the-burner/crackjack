@@ -2,24 +2,24 @@
 // seat that splits plays both of its hands.
 
 import { describe, it, expect, vi } from 'vitest';
-import { GameSession } from '../../../src/game/session.ts';
-import { createServices } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
-import { BlackjackGame, ACTION } from '../../../src/game/engine/game.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { PLAYER } from '../../../src/game/engine/hand.ts';
-import { correctPlay } from '../../../src/game/play-check.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { Hand } from '../../../src/game/engine/hand.ts';
-import type { Rules } from '../../../src/game/engine/rules.ts';
-import type { ComputerPlayContext, GameOptions, TableConfig } from '../../../src/game/engine/game.ts';
-import type { SettingValues } from '../../../src/settings/schema.ts';
-import type { Sound } from '../../../src/services/sound.ts';
+import { GameSession } from '@/game/session';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { BlackjackGame, ACTION } from '@/game/engine/game';
+import { rulesFrom } from '@/game/engine/rules';
+import { PLAYER } from '@/game/engine/hand';
+import { correctPlay } from '@/game/play-check';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import { seededRandom } from '@/core/random';
+import type { CardId } from '@/core/cards';
+import type { Hand } from '@/game/engine/hand';
+import type { Rules } from '@/game/engine/rules';
+import type { ComputerPlayContext, GameOptions, TableConfig } from '@/game/engine/game';
+import type { SettingValues } from '@/settings/schema';
+import type { Sound } from '@/services/sound';
 
 /** The session reads only the upcard from a computer seat's context. */
 const upcardOnly = (dealerUpcard: CardId) => ({ dealerUpcard }) as ComputerPlayContext;

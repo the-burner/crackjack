@@ -1,17 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import {
-  evaluateSideBet,
-  evaluateHandBonus,
-  sideBetSpots,
-  ruleMatches,
-  allowedAtCount,
-} from '../../../src/game/engine/side-bets.ts';
-import { decodeSideBetGame } from '../../../src/settings/side-bet-games.ts';
-import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '../../../src/data/side-bet-games.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { SideBetContext } from '../../../src/game/engine/side-bets.ts';
-import type { SideBetGame, SideBetRule } from '../../../src/settings/side-bet-games.ts';
+import { evaluateSideBet, evaluateHandBonus, sideBetSpots, ruleMatches, allowedAtCount } from '@/game/engine/side-bets';
+import { decodeSideBetGame } from '@/settings/side-bet-games';
+import { SIDE_BET_GAME_DEFINITIONS, BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { SideBetContext } from '@/game/engine/side-bets';
+import type { SideBetGame, SideBetRule } from '@/settings/side-bet-games';
 
 const SPADES = 0,
   CLUBS = 1,

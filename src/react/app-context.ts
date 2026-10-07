@@ -1,8 +1,8 @@
 // The app's services, for React components.
 
 import { createContext, useContext, useSyncExternalStore } from 'react';
-import type { App } from '../app/app.ts';
-import type { AppSettings } from '../settings/schema.ts';
+import type { App } from '@/app/app';
+import type { AppSettings } from '@/settings/schema';
 
 export const AppContext = createContext<App | null>(null);
 

@@ -1,15 +1,15 @@
 // The four drills: each has an options screen and a play screen.
 
-import { flashOptionsScreen } from './flash/options.tsx';
-import { flashScreen } from './flash/screen.ts';
-import { flashErrorsScreen } from './flash/errors.tsx';
-import { depthOptionsScreen } from './depth/options.tsx';
-import { depthScreen } from './depth/screen.ts';
-import { countOptionsScreen } from './count/options.tsx';
-import { countScreen } from './count/screen.ts';
-import { fullOptionsScreen } from './full/options.tsx';
-import { fullScreen } from './full/screen.ts';
-import type { Router } from '../app/router.ts';
+import { flashOptionsScreen } from './flash/options';
+import { flashScreen } from './flash/screen';
+import { flashErrorsScreen } from './flash/errors';
+import { depthOptionsScreen } from './depth/options';
+import { depthScreen } from './depth/screen';
+import { countOptionsScreen } from './count/options';
+import { countScreen } from './count/screen';
+import { fullOptionsScreen } from './full/options';
+import { fullScreen } from './full/screen';
+import type { Router } from '@/app/router';
 
 export function registerDrillScreens(router: Router): Router {
   return router

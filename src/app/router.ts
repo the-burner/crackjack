@@ -18,7 +18,7 @@
 // still closes it, but going forward stops there rather than rebuilding it
 // wrongly.
 
-import type { App } from './app.ts';
+import type { App } from './app';
 
 /** What a screen factory returns. */
 export interface Screen {

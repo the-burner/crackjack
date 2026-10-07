@@ -1,13 +1,13 @@
 // Basic Setup: seats, shoe, burn cards and bankroll.
 
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { Button, CheckList } from '../../react/components.tsx';
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingNumber, SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import { DECKS } from '../../settings/schema.ts';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
-import { toast } from '../../ui/toast.ts';
+import { useApp, useSettings } from '@/react/app-context';
+import { Button, CheckList } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import { SettingNumber, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import { DECKS } from '@/settings/schema';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
+import { toast } from '@/ui/toast';
 
 /** Storage key holding the current bankroll, which the game screen restores. */
 const BANKROLL_KEY = 'bankroll';

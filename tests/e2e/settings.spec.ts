@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { openFromHub } from './support/settings.ts';
+import { openFromHub } from './support/settings';
 
 test.use({ serviceWorkers: 'block' });
 

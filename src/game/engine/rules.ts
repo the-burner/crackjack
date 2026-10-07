@@ -1,10 +1,10 @@
 // Table rules: the questions the engine asks about what is allowed and what a
 // hand pays, derived from the user's settings.
 
-import { valueOf, rankOf } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import type { AppSettings } from '../../settings/schema.ts';
-import type { Hand } from './hand.ts';
+import { valueOf, rankOf } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { AppSettings } from '@/settings/schema';
+import type { Hand } from './hand';
 
 export const SURRENDER = {
   none: 'none',

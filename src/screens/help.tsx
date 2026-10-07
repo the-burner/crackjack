@@ -1,11 +1,11 @@
 // Help text for a screen.
 
 import { useMemo } from 'react';
-import { useApp } from '../react/app-context.ts';
-import { TopBar } from '../react/components.tsx';
-import { reactScreen } from '../react/screen.tsx';
-import type { ScreenProps } from '../react/screen.tsx';
-import { HELP } from '../data/help.ts';
+import { useApp } from '@/react/app-context';
+import { TopBar } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import type { ScreenProps } from '@/react/screen';
+import { HELP } from '@/data/help';
 
 export type HelpParams = { topic: string; title?: string };
 

@@ -1,11 +1,11 @@
 // Depth Drills: Options.
 
-import type { App } from '../../app/app.ts';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { reactScreen } from '../../react/screen.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
-import { alert } from '../../ui/dialogs.ts';
+import type { App } from '@/app/app';
+import { useApp, useSettings } from '@/react/app-context';
+import { reactScreen } from '@/react/screen';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
+import { alert } from '@/ui/dialogs';
 import {
   DrillOptionsScreen,
   Group,
@@ -22,8 +22,8 @@ import {
   COUNT_DOWN_HALT_OPTION,
   ACCURACY_OPTIONS,
   TRAY_OPTIONS,
-} from '../shared/options-screen.tsx';
-import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic.ts';
+} from '@/drills/shared/options-screen';
+import { DRILL_LABELS, isTrueCountDrill, trayStyleFor, TRAY_CAPACITY } from './logic';
 
 type Options<K extends keyof SettingValues> = readonly SelectOption<SettingValues[K]>[];
 

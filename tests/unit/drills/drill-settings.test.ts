@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { trueCountSettings, drillStrategy } from '../../../src/drills/shared/drill-settings.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { StrategyLibrary } from '../../../src/settings/strategies.ts';
-import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../../../src/core/counting.ts';
-import type { AppSettings, SettingKey, SettingValues, SettingsPatch } from '../../../src/settings/schema.ts';
-import type { App } from '../../../src/app/app.ts';
+import { trueCountSettings, drillStrategy } from '@/drills/shared/drill-settings';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { StrategyLibrary } from '@/settings/strategies';
+import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
+import type { AppSettings, SettingKey, SettingValues, SettingsPatch } from '@/settings/schema';
+import type { App } from '@/app/app';
 
 /** The settings a screen would pass in: the schema defaults with overrides. */
 function settings(overrides: SettingsPatch = {}): Pick<AppSettings, 'get'> {

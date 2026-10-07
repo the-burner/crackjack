@@ -1,16 +1,16 @@
 // Flash drills: which hands to drill, how to deal one, and what the correct
 // play is. No DOM, no timers — the screen drives all of this.
 
-import { cardId, handTotals, valueName } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import { randomInt, shuffle } from '../../core/random.ts';
-import type { Random } from '../../core/random.ts';
-import { NEVER, ALWAYS, TABLE_NAMES } from '../../core/strategy/strategy-file.ts';
-import type { TableName } from '../../core/strategy/strategy-file.ts';
-import { advisePlay, ACTION, SECTION, PROBE, NO_INDEX_MARKER } from '../../core/strategy/advisor.ts';
-import type { Action, PlayAdvice, PlayContext, PlayHand, Probe, Section } from '../../core/strategy/advisor.ts';
-import type { CustomMask, Strategy } from '../../core/strategy/strategy-tables.ts';
-import type { Tallies, TallyCell } from '../../services/error-tallies.ts';
+import { cardId, handTotals, valueName } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { randomInt, shuffle } from '@/core/random';
+import type { Random } from '@/core/random';
+import { NEVER, ALWAYS, TABLE_NAMES } from '@/core/strategy/strategy-file';
+import type { TableName } from '@/core/strategy/strategy-file';
+import { advisePlay, ACTION, SECTION, PROBE, NO_INDEX_MARKER } from '@/core/strategy/advisor';
+import type { Action, PlayAdvice, PlayContext, PlayHand, Probe, Section } from '@/core/strategy/advisor';
+import type { CustomMask, Strategy } from '@/core/strategy/strategy-tables';
+import type { Tallies, TallyCell } from '@/services/error-tallies';
 
 /** A kind of hand a drill can ask about; also the name of its strategy table. */
 export type Situation = TableName;

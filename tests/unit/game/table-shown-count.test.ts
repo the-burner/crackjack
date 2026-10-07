@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { createShownCount } from '../../../src/game/table/shown-count.ts';
-import { chipText } from '../../../src/game/table/labels.ts';
-import { sideBetLabel } from '../../../src/game/table/side-bet-picker.ts';
-import { GameSession } from '../../../src/game/session.ts';
-import { createServices } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
-import { Counter } from '../../../src/core/counting.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { Chip } from '../../../src/game/table/table-state.ts';
+import { createShownCount } from '@/game/table/shown-count';
+import { chipText } from '@/game/table/labels';
+import { sideBetLabel } from '@/game/table/side-bet-picker';
+import { GameSession } from '@/game/session';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { Counter } from '@/core/counting';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { Chip } from '@/game/table/table-state';
 
 const card = (rank: number) => cardId(rank, 0);
 

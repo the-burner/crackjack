@@ -2,12 +2,12 @@
 // used once it has been seen.
 
 import type { ReactNode } from 'react';
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
-import type { SettingValues } from '../../settings/schema.ts';
-import { HOLE_CARD_STRATEGY } from '../../settings/strategies.ts';
-import type { SelectOption } from '../../ui/components.ts';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
+import type { SettingValues } from '@/settings/schema';
+import { HOLE_CARD_STRATEGY } from '@/settings/strategies';
+import type { SelectOption } from '@/ui/components';
 
 const NOTE = 'These options are for more advanced play.';
 

@@ -1,10 +1,10 @@
 // Answering on an answer grid: finding the tapped cell, grading it, marking
 // the grid, and the short pause before the next test.
 
-import type { AnswerGrid, GridCell } from './answer-grid.ts';
-import type { DrillShell } from './drill-screen.ts';
-import { gradeAnswer } from './scoring.ts';
-import type { Verdict } from './scoring.ts';
+import type { AnswerGrid, GridCell } from './answer-grid';
+import type { DrillShell } from './drill-screen';
+import { gradeAnswer } from './scoring';
+import type { Verdict } from './scoring';
 
 /** How long a right answer stays marked before the drill moves on. */
 export const PAUSE_AFTER_ANSWER_MS = 100;

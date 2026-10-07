@@ -3,8 +3,8 @@
 // double tap = Surrender. While insurance is offered, vertical = Insure and
 // horizontal = Pass. Diagonal swipes mean nothing.
 
-import { doubleTapDetector } from '../../ui/double-tap.ts';
-import type { GameAction } from '../engine/game.ts';
+import { doubleTapDetector } from '@/ui/double-tap';
+import type { GameAction } from '@/game/engine/game';
 
 /** What a gesture asks for: a play, or an answer to the insurance offer. */
 export type SwipeAction = GameAction | 'insure' | 'pass';

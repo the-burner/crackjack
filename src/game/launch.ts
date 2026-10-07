@@ -1,7 +1,7 @@
 // Opening the table from the home screen.
 
-import { prepareLaunch } from '../settings/rules-logic.ts';
-import type { App } from '../app/app.ts';
+import { prepareLaunch } from '@/settings/rules-logic';
+import type { App } from '@/app/app';
 
 /** Makes sure the player has a seat, then opens the table. */
 export function openTable(app: App): void {

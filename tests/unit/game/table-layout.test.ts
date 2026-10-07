@@ -11,9 +11,9 @@ import {
   MAX_PORTRAIT_SEATS,
   CARDS_PER_HAND,
   HANDS_PER_SEAT,
-} from '../../../src/game/table/layout.ts';
-import type { TableLayoutOptions } from '../../../src/game/table/layout.ts';
-import type { HandKey } from '../../../src/game/engine/hand.ts';
+} from '@/game/table/layout';
+import type { TableLayoutOptions } from '@/game/table/layout';
+import type { HandKey } from '@/game/engine/hand';
 
 interface Size {
   width: number;

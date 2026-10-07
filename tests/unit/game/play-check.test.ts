@@ -1,24 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import {
-  correctPlay,
-  checkPlay,
-  correctInsurance,
-  checkInsurance,
-  checkBet,
-  expectedBet,
-} from '../../../src/game/play-check.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { rulesFrom } from '../../../src/game/engine/rules.ts';
-import { ACTION } from '../../../src/game/engine/game.ts';
-import { Hand } from '../../../src/game/engine/hand.ts';
-import { Settings } from '../../../src/settings/store.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
-import { Storage, MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { PlayCounts } from '../../../src/game/play-check.ts';
-import type { SettingValues } from '../../../src/settings/schema.ts';
+import { correctPlay, checkPlay, correctInsurance, checkInsurance, checkBet, expectedBet } from '@/game/play-check';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { rulesFrom } from '@/game/engine/rules';
+import { ACTION } from '@/game/engine/game';
+import { Hand } from '@/game/engine/hand';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { PlayCounts } from '@/game/play-check';
+import type { SettingValues } from '@/settings/schema';
 
 const SPADES = 0,
   HEARTS = 2;

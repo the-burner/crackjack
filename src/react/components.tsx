@@ -3,10 +3,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { promptNumber } from '../ui/dialogs.ts';
-import { selectedIndexFor } from '../ui/components.ts';
-import type { SelectOption } from '../ui/components.ts';
-import { useApp } from './app-context.ts';
+import { promptNumber } from '@/ui/dialogs';
+import { selectedIndexFor } from '@/ui/components';
+import type { SelectOption } from '@/ui/components';
+import { useApp } from './app-context';
 
 const classes = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
 

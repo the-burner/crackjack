@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE, INDEX_SETS, INSURANCE } from '../../src/core/strategy/strategy-tables.ts';
-import { TABLE, TABLE_NAMES, VARIANT, parseStrategyFile } from '../../src/core/strategy/strategy-file.ts';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
-import { loadFixture } from '../support/fixtures.ts';
-import type { CustomMask, Strategy, TableOptions } from '../../src/core/strategy/strategy-tables.ts';
-import type { Grid, StrategyFile, TableName } from '../../src/core/strategy/strategy-file.ts';
+import { buildStrategy, CODE, INDEX_SETS, INSURANCE } from '@/core/strategy/strategy-tables';
+import { TABLE, TABLE_NAMES, VARIANT, parseStrategyFile } from '@/core/strategy/strategy-file';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { loadFixture } from '../support/fixtures';
+import type { CustomMask, Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import type { Grid, StrategyFile, TableName } from '@/core/strategy/strategy-file';
 
 /** The table rules a recording was made with. */
 interface RecordedConfig {

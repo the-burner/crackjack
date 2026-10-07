@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
-  BUILTIN_STRATEGIES,
-  HOLE_CARD_STRATEGY,
-  StrategyLibrary,
-  strategyOptions,
-} from '../../src/settings/strategies.ts';
-import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
-import { SETTINGS_SCHEMA } from '../../src/settings/schema.ts';
-import { Settings } from '../../src/settings/store.ts';
-import { Storage, MemoryBackend } from '../../src/services/storage.ts';
-import type { TableOptions } from '../../src/core/strategy/strategy-tables.ts';
+import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY, StrategyLibrary, strategyOptions } from '@/settings/strategies';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { Settings } from '@/settings/store';
+import { Storage, MemoryBackend } from '@/services/storage';
+import type { TableOptions } from '@/core/strategy/strategy-tables';
 
 const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));
 

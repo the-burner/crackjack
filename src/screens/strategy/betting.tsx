@@ -2,12 +2,12 @@
 // may make, optionally tied to the count so betting errors can be flagged.
 
 import { useState } from 'react';
-import { reactScreen, useOnShow } from '../../react/screen.tsx';
-import type { ScreenProps } from '../../react/screen.tsx';
-import { useApp, useSettings } from '../../react/app-context.ts';
-import { Button, CheckList, Select, StandardScreen, ValueButton } from '../../react/components.tsx';
-import { SettingsGroup } from '../../react/settings-form.tsx';
-import { promptNumber } from '../../ui/dialogs.ts';
+import { reactScreen, useOnShow } from '@/react/screen';
+import type { ScreenProps } from '@/react/screen';
+import { useApp, useSettings } from '@/react/app-context';
+import { Button, CheckList, Select, StandardScreen, ValueButton } from '@/react/components';
+import { SettingsGroup } from '@/react/settings-form';
+import { promptNumber } from '@/ui/dialogs';
 import {
   CHIP_CHOICES,
   HAND_CHOICES,
@@ -20,7 +20,7 @@ import {
   rampToSave,
   setRow,
   setRowCount,
-} from '../../settings/bet-ramp.ts';
+} from '@/settings/bet-ramp';
 
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
 

@@ -3,7 +3,7 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import type { SettingKey } from '../../src/settings/schema.ts';
+import type { SettingKey } from '@/settings/schema';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -101,7 +101,7 @@ test('every screen with a Help button has help text behind it', async ({ page })
   await openApp(page);
   const topics = await page.evaluate(async () => {
     const help = '/src/data/help.ts';
-    const { HELP }: typeof import('../../src/data/help.ts') = await import(help);
+    const { HELP }: typeof import('@/data/help') = await import(help);
     return Object.keys(HELP);
   });
   expect(topics.length).toBeGreaterThan(20);
@@ -119,7 +119,7 @@ test('every screen a Help button names is a screen the app registers', async ({ 
   await openApp(page);
   const topics = await page.evaluate(async () => {
     const help = '/src/data/help.ts';
-    const { HELP }: typeof import('../../src/data/help.ts') = await import(help);
+    const { HELP }: typeof import('@/data/help') = await import(help);
     return Object.keys(HELP);
   });
   const registered = await page.evaluate(registeredScreens);

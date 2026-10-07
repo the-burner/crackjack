@@ -4,9 +4,9 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { seedRandom, visibleOneOf } from './support/app.ts';
-import type { SavedSettings } from './support/app.ts';
-import { tapBetTile } from './support/table.ts';
+import { seedRandom, visibleOneOf } from './support/app';
+import type { SavedSettings } from './support/app';
+import { tapBetTile } from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };

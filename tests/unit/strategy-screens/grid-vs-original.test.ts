@@ -2,10 +2,10 @@
 // table viewer drew, recorded in tests/fixtures/strategy-screens-tables.json.gz.
 
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, INDEX_SETS } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { loadFixture } from '../../support/fixtures.ts';
-import { ALWAYS, NEVER, NO_ENTRY } from '../../../src/core/strategy/strategy-file.ts';
+import { buildStrategy, INDEX_SETS } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { loadFixture } from '../../support/fixtures';
+import { ALWAYS, NEVER, NO_ENTRY } from '@/core/strategy/strategy-file';
 import {
   TABLE_VIEWS,
   columnLabels,
@@ -16,8 +16,8 @@ import {
   rowLabels,
   specialtyPlays,
   viewByKey,
-} from '../../../src/core/strategy/strategy-grid.ts';
-import type { TableGridView } from '../../../src/core/strategy/strategy-grid.ts';
+} from '@/core/strategy/strategy-grid';
+import type { TableGridView } from '@/core/strategy/strategy-grid';
 
 interface RecordedConfig {
   system: number;

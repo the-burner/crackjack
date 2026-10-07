@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Hand, handKey, parseHandKey } from '../../../src/game/engine/hand.ts';
-import type { HandOptions } from '../../../src/game/engine/hand.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
+import { Hand, handKey, parseHandKey } from '@/game/engine/hand';
+import type { HandOptions } from '@/game/engine/hand';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
 
 const SPADES = 0,
   HEARTS = 2,

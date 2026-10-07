@@ -1,11 +1,11 @@
 // Unusual Games: the side-bet / bonus game selector.
 
-import { useSettings } from '../../react/app-context.ts';
-import { Select } from '../../react/components.tsx';
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import { BUILTIN_SIDE_BET_GAMES } from '../../data/side-bet-games.ts';
-import { applyGameChange } from '../../settings/rules-logic.ts';
+import { useSettings } from '@/react/app-context';
+import { Select } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import { SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
+import { applyGameChange } from '@/settings/rules-logic';
 
 const NOTE = 'You can select one of numerous unusual games above.';
 

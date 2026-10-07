@@ -5,12 +5,12 @@
 // at a time. Input is blocked while a timeline is playing, so a tap cannot land
 // in the middle of an animation and corrupt the queue.
 
-import { DEALER_KEY } from './table-state.ts';
-import type { TableEvent } from './table-state.ts';
-import type { HandKey } from '../engine/hand.ts';
-import type { GameEvent, MessageText } from '../engine/events.ts';
-import type { Result } from '../engine/settlement.ts';
-import type { SoundName } from '../../services/sound.ts';
+import { DEALER_KEY } from './table-state';
+import type { TableEvent } from './table-state';
+import type { HandKey } from '@/game/engine/hand';
+import type { GameEvent, MessageText } from '@/game/engine/events';
+import type { Result } from '@/game/engine/settlement';
+import type { SoundName } from '@/services/sound';
 
 /** Speeds are 1..100; speed s is a pause of (101-s)/120 s. */
 export const pauseForSpeed = (speed: number): number => Math.round(((101 - clampSpeed(speed)) / 120) * 1000);

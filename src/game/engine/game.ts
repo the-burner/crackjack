@@ -5,15 +5,15 @@
 // `act()`. Everything the UI needs is on the engine's state; the engine never
 // waits, so animation speed is entirely the screen's business.
 
-import { valueOf } from '../../core/cards.ts';
-import type { CardId } from '../../core/cards.ts';
-import { defaultRandom } from '../../core/random.ts';
-import type { Random } from '../../core/random.ts';
-import type { SideBetGame } from '../../settings/side-bet-games.ts';
-import type { SettingValues } from '../../settings/schema.ts';
-import { Hand, PLAYER } from './hand.ts';
-import type { ShuffleMode } from './shoe.ts';
-import { Shoe } from './shoe.ts';
+import { valueOf } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import { defaultRandom } from '@/core/random';
+import type { Random } from '@/core/random';
+import type { SideBetGame } from '@/settings/side-bet-games';
+import type { SettingValues } from '@/settings/schema';
+import { Hand, PLAYER } from './hand';
+import type { ShuffleMode } from './shoe';
+import { Shoe } from './shoe';
 import {
   dealerPeeks,
   insuranceOffered,
@@ -27,12 +27,12 @@ import {
   bustValue,
   charlieWin,
   MAX_CARDS_PER_HAND,
-} from './rules.ts';
-import type { Rules } from './rules.ts';
-import { settleHand, RESULT } from './settlement.ts';
-import type { Result } from './settlement.ts';
-import type { GameEvent, SideBetDetail } from './events.ts';
-import { evaluateSideBet, evaluateHandBonus, sideBetSpots } from './side-bets.ts';
+} from './rules';
+import type { Rules } from './rules';
+import { settleHand, RESULT } from './settlement';
+import type { Result } from './settlement';
+import type { GameEvent, SideBetDetail } from './events';
+import { evaluateSideBet, evaluateHandBonus, sideBetSpots } from './side-bets';
 
 /** Whether a bankroll covers a whole round: every hand's bet and every side bet. */
 export function checkAffordable({

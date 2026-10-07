@@ -1,7 +1,7 @@
 // Running count, true count and side counts for the selected counting system.
 
-import type { CardId } from './cards.ts';
-import type { Strategy } from './strategy/strategy-tables.ts';
+import type { CardId } from './cards';
+import type { Strategy } from './strategy/strategy-tables';
 
 /** How the true count divisor (decks remaining) is estimated. */
 export const TC_DIVISION = { fullDeck: 0, halfDeck: 1, quarterDeck: 2, exact: 3 } as const;

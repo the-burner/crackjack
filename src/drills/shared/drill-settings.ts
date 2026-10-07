@@ -1,11 +1,11 @@
 // Shared settings the drills read: the true-count rules and the strategy
 // built for the drill's deck count.
 
-import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../../core/counting.ts';
-import type { CounterSettings, TcDivision, TcLastDeck, TcRounding } from '../../core/counting.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import type { App } from '../../app/app.ts';
-import type { AppSettings, SettingValues } from '../../settings/schema.ts';
+import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
+import type { CounterSettings, TcDivision, TcLastDeck, TcRounding } from '@/core/counting';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { App } from '@/app/app';
+import type { AppSettings, SettingValues } from '@/settings/schema';
 
 const DIVISION: Record<SettingValues['trueCount.resolution'], TcDivision> = {
   full: TC_DIVISION.fullDeck,

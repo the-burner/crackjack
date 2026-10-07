@@ -1,8 +1,8 @@
 // Duration picker: a bottom sheet with hour / minute / second wheels, like the
 // iOS Timer. Promise based, like the dialogs.
 
-import { h } from './dom.ts';
-import { registerOverlay } from './overlays.ts';
+import { h } from './dom';
+import { registerOverlay } from './overlays';
 
 /** Row height; matches .wheel__item in app.css. */
 const ITEM_HEIGHT = 36;

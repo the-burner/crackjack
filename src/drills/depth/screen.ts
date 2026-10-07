@@ -1,18 +1,18 @@
 // Depth drills: a photo of a discard tray, and a grid of depths to pick from.
 
-import { h } from '../../ui/dom.ts';
-import { setupCanvas } from '../../ui/card-sprites.ts';
-import { cssVar } from '../../ui/theme.ts';
-import { drillShell, drillClockFor } from '../shared/drill-screen.ts';
-import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.ts';
-import { drillStrategy } from '../shared/drill-settings.ts';
-import { drawGridIn } from '../shared/answer-grid.ts';
-import type { AnswerGrid } from '../shared/answer-grid.ts';
-import { AnswerPause, gridAnswers } from '../shared/grid-answers.ts';
-import { loadTrayImage, drawTray } from '../shared/discard-tray.ts';
-import type { App, Screen } from '../../app/app.ts';
-import { depthGrid, generateDepthTest } from './logic.ts';
-import type { DepthTest } from './logic.ts';
+import { h } from '@/ui/dom';
+import { setupCanvas } from '@/ui/card-sprites';
+import { cssVar } from '@/ui/theme';
+import { drillShell, drillClockFor } from '@/drills/shared/drill-screen';
+import { progressiveSpeed, TIMER_MODE } from '@/drills/shared/drill-clock';
+import { drillStrategy } from '@/drills/shared/drill-settings';
+import { drawGridIn } from '@/drills/shared/answer-grid';
+import type { AnswerGrid } from '@/drills/shared/answer-grid';
+import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
+import { loadTrayImage, drawTray } from '@/drills/shared/discard-tray';
+import type { App, Screen } from '@/app/app';
+import { depthGrid, generateDepthTest } from './logic';
+import type { DepthTest } from './logic';
 
 /** How many draws to try before giving up on finding a usable test. */
 const MAX_DRAWS = 200;

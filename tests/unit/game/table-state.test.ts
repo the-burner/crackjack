@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { createTableState } from '../../../src/game/table/table-state.ts';
-import type { TableEvent } from '../../../src/game/table/table-state.ts';
-import type { HandKey } from '../../../src/game/engine/hand.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { GameEventOf } from '../../../src/game/engine/events.ts';
+import { createTableState } from '@/game/table/table-state';
+import type { TableEvent } from '@/game/table/table-state';
+import type { HandKey } from '@/game/engine/hand';
+import type { CardId } from '@/core/cards';
+import type { GameEventOf } from '@/game/engine/events';
 
 // Settled events here leave out owner and sideBets, which the table state does not read.
 type Settled = GameEventOf<'settled'>;

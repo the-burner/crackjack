@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dismissTopOverlay, registerOverlay } from '../../src/ui/overlays.ts';
+import { dismissTopOverlay, registerOverlay } from '@/ui/overlays';
 
 describe('overlay registry', () => {
   it('dismisses the newest overlay first', () => {

@@ -10,16 +10,16 @@ import {
   spotsFor,
   DEALER_SPOT,
   TWO_TABLE_PHASES,
-} from '../../../src/drills/full/logic.ts';
-import { halfSteps, answerIndex } from '../../../src/drills/count/logic.ts';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import type { Players } from '../../../src/drills/full/logic.ts';
-import type { TableOptions } from '../../../src/core/strategy/strategy-tables.ts';
-import type { DrillCounts } from '../../../src/drills/shared/count-answers.ts';
+} from '@/drills/full/logic';
+import { halfSteps, answerIndex } from '@/drills/count/logic';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '@/drills/shared/count-grid';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { cardId } from '@/core/cards';
+import { seededRandom } from '@/core/random';
+import type { Players } from '@/drills/full/logic';
+import type { TableOptions } from '@/core/strategy/strategy-tables';
+import type { DrillCounts } from '@/drills/shared/count-answers';
 
 const card = (value: number) => cardId(value, 0);
 const cards = (values: number[]) => values.map(card);

@@ -3,10 +3,10 @@
 // instead: it counts each card the moment the replay shows it face up, as the
 // original did.
 
-import { Counter } from '../../core/counting.ts';
-import type { CounterSettings } from '../../core/counting.ts';
-import type { Strategy } from '../../core/strategy/strategy-tables.ts';
-import type { TableEvent } from './table-state.ts';
+import { Counter } from '@/core/counting';
+import type { CounterSettings } from '@/core/counting';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { TableEvent } from './table-state';
 
 export function createShownCount({
   strategy,

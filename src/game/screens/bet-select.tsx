@@ -2,11 +2,11 @@
 // of spot counts and a grid of chip counts, plus a custom amount.
 
 import { useState } from 'react';
-import { useApp } from '../../react/app-context.ts';
-import { Button, StandardScreen } from '../../react/components.tsx';
-import { reactScreen } from '../../react/screen.tsx';
-import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '../../settings/bet-ramp.ts';
-import { promptNumber } from '../../ui/dialogs.ts';
+import { useApp } from '@/react/app-context';
+import { Button, StandardScreen } from '@/react/components';
+import { reactScreen } from '@/react/screen';
+import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '@/settings/bet-ramp';
+import { promptNumber } from '@/ui/dialogs';
 
 const HELP_TEXT =
   'Tap the number of chips to bet. To play more than one spot, ' +

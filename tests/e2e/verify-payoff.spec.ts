@@ -4,10 +4,10 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import type { Frame } from './globals.d.ts';
-import { seedRandom } from './support/app.ts';
-import type { SavedSettings } from './support/app.ts';
-import type { PillLook, Rect, TableLogEntry } from './support/types.ts';
+import type { Frame } from './globals.d';
+import { seedRandom } from './support/app';
+import type { SavedSettings } from './support/app';
+import type { PillLook, Rect, TableLogEntry } from './support/types';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
@@ -207,7 +207,7 @@ const POLICY = {
 const pointerImageLoaded = (page: Page) =>
   page.evaluate(async () => {
     const url = '/src/game/table/photos.ts';
-    const { loadImage }: typeof import('../../src/game/table/photos.ts') = await import(url);
+    const { loadImage }: typeof import('@/game/table/photos') = await import(url);
     await loadImage('assets/table/pointer.png').ready;
   });
 
@@ -513,7 +513,7 @@ test.describe('the result label', () => {
       expect(new Set(pills.map(e => e.tone))).toEqual(new Set(['win', 'lose', 'push']));
       const popUps = await page.evaluate(async () => {
         const url = '/src/ui/toast.ts';
-        const { toast }: typeof import('../../src/ui/toast.ts') = await import(url);
+        const { toast }: typeof import('@/ui/toast') = await import(url);
         const out: Record<string, PillLook['style']> = {};
         for (const tone of ['good', 'error', 'plain'] as const) {
           const el = toast('x', { tone });

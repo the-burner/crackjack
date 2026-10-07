@@ -1,10 +1,10 @@
 // Strategy catalog and construction of the current
 // strategy from settings.
 
-import { STRATEGY_FILES } from '../data/strategy-files.ts';
-import { buildStrategy } from '../core/strategy/strategy-tables.ts';
-import type { Strategy, TableOptions } from '../core/strategy/strategy-tables.ts';
-import type { AppSettings } from './schema.ts';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import type { Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import type { AppSettings } from './schema';
 
 /** A strategy the player can pick. */
 export interface StrategyEntry {

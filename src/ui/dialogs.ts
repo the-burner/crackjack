@@ -1,7 +1,7 @@
 // Modal message, confirmation and input dialogs (promise based).
 
-import { h } from './dom.ts';
-import { registerOverlay } from './overlays.ts';
+import { h } from './dom';
+import { registerOverlay } from './overlays';
 
 const APP_TITLE = 'Crackjack';
 let dialogs = 0;

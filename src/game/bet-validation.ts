@@ -1,9 +1,9 @@
 // Whether a bet may be placed: the table limits, the bankroll and the side-bet
 // multiple. Pure, so the table screen only shows the message.
 
-import { money } from '../core/money.ts';
-import { checkAffordable } from './engine/game.ts';
-import type { SideBetSpot } from './engine/side-bets.ts';
+import { money } from '@/core/money';
+import { checkAffordable } from './engine/game';
+import type { SideBetSpot } from './engine/side-bets';
 
 export interface BetCheck {
   /** Bet on each hand. */

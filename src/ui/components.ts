@@ -1,9 +1,9 @@
 // Reusable controls. Each returns a DOM element; controls that hold a value
 // expose `setValue()` on the element so screens can refresh them.
 
-import { h } from './dom.ts';
-import type { Children, Props } from './dom.ts';
-import { promptNumber } from './dialogs.ts';
+import { h } from './dom';
+import type { Children, Props } from './dom';
+import { promptNumber } from './dialogs';
 
 export type ButtonOptions = Props & {
   onClick?: (event: MouseEvent) => void;

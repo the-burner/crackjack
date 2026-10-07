@@ -1,10 +1,10 @@
 // The table's buttons: the plays down the sides of the felt, Insure
 // and Pass while insurance is offered, and the bar above the felt.
 
-import { h } from '../../ui/dom.ts';
-import { button } from '../../ui/components.ts';
-import { ACTION } from '../engine/game.ts';
-import type { AvailableActions, GameAction } from '../engine/game.ts';
+import { h } from '@/ui/dom';
+import { button } from '@/ui/components';
+import { ACTION } from '@/game/engine/game';
+import type { AvailableActions, GameAction } from '@/game/engine/game';
 
 const ACTION_LABELS: [action: GameAction, label: string, icon: string, side: 'left' | 'right'][] = [
   [ACTION.stand, 'Stand', 'arrow-l', 'left'],

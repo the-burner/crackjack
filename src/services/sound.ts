@@ -4,7 +4,7 @@
 // iOS only lets audio start after the user has touched the page, so the audio
 // context is created (or resumed) on the first touch or key press.
 
-import type { AppSettings } from '../settings/schema.ts';
+import type { AppSettings } from '@/settings/schema';
 
 const FILES = {
   card: 'assets/sounds/click.mp3',

@@ -17,9 +17,9 @@ import {
   UNUSED_SLOT,
   BELOW_OFFSET,
   isBelowIndex,
-} from './strategy-file.ts';
-import type { FileTables, Grid, OneBased, StrategyFile, TableName } from './strategy-file.ts';
-import { BASIC_STRATEGY_FILE } from '../../data/strategy-files.ts';
+} from './strategy-file';
+import type { FileTables, Grid, OneBased, StrategyFile, TableName } from './strategy-file';
+import { BASIC_STRATEGY_FILE } from '@/data/strategy-files';
 
 export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'] as const;
 export type IndexSet = (typeof INDEX_SETS)[number];

@@ -3,14 +3,14 @@
 // what the table itself shows.
 
 import { useReducer } from 'react';
-import { money } from '../../core/money.ts';
-import { useSettings } from '../../react/app-context.ts';
-import { Button, StandardScreen } from '../../react/components.tsx';
-import { reactScreen, useOnShow } from '../../react/screen.tsx';
-import { SettingChecks } from '../../react/settings-form.tsx';
-import type { SettingReader } from '../../settings/schema.ts';
-import { confirm } from '../../ui/dialogs.ts';
-import type { GameSession } from '../session.ts';
+import { money } from '@/core/money';
+import { useSettings } from '@/react/app-context';
+import { Button, StandardScreen } from '@/react/components';
+import { reactScreen, useOnShow } from '@/react/screen';
+import { SettingChecks } from '@/react/settings-form';
+import type { SettingReader } from '@/settings/schema';
+import { confirm } from '@/ui/dialogs';
+import type { GameSession } from '@/game/session';
 
 /** The in-table readouts, in display order. */
 const DISPLAY_OPTIONS = [

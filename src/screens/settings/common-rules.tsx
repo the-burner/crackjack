@@ -1,11 +1,11 @@
 // Common Rules.
 
-import { reactScreen } from '../../react/screen.tsx';
-import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
-import type { SettingCheck } from '../../react/settings-form.tsx';
-import { TABLE_LIMITS } from '../../settings/schema.ts';
-import type { SettingValues } from '../../settings/schema.ts';
-import type { SelectOption } from '../../ui/components.ts';
+import { reactScreen } from '@/react/screen';
+import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '@/react/settings-form';
+import type { SettingCheck } from '@/react/settings-form';
+import { TABLE_LIMITS } from '@/settings/schema';
+import type { SettingValues } from '@/settings/schema';
+import type { SelectOption } from '@/ui/components';
 
 const NOTE = 'Common rule variations are set using this screen.';
 

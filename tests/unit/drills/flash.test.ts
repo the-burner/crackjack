@@ -20,14 +20,14 @@ import {
   SITUATIONS,
   roundRobinEntries,
   RoundRobin,
-} from '../../../src/drills/flash/logic.ts';
-import type { Entry, FlashHand, Situation, Situations } from '../../../src/drills/flash/logic.ts';
-import type { CustomMask, Strategy, TableOptions } from '../../../src/core/strategy/strategy-tables.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { ACTION, SECTION } from '../../../src/core/strategy/advisor.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import { emptyTallies } from '../../../src/services/error-tallies.ts';
+} from '@/drills/flash/logic';
+import type { Entry, FlashHand, Situation, Situations } from '@/drills/flash/logic';
+import type { CustomMask, Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { ACTION, SECTION } from '@/core/strategy/advisor';
+import { seededRandom } from '@/core/random';
+import { emptyTallies } from '@/services/error-tallies';
 
 const ALL_SITUATIONS = Object.fromEntries(SITUATIONS.map(k => [k, true])) as Situations;
 const options = (extra: Partial<TableOptions> = {}): TableOptions => ({

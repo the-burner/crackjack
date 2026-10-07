@@ -1,9 +1,9 @@
 // What the engine reports as a round plays out; the table animates these.
 
-import type { CardId } from '../../core/cards.ts';
-import type { GameAction } from './game.ts';
-import type { HandKey, Player } from './hand.ts';
-import type { Result } from './settlement.ts';
+import type { CardId } from '@/core/cards';
+import type { GameAction } from './game';
+import type { HandKey, Player } from './hand';
+import type { Result } from './settlement';
 
 /** A side bet (or main-bet bonus) as settled. */
 export interface SideBetDetail {

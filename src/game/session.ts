@@ -2,26 +2,26 @@
 // rounds — the count, the bankroll, statistics, and checking the player's
 // decisions against their strategy.
 
-import { BlackjackGame, STATE, ACTION } from './engine/game.ts';
-import type { AvailableActions, ComputerPlayContext, GameAction, GameState } from './engine/game.ts';
-import type { GameEvent } from './engine/events.ts';
-import type { Hand, HandKey } from './engine/hand.ts';
-import { rulesFrom, MAX_CARDS_PER_HAND } from './engine/rules.ts';
-import type { Rules } from './engine/rules.ts';
-import { Counter } from '../core/counting.ts';
-import type { CounterSettings } from '../core/counting.ts';
-import type { CardId } from '../core/cards.ts';
-import type { Strategy } from '../core/strategy/strategy-tables.ts';
-import type { Services } from '../app/app.ts';
-import type { AppSettings } from '../settings/schema.ts';
-import type { SideBetGame } from '../settings/side-bet-games.ts';
-import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check.ts';
-import type { ExpectedBet, PlayCheck, PlayCounts } from './play-check.ts';
-import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '../core/counting.ts';
-import { decodeSideBetGame } from '../settings/side-bet-games.ts';
-import { SIDE_BET_GAME_DEFINITIONS } from '../data/side-bet-games.ts';
-import { sideBetSpots } from './engine/side-bets.ts';
-import type { SideBetSpot } from './engine/side-bets.ts';
+import { BlackjackGame, STATE, ACTION } from './engine/game';
+import type { AvailableActions, ComputerPlayContext, GameAction, GameState } from './engine/game';
+import type { GameEvent } from './engine/events';
+import type { Hand, HandKey } from './engine/hand';
+import { rulesFrom, MAX_CARDS_PER_HAND } from './engine/rules';
+import type { Rules } from './engine/rules';
+import { Counter } from '@/core/counting';
+import type { CounterSettings } from '@/core/counting';
+import type { CardId } from '@/core/cards';
+import type { Strategy } from '@/core/strategy/strategy-tables';
+import type { Services } from '@/app/app';
+import type { AppSettings } from '@/settings/schema';
+import type { SideBetGame } from '@/settings/side-bet-games';
+import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check';
+import type { ExpectedBet, PlayCheck, PlayCounts } from './play-check';
+import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
+import { decodeSideBetGame } from '@/settings/side-bet-games';
+import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
+import { sideBetSpots } from './engine/side-bets';
+import type { SideBetSpot } from './engine/side-bets';
 
 const BANKROLL_KEY = 'bankroll';
 const STATS_KEY = 'gameStats';

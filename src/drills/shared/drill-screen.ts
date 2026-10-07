@@ -3,14 +3,14 @@
 //
 // A drill supplies callbacks; the shell owns the layout and the counters.
 
-import { h, replaceChildren } from '../../ui/dom.ts';
-import type { Children } from '../../ui/dom.ts';
-import { button } from '../../ui/components.ts';
-import type { App, Screen } from '../../app/app.ts';
-import { DrillScore } from './scoring.ts';
-import { DrillClock } from './drill-clock.ts';
-import type { TimerMode } from './drill-clock.ts';
-import { clockTime } from './format.ts';
+import { h, replaceChildren } from '@/ui/dom';
+import type { Children } from '@/ui/dom';
+import { button } from '@/ui/components';
+import type { App, Screen } from '@/app/app';
+import { DrillScore } from './scoring';
+import { DrillClock } from './drill-clock';
+import type { TimerMode } from './drill-clock';
+import { clockTime } from './format';
 
 export interface DrillShellOptions {
   title: string;

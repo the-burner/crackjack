@@ -9,8 +9,8 @@
 // payout, 777 bonus, peek mode) already encode their mutual exclusions as a
 // single value, so only the cross-setting rules are listed below.
 
-import { SETTINGS_SCHEMA } from './schema.ts';
-import type { SettingKey, SettingReader, SettingValues, SettingsPatch } from './schema.ts';
+import { SETTINGS_SCHEMA } from './schema';
+import type { SettingKey, SettingReader, SettingValues, SettingsPatch } from './schema';
 
 /** Holds what the rules a variant forces were set to before it was chosen. */
 const SAVED_RULES = 'bonuses.savedRules';

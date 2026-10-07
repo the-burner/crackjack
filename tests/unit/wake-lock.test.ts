@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ScreenWakeLock } from '../../src/services/wake-lock.ts';
+import { ScreenWakeLock } from '@/services/wake-lock';
 
 type FakeSentinel = {
   released: boolean;

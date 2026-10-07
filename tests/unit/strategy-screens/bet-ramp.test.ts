@@ -17,8 +17,8 @@ import {
   setRow,
   setRowCount,
   toPackedRamp,
-} from '../../../src/settings/bet-ramp.ts';
-import { SETTINGS_SCHEMA } from '../../../src/settings/schema.ts';
+} from '@/settings/bet-ramp';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
 
 /** A sample five-row ramp (the original apps' fresh-install bet table). */
 const DEFAULT_RAMP = { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) };

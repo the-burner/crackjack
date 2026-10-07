@@ -12,10 +12,10 @@ import {
   SCATTER_CARDS,
   SLOTS_PER_SPOT,
   TWO_TABLE_PHASES,
-} from '../../../src/drills/full/logic.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import type { DrillCounts } from '../../../src/drills/shared/count-answers.ts';
+} from '@/drills/full/logic';
+import { cardId } from '@/core/cards';
+import { seededRandom } from '@/core/random';
+import type { DrillCounts } from '@/drills/shared/count-answers';
 
 /** A card of the given blackjack value, in spades. */
 const card = (value: number) => cardId(value, 0);

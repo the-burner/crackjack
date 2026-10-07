@@ -1,11 +1,11 @@
 // The labels laid over the felt: one chip label per seat, showing what the
 // seat has bet, its result and what it was paid.
 
-import { h } from '../../ui/dom.ts';
-import { money } from '../../core/money.ts';
-import { RESULT_TONES } from './animator.ts';
-import type { Box, SeatLayout } from './layout.ts';
-import type { Chip } from './table-state.ts';
+import { h } from '@/ui/dom';
+import { money } from '@/core/money';
+import { RESULT_TONES } from './animator';
+import type { Box, SeatLayout } from './layout';
+import type { Chip } from './table-state';
 
 /** Puts an absolutely positioned label where the layout says. */
 export const placeBox = (node: HTMLElement, rect: Box) =>

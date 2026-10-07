@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { App } from '../../src/app/app.ts';
-import { Router, type HistoryScreen } from '../../src/app/router.ts';
+import type { App } from '@/app/app';
+import { Router, type HistoryScreen } from '@/app/router';
 
 type FakeElement = HTMLElement & { removed: boolean };
 /** A history entry as the router writes it; the one the app started on is null. */

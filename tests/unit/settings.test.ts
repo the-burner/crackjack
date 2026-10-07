@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Storage, MemoryBackend } from '../../src/services/storage.ts';
-import { Settings, migrate, SETTINGS_VERSION } from '../../src/settings/store.ts';
-import { SETTINGS_SCHEMA, type SettingKey } from '../../src/settings/schema.ts';
-import type { BoolDef, SettingsSchema } from '../../src/settings/store.ts';
+import { Storage, MemoryBackend } from '@/services/storage';
+import { Settings, migrate, SETTINGS_VERSION } from '@/settings/store';
+import { SETTINGS_SCHEMA, type SettingKey } from '@/settings/schema';
+import type { BoolDef, SettingsSchema } from '@/settings/store';
 
 const schema = {
   'mechanics.sound': { type: 'bool', default: false } as BoolDef,

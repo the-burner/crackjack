@@ -8,13 +8,13 @@
 // the screen on every change.
 
 import type { ReactNode } from 'react';
-import { useSettings } from '../../react/app-context.ts';
-import { Button, CheckList, Field, Select, Slider, StandardScreen, ValueButton } from '../../react/components.tsx';
-import type { AppSchema, SettingKey, SettingValues } from '../../settings/schema.ts';
-import type { NumberDef } from '../../settings/store.ts';
-import type { SelectOption } from '../../ui/components.ts';
-import { pickDuration, tenthsColumns } from '../../ui/time-wheel.ts';
-import { clockTime } from './format.ts';
+import { useSettings } from '@/react/app-context';
+import { Button, CheckList, Field, Select, Slider, StandardScreen, ValueButton } from '@/react/components';
+import type { AppSchema, SettingKey, SettingValues } from '@/settings/schema';
+import type { NumberDef } from '@/settings/store';
+import type { SelectOption } from '@/ui/components';
+import { pickDuration, tenthsColumns } from '@/ui/time-wheel';
+import { clockTime } from './format';
 
 type BoolKey = { [K in SettingKey]: SettingValues[K] extends boolean ? K : never }[SettingKey];
 type IntKey = { [K in SettingKey]: AppSchema[K] extends NumberDef ? K : never }[SettingKey];

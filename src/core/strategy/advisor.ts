@@ -1,10 +1,10 @@
 // Playing advisor: decides the strategy-correct action for a hand, given the
 // tables built by buildStrategy() and the current count.
 
-import { NEVER, ALWAYS, NO_ENTRY, BELOW_OFFSET, isBelowIndex } from './strategy-file.ts';
-import { CODE, INSURANCE, SPLIT_PLUS3_PER_DECK } from './strategy-tables.ts';
-import type { Strategy } from './strategy-tables.ts';
-import type { CardId } from '../cards.ts';
+import { NEVER, ALWAYS, NO_ENTRY, BELOW_OFFSET, isBelowIndex } from './strategy-file';
+import { CODE, INSURANCE, SPLIT_PLUS3_PER_DECK } from './strategy-tables';
+import type { Strategy } from './strategy-tables';
+import type { CardId } from '@/core/cards';
 
 export const ACTION = { hit: 0, stand: 1, double: 2, split: 3, surrender: 4 } as const;
 export type Action = (typeof ACTION)[keyof typeof ACTION];

@@ -2,9 +2,9 @@
 // before an obviously bad decision goes through, the dealer asks whether the
 // player is sure. The question is asked once; pressing again plays the hand.
 
-import { ACTION } from '../engine/game.ts';
-import type { GameAction } from '../engine/game.ts';
-import type { HandTotals } from '../../core/cards.ts';
+import { ACTION } from '@/game/engine/game';
+import type { GameAction } from '@/game/engine/game';
+import type { HandTotals } from '@/core/cards';
 
 /**
  * Whether an action is obviously wrong for this hand, whatever the count says.

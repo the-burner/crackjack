@@ -7,13 +7,13 @@ import {
   trayStyleFor,
   isTrueCountDrill,
   RESOLUTION_STEPS,
-} from '../../../src/drills/depth/logic.ts';
-import type { DepthTestOptions, TrueCountOptions } from '../../../src/drills/depth/logic.ts';
-import type { AnswerGrid } from '../../../src/drills/shared/answer-grid.ts';
-import type { CounterSettings } from '../../../src/core/counting.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { seededRandom } from '../../../src/core/random.ts';
+} from '@/drills/depth/logic';
+import type { DepthTestOptions, TrueCountOptions } from '@/drills/depth/logic';
+import type { AnswerGrid } from '@/drills/shared/answer-grid';
+import type { CounterSettings } from '@/core/counting';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { seededRandom } from '@/core/random';
 
 const highLow = buildStrategy(STRATEGY_FILES[30], {
   decks: 6,

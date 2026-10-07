@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { GameSession } from '../../../src/game/session.ts';
-import { createServices } from '../../../src/app/app.ts';
-import { MemoryBackend } from '../../../src/services/storage.ts';
-import { cardId } from '../../../src/core/cards.ts';
-import type { CardId } from '../../../src/core/cards.ts';
-import type { SettingsPatch } from '../../../src/settings/schema.ts';
-import { Counter } from '../../../src/core/counting.ts';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.ts';
+import { GameSession } from '@/game/session';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { cardId } from '@/core/cards';
+import type { CardId } from '@/core/cards';
+import type { SettingsPatch } from '@/settings/schema';
+import { Counter } from '@/core/counting';
+import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
 
 const card = (rank: number, suit = 0) => cardId(rank, suit);
 

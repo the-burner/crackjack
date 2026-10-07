@@ -6,37 +6,37 @@
 // animator plays at the speeds the player chose. Input is refused for as long
 // as a timeline is playing.
 
-import { h } from '../../ui/dom.ts';
-import { confirm } from '../../ui/dialogs.ts';
-import { toast } from '../../ui/toast.ts';
-import type { ToastOptions } from '../../ui/toast.ts';
-import type { App, Screen } from '../../app/app.ts';
-import { GameSession } from '../session.ts';
-import { STATE } from '../engine/game.ts';
-import type { GameAction } from '../engine/game.ts';
-import { PLAYER } from '../engine/hand.ts';
-import type { HandKey } from '../engine/hand.ts';
-import type { GameEvent } from '../engine/events.ts';
-import { TABLE_LIMITS } from '../../settings/schema.ts';
-import { money, dollars } from '../../core/money.ts';
-import { tableLayout, seatSlot } from '../table/layout.ts';
-import type { TableLayout } from '../table/layout.ts';
-import { createTableRenderer } from '../table/renderer.ts';
-import { createTableState } from '../table/table-state.ts';
-import { createShownCount } from '../table/shown-count.ts';
-import { createChipLabels, placeBox } from '../table/labels.ts';
-import { createTableControls, createTableBar } from '../table/controls.ts';
-import { createSideBetPicker, sideBetLabel } from '../table/side-bet-picker.ts';
-import { createAnimator, planSteps, pauseForSpeed } from '../table/animator.ts';
-import type { Step } from '../table/animator.ts';
-import { createBetOverlay } from '../table/bet-overlay.ts';
-import type { BetCell } from '../table/bet-grid.ts';
-import { attachSwipes } from '../table/gestures.ts';
-import type { SwipeAction } from '../table/gestures.ts';
-import { obviouslyBad, areYouSure } from '../table/bad-plays.ts';
-import { dealerErrorsOn, enabledErrors, missedMessage } from '../dealer-errors.ts';
-import { betError } from '../bet-validation.ts';
-import { blackjackUnknown, withDealerError, createDealerErrorRound } from '../dealer-error-round.ts';
+import { h } from '@/ui/dom';
+import { confirm } from '@/ui/dialogs';
+import { toast } from '@/ui/toast';
+import type { ToastOptions } from '@/ui/toast';
+import type { App, Screen } from '@/app/app';
+import { GameSession } from '@/game/session';
+import { STATE } from '@/game/engine/game';
+import type { GameAction } from '@/game/engine/game';
+import { PLAYER } from '@/game/engine/hand';
+import type { HandKey } from '@/game/engine/hand';
+import type { GameEvent } from '@/game/engine/events';
+import { TABLE_LIMITS } from '@/settings/schema';
+import { money, dollars } from '@/core/money';
+import { tableLayout, seatSlot } from '@/game/table/layout';
+import type { TableLayout } from '@/game/table/layout';
+import { createTableRenderer } from '@/game/table/renderer';
+import { createTableState } from '@/game/table/table-state';
+import { createShownCount } from '@/game/table/shown-count';
+import { createChipLabels, placeBox } from '@/game/table/labels';
+import { createTableControls, createTableBar } from '@/game/table/controls';
+import { createSideBetPicker, sideBetLabel } from '@/game/table/side-bet-picker';
+import { createAnimator, planSteps, pauseForSpeed } from '@/game/table/animator';
+import type { Step } from '@/game/table/animator';
+import { createBetOverlay } from '@/game/table/bet-overlay';
+import type { BetCell } from '@/game/table/bet-grid';
+import { attachSwipes } from '@/game/table/gestures';
+import type { SwipeAction } from '@/game/table/gestures';
+import { obviouslyBad, areYouSure } from '@/game/table/bad-plays';
+import { dealerErrorsOn, enabledErrors, missedMessage } from '@/game/dealer-errors';
+import { betError } from '@/game/bet-validation';
+import { blackjackUnknown, withDealerError, createDealerErrorRound } from '@/game/dealer-error-round';
 
 /** The insurance offer passes itself after this long. */
 const INSURANCE_MS = 5000;

@@ -6,14 +6,14 @@
 // it. That is what caught the settings that used to be read nowhere at all.
 
 import { describe, it, expect } from 'vitest';
-import { GameSession } from '../../src/game/session.ts';
-import { createServices } from '../../src/app/app.ts';
-import { MemoryBackend } from '../../src/services/storage.ts';
-import { rulesFrom } from '../../src/game/engine/rules.ts';
-import { Settings } from '../../src/settings/store.ts';
-import { SETTINGS_SCHEMA, type SettingKey, type SettingsPatch } from '../../src/settings/schema.ts';
-import type { Sound } from '../../src/services/sound.ts';
-import { Storage } from '../../src/services/storage.ts';
+import { GameSession } from '@/game/session';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { rulesFrom } from '@/game/engine/rules';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA, type SettingKey, type SettingsPatch } from '@/settings/schema';
+import type { Sound } from '@/services/sound';
+import { Storage } from '@/services/storage';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -147,7 +147,7 @@ describe('the unusual-game picker', () => {
 describe('speeds reaching the table', () => {
   for (const key of ['mechanics.dealerSpeed', 'mechanics.otherPlayerSpeed', 'mechanics.payoffSpeed'] as const) {
     it(`${key} changes how long the table waits`, async () => {
-      const { pauseForSpeed } = await import('../../src/game/table/animator.ts');
+      const { pauseForSpeed } = await import('@/game/table/animator');
       const settings = settingsWith();
       const slow = pauseForSpeed(settings.get(key));
       const fast = pauseForSpeed(otherValue(key) as number);

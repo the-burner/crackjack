@@ -1,10 +1,10 @@
 // Choosing the side bets for the next round: the bet picker opens once per
 // side-bet spot, since a game may offer two.
 
-import { alert } from '../../ui/dialogs.ts';
-import { money } from '../../core/money.ts';
-import type { App } from '../../app/app.ts';
-import type { SideBetSpot } from '../engine/side-bets.ts';
+import { alert } from '@/ui/dialogs';
+import { money } from '@/core/money';
+import type { App } from '@/app/app';
+import type { SideBetSpot } from '@/game/engine/side-bets';
 
 /** Side-bet amounts by spot id. */
 export type SideBets = Record<string, number>;

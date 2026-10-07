@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { reactScreen, useOnBack, useOnShow } from '../../../src/react/screen.tsx';
-import { useSettings } from '../../../src/react/app-context.ts';
-import { Select } from '../../../src/react/components.tsx';
-import { SettingChecks, SettingSlider } from '../../../src/react/settings-form.tsx';
-import { createTestApp, renderScreen } from '../../support/render.tsx';
+import { reactScreen, useOnBack, useOnShow } from '@/react/screen';
+import { useSettings } from '@/react/app-context';
+import { Select } from '@/react/components';
+import { SettingChecks, SettingSlider } from '@/react/settings-form';
+import { createTestApp, renderScreen } from '../../support/render';
 
 describe('reactScreen', () => {
   it('renders before the factory returns, with the section class', () => {

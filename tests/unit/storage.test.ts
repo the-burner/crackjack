@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Storage, MemoryBackend, type StorageEventTarget } from '../../src/services/storage.ts';
+import { Storage, MemoryBackend, type StorageEventTarget } from '@/services/storage';
 
 /** globalThis with localStorage removable, as in a browser that blocks it. */
 const host = globalThis as { localStorage?: unknown };

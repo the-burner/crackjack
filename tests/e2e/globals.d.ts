@@ -1,10 +1,10 @@
 // What the specs reach for on `window`. The frame log (`__cjRecordFrames`,
 // `__cjFrames`) is declared by the renderer, re-exported below.
 
-import type { App } from '../../src/app/app.ts';
-import type { AudioStarted, SoundPlayed, TableLogEntry } from './support/types.ts';
+import type { App } from '@/app/app';
+import type { AudioStarted, SoundPlayed, TableLogEntry } from './support/types';
 
-export type { Frame } from '../../src/game/table/renderer.ts';
+export type { Frame } from '@/game/table/renderer';
 
 declare global {
   interface Window {

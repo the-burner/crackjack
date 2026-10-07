@@ -3,14 +3,14 @@
 // side buttons for side bets, the bet editor, shuffling, the bankroll, a Foul
 // claim and the last strategy error.
 
-import { h } from '../../ui/dom.ts';
-import { button } from '../../ui/components.ts';
-import { cssVar } from '../../ui/theme.ts';
-import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, TILE_GAP, COLUMNS, ROWS } from './bet-grid.ts';
-import type { BetCell, GridGeometry } from './bet-grid.ts';
-import { setupCanvas } from '../../ui/card-sprites.ts';
-import { money } from '../../core/money.ts';
-import type { Ramp } from '../../settings/bet-ramp.ts';
+import { h } from '@/ui/dom';
+import { button } from '@/ui/components';
+import { cssVar } from '@/ui/theme';
+import { betCells, gridGeometry, cellIndexAt, drawTile, TILE, TILE_GAP, COLUMNS, ROWS } from './bet-grid';
+import type { BetCell, GridGeometry } from './bet-grid';
+import { setupCanvas } from '@/ui/card-sprites';
+import { money } from '@/core/money';
+import type { Ramp } from '@/settings/bet-ramp';
 
 const MIN_TILE_HEIGHT = 38;
 const MAX_TILE_HEIGHT = 62;

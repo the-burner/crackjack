@@ -1,17 +1,17 @@
 // Settings screens: the hub and the option screens it opens.
 
-import type { Router } from '../../app/router.ts';
-import { settingsHubScreen } from './hub.tsx';
-import { setupScreen } from './setup.tsx';
-import { commonRulesScreen } from './common-rules.tsx';
-import { ruleVariationsScreen } from './rule-variations.tsx';
-import { mechanicsScreen } from './mechanics.tsx';
-import { bonusesScreen } from './bonuses.tsx';
-import { playVariationsScreen } from './play-variations.tsx';
-import { unusualGamesScreen } from './unusual-games.tsx';
-import { dealerErrorsScreen } from './dealer-errors.tsx';
-import { peekingScreen } from './peeking.tsx';
-import { appearanceScreen } from './appearance.tsx';
+import type { Router } from '@/app/router';
+import { settingsHubScreen } from './hub';
+import { setupScreen } from './setup';
+import { commonRulesScreen } from './common-rules';
+import { ruleVariationsScreen } from './rule-variations';
+import { mechanicsScreen } from './mechanics';
+import { bonusesScreen } from './bonuses';
+import { playVariationsScreen } from './play-variations';
+import { unusualGamesScreen } from './unusual-games';
+import { dealerErrorsScreen } from './dealer-errors';
+import { peekingScreen } from './peeking';
+import { appearanceScreen } from './appearance';
 
 export function registerSettingsScreens(router: Router) {
   return router

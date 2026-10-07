@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DrillClock, TIMER_MODE, progressiveSpeed } from '../../../src/drills/shared/drill-clock.ts';
-import type { DrillClockOptions } from '../../../src/drills/shared/drill-clock.ts';
-import { DrillScore, gradeAnswer, ACCURACY } from '../../../src/drills/shared/scoring.ts';
-import { trayImage, maxDecksInTray } from '../../../src/drills/shared/discard-tray.ts';
-import { AnswerGrid, numberGrid, windowContaining } from '../../../src/drills/shared/answer-grid.ts';
-import { clockTime, mixedNumber, signedCount } from '../../../src/drills/shared/format.ts';
-import { DrillShoe } from '../../../src/drills/shared/shoe.ts';
-import { buildStrategy } from '../../../src/core/strategy/strategy-tables.ts';
-import { STRATEGY_FILES } from '../../../src/data/strategy-files.ts';
-import { seededRandom } from '../../../src/core/random.ts';
-import type { CounterSettings, TcRounding } from '../../../src/core/counting.ts';
+import { DrillClock, TIMER_MODE, progressiveSpeed } from '@/drills/shared/drill-clock';
+import type { DrillClockOptions } from '@/drills/shared/drill-clock';
+import { DrillScore, gradeAnswer, ACCURACY } from '@/drills/shared/scoring';
+import { trayImage, maxDecksInTray } from '@/drills/shared/discard-tray';
+import { AnswerGrid, numberGrid, windowContaining } from '@/drills/shared/answer-grid';
+import { clockTime, mixedNumber, signedCount } from '@/drills/shared/format';
+import { DrillShoe } from '@/drills/shared/shoe';
+import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { STRATEGY_FILES } from '@/data/strategy-files';
+import { seededRandom } from '@/core/random';
+import type { CounterSettings, TcRounding } from '@/core/counting';
 
 type TimerId = ReturnType<typeof setTimeout>;
 interface FakeTimer {

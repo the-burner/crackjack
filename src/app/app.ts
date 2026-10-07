@@ -1,19 +1,19 @@
 // Application services shared by every screen.
 
-import { Storage } from '../services/storage.ts';
-import type { StorageBackend } from '../services/storage.ts';
-import { Sound } from '../services/sound.ts';
-import { Settings } from '../settings/store.ts';
-import { SETTINGS_SCHEMA } from '../settings/schema.ts';
-import type { AppSettings } from '../settings/schema.ts';
-import { StrategyLibrary } from '../settings/strategies.ts';
-import { Router } from './router.ts';
-import type { Screen, ScreenParams } from './router.ts';
-import { dismissTopOverlay } from '../ui/overlays.ts';
-import { ErrorTallies } from '../services/error-tallies.ts';
-import { ScreenWakeLock } from '../services/wake-lock.ts';
+import { Storage } from '@/services/storage';
+import type { StorageBackend } from '@/services/storage';
+import { Sound } from '@/services/sound';
+import { Settings } from '@/settings/store';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
+import type { AppSettings } from '@/settings/schema';
+import { StrategyLibrary } from '@/settings/strategies';
+import { Router } from './router';
+import type { Screen, ScreenParams } from './router';
+import { dismissTopOverlay } from '@/ui/overlays';
+import { ErrorTallies } from '@/services/error-tallies';
+import { ScreenWakeLock } from '@/services/wake-lock';
 
-export type { Screen, ScreenFactory, ScreenParams } from './router.ts';
+export type { Screen, ScreenFactory, ScreenParams } from './router';
 
 /** The services that do not need a DOM. */
 export interface Services {
