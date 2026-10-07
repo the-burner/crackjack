@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { durationColumns, joinDuration } from '../../public/src/ui/time-wheel.js';
+import { durationColumns, joinDuration } from '../../src/ui/time-wheel.js';
 
 describe('duration wheels within the setting maximum', () => {
   it('shows a one minute limit as seconds alone', () => {

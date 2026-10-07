@@ -3,12 +3,12 @@ import {
   buildHandList, dealHand, fillHand, handIndex, ownIndex, countCentre, countForHand, correctPlay, errorCell,
   describeHand, describeEntry, errorCellsAsHands, errorSummary, percent, rowOf, columnOf, upcardOf, SITUATIONS,
   roundRobinEntries, RoundRobin,
-} from '../../../public/src/drills/flash/logic.js';
-import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
-import { ACTION, SECTION } from '../../../public/src/core/strategy/advisor.js';
-import { seededRandom } from '../../../public/src/core/random.js';
-import { emptyTallies } from '../../../public/src/services/error-tallies.js';
+} from '../../../src/drills/flash/logic.js';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { ACTION, SECTION } from '../../../src/core/strategy/advisor.js';
+import { seededRandom } from '../../../src/core/random.js';
+import { emptyTallies } from '../../../src/services/error-tallies.js';
 
 const ALL_SITUATIONS = Object.fromEntries(SITUATIONS.map(k => [k, true]));
 const options = extra => ({ decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all', ...extra });
@@ -434,7 +434,6 @@ describe('descriptions', () => {
 
 describe('Round Robin', () => {
   const all = Object.fromEntries(SITUATIONS.map(kind => [kind, true]));
-  const key = e => `${e.kind} ${e.value} v ${e.upcard}`;
 
   it('lists each player hand once per dealer card, merging situations that share it', () => {
     const entries = roundRobinEntries(all);

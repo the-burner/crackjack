@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, STATE, ACTION } from '../../../public/src/game/engine/game.js';
-import { rulesFrom } from '../../../public/src/game/engine/rules.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
-import { seededRandom } from '../../../public/src/core/random.js';
-import { decodeSideBetGame } from '../../../public/src/settings/side-bet-games.js';
-import { sideBetSpots } from '../../../public/src/game/engine/side-bets.js';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../../public/src/data/side-bet-games.js';
+import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.js';
+import { rulesFrom } from '../../../src/game/engine/rules.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage, MemoryBackend } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
+import { seededRandom } from '../../../src/core/random.js';
+import { decodeSideBetGame } from '../../../src/settings/side-bet-games.js';
+import { sideBetSpots } from '../../../src/game/engine/side-bets.js';
+import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.js';
 
 const SPADES = 0, HEARTS = 2, DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
@@ -535,8 +535,8 @@ describe('side bets through the engine', () => {
 
 describe('GameSession', () => {
   it('plays a round, keeps the count, and persists the bankroll', async () => {
-    const { GameSession } = await import('../../../public/src/game/session.js');
-    const { createServices } = await import('../../../public/src/app/app.js');
+    const { GameSession } = await import('../../../src/game/session.js');
+    const { createServices } = await import('../../../src/app/app.js');
     const app = createServices({ backend: new MemoryBackend() });
     app.sound = { play() {} };
     const session = new GameSession(app);

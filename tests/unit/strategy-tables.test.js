@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildStrategy, CODE, INDEX_SETS, INSURANCE } from '../../public/src/core/strategy/strategy-tables.js';
-import { TABLE, TABLE_NAMES, VARIANT, parseStrategyFile } from '../../public/src/core/strategy/strategy-file.js';
-import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
+import { buildStrategy, CODE, INDEX_SETS, INSURANCE } from '../../src/core/strategy/strategy-tables.js';
+import { TABLE, TABLE_NAMES, VARIANT, parseStrategyFile } from '../../src/core/strategy/strategy-file.js';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
 import { loadFixture } from '../support/fixtures.js';
 
 const toNumbers = table => table.map(row => row.map(v => (v === null || v === undefined ? v : Number(v))));

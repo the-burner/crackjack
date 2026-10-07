@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Hand } from '../../../public/src/game/engine/hand.js';
-import { cardId } from '../../../public/src/core/cards.js';
+import { Hand } from '../../../src/game/engine/hand.js';
+import { cardId } from '../../../src/core/cards.js';
 
 const SPADES = 0, HEARTS = 2, DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);

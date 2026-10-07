@@ -33,10 +33,8 @@ test('back dismisses a dialog on the home screen instead of leaving the app', as
   expect(await page.evaluate(() => typeof window.app?.router?.open)).toBe('function');
 });
 
-test.describe('the installed app offline', () => {
+test.describe('the installed app offline', { tag: '@build' }, () => {
   test.use({ serviceWorkers: 'allow' });
-  // Playwright's WebKit build crashes while offline; the worker itself is engine-independent.
-  test.skip(({ browserName }) => browserName === 'webkit', 'offline navigation is unsupported in Playwright WebKit');
 
   test('opens a deep link at the app base instead of serving the shell under it', async ({ page, context }) => {
     await page.goto('/index.html');

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { betCells, betLabel, gridGeometry, cellIndexAt, drawTile, COLUMNS, ROWS, TILE, TILE_GAP } from '../../../public/src/game/table/bet-grid.js';
-import { trayPhoto, shoePhoto } from '../../../public/src/game/table/photos.js';
+import { betCells, betLabel, gridGeometry, cellIndexAt, drawTile, COLUMNS, ROWS, TILE, TILE_GAP } from '../../../src/game/table/bet-grid.js';
+import { trayPhoto, shoePhoto } from '../../../src/game/table/photos.js';
 
 const ramp = (...rows) => ({ minCount: 0, rows: rows.map(r => (Array.isArray(r) ? { chips: r[0], hands: r[1] } : { chips: r, hands: 1 })) });
 

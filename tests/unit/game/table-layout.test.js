@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   tableLayout, visibleSeats, cardSlot, seatSlot, dealerSlot, railEdgeY, traySilhouette, DEALER_SPREAD_CARDS,
   MAX_PORTRAIT_SEATS, CARDS_PER_HAND, HANDS_PER_SEAT,
-} from '../../../public/src/game/table/layout.js';
+} from '../../../src/game/table/layout.js';
 
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };

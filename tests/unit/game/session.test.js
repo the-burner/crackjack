@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { GameSession } from '../../../public/src/game/session.js';
-import { createServices } from '../../../public/src/app/app.js';
-import { MemoryBackend } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
-import { Counter } from '../../../public/src/core/counting.js';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../../public/src/data/side-bet-games.js';
+import { GameSession } from '../../../src/game/session.js';
+import { createServices } from '../../../src/app/app.js';
+import { MemoryBackend } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
+import { Counter } from '../../../src/core/counting.js';
+import { SIDE_BET_GAME_DEFINITIONS } from '../../../src/data/side-bet-games.js';
 
 const card = (rank, suit = 0) => cardId(rank, suit);
 

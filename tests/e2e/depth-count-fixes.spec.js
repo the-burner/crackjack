@@ -55,15 +55,6 @@ const feltAtCentre = canvas => canvas.evaluate(el => {
   return Math.round((100 * felt) / (data.length / 4));
 });
 
-/** Taps the cell at (row, column) of an answer grid. */
-async function tapCell(screen, { row, column, rows, columns, offset = 0 }) {
-  const canvas = screen.locator('canvas.drill__answers');
-  const box = await canvas.boundingBox();
-  await canvas.click({
-    position: { x: (box.width / columns) * (column + offset + 0.5), y: (box.height / rows) * (row + 0.5) },
-  });
-}
-
 /**
  * Answers the one depth cell that can be right, then presses a drill button in
  * the same tick, so the press lands inside the pause before the next test.

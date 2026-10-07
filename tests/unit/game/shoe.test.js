@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Shoe, SHUFFLE_MODE } from '../../../public/src/game/engine/shoe.js';
-import { CARDS_PER_DECK } from '../../../public/src/core/cards.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+import { Shoe, SHUFFLE_MODE } from '../../../src/game/engine/shoe.js';
+import { CARDS_PER_DECK } from '../../../src/core/cards.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 const shoe = (over = {}) => new Shoe({ decks: 2, random: seededRandom(1), ...over });
 

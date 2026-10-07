@@ -3,9 +3,9 @@ import {
   DEALER_ERROR, ERROR_CHANCE, UNPEEKED_BLACKJACK_CHANCE, SUPPORTED_ERRORS, enabledErrors,
   dealerErrorsOn, pickDealerError, claimFoul, missedMessage, dealerStandsByMistake,
   bustsGoodHandByMistake, bustedGoodHandShortfall, errorHandFrom,
-} from '../../../public/src/game/dealer-errors.js';
-import { Hand } from '../../../public/src/game/engine/hand.js';
-import { cardId } from '../../../public/src/core/cards.js';
+} from '../../../src/game/dealer-errors.js';
+import { Hand } from '../../../src/game/engine/hand.js';
+import { cardId } from '../../../src/core/cards.js';
 
 const settingsWith = on => ({ get: key => on.includes(key) });
 

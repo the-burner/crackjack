@@ -1,15 +1,15 @@
 // A face-down game, early surrender, and the insurance chips leaving the table.
 
 import { describe, it, expect } from 'vitest';
-import { BlackjackGame, STATE, ACTION } from '../../../public/src/game/engine/game.js';
-import { rulesFrom } from '../../../public/src/game/engine/rules.js';
-import { PLAYER } from '../../../public/src/game/engine/hand.js';
-import { createTableState } from '../../../public/src/game/table/table-state.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+import { BlackjackGame, STATE, ACTION } from '../../../src/game/engine/game.js';
+import { rulesFrom } from '../../../src/game/engine/rules.js';
+import { PLAYER } from '../../../src/game/engine/hand.js';
+import { createTableState } from '../../../src/game/table/table-state.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage, MemoryBackend } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 const card = (rank, suit = 0) => cardId(rank, suit);
 

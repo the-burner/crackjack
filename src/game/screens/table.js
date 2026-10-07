@@ -277,16 +277,6 @@ export function tableScreen(app) {
     updateControls();
   }
 
-  /** Applies events with no animation (clearing the table). */
-  function applyNow(events) {
-    for (const event of events) {
-      state.apply(event);
-      countStep(event);
-    }
-    counts.textContent = countsText();
-    render();
-  }
-
   function whenIdle() {
     warnedOfBadPlay = false;
     showWarnings();

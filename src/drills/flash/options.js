@@ -1,6 +1,5 @@
 // Flash Drills: Options.
 
-import { h } from '../../ui/dom.js';
 import { button } from '../../ui/components.js';
 import { alert, confirm } from '../../ui/dialogs.js';
 import { toast } from '../../ui/toast.js';

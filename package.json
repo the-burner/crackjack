@@ -3,20 +3,38 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node tools/server.mjs",
-    "serve": "node tools/server.mjs --phone",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite build && vite preview",
+    "serve": "vite build && vite preview --mode phone",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "precache": "node tools/update-precache.mjs",
-    "precache:check": "node tools/update-precache.mjs --check",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "add-strategy": "node tools/bundle-import.mjs strategy",
     "add-side-bet": "node tools/bundle-import.mjs side-bet",
-    "logo": "node tools/logo.mjs && node tools/update-precache.mjs"
+    "logo": "node tools/logo.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@vitest/coverage-v8": "^5.0.3",
-    "vitest": "^5.0.3"
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "~6.0",
+    "typescript-eslint": "^8.71.1",
+    "vite": "^8.3.3",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3",
+    "workbox-core": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

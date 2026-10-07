@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Storage, MemoryBackend } from '../../public/src/services/storage.js';
+import { Storage, MemoryBackend } from '../../src/services/storage.js';
 
 const store = () => {
   const backend = new MemoryBackend();

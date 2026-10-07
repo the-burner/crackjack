@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { doubleTapDetector, DOUBLE_TAP_MS, DOUBLE_TAP_DISTANCE } from '../../public/src/ui/double-tap.js';
+import { doubleTapDetector, DOUBLE_TAP_MS, DOUBLE_TAP_DISTANCE } from '../../src/ui/double-tap.js';
 
 describe('doubleTapDetector', () => {
   it('reports the second of two quick, close taps', () => {

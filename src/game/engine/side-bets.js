@@ -178,7 +178,7 @@ export function ruleMatches(rule, context) {
     if (selected.length === 0 || !patternMatches(pattern, selected)) return false;
   }
 
-  const playerSet = playerConditionCards({ rule, pattern, playerHandCards, selected, firstTwoCardsOnly });
+  const playerSet = playerConditionCards({ pattern, playerHandCards, selected, firstTwoCardsOnly });
   if (!countMatches(rule.playerCombo[0], playerSet.length)) return false;
   if (!totalMatches(rule.playerCombo[1], totalOf(playerSet, rule.acesCountOne))) return false;
   if (!suitMatches(rule.playerCombo[2], playerSet)) return false;
@@ -201,7 +201,7 @@ export function ruleMatches(rule, context) {
  * Normally the whole hand; the cards the rule picked out where the pattern code
  * says so; the first two only where the game says so.
  */
-function playerConditionCards({ rule, pattern, playerHandCards, selected, firstTwoCardsOnly }) {
+function playerConditionCards({ pattern, playerHandCards, selected, firstTwoCardsOnly }) {
   if (pattern === PATTERN.selection) return selected;
   if (firstTwoCardsOnly) return playerHandCards.slice(0, 2);
   return playerHandCards;

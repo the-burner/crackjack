@@ -4,12 +4,12 @@ import { describe, it, expect } from 'vitest';
 import {
   doubleAllowed, blackjackPremium, roundPremium, bustValue, rulesFrom,
   splitAllowed, surrenderAllowed, earlySurrenderAllowed, charlieWin, insuranceOffered,
-} from '../../../public/src/game/engine/rules.js';
-import { Hand } from '../../../public/src/game/engine/hand.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
+} from '../../../src/game/engine/rules.js';
+import { Hand } from '../../../src/game/engine/hand.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage, MemoryBackend } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
 
 const SPADES = 0, CLUBS = 1, HEARTS = 2, DIAMONDS = 3;
 const card = (rank, suit = SPADES) => cardId(rank, suit);

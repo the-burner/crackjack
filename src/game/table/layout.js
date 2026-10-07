@@ -253,7 +253,7 @@ function shoeRect({ width, topOfSeats, cardWidth }) {
 }
 
 /** The bankroll label: centred over the felt, above the dealer's cards. */
-function bankrollBox({ width, height, portrait, dealer, cardHeight, tray }) {
+function bankrollBox({ width, portrait, dealer, cardHeight, tray }) {
   const boxHeight = Math.round(clamp(cardHeight * 0.32, 18, 34));
   if (portrait) {
     const left = tray ? tray.x + tray.width + 4 : 4;

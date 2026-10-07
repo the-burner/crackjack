@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 
-const DIR = 'public/src/ui/styles/';
+const DIR = 'src/ui/styles/';
 const FILES = readdirSync(DIR).filter(name => name.endsWith('.css'));
 const CSS = Object.fromEntries(FILES.map(name => [name, readFileSync(DIR + name, 'utf8')]));
 const ALL = Object.values(CSS).join('\n');
@@ -42,15 +42,12 @@ describe('custom properties', () => {
   });
 
   it('are all used somewhere, so none is left behind', () => {
-    const used = new Set([
-      ...[...ALL.matchAll(/var\((--[a-z0-9-]+)/g)].map(match => match[1]),
-      // Canvas code reads some of them by name instead.
-      ...[...readFileSync('public/sw.js', 'utf8').matchAll(/(--[a-z0-9-]+)/g)].map(match => match[1]),
-    ]);
+    const used = new Set([...ALL.matchAll(/var\((--[a-z0-9-]+)/g)].map(match => match[1]));
+    // Canvas code reads some of them by name instead.
     const fromScript = new Set();
-    for (const file of ['public/src/game/table/bet-grid.js', 'public/src/drills/shared/answer-grid.js',
-      'public/src/game/table/renderer.js', 'public/src/drills/full/screen.js', 'public/src/drills/depth/screen.js',
-      'public/src/drills/count/screen.js', 'public/src/game/screens/table.js', 'public/src/ui/theme.js']) {
+    for (const file of ['src/game/table/bet-grid.js', 'src/drills/shared/answer-grid.js',
+      'src/game/table/renderer.js', 'src/drills/full/screen.js', 'src/drills/depth/screen.js',
+      'src/drills/count/screen.js', 'src/game/screens/table.js', 'src/ui/theme.js']) {
       for (const match of readFileSync(file, 'utf8').matchAll(/(--[a-z0-9-]+)/g)) fromScript.add(match[1]);
     }
     const defined = definitions(CSS['app.css']).map(match => match[1]);
@@ -137,17 +134,17 @@ describe('canvas colours', () => {
    * These two are the exceptions, and should be converted.
    */
   const KNOWN_LITERALS = {
-    'public/src/game/table/renderer.js': ['CIRCLE_COLOR', 'FELT_FALLBACK'],
+    'src/game/table/renderer.js': ['CIRCLE_COLOR', 'FELT_FALLBACK'],
   };
 
   const FILES_WITH_CANVAS = [
-    'public/src/game/table/renderer.js',
-    'public/src/game/table/bet-grid.js',
-    'public/src/drills/shared/answer-grid.js',
-    'public/src/drills/shared/discard-tray.js',
-    'public/src/drills/full/screen.js',
-    'public/src/drills/depth/screen.js',
-    'public/src/drills/count/screen.js',
+    'src/game/table/renderer.js',
+    'src/game/table/bet-grid.js',
+    'src/drills/shared/answer-grid.js',
+    'src/drills/shared/discard-tray.js',
+    'src/drills/full/screen.js',
+    'src/drills/depth/screen.js',
+    'src/drills/count/screen.js',
   ];
 
   for (const file of FILES_WITH_CANVAS) {
@@ -165,7 +162,7 @@ describe('canvas colours', () => {
 });
 
 describe('the table canvas', () => {
-  const renderer = readFileSync('public/src/game/table/renderer.js', 'utf8');
+  const renderer = readFileSync('src/game/table/renderer.js', 'utf8');
 
   /**
    * Colours of the felt artwork itself: the fill shown before the photograph

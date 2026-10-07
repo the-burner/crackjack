@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { correctPlay, checkPlay, correctInsurance, checkInsurance, checkBet, expectedBet } from '../../../public/src/game/play-check.js';
-import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
-import { rulesFrom } from '../../../public/src/game/engine/rules.js';
-import { ACTION } from '../../../public/src/game/engine/game.js';
-import { Hand } from '../../../public/src/game/engine/hand.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
+import { correctPlay, checkPlay, correctInsurance, checkInsurance, checkBet, expectedBet } from '../../../src/game/play-check.js';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { rulesFrom } from '../../../src/game/engine/rules.js';
+import { ACTION } from '../../../src/game/engine/game.js';
+import { Hand } from '../../../src/game/engine/hand.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage, MemoryBackend } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
 
-const SPADES = 0, CLUBS = 1, HEARTS = 2;
+const SPADES = 0, HEARTS = 2;
 const card = (rank, suit = SPADES) => cardId(rank, suit);
 
 /** The default High-Low strategy, whose insurance index is a whole true count. */

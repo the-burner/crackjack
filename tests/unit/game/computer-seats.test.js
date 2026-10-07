@@ -2,18 +2,18 @@
 // seat that splits plays both of its hands.
 
 import { describe, it, expect, vi } from 'vitest';
-import { GameSession } from '../../../public/src/game/session.js';
-import { createServices } from '../../../public/src/app/app.js';
-import { MemoryBackend } from '../../../public/src/services/storage.js';
-import { BlackjackGame, ACTION } from '../../../public/src/game/engine/game.js';
-import { rulesFrom } from '../../../public/src/game/engine/rules.js';
-import { PLAYER } from '../../../public/src/game/engine/hand.js';
-import { correctPlay } from '../../../public/src/game/play-check.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage } from '../../../public/src/services/storage.js';
-import { cardId } from '../../../public/src/core/cards.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+import { GameSession } from '../../../src/game/session.js';
+import { createServices } from '../../../src/app/app.js';
+import { MemoryBackend } from '../../../src/services/storage.js';
+import { BlackjackGame, ACTION } from '../../../src/game/engine/game.js';
+import { rulesFrom } from '../../../src/game/engine/rules.js';
+import { PLAYER } from '../../../src/game/engine/hand.js';
+import { correctPlay } from '../../../src/game/play-check.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage } from '../../../src/services/storage.js';
+import { cardId } from '../../../src/core/cards.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 const card = (rank, suit = 0) => cardId(rank, suit);
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Storage, MemoryBackend } from '../../public/src/services/storage.js';
-import { Settings } from '../../public/src/settings/store.js';
+import { Storage, MemoryBackend } from '../../src/services/storage.js';
+import { Settings } from '../../src/settings/store.js';
 
 const schema = {
   'mechanics.sound': { type: 'bool', default: false },

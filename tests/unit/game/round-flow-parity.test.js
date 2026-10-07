@@ -1,13 +1,13 @@
 // When the shoe is shuffled, what the burn cards do, and where the cut card falls.
 
 import { describe, it, expect, vi } from 'vitest';
-import { BlackjackGame, ACTION } from '../../../public/src/game/engine/game.js';
-import { Shoe, SHUFFLE_MODE } from '../../../public/src/game/engine/shoe.js';
-import { rulesFrom } from '../../../public/src/game/engine/rules.js';
-import { Settings } from '../../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../../public/src/settings/schema.js';
-import { Storage, MemoryBackend } from '../../../public/src/services/storage.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+import { BlackjackGame, ACTION } from '../../../src/game/engine/game.js';
+import { Shoe, SHUFFLE_MODE } from '../../../src/game/engine/shoe.js';
+import { rulesFrom } from '../../../src/game/engine/rules.js';
+import { Settings } from '../../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../../src/settings/schema.js';
+import { Storage, MemoryBackend } from '../../../src/services/storage.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 function makeRules(overrides = {}) {
   const settings = new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));

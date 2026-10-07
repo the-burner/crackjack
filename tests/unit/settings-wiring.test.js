@@ -6,13 +6,13 @@
 // it. That is what caught the settings that used to be read nowhere at all.
 
 import { describe, it, expect } from 'vitest';
-import { GameSession } from '../../public/src/game/session.js';
-import { createServices } from '../../public/src/app/app.js';
-import { MemoryBackend } from '../../public/src/services/storage.js';
-import { rulesFrom } from '../../public/src/game/engine/rules.js';
-import { Settings } from '../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../public/src/settings/schema.js';
-import { Storage } from '../../public/src/services/storage.js';
+import { GameSession } from '../../src/game/session.js';
+import { createServices } from '../../src/app/app.js';
+import { MemoryBackend } from '../../src/services/storage.js';
+import { rulesFrom } from '../../src/game/engine/rules.js';
+import { Settings } from '../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
+import { Storage } from '../../src/services/storage.js';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -144,7 +144,7 @@ describe('the unusual-game picker', () => {
 describe('speeds reaching the table', () => {
   for (const key of ['mechanics.dealerSpeed', 'mechanics.otherPlayerSpeed', 'mechanics.payoffSpeed']) {
     it(`${key} changes how long the table waits`, async () => {
-      const { pauseForSpeed } = await import('../../public/src/game/table/animator.js');
+      const { pauseForSpeed } = await import('../../src/game/table/animator.js');
       const settings = settingsWith();
       const slow = pauseForSpeed(settings.get(key));
       const fast = pauseForSpeed(otherValue(key));
@@ -186,7 +186,7 @@ describe('every setting does something', () => {
       if (statSync(full).isDirectory()) walk(full);
       else if (entry.endsWith('.js')) sourceFiles.push(full);
     }
-  })('public/src');
+  })('src');
 
   /** Files that only define or edit settings, so reading one there proves nothing. */
   const isEditor = file => file.includes('settings/schema.js')

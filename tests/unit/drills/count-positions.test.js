@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flashPositions } from '../../../public/src/drills/count/logic.js';
+import { flashPositions } from '../../../src/drills/count/logic.js';
 
 describe('a flash of a single card', () => {
   it('centres the card with Positions: Horizontal, as it does diagonally', () => {

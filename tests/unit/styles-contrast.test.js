@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const DIR = 'public/src/ui/styles/';
+const DIR = 'src/ui/styles/';
 /** The order index.html loads them in: equal specificity is settled by it. */
 const FILES = ['app.css', 'icons.css', 'screens.css', 'settings.css',
   'strategy.css', 'drills.css', 'game.css', 'themes.css'];

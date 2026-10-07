@@ -7,8 +7,6 @@ import { test, expect } from '@playwright/test';
 const PORTRAIT = { width: 390, height: 844 };
 const LANDSCAPE = { width: 844, height: 390 };
 
-/** Seat 1 is the player's; 2..4 are computer players. */
-const ONE_HUMAN = [false, true, true, true, false, false];
 /** Seats 1 and 2 are the player's; 3 and 4 are computer players. */
 const TWO_HUMAN = [false, false, true, true, false, false];
 

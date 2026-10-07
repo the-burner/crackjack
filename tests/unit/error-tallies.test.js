@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { ErrorTallies, emptyTallies } from '../../public/src/services/error-tallies.js';
-import { Storage, MemoryBackend } from '../../public/src/services/storage.js';
-import { TABLE_NAMES } from '../../public/src/core/strategy/strategy-file.js';
+import { ErrorTallies, emptyTallies } from '../../src/services/error-tallies.js';
+import { Storage, MemoryBackend } from '../../src/services/storage.js';
+import { TABLE_NAMES } from '../../src/core/strategy/strategy-file.js';
 
 const tallies = () => new ErrorTallies(new Storage(new MemoryBackend()));
 

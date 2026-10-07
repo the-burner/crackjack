@@ -1,12 +1,12 @@
 // A saved value that no longer makes sense must not reach the screens.
 
 import { describe, it, expect } from 'vitest';
-import { Storage, MemoryBackend } from '../../public/src/services/storage.js';
-import { Settings } from '../../public/src/settings/store.js';
-import { SETTINGS_SCHEMA } from '../../public/src/settings/schema.js';
-import { prepareLaunch } from '../../public/src/settings/rules-logic.js';
-import { BUILTIN_STRATEGIES } from '../../public/src/settings/strategies.js';
-import { BUILTIN_SIDE_BET_GAMES } from '../../public/src/data/side-bet-games.js';
+import { Storage, MemoryBackend } from '../../src/services/storage.js';
+import { Settings } from '../../src/settings/store.js';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
+import { prepareLaunch } from '../../src/settings/rules-logic.js';
+import { BUILTIN_STRATEGIES } from '../../src/settings/strategies.js';
+import { BUILTIN_SIDE_BET_GAMES } from '../../src/data/side-bet-games.js';
 
 /** Settings loaded from storage holding `values`. */
 function saved(values) {

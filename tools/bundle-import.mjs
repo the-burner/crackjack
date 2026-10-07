@@ -5,15 +5,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { parseStrategyFile } from '../public/src/core/strategy/strategy-file.js';
-import { decodeSideBetGame, sideBetGameName } from '../public/src/settings/side-bet-games.js';
+import { parseStrategyFile } from '../src/core/strategy/strategy-file.js';
+import { decodeSideBetGame, sideBetGameName } from '../src/settings/side-bet-games.js';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const STRATEGY_FILES = 'public/src/data/strategy-files.js';
-const STRATEGY_CATALOG = 'public/src/settings/strategies.js';
-const SIDE_BET_GAMES = 'public/src/data/side-bet-games.js';
+const STRATEGY_FILES = 'src/data/strategy-files.js';
+const STRATEGY_CATALOG = 'src/settings/strategies.js';
+const SIDE_BET_GAMES = 'src/data/side-bet-games.js';
 
 /** Where exports are downloaded from. */
 export const EXPORT_HOST = 'https://www.qfit.com';
@@ -123,7 +122,6 @@ async function main([kind, code, ...rest]) {
     added = addSideBetGame(read(SIDE_BET_GAMES), await download(sideBetUrl(code)), name);
     write(SIDE_BET_GAMES, added.games);
   }
-  execFileSync(process.execPath, [path.join(REPO, 'tools/update-precache.mjs')], { stdio: 'inherit' });
   console.log(`Added ${kind} "${added.name}" as id ${added.id}.`);
 }
 

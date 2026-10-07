@@ -3,20 +3,37 @@ import { defineConfig, devices } from '@playwright/test';
 /** Every test runs on an iPhone 13 profile, in both engines the app meets. */
 const iPhone = devices['iPhone 13'];
 
+/**
+ * Most tests run against the dev server, whose unbundled modules they can
+ * import and patch in the page. Tests tagged @build need the service worker,
+ * so they run against the production build.
+ */
+const DEV = 'http://127.0.0.1:5174';
+const BUILD = 'http://127.0.0.1:4173';
+
 export default defineConfig({
   testDir: 'tests',
   testMatch: ['e2e/**/*.spec.js'],
   fullyParallel: true,
   reporter: 'list',
-  use: { ...iPhone, baseURL: 'http://127.0.0.1:4173' },
+  use: { ...iPhone, baseURL: DEV },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'chromium', grepInvert: /@build/, use: { browserName: 'chromium' } },
     // WebKit is Safari's engine, so it is the closest check on what the iPhone runs.
-    { name: 'webkit', use: { browserName: 'webkit' } },
+    { name: 'webkit', grepInvert: /@build/, use: { browserName: 'webkit' } },
+    // Chromium only: Playwright's WebKit build crashes when offline.
+    { name: 'build', grep: /@build/, use: { browserName: 'chromium', baseURL: BUILD } },
   ],
-  webServer: {
-    command: 'node tools/server.mjs --port 4173',
-    url: 'http://127.0.0.1:4173/index.html',
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: 'npx vite --host 127.0.0.1 --port 5174 --strictPort',
+      url: `${DEV}/index.html`,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'npm run build && npx vite preview --strictPort',
+      url: `${BUILD}/index.html`,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });

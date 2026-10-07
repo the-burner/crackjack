@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 
 /** Card ids are suit * 13 + rank; spades by default. */
 const card = (rank, suit = 0) => suit * 13 + rank;
-const [A, J, Q, K] = [1, 11, 12, 13];
+const [A, Q, K] = [1, 12, 13];
 
 const ALL_HUMAN = [false, false, false, false, false, false];
 

@@ -22,14 +22,14 @@ You don't need a phone or any installation to try the app. You need
 [Node.js](https://nodejs.org/) 22 or newer.
 
 ```bash
-npm start                            # or: node tools/server.mjs
-npm start -- --port 9000             # a different port
+npm install
+npm run dev                          # http://localhost:5173/, reloads as you edit
+npm run preview                      # the production build: http://127.0.0.1:4173/
 ```
 
-Then open <http://127.0.0.1:4173/> in Chrome, Safari or Firefox. The app must
-be **served**; opening `index.html` directly as a `file://` page doesn't work,
-because the browser won't load modules that way. The server reads files from
-disk on every request, so there's no need to restart it after editing.
+Open the URL in Chrome, Safari or Firefox. `npm run dev` serves the source
+with hot reload and no service worker; `npm run preview` builds `dist/` and
+serves it as an installed copy would see it, offline cache included.
 
 Tips for desktop testing:
 
@@ -37,11 +37,9 @@ Tips for desktop testing:
   DevTools (`Cmd+Option+I`), turn on the device toolbar (`Cmd+Shift+M`) and pick
   an iPhone. Use its rotate button for landscape, which the Full Table Drills
   need. A mouse drag works as a swipe on the table and in the Flash drill.
-- **Seeing your edits.** The app installs a service worker that caches every
-  file for offline use, so after editing a file a plain reload may show the old
-  version. In DevTools → Application → Service Workers, tick **Update on
-  reload** (or **Bypass for network**). Running `npm run precache` also makes the
-  next load pick up the changes.
+- **Seeing your edits.** Use `npm run dev`, which has no service worker. The
+  preview build caches itself for offline use; after rebuilding, the app asks
+  to reload.
 - **Starting fresh.** Settings, bankroll and statistics are kept in local
   storage. **Reset Defaults** on the home screen resets the
   settings only; to wipe everything use DevTools → Application → Storage →
@@ -49,8 +47,8 @@ Tips for desktop testing:
 
 ## Serving it to a phone
 
-iOS Safari only installs a web app served over HTTPS, so the server has a
-phone mode that serves HTTPS to your local network:
+iOS Safari only installs a web app served over HTTPS, so there is a phone
+mode that builds the app and serves it over HTTPS to your local network:
 
 ```bash
 npm run serve                        # https://<your-mac>.local:8443/  (also https://localhost:8443/)
@@ -66,8 +64,7 @@ mkcert -install        # once per Mac
 ```
 
 On first run it writes a certificate for your Mac's `.local` hostname into
-`.certs/` (git-ignored). Only the app's own files are served; the rest of the
-repository (tests, `.git`, the certificates) is not.
+`.certs/` (git-ignored). Only the build in `dist/` is served.
 
 ## Installing on an iPhone (offline home-screen app)
 
@@ -97,18 +94,21 @@ rename the Mac, delete `.certs/` and repeat the setup.
 Settings live in the browser's local storage under the `cj.` prefix, so they
 survive reloads and app updates. Deleting the installed app (or clearing Safari's
 data for the site) clears them, and the app starts from the defaults in
-`public/src/settings/schema.js` — edit that file if you want different defaults.
+`src/settings/schema.js` — edit that file if you want different defaults.
 
 ## Development
 
 ```bash
-npm install                          # dev dependencies (Vitest, Playwright)
-npm start                            # local server: http://127.0.0.1:4173/
-npm run serve                        # phone server: https://<your-mac>.local:8443/
+npm install                          # dev dependencies (Vite, TypeScript, ESLint, Vitest, Playwright)
+npm run dev                          # dev server with hot reload: http://localhost:5173/
+npm run build                        # production build into dist/
+npm run preview                      # build and serve dist/: http://127.0.0.1:4173/
+npm run serve                        # build and serve dist/ to phones: https://<your-mac>.local:8443/
 npx playwright install chromium webkit  # once, for the browser tests
 npm test                             # unit tests
-npm run test:e2e                     # browser tests in both engines (starts its own server on port 4173)
-npm run precache                     # update the service worker's file list after changing files
+npm run test:e2e                     # browser tests in both engines (starts the dev server and a build)
+npm run lint                         # ESLint
+npm run typecheck                    # TypeScript
 npm run add-strategy -- <code>       # bundle a strategy by its export code (optional --name "...")
 npm run add-side-bet -- <code>       # bundle a side-bet game by its export code (optional --name "...")
 npm run logo                         # redraw the app icon and wordmark (tools/logo.mjs)
@@ -118,9 +118,9 @@ The browser tests run twice, once in Chromium and once in WebKit (Safari's
 engine, so the closest check on what an iPhone runs). To run one engine only:
 `npx playwright test --project=webkit`.
 
-Run `npm run precache` whenever you add, remove or change a file the app serves;
-it refreshes the list and version in `public/sw.js` so installed copies update
-themselves. The unit tests fail if you forget.
+The service worker's file list is generated by each build (vite-plugin-pwa), so
+installed copies pick up every change; they ask before reloading. CI runs lint,
+the type check and both test suites on every push and pull request.
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and
   the conventions it follows.

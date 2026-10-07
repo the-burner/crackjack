@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY, StrategyLibrary, strategyOptions } from '../../public/src/settings/strategies.js';
-import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
-import { SETTINGS_SCHEMA } from '../../public/src/settings/schema.js';
-import { Settings } from '../../public/src/settings/store.js';
-import { Storage, MemoryBackend } from '../../public/src/services/storage.js';
+import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY, StrategyLibrary, strategyOptions } from '../../src/settings/strategies.js';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.js';
+import { Settings } from '../../src/settings/store.js';
+import { Storage, MemoryBackend } from '../../src/services/storage.js';
 
 const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));
 

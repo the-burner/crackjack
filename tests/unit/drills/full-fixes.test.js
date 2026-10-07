@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import {
   dealRound, partialView, fullAnswer, fullyShownLimit, fullQuestionDrill, asksTwoCounts,
   nextTwoTablePhase, spotsFor, DEALER_SPOT, TWO_TABLE_PHASES,
-} from '../../../public/src/drills/full/logic.js';
-import { halfSteps, answerIndex } from '../../../public/src/drills/count/logic.js';
-import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../public/src/drills/shared/count-grid.js';
-import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
-import { cardId } from '../../../public/src/core/cards.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+} from '../../../src/drills/full/logic.js';
+import { halfSteps, answerIndex } from '../../../src/drills/count/logic.js';
+import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../../../src/drills/shared/count-grid.js';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { cardId } from '../../../src/core/cards.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 const card = value => cardId(value, 0);
 const cards = values => values.map(card);

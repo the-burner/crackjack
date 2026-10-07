@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest';
 import {
   EXPORT_HOST, addSideBetGame, addStrategy, isSideBetDefinition, isStrategyFileText, normalizeDownload, sideBetUrl, strategyUrl,
 } from '../../tools/bundle-import.mjs';
-import { STRATEGY_FILES } from '../../public/src/data/strategy-files.js';
-import { SIDE_BET_GAME_DEFINITIONS } from '../../public/src/data/side-bet-games.js';
+import { STRATEGY_FILES } from '../../src/data/strategy-files.js';
+import { SIDE_BET_GAME_DEFINITIONS } from '../../src/data/side-bet-games.js';
 
 const read = file => fs.readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
-const sources = () => ({ files: read('public/src/data/strategy-files.js'), catalog: read('public/src/settings/strategies.js') });
+const sources = () => ({ files: read('src/data/strategy-files.js'), catalog: read('src/settings/strategies.js') });
 /** Loads an import-free module from source. */
 const load = src => import(`data:text/javascript,${encodeURIComponent(src)}`);
 
@@ -63,7 +63,7 @@ describe('addSideBetGame', () => {
   const definition = SIDE_BET_GAME_DEFINITIONS[8].replace('Lucky Ladies', 'Lucky Gents');
 
   it('adds the definition under the next id and lists it last', async () => {
-    const { id, name, games } = addSideBetGame(read('public/src/data/side-bet-games.js'), definition);
+    const { id, name, games } = addSideBetGame(read('src/data/side-bet-games.js'), definition);
     expect([id, name]).toEqual([20, 'Lucky Gents']);
     const mod = await load(games);
     expect(mod.SIDE_BET_GAME_DEFINITIONS[20]).toBe(definition);
@@ -72,7 +72,7 @@ describe('addSideBetGame', () => {
 
   it('rejects a bad download and a game that is already bundled', () => {
     expect(isSideBetDefinition('error')).toBe(false);
-    expect(() => addSideBetGame(read('public/src/data/side-bet-games.js'), 'error')).toThrow(/not a side-bet game/);
-    expect(() => addSideBetGame(read('public/src/data/side-bet-games.js'), SIDE_BET_GAME_DEFINITIONS[8])).toThrow(/already bundled/);
+    expect(() => addSideBetGame(read('src/data/side-bet-games.js'), 'error')).toThrow(/not a side-bet game/);
+    expect(() => addSideBetGame(read('src/data/side-bet-games.js'), SIDE_BET_GAME_DEFINITIONS[8])).toThrow(/already bundled/);
   });
 });

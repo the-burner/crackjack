@@ -1,57 +1,58 @@
 # Architecture
 
-Crackjack is a static, offline-first web app written as plain ES
-modules. There is no build step: everything the browser loads is in `public/`,
-served as-is — `public/index.html` loads `public/src/main.js`. Everything outside
-`public/` (tests, tools, docs) is for development only.
+Crackjack is a static, offline-first web app written as ES modules and built
+with Vite: `index.html` loads `src/main.js`, and `npm run build` bundles them,
+with the files in `public/`, into `dist/`. TypeScript is configured with
+`allowJs`, so modules can move to `.ts` one at a time. Everything else (tests,
+tools, docs) is for development only.
 
 ## Layout
 
 ```
-public/          the app: the only folder the server serves
-  index.html     the page; loads src/main.js
+index.html       the page; loads src/main.js
+public/          copied into the build as-is
   manifest.webmanifest  install manifest (name, icons, colours)
-  sw.js          service worker: offline cache (must sit at the site root)
   assets/        images and sounds (cards, table, trays, shoe, sounds, icons)
-  src/
-    main.js        entry point: creates the app, registers screens, opens Home
-    app/           createApp() / createServices() and the screen router
-    core/          pure logic shared by everything, no DOM
-      cards.js       card ids, ranks, suits, hand totals
-      counting.js    running count, true count, side counts, decks remaining
-      random.js      seeded and default random sources, shuffling
-      strategy/      strategy-file parsing, table building, play and insurance
-                     advice, and the cell formatting the table viewer draws
-    settings/      the settings schema and store, the strategy catalog, and the
-                   pure rules behind the settings screens (rule interactions,
-                   bet ramp, side-bet game decoding)
-    services/      namespaced localStorage, sound effects, strategy-error tallies
-    ui/            DOM helpers, components, dialogs, the standard screen layout,
-                   card sprites, the stylesheets, and the colour themes
-                   (theme.js; Classic in :root, Catppuccin in themes.css)
-    screens/       Home and Help, the settings screens (settings/) and the
-                   strategy, true count and betting screens (strategy/)
-    drills/        the four drills; shared/ holds what they have in common
-      <drill>/       logic.js (pure), options.js and screen.js
-    game/
-      engine/        the round as a pure state machine: hands, shoe, rules,
-                     settlement, side bets
-      session.js     the engine plus the count, bankroll, statistics and
-                     strategy checking, persisted across visits
-      play-check.js  is this play or bet what the strategy calls for?
-      dealer-errors.js  the deliberate dealer mistakes and Foul claims
-      table/         drawing and animating the table, the betting overlay,
-                     gestures
-      screens/       the table, the bet picker and the statistics screen
-    data/          bundled data: strategy files, side-bet games, help text
+src/
+  main.js        entry point: creates the app, registers screens, opens Home
+  sw.js          service worker source: offline precache, built to dist/sw.js
+  app/           createApp() / createServices() and the screen router
+  core/          pure logic shared by everything, no DOM
+    cards.js       card ids, ranks, suits, hand totals
+    counting.js    running count, true count, side counts, decks remaining
+    random.js      seeded and default random sources, shuffling
+    strategy/      strategy-file parsing, table building, play and insurance
+                   advice, and the cell formatting the table viewer draws
+  settings/      the settings schema and store, the strategy catalog, and the
+                 pure rules behind the settings screens (rule interactions,
+                 bet ramp, side-bet game decoding)
+  services/      namespaced localStorage, sound effects, strategy-error tallies
+  ui/            DOM helpers, components, dialogs, the standard screen layout,
+                 card sprites, the stylesheets, and the colour themes
+                 (theme.js; Classic in :root, Catppuccin in themes.css)
+  screens/       Home and Help, the settings screens (settings/) and the
+                 strategy, true count and betting screens (strategy/)
+  drills/        the four drills; shared/ holds what they have in common
+    <drill>/       logic.js (pure), options.js and screen.js
+  game/
+    engine/        the round as a pure state machine: hands, shoe, rules,
+                   settlement, side bets
+    session.js     the engine plus the count, bankroll, statistics and
+                   strategy checking, persisted across visits
+    play-check.js  is this play or bet what the strategy calls for?
+    dealer-errors.js  the deliberate dealer mistakes and Foul claims
+    table/         drawing and animating the table, the betting overlay,
+                   gestures
+    screens/       the table, the bet picker and the statistics screen
+  data/          bundled data: strategy files, side-bet games, help text
 tests/
-  unit/          Vitest tests for public/src/
+  unit/          Vitest tests for src/
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
   support/       the fixture loader
-tools/           the app's web server (server.mjs), the service worker's
-                 precache list generator, and bundle-import.mjs, which bundles
-                 strategies and side-bet games from their export codes
+tools/           certs.mjs (HTTPS certificates for serving to a phone),
+                 bundle-import.mjs, which bundles strategies and side-bet games
+                 from their export codes, and logo.mjs
 docs/            this document
 ```
 
@@ -105,10 +106,18 @@ animation is done.
   lists, answer grids and tray photos. They pin the rebuild's behavior to the
   original's.
 - `npm run test:e2e` drives the running app in a mobile browser: every screen,
-  playing rounds at the table, and running each drill.
+  playing rounds at the table, and running each drill. It runs on the Vite dev
+  server, so tests can import and patch the app's modules in the page; the
+  tests tagged `@build` (offline use) run on the production build instead.
+- CI (`.github/workflows/ci.yml`) runs lint, the type check, and both suites.
 
 ## Offline
 
-`public/sw.js` precaches every file in `public/`. Its file list and version are
-generated: run `npm run precache` after adding, removing or changing a file.
-`npm run precache:check` fails if the list is out of date.
+`src/sw.js` is built by vite-plugin-pwa (`injectManifest`), which writes the
+list of built files into it, so every build precaches exactly what it ships.
+A new build installs in the background and waits; `main.js` then asks whether
+to reload, and on Reload the new worker takes over. Offline navigations to any
+other URL are redirected to `index.html`, so relative asset paths resolve.
+
+The build uses relative URLs (`base: './'`), so `dist/` works under any path and
+can be wrapped by Capacitor later (which would skip the service worker).

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   depthGrid, depthLabel, generateDepthTest, trueCountFor, trayStyleFor, isTrueCountDrill, RESOLUTION_STEPS,
-} from '../../../public/src/drills/depth/logic.js';
-import { buildStrategy } from '../../../public/src/core/strategy/strategy-tables.js';
-import { STRATEGY_FILES } from '../../../public/src/data/strategy-files.js';
-import { seededRandom } from '../../../public/src/core/random.js';
+} from '../../../src/drills/depth/logic.js';
+import { buildStrategy } from '../../../src/core/strategy/strategy-tables.js';
+import { STRATEGY_FILES } from '../../../src/data/strategy-files.js';
+import { seededRandom } from '../../../src/core/random.js';
 
 const highLow = buildStrategy(STRATEGY_FILES[30], { decks: 6, hitSoft17: false, doubleAfterSplit: false, noHoleCard: false, indexSet: 'all' });
 const tc = { division: 0, lastDeck: 1, rounding: 0 };
