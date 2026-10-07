@@ -6,7 +6,7 @@ import { Icon } from './icon';
 
 export type Option<T> = { value: T; label: string };
 
-/** Which option a value selects, or -1 when it is none of them. */
+/** Which option a value selects. */
 export const selectedIndexFor = <T,>(options: readonly Option<T>[], value: T) =>
   options.findIndex(o => o.value === value);
 
@@ -35,7 +35,6 @@ export function Select<T>({
         name={name}
         aria-label={ariaLabel}
         disabled={disabled}
-        // An unknown value shows as nothing chosen, rather than claiming the first option.
         value={String(selectedIndexFor(options, value))}
         onChange={event => onChange(options[Number(event.currentTarget.value)].value)}
         className={cn(
@@ -45,7 +44,6 @@ export function Select<T>({
           '[[data-slot=settings-group]_[data-slot=field]_&]:pl-0',
         )}
       >
-        <option value="-1" hidden disabled />
         {options.map((o, i) => (
           <option key={i} value={i}>
             {o.label}
