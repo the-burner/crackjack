@@ -498,9 +498,9 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await sheet.getByRole('button', { name: 'Done' }).click();
   await expect(sheet).toBeHidden();
   await expect(row).toHaveText('00:05:01');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['drills.flash.drillSeconds'])).toBe(
-    301,
-  );
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings')).values['drills.flash.drillSeconds']),
+  ).toBe(301);
 
   // Cancel leaves the setting alone.
   await row.click();

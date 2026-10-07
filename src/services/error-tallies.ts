@@ -1,24 +1,38 @@
-// @ts-nocheck
 // Per-cell counts of strategy errors, shared by the game and the Flash drill
 // ("Drill Errors" hands). Each table is a 10 x 10 grid indexed like the
 // strategy tables: [row][dealer column].
 
 import { TABLE_NAMES } from '../core/strategy/strategy-file.ts';
+import type { TableName } from '../core/strategy/strategy-file.ts';
+import type { Storage } from './storage.ts';
 
 const STORAGE_KEY = 'errorTallies';
 
-const emptyGrid = () => Array.from({ length: 10 }, () => new Array(10).fill(0));
-export const emptyTallies = () => Object.fromEntries(TABLE_NAMES.map(name => [name, emptyGrid()]));
+/** Error counts per strategy table, each a 10 x 10 grid. */
+export type Tallies = Record<TableName, number[][]>;
 
-const isGrid = grid =>
+/** One cell with at least one error. */
+export interface TallyCell {
+  table: TableName;
+  row: number;
+  column: number;
+  count: number;
+}
+
+const emptyGrid = (): number[][] => Array.from({ length: 10 }, () => new Array<number>(10).fill(0));
+export const emptyTallies = (): Tallies => Object.fromEntries(TABLE_NAMES.map(name => [name, emptyGrid()])) as Tallies;
+
+const isGrid = (grid: unknown): grid is number[][] =>
   Array.isArray(grid) && grid.length === 10 && grid.every(row => Array.isArray(row) && row.length === 10);
 
 export class ErrorTallies {
-  constructor(storage) {
+  readonly storage: Storage;
+
+  constructor(storage: Storage) {
     this.storage = storage;
   }
 
-  load() {
+  load(): Tallies {
     const saved = this.storage.get(STORAGE_KEY, {});
     const tallies = emptyTallies();
     // A damaged grid is thrown away rather than left to break recording.
@@ -27,7 +41,7 @@ export class ErrorTallies {
   }
 
   /** Records one error in `table` (a TABLE_NAMES entry) at [row][column]. */
-  record(table, row, column) {
+  record(table: TableName, row: number, column: number) {
     if (row < 0 || row > 9 || column < 0 || column > 9) return;
     const tallies = this.load();
     tallies[table][row][column] += 1;
@@ -39,9 +53,9 @@ export class ErrorTallies {
   }
 
   /** Cells with at least one error, most frequent first: [{table, row, column, count}]. */
-  cells() {
+  cells(): TallyCell[] {
     const tallies = this.load();
-    const out = [];
+    const out: TallyCell[] = [];
     for (const table of TABLE_NAMES) {
       tallies[table].forEach((r, row) =>
         r.forEach((count, column) => {

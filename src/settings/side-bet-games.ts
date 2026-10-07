@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Decoder for side-bet / bonus game definitions.
 //
 // A definition is one string: a leading `|`, the game name, then a long run of
@@ -12,14 +11,14 @@ export const RULE_COUNT = 20;
 /** Rule index at which `forcedSideBet` has not been set by the definition. */
 const DEFAULT_FORCED_SIDE_BET = 11;
 
-/** @returns {string} the game name stored in a definition string. */
-export function sideBetGameName(definition) {
+/** The game name stored in a definition string. */
+export function sideBetGameName(definition: string): string {
   const end = definition.indexOf('|', 1);
   return (end === -1 ? definition.slice(1) : definition.slice(1, end)).trim();
 }
 
 /** Expands the shorthand characters and splits the definition into raw fields. */
-function fields(definition) {
+function fields(definition: string): string[] {
   const start = definition.indexOf('|', 1);
   if (start === -1) throw new Error('Side-bet definition has no field list');
   // The replacement order matters: `)` expands to text containing `#`, and both
@@ -39,61 +38,70 @@ function fields(definition) {
 }
 
 /** Sequential reader over the raw fields. */
-function reader(raw) {
+function reader(raw: string[]) {
   let at = 0;
-  const next = () => raw[at++];
+  const next = (): string | undefined => raw[at++];
   return {
     flag: () => Number(next()) !== 0,
     int: () => Math.floor(Number(next()) || 0),
     number: () => Number(next()) || 0,
     text: () => String(next() ?? '').trim(),
     /** Reads `rows` x `cols` values with `read`, returning one array per row. */
-    grid: (rows, cols, read) => Array.from({ length: rows }, () => Array.from({ length: cols }, read)),
-    column: (rows, read) => Array.from({ length: rows }, read),
+    grid: <T>(rows: number, cols: number, read: () => T): T[][] =>
+      Array.from({ length: rows }, () => Array.from({ length: cols }, read)),
+    column: <T>(rows: number, read: () => T): T[] => Array.from({ length: rows }, read),
   };
 }
 
-/**
- * A single bonus or side-bet rule.
- * @typedef {object} SideBetRule
- * @property {boolean} enabled
- * @property {boolean} aboveThreshold     Pay the rule when the true count is above `trueCountThreshold` instead of below.
- * @property {number[]} mixMatch          [player cards, dealer cards, pattern]; see the spec for the codes.
- * @property {number[]} playerCombo       Card count / total / suit conditions and five unused slots.
- * @property {boolean} allowedAfterSplit
- * @property {boolean} winRequired
- * @property {boolean} allowedAfterDouble
- * @property {boolean} acesCountOne
- * @property {number} payTenths           Payout multiplier in tenths (x:1 = payTenths / 10).
- * @property {number} payFixed            Flat amount added to a win.
- * @property {number} trueCountThreshold
- * @property {number[]} dealerCombo       Dealer card count / total / suit conditions.
- * @property {number[]} exactCards        Six player ranks, six dealer ranks, then up / hole / last card.
- * @property {boolean} twentyOneAlwaysWins
- * @property {number} streakLength
- * @property {string} sideBetId           Two-character label shown on the table ('' when unused).
- * @property {number} sideBetDealerLimit
- * @property {number} sideBetMinLimit
- */
+/** A single bonus or side-bet rule. */
+export interface SideBetRule {
+  enabled: boolean;
+  /** Pay the rule when the true count is above `trueCountThreshold` instead of below. */
+  aboveThreshold: boolean;
+  /** [player cards, dealer cards, pattern]; see the spec for the codes. */
+  mixMatch: number[];
+  /** Card count / total / suit conditions and five unused slots. */
+  playerCombo: number[];
+  allowedAfterSplit: boolean;
+  winRequired: boolean;
+  allowedAfterDouble: boolean;
+  acesCountOne: boolean;
+  /** Payout multiplier in tenths (x:1 = payTenths / 10). */
+  payTenths: number;
+  /** Flat amount added to a win. */
+  payFixed: number;
+  trueCountThreshold: number;
+  /** Dealer card count / total / suit conditions. */
+  dealerCombo: number[];
+  /** Six player ranks, six dealer ranks, then up / hole / last card. */
+  exactCards: number[];
+  twentyOneAlwaysWins: boolean;
+  streakLength: number;
+  /** Two-character label shown on the table ('' when unused). */
+  sideBetId: string;
+  sideBetDealerLimit: number;
+  sideBetMinLimit: number;
+}
 
-/**
- * A decoded game: its rules plus the flags that apply to the whole game.
- * @typedef {object} SideBetGame
- * @property {string} name
- * @property {SideBetRule[]} rules                 Always `RULE_COUNT` long.
- * @property {boolean} firstTwoCardsOnly           Evaluate only the player's first two cards.
- * @property {boolean} merge                       Merge the two side-bet spots into one.
- * @property {boolean} nonAdditive                 Accumulate every matching rule instead of stopping at the first.
- * @property {number} forcedSideBet                Rules from this index on are side bets, not hand bonuses.
- * @property {boolean} delayed                     Resolve side bets at settlement instead of right after the deal.
- */
+/** A decoded game: its rules plus the flags that apply to the whole game. */
+export interface SideBetGame {
+  name: string;
+  /** Always `RULE_COUNT` long. */
+  rules: SideBetRule[];
+  /** Evaluate only the player's first two cards. */
+  firstTwoCardsOnly: boolean;
+  /** Merge the two side-bet spots into one. */
+  merge: boolean;
+  /** Accumulate every matching rule instead of stopping at the first. */
+  nonAdditive: boolean;
+  /** Rules from this index on are side bets, not hand bonuses. */
+  forcedSideBet: number;
+  /** Resolve side bets at settlement instead of right after the deal. */
+  delayed: boolean;
+}
 
-/**
- * Decodes a side-bet / bonus game definition string.
- * @param {string} definition
- * @returns {SideBetGame}
- */
-export function decodeSideBetGame(definition) {
+/** Decodes a side-bet / bonus game definition string. */
+export function decodeSideBetGame(definition: string): SideBetGame {
   const r = reader(fields(definition));
   const aboveThreshold = r.column(RULE_COUNT, r.flag);
   const mixMatch = r.grid(RULE_COUNT, 3, r.int);
@@ -113,7 +121,7 @@ export function decodeSideBetGame(definition) {
   const forcedSideBet = r.int();
   const delayed = r.flag();
 
-  const rules = Array.from({ length: RULE_COUNT }, (_, i) => ({
+  const rules = Array.from({ length: RULE_COUNT }, (_, i): SideBetRule => ({
     enabled: checks[i][0],
     aboveThreshold: aboveThreshold[i],
     mixMatch: mixMatch[i],

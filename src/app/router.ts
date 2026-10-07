@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Screen navigation. Screens form a stack: opening a screen hides the one
 // below it (keeping its state), and going back destroys the top screen.
 //
@@ -19,8 +18,57 @@
 // still closes it, but going forward stops there rather than rebuilding it
 // wrongly.
 
+import type { App } from './app.ts';
+
+/** What a screen factory returns. */
+export interface Screen {
+  el: HTMLElement;
+  onShow?(): void;
+  onHide?(): void;
+  destroy?(): void;
+  /** Returns true to handle the back request itself. */
+  onBack?(): boolean | void;
+}
+
+/** What a screen is opened with. */
+export type ScreenParams = object;
+
+/**
+ * Builds a screen. Declared as a method so that a factory taking its own params
+ * type can be registered alongside the others.
+ */
+export type ScreenFactory<P extends ScreenParams = ScreenParams> = {
+  build(app: App, params: P): Screen;
+}['build'];
+
+/** The parts of `window.history` the router uses. */
+export interface RouterHistory {
+  pushState(data: unknown, unused: string): void;
+  replaceState?(data: unknown, unused: string): void;
+  back(): void;
+  go(delta: number): void;
+}
+
+/** A screen as a history entry records it; params are null when they could not be stored. */
+export interface HistoryScreen {
+  name: string;
+  params: ScreenParams | null;
+}
+
+interface OpenScreen extends HistoryScreen {
+  screen: Screen;
+}
+
+export interface RouterOptions {
+  history?: RouterHistory | null;
+  window?: Pick<Window, 'addEventListener'> | null;
+  dismissOverlay?: () => boolean;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
 /** Params a history entry can carry, or null when they cannot be stored. */
-function storableParams(params) {
+function storableParams(params: ScreenParams | undefined): ScreenParams | null {
   try {
     return structuredClone(params ?? {});
   } catch {
@@ -29,37 +77,42 @@ function storableParams(params) {
 }
 
 export class Router {
+  readonly root: HTMLElement;
+  readonly app: App;
+  readonly history: RouterHistory | null;
+  readonly dismissOverlay: () => boolean;
+  private factories = new Map<string, ScreenFactory>();
+  stack: OpenScreen[] = [];
+
   constructor(
-    root,
-    app,
-    { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false } = {},
+    root: HTMLElement,
+    app: App,
+    { history = globalThis.history, window: win = globalThis.window, dismissOverlay = () => false }: RouterOptions = {},
   ) {
     this.root = root;
     this.app = app;
     this.history = history;
     /** Closes the top modal overlay, if one is open, instead of a screen. */
     this.dismissOverlay = dismissOverlay;
-    this.factories = new Map();
-    this.stack = [];
     win?.addEventListener('popstate', event => this.onPopState(event));
   }
 
-  register(name, factory) {
+  register<P extends ScreenParams>(name: string, factory: ScreenFactory<P>): this {
     this.factories.set(name, factory);
     return this;
   }
 
-  get current() {
+  get current(): OpenScreen | null {
     return this.stack[this.stack.length - 1] ?? null;
   }
 
   /** The open screens as a history entry describes them. */
-  get entry() {
+  get entry(): { screens: HistoryScreen[] } {
     return { screens: this.stack.map(({ name, params }) => ({ name, params })) };
   }
 
   /** Opens a screen on top of the current one, and records it in the history. */
-  open(name, params = {}) {
+  open(name: string, params: ScreenParams = {}): Screen {
     const screen = this.mount(name, params);
     // The bottom screen keeps the entry the app started on below it, so that a
     // back request with a dialog over it has an entry to spend on dismissing it.
@@ -69,7 +122,7 @@ export class Router {
   }
 
   /** Replaces the current screen. */
-  replace(name, params = {}) {
+  replace(name: string, params: ScreenParams = {}): Screen {
     const top = this.stack.pop();
     if (top) this.dispose(top);
     const screen = this.mount(name, params);
@@ -80,9 +133,9 @@ export class Router {
   /**
    * Closes the current screen and shows the one below. The history goes back
    * too, and its popstate is what actually closes the screen.
-   * @returns {boolean} false when the bottom screen is already showing.
+   * @returns false when the bottom screen is already showing.
    */
-  back() {
+  back(): boolean {
     // An open dialog or sheet is what a back request means to close.
     if (this.dismissOverlay()) return true;
     if (this.stack.length <= 1) return false;
@@ -101,11 +154,11 @@ export class Router {
 
   /**
    * Closes the top screen, unless it handles back itself.
-   * @returns {boolean} false when there was nothing to close.
+   * @returns false when there was nothing to close.
    */
-  closeTop() {
-    if (this.stack.length <= 1) return false;
+  closeTop(): boolean {
     const top = this.current;
+    if (!top || this.stack.length <= 1) return false;
     if (top.screen.onBack?.()) return false;
     this.stack.pop();
     this.dispose(top);
@@ -121,7 +174,7 @@ export class Router {
   }
 
   /** Builds a screen and puts it on top of the stack, history untouched. */
-  mount(name, params) {
+  mount(name: string, params: ScreenParams): Screen {
     const factory = this.factories.get(name);
     if (!factory) throw new Error(`Unknown screen: ${name}`);
     const previous = this.current;
@@ -141,10 +194,11 @@ export class Router {
   }
 
   /** The browser moved through the history: show what that entry stood for. */
-  onPopState(event) {
+  onPopState(event: { state?: unknown } | null) {
+    const state = isRecord(event?.state) ? event.state : null;
     // The entry below the bottom screen: a dialog over home is what a back
     // request there means to close, and otherwise it means to leave the app.
-    if (event?.state?.bottom) {
+    if (state?.bottom) {
       if (this.dismissOverlay()) this.history?.pushState(this.entry, '');
       else {
         // Nothing to leave to (an installed app, a fresh tab) leaves this entry
@@ -154,7 +208,7 @@ export class Router {
       }
       return;
     }
-    const wanted = event?.state?.screens;
+    const wanted = state?.screens;
     // An entry that is not the router's own — a foreign one, or one whose state
     // the browser lost — says nothing about the screens, so they are left be.
     if (!Array.isArray(wanted) || wanted.length === 0) return;
@@ -167,15 +221,12 @@ export class Router {
     this.reconcile(wanted);
   }
 
-  /**
-   * Brings the open screens in line with the stack a history entry describes.
-   * @param {{name: string, params: object|null}[]} wanted
-   */
-  reconcile(wanted) {
+  /** Brings the open screens in line with the stack a history entry describes. */
+  reconcile(wanted: HistoryScreen[]) {
     // Closes from the top until what is left is the start of the wanted stack.
     while (
       this.stack.length > wanted.length ||
-      (this.stack.length > 1 && this.current.name !== wanted[this.stack.length - 1].name)
+      (this.stack.length > 1 && this.current?.name !== wanted[this.stack.length - 1].name)
     ) {
       if (!this.closeTop()) {
         // A screen kept itself open, so the entry it would have used goes back.
@@ -195,7 +246,7 @@ export class Router {
     }
   }
 
-  dispose({ screen }) {
+  dispose({ screen }: OpenScreen) {
     try {
       screen.onHide?.();
       screen.destroy?.();

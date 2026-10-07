@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Rule interactions for the settings screens.
 //
 // Rules that imply or exclude other rules, the rule bundles that come with each
@@ -11,9 +10,22 @@
 // single value, so only the cross-setting rules are listed below.
 
 import { SETTINGS_SCHEMA } from './schema.ts';
+import type { SettingKey, SettingReader, SettingValues, SettingsPatch } from './schema.ts';
 
 /** Holds what the rules a variant forces were set to before it was chosen. */
 const SAVED_RULES = 'bonuses.savedRules';
+
+/** A rule bundle that comes with a game variant. */
+export type Variant = 'standard' | 'blackjackSwitch' | 'doubleExposure' | 'spanish21';
+
+/** Writes one value into a patch; `key` may be a union of keys. */
+type PatchWriter = <K extends SettingKey>(key: K, value: SettingValues[K]) => void;
+
+const keysOf = (patch: SettingsPatch) => Object.keys(patch) as SettingKey[];
+
+const write = <K extends SettingKey>(patch: SettingsPatch, key: K, value: SettingValues[K]) => {
+  patch[key] = value;
+};
 
 /** Side-bet game ids that change the rules of the game itself. */
 const BLACKJACK_SWITCH = 2001;
@@ -21,7 +33,7 @@ const DOUBLE_EXPOSURE = 2002;
 const SPANISH_21 = [16, 17];
 
 /** Rules each variant forces on while it is selected. */
-const VARIANT_RULES = {
+const VARIANT_RULES: Record<Variant, SettingsPatch> = {
   standard: {},
   blackjackSwitch: {
     'rules.dealerHitsSoft17': true,
@@ -55,10 +67,9 @@ const VARIANT_RULES = {
 
 /**
  * The rule variant a side-bet game selection implies.
- * @param {number} gameId  Value of `bonuses.game`.
- * @returns {'standard'|'blackjackSwitch'|'doubleExposure'|'spanish21'}
+ * @param gameId  Value of `bonuses.game`.
  */
-export function gameVariant(gameId) {
+export function gameVariant(gameId: number): Variant {
   if (gameId === BLACKJACK_SWITCH) return 'blackjackSwitch';
   if (gameId === DOUBLE_EXPOSURE) return 'doubleExposure';
   if (SPANISH_21.includes(gameId)) return 'spanish21';
@@ -66,7 +77,7 @@ export function gameVariant(gameId) {
 }
 
 /** Implications of a single setting, expressed as (read, set) side effects. */
-function implicationsOf(key, read, set) {
+function implicationsOf(key: SettingKey, read: SettingReader, set: PatchWriter) {
   switch (key) {
     case 'rules.redouble':
       // Redoubling needs a third card and shows it.
@@ -126,7 +137,7 @@ function implicationsOf(key, read, set) {
 }
 
 /** Rules the selected variant enforces on every edit, not just when it is chosen. */
-function enforceVariant(read, set) {
+function enforceVariant(read: SettingReader, set: PatchWriter) {
   if (gameVariant(read('bonuses.game')) !== 'doubleExposure') return;
   // With both dealer cards face up there is nothing to insure or to peek at.
   set('rules.insurance', 'none');
@@ -134,41 +145,48 @@ function enforceVariant(read, set) {
 }
 
 /** Resolves `changes` until no further implication fires. */
-function close(get, changes) {
-  const read = key => (key in changes ? changes[key] : get(key));
-  const queue = Object.keys(changes);
-  const set = (key, value) => {
+function close(get: SettingReader, changes: SettingsPatch): SettingsPatch {
+  const read: SettingReader = key => (key in changes ? (changes[key] as SettingValues[typeof key]) : get(key));
+  const queue = keysOf(changes);
+  const set: PatchWriter = (key, value) => {
     if (read(key) === value) return;
-    changes[key] = value;
+    write(changes, key, value);
     queue.push(key);
   };
   // Each setting can only be forced a bounded number of times; the cap just
   // guarantees termination if a future rule is added that oscillates.
-  for (let steps = 0; queue.length && steps < 200; steps += 1) implicationsOf(queue.shift(), read, set);
+  for (let steps = 0; queue.length && steps < 200; steps += 1) {
+    const key = queue.shift();
+    if (key) implicationsOf(key, read, set);
+  }
   enforceVariant(read, set);
   return changes;
 }
 
 /**
  * Applies one settings change together with every rule it implies.
- * @param {(key: string) => *} get  Reads the current value of a setting.
- * @param {string} key
- * @param {*} value
- * @returns {Record<string, *>} settings to write, including `key` itself
+ * @param get  Reads the current value of a setting.
+ * @returns settings to write, including `key` itself
  */
-export function applyRuleChange(get, key, value) {
-  return close(get, { [key]: value });
+export function applyRuleChange<K extends SettingKey>(
+  get: SettingReader,
+  key: K,
+  value: SettingValues[K],
+): SettingsPatch {
+  const changes: SettingsPatch = {};
+  write(changes, key, value);
+  return close(get, changes);
 }
 
 /**
  * Applies one end of the index range. A bound that crosses the other one is
  * clamped to it, so the range is never inverted.
- * @param {(key: string) => *} get
- * @param {'strategy.indexRangeMin'|'strategy.indexRangeMax'} key
- * @param {number} value
- * @returns {Record<string, number>}
  */
-export function applyIndexRangeChange(get, key, value) {
+export function applyIndexRangeChange(
+  get: SettingReader,
+  key: 'strategy.indexRangeMin' | 'strategy.indexRangeMax',
+  value: number,
+): SettingsPatch {
   const lowEnd = key === 'strategy.indexRangeMin';
   const other = get(lowEnd ? 'strategy.indexRangeMax' : 'strategy.indexRangeMin');
   return { [key]: lowEnd ? Math.min(value, other) : Math.max(value, other) };
@@ -178,25 +196,23 @@ export function applyIndexRangeChange(get, key, value) {
  * Selects a side-bet / unusual game and applies its rule bundle. Rules the
  * previous variant forced, and the new one does not, go back to the values the
  * player had before it was chosen; unrelated options are left alone.
- * @param {(key: string) => *} get
- * @param {number} gameId
- * @returns {Record<string, *>}
  */
-export function applyGameChange(get, gameId) {
-  const changes = { 'bonuses.game': gameId };
+export function applyGameChange(get: SettingReader, gameId: number): SettingsPatch {
+  const changes: SettingsPatch = { 'bonuses.game': gameId };
   const previous = gameVariant(get('bonuses.game'));
   const next = gameVariant(gameId);
   if (previous !== next) {
     const saved = get(SAVED_RULES) ?? {};
     // What a rule holds once the previous variant stops forcing it.
-    const restored = key => {
+    // (A saved value is whatever storage held; Settings.update coerces it.)
+    const restored = <K extends SettingKey>(key: K): SettingValues[K] => {
       if (!(key in VARIANT_RULES[previous])) return get(key);
-      return key in saved ? saved[key] : structuredClone(SETTINGS_SCHEMA[key].default);
+      return (key in saved ? saved[key] : structuredClone(SETTINGS_SCHEMA[key].default)) as SettingValues[K];
     };
-    for (const key of Object.keys(VARIANT_RULES[previous])) {
-      if (!(key in VARIANT_RULES[next])) changes[key] = restored(key);
+    for (const key of keysOf(VARIANT_RULES[previous])) {
+      if (!(key in VARIANT_RULES[next])) write(changes, key, restored(key));
     }
-    const remembered = Object.keys(VARIANT_RULES[next]);
+    const remembered = keysOf(VARIANT_RULES[next]);
     if (remembered.length) changes[SAVED_RULES] = Object.fromEntries(remembered.map(key => [key, restored(key)]));
     Object.assign(changes, VARIANT_RULES[next]);
   }
@@ -207,11 +223,9 @@ export function applyGameChange(get, gameId) {
  * Seat check run before the table opens: at least one seat in play must be
  * free for the player. The table fits up to four seats in portrait by itself,
  * so the saved seat count is left alone.
- * @param {(key: string) => *} get
- * @returns {{changes: Record<string, *>}}
  */
-export function prepareLaunch(get) {
-  const changes = {};
+export function prepareLaunch(get: SettingReader): { changes: SettingsPatch } {
+  const changes: SettingsPatch = {};
   const seatCount = get('table.seatCount');
   const computerSeats = get('table.computerSeats');
   if (computerSeats.slice(0, seatCount).every(Boolean)) {

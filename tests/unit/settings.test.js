@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Storage, MemoryBackend } from '../../src/services/storage.ts';
-import { Settings } from '../../src/settings/store.ts';
+import { Settings, migrate, SETTINGS_VERSION } from '../../src/settings/store.ts';
+import { SETTINGS_SCHEMA } from '../../src/settings/schema.ts';
 
 const schema = {
   'mechanics.sound': { type: 'bool', default: false },
@@ -215,7 +216,7 @@ describe('settings changed in another tab', () => {
 
     expect(settings.get('mechanics.sound')).toBe(true);
     settings.set('rules.decks', 6);
-    expect(JSON.parse(backend.getItem('cj.settings'))['mechanics.sound']).toBe(true);
+    expect(JSON.parse(backend.getItem('cj.settings')).values['mechanics.sound']).toBe(true);
   });
 
   it('tell the listeners which keys changed', () => {
@@ -234,5 +235,89 @@ describe('settings changed in another tab', () => {
     watcher();
 
     expect(seen).toEqual([['mechanics.sound', true]]);
+  });
+});
+
+describe('saved format', () => {
+  it('saves the values in a versioned envelope', () => {
+    const backend = new MemoryBackend();
+    new Settings(schema, new Storage(backend)).set('rules.decks', 2);
+    const saved = JSON.parse(backend.getItem('cj.settings'));
+    expect(saved.version).toBe(SETTINGS_VERSION);
+    expect(saved.values['rules.decks']).toBe(2);
+  });
+
+  it('reads the flat object saved before the envelope, keeping every value', () => {
+    const flat = {
+      'table.decks': 2,
+      'display.theme': 'latte',
+      'betting.ramp': { minCount: -1, rows: [{ chips: 3, hands: 2 }] },
+      'table.computerSeats': [false, true, false, false, false, false],
+    };
+    const storage = new Storage(new MemoryBackend());
+    storage.set('settings', flat);
+    const s = new Settings(SETTINGS_SCHEMA, storage);
+    for (const [key, value] of Object.entries(flat)) expect(s.get(key)).toEqual(value);
+    s.set('display.sound', true);
+    const after = new Settings(SETTINGS_SCHEMA, storage);
+    for (const [key, value] of Object.entries(flat)) expect(after.get(key)).toEqual(value);
+    expect(storage.get('settings').version).toBe(SETTINGS_VERSION);
+  });
+
+  it('migrates nothing out of something that is not an object', () => {
+    expect(migrate(null)).toEqual({});
+    expect(migrate(7)).toEqual({});
+    expect(migrate([1, 2])).toEqual({});
+  });
+
+  it('takes the values of a current envelope as they are', () => {
+    expect(migrate({ version: SETTINGS_VERSION, values: { a: 1 } })).toEqual({ a: 1 });
+  });
+
+  it('reads the values of a newer version as they are', () => {
+    expect(migrate({ version: SETTINGS_VERSION + 1, values: { a: 1 } })).toEqual({ a: 1 });
+  });
+
+  it('treats an envelope with a bad version as a flat object', () => {
+    expect(migrate({ version: 0.5, values: { a: 1 } })).toEqual({ version: 0.5, values: { a: 1 } });
+    expect(migrate({ version: 1, values: 'oops' })).toEqual({ version: 1, values: 'oops' });
+  });
+});
+
+describe('json values', () => {
+  it('are handed out as copies, so a changed one saves when set back', () => {
+    const storage = new Storage(new MemoryBackend());
+    const s = new Settings(schema, storage);
+    const seen = [];
+    s.subscribe((key, value) => seen.push([key, value]));
+    const table = s.get('betting.table');
+    table[0] = 9;
+    expect(s.get('betting.table')).toEqual([1, 2]);
+    s.set('betting.table', table);
+    expect(new Settings(schema, storage).get('betting.table')).toEqual([9, 2]);
+    expect(seen).toEqual([['betting.table', [9, 2]]]);
+  });
+
+  it('say nothing when set to an equal copy', () => {
+    const s = fresh();
+    const seen = [];
+    s.subscribe(key => seen.push(key));
+    s.set('betting.table', s.get('betting.table'));
+    s.reset();
+    expect(seen).toEqual([]);
+  });
+
+  it('are copied when set, so the caller cannot change them afterwards', () => {
+    const s = fresh();
+    const table = [5, 10];
+    s.set('betting.table', table);
+    table[0] = 99;
+    expect(s.get('betting.table')).toEqual([5, 10]);
+  });
+
+  it('are copies in a group as well', () => {
+    const s = fresh();
+    s.group('betting').table.push(3);
+    expect(s.get('betting.table')).toEqual([1, 2]);
   });
 });

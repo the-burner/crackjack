@@ -1,11 +1,23 @@
-// @ts-nocheck
 // Strategy catalog and construction of the current
 // strategy from settings.
 
 import { STRATEGY_FILES } from '../data/strategy-files.ts';
 import { buildStrategy } from '../core/strategy/strategy-tables.ts';
+import type { Strategy, TableOptions } from '../core/strategy/strategy-tables.ts';
+import type { AppSettings } from './schema.ts';
 
-/** Built-in strategies in display order. The first is the default (see settings/schema.js). */
+/** A strategy the player can pick. */
+export interface StrategyEntry {
+  id: number;
+  name: string;
+}
+
+/** Reads settings; the store, or anything with its `get`. */
+type SettingsSource = Pick<AppSettings, 'get'>;
+
+const FILES: Readonly<Record<number, string | undefined>> = STRATEGY_FILES;
+
+/** Built-in strategies in display order. The first is the default (see settings/schema.ts). */
 export const BUILTIN_STRATEGIES = [
   [100, "Crackjack's High-Low Strategy"],
   [5, 'Basic Strategy'],
@@ -47,49 +59,50 @@ export const BUILTIN_STRATEGIES = [
   [60, 'UBZ11 Composite'],
   [61, 'UBZ11 Single Deck'],
   [42, 'Blackjack Apprenticeship'],
-].map(([id, name]) => ({ id, name }));
+].map(([id, name]): StrategyEntry => ({ id: Number(id), name: String(name) }));
 
 /** The built-in hole-carding strategy offered on the Peeking screen. */
-export const HOLE_CARD_STRATEGY = { id: 99, name: 'Hole-Carding' };
+export const HOLE_CARD_STRATEGY: StrategyEntry = { id: 99, name: 'Hole-Carding' };
 
 /** The built-in strategies, by id. */
 export class StrategyLibrary {
-  constructor() {
-    this.cache = new Map();
-  }
+  private cache = new Map<string, Strategy>();
 
   /** Strategies selectable on the Playing Strategy screen. */
-  list() {
+  list(): readonly StrategyEntry[] {
     return BUILTIN_STRATEGIES;
   }
 
-  text(id) {
-    return STRATEGY_FILES[id] ?? null;
+  text(id: number): string | null {
+    return FILES[id] ?? null;
   }
 
-  /**
-   * Builds strategy `id` for the given rules (memoized).
-   * @param {number} id
-   * @param {import('../core/strategy/strategy-tables.ts').TableOptions} options
-   */
-  build(id, options) {
+  /** Builds strategy `id` for the given rules (memoized). */
+  build(id: number, options: TableOptions): Strategy {
     const key = JSON.stringify([id, options]);
-    if (!this.cache.has(key)) {
+    let strategy = this.cache.get(key);
+    if (strategy === undefined) {
       const text = this.text(id) ?? STRATEGY_FILES[30];
-      this.cache.set(key, buildStrategy(text, options));
-      if (this.cache.size > 50) this.cache.delete(this.cache.keys().next().value);
+      strategy = buildStrategy(text, options);
+      this.cache.set(key, strategy);
+      const oldest = this.cache.keys().next();
+      if (this.cache.size > 50 && !oldest.done) this.cache.delete(oldest.value);
     }
-    return this.cache.get(key);
+    return strategy;
   }
 
   /** Builds the user's selected strategy for `decks` decks. */
-  current(settings, decks, { system = settings.get('strategy.system') } = {}) {
+  current(
+    settings: SettingsSource,
+    decks: number,
+    { system = settings.get('strategy.system') }: { system?: number } = {},
+  ): Strategy {
     return this.build(system, strategyOptions(settings, decks));
   }
 }
 
 /** Strategy table options derived from the shared settings. */
-export function strategyOptions(settings, decks) {
+export function strategyOptions(settings: SettingsSource, decks: number): TableOptions {
   return {
     decks,
     hitSoft17: settings.get('rules.dealerHitsSoft17'),

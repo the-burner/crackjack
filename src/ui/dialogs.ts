@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Modal message, confirmation and input dialogs (promise based).
 
 import { h } from './dom.ts';
@@ -6,7 +5,25 @@ import { registerOverlay } from './overlays.ts';
 
 const APP_TITLE = 'Crackjack';
 
-function open({ title = APP_TITLE, message, input = null, buttons }) {
+type DialogButton<T> = { label: string; value: T };
+type DialogInput = { type?: string; value?: string; inputmode?: string };
+/** A button whose value is 'input' resolves to the entered text. */
+type InputValue = 'input';
+type DialogOptions<T> = {
+  title?: string;
+  message: string;
+  input?: DialogInput | null;
+  buttons: readonly DialogButton<T>[];
+};
+
+function open<T>(o: DialogOptions<T> & { input?: null }): Promise<T>;
+function open<T>(o: DialogOptions<T | InputValue> & { input: DialogInput }): Promise<T | string | null>;
+function open<T>({
+  title = APP_TITLE,
+  message,
+  input = null,
+  buttons,
+}: DialogOptions<T | InputValue>): Promise<T | string | null> {
   return new Promise(resolve => {
     const field = input
       ? h('input', {
@@ -16,7 +33,7 @@ function open({ title = APP_TITLE, message, input = null, buttons }) {
           inputmode: input.inputmode,
         })
       : null;
-    const close = result => {
+    const close = (result: T | string | null) => {
       unregister();
       overlay.remove();
       resolve(result);
@@ -43,7 +60,11 @@ function open({ title = APP_TITLE, message, input = null, buttons }) {
           'div',
           { class: 'dialog__buttons' },
           buttons.map(b =>
-            h('button', { type: 'button', onclick: () => close(b.value === 'input' ? field.value : b.value) }, b.label),
+            h(
+              'button',
+              { type: 'button', onclick: () => close(b.value === 'input' && field ? field.value : b.value) },
+              b.label,
+            ),
           ),
         ),
       ),
@@ -60,12 +81,15 @@ function open({ title = APP_TITLE, message, input = null, buttons }) {
 }
 
 /** Shows a message with an OK button. */
-export function alert(message, { title } = {}) {
-  return open({ title, message, buttons: [{ label: 'OK', value: true }] });
+export function alert(message: string, { title }: { title?: string } = {}): Promise<true> {
+  return open<true>({ title, message, buttons: [{ label: 'OK', value: true }] });
 }
 
 /** Asks a yes/no question; resolves to true for Yes. */
-export function confirm(message, { title, yes = 'Yes', no = 'No' } = {}) {
+export function confirm(
+  message: string,
+  { title, yes = 'Yes', no = 'No' }: { title?: string; yes?: string; no?: string } = {},
+): Promise<boolean> {
   return open({
     title,
     message,
@@ -77,8 +101,12 @@ export function confirm(message, { title, yes = 'Yes', no = 'No' } = {}) {
 }
 
 /** Asks for text; resolves to the entered string, or null when cancelled. */
-export function prompt(message, value = '', { title, type = 'text', inputmode } = {}) {
-  return open({
+export function prompt(
+  message: string,
+  value = '',
+  { title, type = 'text', inputmode }: { title?: string; type?: string; inputmode?: string } = {},
+): Promise<string | null> {
+  return open<null>({
     title,
     message,
     input: { value, type, inputmode },
@@ -90,7 +118,11 @@ export function prompt(message, value = '', { title, type = 'text', inputmode } 
 }
 
 /** Asks for a whole number and clamps it to [min, max]; resolves to null when cancelled or invalid. */
-export async function promptNumber(message, value, { min = -Infinity, max = Infinity, title } = {}) {
+export async function promptNumber(
+  message: string,
+  value: number,
+  { min = -Infinity, max = Infinity, title }: { min?: number; max?: number; title?: string } = {},
+): Promise<number | null> {
   const text = await prompt(message, String(value), { title, inputmode: 'numeric' });
   if (text === null || text.trim() === '') return null;
   const n = Math.round(Number(text));

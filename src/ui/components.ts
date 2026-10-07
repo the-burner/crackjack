@@ -1,22 +1,25 @@
-// @ts-nocheck
 // Reusable controls. Each returns a DOM element; controls that hold a value
 // expose `setValue()` on the element so screens can refresh them.
 
 import { h } from './dom.ts';
+import type { Children, Props } from './dom.ts';
 import { promptNumber } from './dialogs.ts';
 
-/**
- * @param {string} label
- * @param {object} [o]
- * @param {() => void} [o.onClick]
- * @param {string} [o.icon]       Icon name (gear, back, info, grid, plus, refresh, arrow-r, ...).
- * @param {'right'|'bottom'} [o.iconPos='right']
- * @param {'default'|'nav'|'primary'} [o.variant='default']
- * @param {boolean} [o.large]
- * @param {boolean} [o.block]
- */
+export type ButtonOptions = Props & {
+  onClick?: (event: MouseEvent) => void;
+  /** Icon name (gear, back, info, grid, plus, refresh, arrow-r, ...). */
+  icon?: string;
+  /** Default 'right'. */
+  iconPos?: 'right' | 'bottom';
+  /** Default 'default'. */
+  variant?: 'default' | 'nav' | 'primary';
+  large?: boolean;
+  block?: boolean;
+  className?: string;
+};
+
 export function button(
-  label,
+  label: string,
   {
     onClick,
     icon,
@@ -26,8 +29,8 @@ export function button(
     block = false,
     className = '',
     ...attrs
-  } = {},
-) {
+  }: ButtonOptions = {},
+): HTMLButtonElement {
   const classes = ['btn'];
   if (variant !== 'default') classes.push(`btn--${variant}`);
   if (large) classes.push('btn--large');
@@ -38,7 +41,17 @@ export function button(
 }
 
 /** Title bar with Back on the left, the title, and Help (plus optional extra buttons) on the right. */
-export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } = {}) {
+export type TopBarOptions = {
+  onBack?: (() => void) | null;
+  onHelp?: (() => void) | null;
+  end?: readonly Children[];
+  backLabel?: string;
+};
+
+export function topBar(
+  title: string,
+  { onBack, onHelp, end = [], backLabel = 'Back' }: TopBarOptions = {},
+): HTMLElement {
   return h(
     'header',
     { class: 'topbar' },
@@ -53,68 +66,111 @@ export function topBar(title, { onBack, onHelp, end = [], backLabel = 'Back' } =
   );
 }
 
+export type SelectOption<T> = { value: T; label: string };
+
+/** A select's wrapper, with `setValue()` and the native `control`. */
+export type SelectHandle<T> = HTMLDivElement & {
+  setValue: (value: T) => void;
+  control: HTMLSelectElement;
+};
+
 /**
  * A native select styled like the rest of the UI.
- * @param {{value: *, label: string}[]} options
  */
 /**
  * Which option a value selects, or -1 when it is none of them. Showing the
  * first option for an unknown value would claim a value nobody chose.
  */
-export const selectedIndexFor = (options, value) => options.findIndex(o => o.value === value);
+export const selectedIndexFor = <T>(options: readonly SelectOption<T>[], value: T): number =>
+  options.findIndex(o => o.value === value);
 
-export function select(options, value, onChange, { mini = false, name } = {}) {
-  const el = h(
+export function select<T>(
+  options: readonly SelectOption<T>[],
+  value: T,
+  onChange: (value: T) => void,
+  { mini = false, name }: { mini?: boolean; name?: string } = {},
+): SelectHandle<T> {
+  const el: HTMLSelectElement = h(
     'select',
     { name, onchange: () => onChange(options[el.selectedIndex].value) },
     options.map(o => h('option', {}, o.label)),
   );
-  const wrap = h('div', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el);
-  wrap.setValue = v => {
-    el.selectedIndex = selectedIndexFor(options, v);
-  };
+  const wrap = Object.assign(h('div', { class: `select icon-arrow-d${mini ? ' select--mini' : ''}` }, el), {
+    setValue: (v: T) => {
+      el.selectedIndex = selectedIndexFor(options, v);
+    },
+    control: el,
+  });
   wrap.setValue(value);
-  wrap.control = el;
   return wrap;
 }
+
+export type CheckItem = {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+};
+
+export type CheckListOptions = { horizontal?: boolean; chips?: boolean };
+
+/** One row of a checkList. */
+export type CheckRow = HTMLLabelElement & { setChecked: (checked: boolean) => void };
+
+export type CheckListHandle = HTMLDivElement & {
+  refresh: (getChecked: (index: number) => unknown) => void;
+};
 
 /**
  * A group of checkboxes: toggle rows, a segmented control (`horizontal`), or a
  * grid of separate toggle chips (`chips`, three per row).
- * @param {{label: string, checked: boolean, onChange: (checked: boolean) => void, disabled?: boolean}[]} items
  */
-export function checkList(items, { horizontal = false, chips = false } = {}) {
-  const rows = items.map(item => {
+export function checkList(
+  items: readonly CheckItem[],
+  { horizontal = false, chips = false }: CheckListOptions = {},
+): CheckListHandle {
+  const rows = items.map((item): CheckRow => {
     const input = h('input', { type: 'checkbox', checked: Boolean(item.checked), disabled: item.disabled });
     const row = h('label', { class: `check${item.checked ? ' is-on' : ''}` }, input, h('span', {}, item.label));
     input.addEventListener('change', () => {
       row.classList.toggle('is-on', input.checked);
       item.onChange(input.checked);
     });
-    row.setChecked = c => {
-      input.checked = c;
-      row.classList.toggle('is-on', c);
-    };
-    return row;
+    return Object.assign(row, {
+      setChecked: (c: boolean) => {
+        input.checked = c;
+        row.classList.toggle('is-on', c);
+      },
+    });
   });
   const el = h(
     'div',
     { class: `checklist${horizontal ? ' checklist--horizontal' : ''}${chips ? ' checklist--chips' : ''}` },
     rows,
   );
-  /** Re-reads every item's state from `getChecked(index)`. */
-  el.refresh = getChecked => rows.forEach((r, i) => r.setChecked(Boolean(getChecked(i))));
-  return el;
+  return Object.assign(el, {
+    /** Re-reads every item's state from `getChecked(index)`. */
+    refresh: (getChecked: (index: number) => unknown) => rows.forEach((r, i) => r.setChecked(Boolean(getChecked(i)))),
+  });
 }
 
 /** A button showing a number; tapping it prompts for a new value within [min, max]. */
+export type ValueButtonOptions = {
+  prompt?: string;
+  min?: number;
+  max?: number;
+  format?: (value: number) => string;
+};
+
+export type ValueHandle<E extends HTMLElement> = E & { setValue: (value: number) => void };
+
 export function valueButton(
-  value,
-  onChange,
-  { prompt = 'Value', min = -Infinity, max = Infinity, format = String } = {},
-) {
+  value: number,
+  onChange: (value: number) => void,
+  { prompt = 'Value', min = -Infinity, max = Infinity, format = String }: ValueButtonOptions = {},
+): ValueHandle<HTMLButtonElement> {
   let current = value;
-  const el = button(format(current), {
+  const btn = button(format(current), {
     className: 'value-btn',
     onClick: async () => {
       const n = await promptNumber(prompt, current, { min, max });
@@ -123,10 +179,12 @@ export function valueButton(
       onChange(n);
     },
   });
-  el.setValue = v => {
-    current = v;
-    el.textContent = format(v);
-  };
+  const el = Object.assign(btn, {
+    setValue: (v: number) => {
+      current = v;
+      btn.textContent = format(v);
+    },
+  });
   return el;
 }
 
@@ -134,7 +192,12 @@ export function valueButton(
  * A labelled range slider with a number box. The number can be typed in as well
  * as dragged; a typed value is rounded to the step and kept within [min, max].
  */
-export function slider(label, value, onChange, { min, max, step = 1 }) {
+export function slider(
+  label: string,
+  value: number,
+  onChange: (value: number) => void,
+  { min, max, step = 1 }: { min: number; max: number; step?: number },
+): ValueHandle<HTMLDivElement> {
   const range = h('input', { type: 'range', min, max, step, value });
   const box = h('input', {
     type: 'number',
@@ -146,13 +209,13 @@ export function slider(label, value, onChange, { min, max, step = 1 }) {
     inputmode: 'numeric',
     'aria-label': label || 'Value',
   });
-  const clamp = n => {
+  const clamp = (n: number) => {
     const stepped = Math.round((n - min) / step) * step + min;
     return Math.min(max, Math.max(min, stepped));
   };
-  const commit = n => {
-    range.value = n;
-    box.value = n;
+  const commit = (n: number) => {
+    range.value = String(n);
+    box.value = String(n);
     onChange(n);
   };
   range.addEventListener('input', () => {
@@ -178,14 +241,15 @@ export function slider(label, value, onChange, { min, max, step = 1 }) {
     label ? h('div', { class: 'slider__label' }, label) : null,
     h('div', { class: 'slider__row' }, box, range),
   );
-  el.setValue = v => {
-    range.value = v;
-    box.value = v;
-  };
-  return el;
+  return Object.assign(el, {
+    setValue: (v: number) => {
+      range.value = String(v);
+      box.value = String(v);
+    },
+  });
 }
 
 /** Label + control, stacked or inline. */
-export function field(label, control, { inline = false } = {}) {
+export function field(label: string, control: Children, { inline = false }: { inline?: boolean } = {}): HTMLDivElement {
   return h('div', { class: `field${inline ? ' field--inline' : ''}` }, h('span', { class: 'label' }, label), control);
 }

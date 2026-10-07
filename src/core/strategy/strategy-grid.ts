@@ -1,10 +1,11 @@
-// @ts-nocheck
 // Presentation model for the strategy table viewer: which rows and columns a
 // table has, what each cell shows, and which colour it gets. Pure functions so
 // the rendering rules can be unit tested.
 
 import { NEVER, ALWAYS, NO_ENTRY } from './strategy-file.ts';
-import { CODE_DESCRIPTIONS } from './strategy-tables.ts';
+import type { TableName } from './strategy-file.ts';
+import { CODE_DESCRIPTIONS, SPLIT_PLUS3_PER_DECK } from './strategy-tables.ts';
+import type { Strategy } from './strategy-tables.ts';
 
 /** Cell colours. */
 export const GRID_COLOR = {
@@ -22,7 +23,7 @@ export const GRID_COLOR = {
   noErrors: '#404040',
   /** Error heat map: errors recorded. */
   errors: '#ff0000',
-};
+} as const;
 
 /** Lowest and highest value that is shown as a number rather than left blank. */
 const MIN_SHOWN = -31000;
@@ -33,14 +34,36 @@ const BELOW_OFFSET = 31500;
 const FIRST_CODE = 1001;
 const LAST_CODE = 1099;
 /** Undocumented code that reuses the *VR description. */
-const CODE_ALIAS = { 1098: 1017 };
+const CODE_ALIAS: Readonly<Partial<Record<number, number>>> = { [SPLIT_PLUS3_PER_DECK]: 1017 };
+
+/** A view of one strategy table; its key is the table name. */
+export interface TableGridView {
+  key: TableName;
+  label: string;
+  table: TableName;
+  reversed: boolean;
+  below: boolean;
+  rows: number;
+  extendedRows: number;
+  /** Labels for the action, opposite, index and below colours (null = not used). */
+  legend: (string | null)[];
+}
+
+/** The Insurance/Counts view. */
+export interface CountsView {
+  key: 'counts';
+  label: string;
+  table: null;
+}
+
+export type TableView = TableGridView | CountsView;
 
 /**
  * The seven views of the table picker, in the order the picker lists them.
  * `table` is the strategy table name (null for the counts view); `reversed`
  * means 32000 is the *opposite* action (double/split tables).
  */
-export const TABLE_VIEWS = [
+export const TABLE_VIEWS: TableView[] = [
   {
     key: 'hardStand',
     label: 'Hard Hit/Stand',
@@ -104,19 +127,18 @@ export const TABLE_VIEWS = [
   { key: 'counts', label: 'Insurance/Counts', table: null },
 ];
 
-export const viewByKey = key => TABLE_VIEWS.find(v => v.key === key) ?? TABLE_VIEWS[0];
+export const viewByKey = (key: string): TableView => TABLE_VIEWS.find(v => v.key === key) ?? TABLE_VIEWS[0];
 
 /** Number of rows shown for a view. */
-export function rowCount(view, { extended = false } = {}) {
+export function rowCount(view: TableGridView, { extended = false }: { extended?: boolean } = {}): number {
   return extended ? view.extendedRows : view.rows;
 }
 
-/**
- * Row labels (the left-hand column) for a view.
- * @param {object} view
- * @param {{extended?: boolean, earlySurrender?: boolean}} [o]
- */
-export function rowLabels(view, { extended = false, earlySurrender = false } = {}) {
+/** Row labels (the left-hand column) for a view. */
+export function rowLabels(
+  view: TableGridView,
+  { extended = false, earlySurrender = false }: { extended?: boolean; earlySurrender?: boolean } = {},
+): string[] {
   const n = rowCount(view, { extended });
   switch (view.key) {
     case 'hardStand':
@@ -138,27 +160,40 @@ export function rowLabels(view, { extended = false, earlySurrender = false } = {
 }
 
 /** Column headers (dealer upcards, or player/dealer totals for extended files). */
-export function columnLabels({ extended = false } = {}) {
+export function columnLabels({ extended = false }: { extended?: boolean } = {}): string[] {
   if (!extended) return ['2', '3', '4', '5', '6', '7', '8', '9', 'X', 'A'];
   return [...range(17, i => String(i + 4)), 'AA', 'A2', 'A3', 'A4', 'A5', 'A6'];
 }
 
-/**
- * How one cell of a strategy table is drawn.
- * @param {object} o
- * @param {number} o.value        Raw table value.
- * @param {object} o.view         A TABLE_VIEWS entry.
- * @param {boolean} [o.selected=true]  False greys the cell out (mask editing).
- * @param {number|null} [o.errorCount] When set, draw the error heat map instead.
- * @returns {{text: string, background: string, color: string}}
- */
-export function gridCell({ value, view, selected = true, errorCount = null }) {
+/** What a grid cell shows and its colours. */
+export interface GridCell {
+  text: string;
+  background: string;
+  color: string;
+}
+
+/** How one cell of a strategy table is drawn. */
+export function gridCell({
+  value,
+  view,
+  selected = true,
+  errorCount = null,
+}: {
+  /** Raw table value. */
+  value: number;
+  /** A TABLE_VIEWS entry. */
+  view: TableGridView;
+  /** False greys the cell out (mask editing). Default true. */
+  selected?: boolean;
+  /** When set, draw the error heat map instead. */
+  errorCount?: number | null;
+}): GridCell {
   if (errorCount !== null) {
     return errorCount > 0
       ? { text: String(errorCount), background: GRID_COLOR.errors, color: '#000' }
       : { text: '', background: GRID_COLOR.noErrors, color: '#fff' };
   }
-  const cell = { text: '', background: GRID_COLOR.index, color: '#000' };
+  const cell: GridCell = { text: '', background: GRID_COLOR.index, color: '#000' };
   if (value === ALWAYS) cell.background = view.reversed ? GRID_COLOR.opposite : GRID_COLOR.action;
   else if (value === NEVER) cell.background = view.reversed ? GRID_COLOR.action : GRID_COLOR.opposite;
   else {
@@ -171,7 +206,7 @@ export function gridCell({ value, view, selected = true, errorCount = null }) {
     const code = specialCode(value);
     if (code !== null) {
       cell.text = codeSymbol(code);
-      if (view.below && value === 1098) {
+      if (view.below && value === SPLIT_PLUS3_PER_DECK) {
         cell.background = GRID_COLOR.below;
         cell.color = '#fff';
       }
@@ -182,31 +217,37 @@ export function gridCell({ value, view, selected = true, errorCount = null }) {
 }
 
 /** The special code in a cell, or null. */
-export function specialCode(value) {
-  return value > FIRST_CODE - 1 && value < LAST_CODE + 1 && CODE_DESCRIPTIONS[CODE_ALIAS[value] ?? value]
+export function specialCode(value: number | undefined): number | null {
+  return value !== undefined &&
+    value > FIRST_CODE - 1 &&
+    value < LAST_CODE + 1 &&
+    CODE_DESCRIPTIONS[CODE_ALIAS[value] ?? value]
     ? value
     : null;
 }
 
 /** The short symbol shown in a cell for a special code, e.g. 1001 -> "A". */
-export function codeSymbol(code) {
+export function codeSymbol(code: number): string {
   const text = CODE_DESCRIPTIONS[CODE_ALIAS[code] ?? code];
   const head = text.slice(0, 4);
   return (head.endsWith(' -') ? head.slice(0, 2) : head).slice(1).trim();
 }
 
 /** The legend row for a special code, e.g. 1001 -> "A - Surrender 10,6 only". */
-export function codeDescription(code) {
+export function codeDescription(code: number): string {
   return CODE_DESCRIPTIONS[CODE_ALIAS[code] ?? code].slice(1);
 }
 
 /**
  * The "Specialty Plays" list for one view: every special code used by the
  * displayed cells, in reading order, without repeats.
- * @returns {string[]}
  */
-export function specialtyPlays(table, view, { extended = false, columns = 10 } = {}) {
-  const out = [];
+export function specialtyPlays(
+  table: readonly (readonly number[] | undefined)[],
+  view: TableGridView,
+  { extended = false, columns = 10 }: { extended?: boolean; columns?: number } = {},
+): string[] {
+  const out: string[] = [];
   for (let row = 0; row < rowCount(view, { extended }); row++) {
     for (let column = 0; column < columns; column++) {
       const code = specialCode(table[row]?.[column]);
@@ -219,31 +260,49 @@ export function specialtyPlays(table, view, { extended = false, columns = 10 } =
 }
 
 /** Insurance codes that replace the per-deck insurance table. */
-const INSURANCE_RULES = { 9999: 'Never Insure', '-9999': 'Red Seven Rule', 9998: 'Use Insurance Hand Table' };
+const INSURANCE_RULES: Readonly<Partial<Record<number, string>>> = {
+  9999: 'Never Insure',
+  '-9999': 'Red Seven Rule',
+  9998: 'Use Insurance Hand Table',
+};
 
 /** The sentence describing how the strategy decides on insurance. */
-export function insuranceRuleText(insuranceCode) {
+export function insuranceRuleText(insuranceCode: number): string {
   return INSURANCE_RULES[insuranceCode] ?? 'Use Insurance Decks Table';
 }
 
 /** True when the per-deck insurance table applies (and so is worth showing). */
-export function usesInsuranceDecksTable(insuranceCode) {
+export function usesInsuranceDecksTable(insuranceCode: number): boolean {
   return insuranceCode !== -9999 && insuranceCode < 9999;
 }
 
 /** A card value of 10000 means "counts only when the card is red". */
 const RED_ONLY = 10000;
 
-/**
- * The four small tables of the Insurance/Counts view.
- * @param {object} strategy  Result of buildStrategy().
- */
-export function countsTables(strategy) {
+/** One small table of the Insurance/Counts view. */
+export interface CountsTable {
+  caption: string;
+  columns: string[];
+  rows: { label?: string; values: string[] }[];
+}
+
+/** The Insurance/Counts view: its four small tables and the insurance rule. */
+export interface CountsTables {
+  pointValues: CountsTable;
+  startingCount: CountsTable;
+  /** Null when the per-deck insurance table doesn't apply. */
+  insuranceDecks: CountsTable | null;
+  insuranceHands: CountsTable;
+  rule: string;
+}
+
+/** The four small tables of the Insurance/Counts view. */
+export function countsTables(strategy: Strategy): CountsTables {
   const { countValues, countValuesBlack, initialRunningCount, insuranceByDecks, insuranceByTotal, kiss, file } =
     strategy;
-  const tenth = v => trimNumber(v / 10);
+  const tenth = (v: number) => trimNumber(v / 10);
   // A red-only card has no plain point value, so the Red column shows "*".
-  const point = (values, red) =>
+  const point = (values: number[], red: boolean) =>
     range(10, i => {
       if (kiss && i === 9) return `0/${tenth(values[10])}`;
       if (countValues[i + 1] === RED_ONLY) return red ? '*' : tenth(values[i + 1]);
@@ -280,9 +339,9 @@ export function countsTables(strategy) {
 }
 
 /** Cells of a view that hold a real index (the ones worth picking in a mask). */
-export function isIndexCell(value) {
+export function isIndexCell(value: number): boolean {
   return value !== ALWAYS && value !== NEVER && value !== NO_ENTRY;
 }
 
-const range = (n, fn) => Array.from({ length: n }, (_, i) => fn(i));
-const trimNumber = n => String(Math.round(n * 1000) / 1000);
+const range = <T>(n: number, fn: (i: number) => T): T[] => Array.from({ length: n }, (_, i) => fn(i));
+const trimNumber = (n: number): string => String(Math.round(n * 1000) / 1000);

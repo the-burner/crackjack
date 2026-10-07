@@ -1,18 +1,29 @@
-// @ts-nocheck
 // Every user setting, with its type and default. Shared groups (rules,
 // strategy, trueCount, display) are used by both the game and the drills;
 // drills.* groups belong to one drill each.
 
-import { BUILTIN_STRATEGIES } from './strategies.ts';
+import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategies.ts';
 import { BUILTIN_SIDE_BET_GAMES } from '../data/side-bet-games.ts';
+import { isRamp } from './bet-ramp.ts';
+import type { Ramp } from './bet-ramp.ts';
+import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues } from './store.ts';
 
-const bool = value => ({ type: 'bool', default: value });
-const int = (value, min, max) => ({ type: 'int', default: value, min, max });
-const oneOf = (values, value) => ({ type: 'enum', values, default: value });
-const json = (value, shape) => ({ type: 'json', default: value, shape });
+const bool = (value: boolean): BoolDef => ({ type: 'bool', default: value });
+const int = (value: number, min?: number, max?: number): NumberDef => ({ type: 'int', default: value, min, max });
+const oneOf = <const T extends string | number>(values: readonly T[], value: NoInfer<T>): EnumDef<T> => ({
+  type: 'enum',
+  values,
+  default: value,
+});
+const json = <T>(value: T, shape?: (value: unknown) => value is T): JsonDef<T> => ({
+  type: 'json',
+  default: value,
+  shape,
+});
 
-const grid = (rows, cols, value) => Array.from({ length: rows }, () => new Array(cols).fill(value));
-const tableGrids = value => ({
+const grid = <T>(rows: number, cols: number, value: T): T[][] =>
+  Array.from({ length: rows }, () => new Array<T>(cols).fill(value));
+const tableGrids = <T>(value: T) => ({
   split: grid(10, 10, value),
   hardStand: grid(10, 10, value),
   softDouble: grid(10, 10, value),
@@ -34,6 +45,9 @@ export const TABLE_LIMITS = [
   [500, 25000],
   [1, 100000],
 ];
+
+/** Every strategy a setting may name: the built-in ones and the hole-carding one. */
+const STRATEGY_IDS = [HOLE_CARD_STRATEGY.id, ...BUILTIN_STRATEGIES.map(strategy => strategy.id)];
 
 export const SETTINGS_SCHEMA = {
   // Common rules.
@@ -98,7 +112,7 @@ export const SETTINGS_SCHEMA = {
   // Playing strategy (shared).
   'strategy.system': oneOf(
     BUILTIN_STRATEGIES.map(strategy => strategy.id),
-    100,
+    BUILTIN_STRATEGIES[0].id,
   ),
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),
@@ -121,10 +135,7 @@ export const SETTINGS_SCHEMA = {
   'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
   'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
-  'betting.ramp': json(
-    { minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) },
-    value => Boolean(value) && Array.isArray(value.rows),
-  ),
+  'betting.ramp': json<Ramp>({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }, isRamp),
 
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': oneOf(
@@ -132,7 +143,7 @@ export const SETTINGS_SCHEMA = {
     0,
   ),
   /** The rules an unusual game overwrote, put back when it is left. */
-  'bonuses.savedRules': json({}),
+  'bonuses.savedRules': json<Record<string, unknown>>({}),
   'bonuses.sevens777': oneOf(['none', '2:1', '3:2', 'suited10:1'], 'none'),
   'bonuses.suitedAceJack': bool(false),
   'bonuses.heartsAceJack': bool(false),
@@ -164,8 +175,8 @@ export const SETTINGS_SCHEMA = {
   'peeking.adjacentHands': bool(false),
   'peeking.randomizeCard': bool(false),
   'peeking.randomizeHand': bool(false),
-  'peeking.strategyHigh': int(99),
-  'peeking.strategyLow': int(99),
+  'peeking.strategyHigh': oneOf(STRATEGY_IDS, HOLE_CARD_STRATEGY.id),
+  'peeking.strategyLow': oneOf(STRATEGY_IDS, HOLE_CARD_STRATEGY.id),
 
   // Speed and dealer behavior (game).
   'mechanics.dealerSpeed': int(30, 1, 100),
@@ -290,4 +301,16 @@ export const SETTINGS_SCHEMA = {
   'drills.full.alarmSeconds': int(180, 10, 1799),
   'drills.full.progressiveSpeed': bool(false),
   'drills.full.twoCounts': bool(false),
-};
+} satisfies Record<string, SettingDef>;
+
+export type AppSchema = typeof SETTINGS_SCHEMA;
+/** Every setting's dotted key. */
+export type SettingKey = keyof AppSchema;
+/** Every setting's value type, by key. */
+export type SettingValues = SettingsValues<AppSchema>;
+/** Some settings to apply together, as `Settings.update` takes them. */
+export type SettingsPatch = Partial<SettingValues>;
+/** Reads the current value of a setting. */
+export type SettingReader = <K extends SettingKey>(key: K) => SettingValues[K];
+/** The app's settings store. */
+export type AppSettings = Settings<AppSchema>;

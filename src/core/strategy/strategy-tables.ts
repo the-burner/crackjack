@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Builds the effective playing tables for a strategy file under a given set of
 // table rules, index limits and count adjustments.
 //
@@ -15,10 +14,15 @@ import {
   TABLE_NAMES,
   parseStrategyFile,
   parseBasicStrategyFile,
+  UNUSED_SLOT,
+  BELOW_OFFSET,
+  isBelowIndex,
 } from './strategy-file.ts';
+import type { FileTables, Grid, OneBased, StrategyFile, TableName } from './strategy-file.ts';
 import { BASIC_STRATEGY_FILE } from '../../data/strategy-files.ts';
 
-export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'];
+export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'] as const;
+export type IndexSet = (typeof INDEX_SETS)[number];
 
 /** Special cell codes. Some are resolved while building tables, the rest by the advisor. */
 export const CODE = {
@@ -69,10 +73,13 @@ export const CODE = {
   group3: 1045,
   group4: 1046,
   group5: 1047,
-};
+} as const;
+
+/** Undocumented split code: the *VR index (CODE.plus3PerDeck) as a "below" index. */
+export const SPLIT_PLUS3_PER_DECK = 1098;
 
 /** Display text for special codes, shown in the strategy table viewer. */
-export const CODE_DESCRIPTIONS = {
+export const CODE_DESCRIPTIONS: Readonly<Record<number, string>> = {
   1001: '*A - Surrender 10,6 only',
   1002: '*B - Surrender except for 8,7',
   1003: '*C - 7,7 Hit < 0; else Hit < 13',
@@ -123,14 +130,16 @@ export const CODE_DESCRIPTIONS = {
 };
 
 /** Insurance codes that replace the per-deck insurance index. */
-export const INSURANCE = { byTotalTable: 9998, never: 9999, pivot: -9999 };
+export const INSURANCE = { byTotalTable: 9998, never: 9999, pivot: -9999 } as const;
 
 /** Cells that the Illustrious 18 / Sweet 16 / Catch 20 index sets keep. */
-const ILLUSTRIOUS_18_SPLITS = [
+type Cell = [row: number, column: number];
+
+const ILLUSTRIOUS_18_SPLITS: Cell[] = [
   [1, 3],
   [1, 4],
 ];
-const ILLUSTRIOUS_18_HARD_STANDS = [
+const ILLUSTRIOUS_18_HARD_STANDS: Cell[] = [
   [1, 7],
   [1, 8],
   [2, 8],
@@ -142,70 +151,128 @@ const ILLUSTRIOUS_18_HARD_STANDS = [
   [5, 3],
   [5, 4],
 ];
-const ILLUSTRIOUS_18_HARD_DOUBLES = [
+const ILLUSTRIOUS_18_HARD_DOUBLES: Cell[] = [
   [0, 9],
   [1, 8],
   [1, 9],
   [2, 0],
   [2, 5],
 ];
-const CATCH_20_SOFT_DOUBLES = [
+const CATCH_20_SOFT_DOUBLES: Cell[] = [
   [1, 3],
   [1, 4],
 ];
-const CATCH_20_EXTRA_HARD_DOUBLES = [
+const CATCH_20_EXTRA_HARD_DOUBLES: Cell[] = [
   [3, 3],
   [3, 4],
 ];
-const FAB_4_SURRENDERS = [
+const FAB_4_SURRENDERS: Cell[] = [
   [2, 7],
   [2, 8],
   [2, 9],
   [3, 8],
 ];
 
-const QUARTER_COUNT_BY_DECKS = { 1: 2, 2: 0, 3: -2, 4: -3, 5: -5, 6: -6, 7: -8, 8: -10 };
+const QUARTER_COUNT_BY_DECKS: Readonly<Record<number, number>> = {
+  1: 2,
+  2: 0,
+  3: -2,
+  4: -3,
+  5: -5,
+  6: -6,
+  7: -8,
+  8: -10,
+};
 
 const ROWS = 10;
 const BASE_COLUMNS = 10;
 const EXTENDED_COLUMNS = 23;
 
-const contains = (cells, k, l) => cells.some(([r, c]) => r === k && c === l);
+const contains = (cells: Cell[], k: number, l: number) => cells.some(([r, c]) => r === k && c === l);
 
 /** Rounds like VBScript CInt (banker's rounding). */
-function roundHalfEven(n) {
+function roundHalfEven(n: number): number {
   const i = Math.floor(n);
   const d = n - i - 0.5;
   if (d === 0) return i % 2 === 0 ? i : i + 1;
   return d > 0 ? i + 1 : i;
 }
 
-let cachedBasic = null;
-function basicTemplate() {
+let cachedBasic: FileTables | null = null;
+function basicTemplate(): FileTables {
   cachedBasic ??= parseBasicStrategyFile(BASIC_STRATEGY_FILE);
   return cachedBasic;
 }
 
-/**
- * @typedef {object} TableOptions
- * @property {number} decks              Number of decks in play (1-8).
- * @property {boolean} hitSoft17          Dealer hits soft 17.
- * @property {boolean} doubleAfterSplit
- * @property {boolean} noHoleCard
- * @property {string}  indexSet           One of INDEX_SETS.
- * @property {boolean} [fab4]             Keep the "Fab 4" surrender indices when limiting indices.
- * @property {object}  [customMask]       For indexSet 'custom': {split, hardStand, ...} boolean grids; true keeps the index.
- * @property {number}  [rangeHigh=99]     Indices above this become ALWAYS.
- * @property {number}  [rangeLow=-99]     Indices below this become NEVER.
- * @property {number|null} [forcedInitialRunningCount] Adjust indices to start every count at this value.
- */
+/** The six playing tables, each indexed [row][column]. */
+export type StrategyTables = Record<TableName, Grid>;
+
+/** Per-table boolean grids of a custom index set; true keeps the index. */
+export type CustomMask = Record<TableName, boolean[][]>;
+
+export interface TableOptions {
+  /** Number of decks in play (1-8). */
+  decks: number;
+  /** Dealer hits soft 17. */
+  hitSoft17: boolean;
+  doubleAfterSplit: boolean;
+  noHoleCard: boolean;
+  /** Default 'all'. */
+  indexSet?: IndexSet;
+  /** Keep the "Fab 4" surrender indices when limiting indices. */
+  fab4?: boolean;
+  /** For indexSet 'custom'. */
+  customMask?: CustomMask | null;
+  /** Indices above this become ALWAYS. Default 99. */
+  rangeHigh?: number;
+  /** Indices below this become NEVER. Default -99. */
+  rangeLow?: number;
+  /** Adjust indices to start every count at this value. */
+  forcedInitialRunningCount?: number | null;
+}
+
+/** The effective tables and count parameters of a strategy, as built by buildStrategy(). */
+export interface Strategy {
+  name: string;
+  /** The parsed file the strategy was built from. */
+  file: StrategyFile;
+  decks: number;
+  tables: StrategyTables;
+  /** Basic-strategy tables for the same rules (base columns only). */
+  basicTables: StrategyTables;
+  /** Values of A,2..9,T at index 1..10, in tenths; 10000 = counts +1 only when red. */
+  countValues: OneBased;
+  /** Values for black cards (same as countValues unless red/black). */
+  countValuesBlack: OneBased;
+  kiss: boolean;
+  halves: boolean;
+  unbalanced: boolean;
+  /** COUNT_UNIT. */
+  trueCountType: number;
+  /** Insurance index in tenths, or an INSURANCE code. */
+  insurance: number;
+  insuranceByTotal: number[];
+  insuranceByDecks: OneBased;
+  /** Per deck count 1..8, at index 0..7. */
+  initialRunningCount: number[];
+  ircAdjust: number;
+  pivot: number;
+  realPivot: number;
+  groups: Grid;
+  sideCounts: number[];
+  extended: boolean;
+  earlySurrender: boolean;
+}
+
+/** Builds one value per table, keyed by table name. */
+const byTable = <T>(fn: (name: TableName, t: number) => T) =>
+  Object.fromEntries(TABLE_NAMES.map((name, t) => [name, fn(name, t)])) as Record<TableName, T>;
 
 /**
  * Builds the tables and count parameters for a strategy.
- * @param {string|object} file  Strategy file text, or an already parsed file.
- * @param {TableOptions} options
+ * `file` is the strategy file text, or an already parsed file.
  */
-export function buildStrategy(file, options) {
+export function buildStrategy(file: string | StrategyFile, options: TableOptions): Strategy {
   const f = typeof file === 'string' ? parseStrategyFile(file) : structuredClone(file);
   const {
     decks,
@@ -228,20 +295,20 @@ export function buildStrategy(file, options) {
     if (indexSet !== 'none') indexSet = 'all';
   }
 
-  const fileCell = (variant, table, k, l) =>
-    l >= BASE_COLUMNS ? f.extendedTables[variant][table][k][l - BASE_COLUMNS] : f.tables[variant][table][k][l];
-  const emptyTables = () =>
-    Object.fromEntries(TABLE_NAMES.map(n => [n, Array.from({ length: ROWS }, () => new Array(columns))]));
+  // Only extended files have columns past the base ones, and they have extendedTables.
+  const fileCell = (variant: number, table: number, k: number, l: number) =>
+    l >= BASE_COLUMNS ? f.extendedTables![variant][table][k][l - BASE_COLUMNS] : f.tables[variant][table][k][l];
+  const emptyTables = () => byTable((): Grid => Array.from({ length: ROWS }, () => new Array<number>(columns)));
   const tables = emptyTables();
-  const eachCell = (cols, fn) => {
+  const eachCell = (cols: number, fn: (k: number, l: number) => void) => {
     for (let k = 0; k < ROWS; k++) for (let l = 0; l < cols; l++) fn(k, l);
   };
 
   // Count values (index 1..10 = A,2..9,T).
   const countValues = f.countValues.slice();
   const countValuesBlack = f.redBlack ? f.countValuesBlack.slice() : f.countValues.slice();
-  countValues[0] = undefined;
-  countValuesBlack[0] = undefined;
+  countValues[0] = UNUSED_SLOT;
+  countValuesBlack[0] = UNUSED_SLOT;
 
   let ircAdjust = 0;
   const insuranceByDecks = f.insuranceByDecks.slice();
@@ -255,7 +322,7 @@ export function buildStrategy(file, options) {
   }
 
   // 1. Start from the variant matching the deck count and soft-17 rule.
-  let variant = VARIANT.base;
+  let variant: number = VARIANT.base;
   if (multiDeck && hitSoft17 && f.variants.multiDeck && f.variants.hitSoft17) variant = VARIANT.hitSoft17MultiDeck;
   else if (multiDeck && f.variants.multiDeck) variant = VARIANT.multiDeck;
   else if (hitSoft17 && f.variants.hitSoft17) variant = VARIANT.hitSoft17;
@@ -296,7 +363,7 @@ export function buildStrategy(file, options) {
 
   // Basic-strategy fallback tables for the same rules.
   {
-    let v = VARIANT.base;
+    let v: number = VARIANT.base;
     if (decks > 1 && hitSoft17) v = VARIANT.hitSoft17MultiDeck;
     else if (multiDeck) v = VARIANT.multiDeck;
     else if (hitSoft17) v = VARIANT.hitSoft17;
@@ -304,7 +371,7 @@ export function buildStrategy(file, options) {
       eachCell(BASE_COLUMNS, (k, l) => {
         basic[0][t][k][l] = basic[v][t][k][l];
       });
-    const overlay = from => {
+    const overlay = (from: number) => {
       for (let t = 0; t < 6; t++)
         eachCell(BASE_COLUMNS, (k, l) => {
           if (basic[from][t][k][l] > NO_ENTRY) basic[0][t][k][l] = basic[from][t][k][l];
@@ -313,9 +380,7 @@ export function buildStrategy(file, options) {
     if (doubleAfterSplit) overlay(decks > 1 ? VARIANT.doubleAfterSplitMultiDeck : VARIANT.doubleAfterSplit);
     if (noHoleCard) overlay(VARIANT.noHoleCard);
   }
-  const basicTables = Object.fromEntries(
-    TABLE_NAMES.map((name, t) => [name, basic[0][t].slice(0, ROWS).map(r => r.slice(0, BASE_COLUMNS))]),
-  );
+  const basicTables = byTable((_, t) => basic[0][t].slice(0, ROWS).map(r => r.slice(0, BASE_COLUMNS)));
 
   // 4. Resolve pivot-based codes for running-count (unbalanced) systems.
   const pivotSum = () => {
@@ -354,7 +419,7 @@ export function buildStrategy(file, options) {
   });
 
   // Insurance decision parameter.
-  let insurance = [INSURANCE.never, INSURANCE.pivot, INSURANCE.byTotalTable].includes(f.insuranceCode)
+  let insurance = ([INSURANCE.never, INSURANCE.pivot, INSURANCE.byTotalTable] as number[]).includes(f.insuranceCode)
     ? f.insuranceCode
     : insuranceByDecks[decks];
   if (f.insuranceCode === INSURANCE.pivot) {
@@ -363,7 +428,7 @@ export function buildStrategy(file, options) {
   }
 
   // 6. Limit the index set by reverting cells to basic strategy.
-  const useBasic = (name, k, l) => {
+  const useBasic = (name: TableName, k: number, l: number) => {
     tables[name][k][l] = basic[0][TABLE_NAMES.indexOf(name)][k][l];
   };
   if (indexSet === 'none') {
@@ -435,10 +500,10 @@ export function buildStrategy(file, options) {
 }
 
 /** Applies the index range limit to one cell. */
-function limitToRange(v, low, high) {
-  if (v < -31000 && v > NEVER) {
+function limitToRange(v: number, low: number, high: number): number {
+  if (isBelowIndex(v)) {
     // "Below" indices are stored offset by -31500.
-    return Math.abs(v + 31500) > high ? NEVER : v;
+    return Math.abs(v + BELOW_OFFSET) > high ? NEVER : v;
   }
   let out = v;
   if (v > high && v < 1000) out = ALWAYS;
@@ -448,11 +513,25 @@ function limitToRange(v, low, high) {
 
 /** Custom index set: cells not selected in the mask revert to basic strategy. */
 function applyCustomMask(
-  tables,
-  basic,
-  mask,
-  { decks, fileDecks, doubleAfterSplit, noHoleCard, fileDoubleAfterSplit, earlySurrender },
-) {
+  tables: StrategyTables,
+  basic: FileTables,
+  mask: CustomMask,
+  {
+    decks,
+    fileDecks,
+    doubleAfterSplit,
+    noHoleCard,
+    fileDoubleAfterSplit,
+    earlySurrender,
+  }: {
+    decks: number;
+    fileDecks: number;
+    doubleAfterSplit: boolean;
+    noHoleCard: boolean;
+    fileDoubleAfterSplit: boolean;
+    earlySurrender: boolean;
+  },
+): void {
   const masks = TABLE_NAMES.map(name => mask[name]);
   for (let k = 0; k < ROWS; k++) {
     for (let l = 0; l < BASE_COLUMNS; l++) {
@@ -464,7 +543,7 @@ function applyCustomMask(
       }
     }
   }
-  const overlay = from => {
+  const overlay = (from: number) => {
     for (let k = 0; k < ROWS; k++)
       for (let l = 0; l < BASE_COLUMNS; l++) {
         for (let t = 0; t < 6; t++) {

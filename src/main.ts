@@ -1,14 +1,23 @@
-// @ts-nocheck
 // Entry point: creates the app, registers screens and shows the home screen.
 
 import { createApp } from './app/app.ts';
+import type { App } from './app/app.ts';
 import { registerScreens } from './screens/index.ts';
 import { applyTheme } from './ui/theme.ts';
 import { toast } from './ui/toast.ts';
 import { confirm } from './ui/dialogs.ts';
 import { registerSW } from 'virtual:pwa-register';
 
-const app = createApp(document.getElementById('app'));
+declare global {
+  interface Window {
+    /** The running app, for debugging and the browser tests. */
+    app: App;
+  }
+}
+
+const root = document.getElementById('app');
+if (!root) throw new Error('index.html has no #app element');
+const app = createApp(root);
 applyTheme(app.settings.get('display.theme'));
 app.settings.subscribe((key, value) => {
   if (key === 'display.theme') applyTheme(value);

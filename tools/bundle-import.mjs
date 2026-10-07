@@ -80,11 +80,16 @@ function objectIds(src, opener) {
 export function addStrategy({ files, catalog }, text, name = text.slice(1, text.indexOf('|', 1)).trim()) {
   if (!isStrategyFileText(text)) throw new Error('That is not a strategy file. Probably an incorrect code.');
   if (files.includes(JSON.stringify(text))) throw new Error('That strategy is already bundled.');
-  const id = Math.max(...objectIds(files, 'export const STRATEGY_FILES = {')) + 1;
+  const id = Math.max(...objectIds(files, 'export const STRATEGY_FILES: Readonly<Record<number, string>> = {')) + 1;
   return {
     id,
     name,
-    files: insertBefore(files, 'export const STRATEGY_FILES = {', '\n};', `\n  ${id}: ${JSON.stringify(text)},`),
+    files: insertBefore(
+      files,
+      'export const STRATEGY_FILES: Readonly<Record<number, string>> = {',
+      '\n};',
+      `\n  ${id}: ${JSON.stringify(text)},`,
+    ),
     catalog: insertBefore(
       catalog,
       'export const BUILTIN_STRATEGIES = [',
@@ -101,7 +106,8 @@ export function addStrategy({ files, catalog }, text, name = text.slice(1, text.
 export function addSideBetGame(games, definition, name = sideBetGameName(definition)) {
   if (!isSideBetDefinition(definition)) throw new Error('That is not a side-bet game. Probably an incorrect code.');
   if (games.includes(JSON.stringify(definition))) throw new Error('That game is already bundled.');
-  const id = Math.max(...objectIds(games, 'export const SIDE_BET_GAME_DEFINITIONS = {')) + 1;
+  const id =
+    Math.max(...objectIds(games, 'export const SIDE_BET_GAME_DEFINITIONS: Readonly<Record<number, string>> = {')) + 1;
   let out = insertBefore(
     games,
     'export const BUILTIN_SIDE_BET_GAMES = [',
@@ -110,7 +116,7 @@ export function addSideBetGame(games, definition, name = sideBetGameName(definit
   );
   out = insertBefore(
     out,
-    'export const SIDE_BET_GAME_DEFINITIONS = {',
+    'export const SIDE_BET_GAME_DEFINITIONS: Readonly<Record<number, string>> = {',
     '\n};',
     `\n  ${id}: ${JSON.stringify(definition)},`,
   );

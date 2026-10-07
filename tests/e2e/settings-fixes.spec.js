@@ -105,7 +105,7 @@ test('the Allowed Bets rows sit in one inset group', async ({ page }) => {
 test('Allowed Bets saves the bet ramp it brought back into range', async ({ page }) => {
   await openHub(page, { 'betting.ramp': { minCount: 1.5, rows: [{ chips: 999, hands: 9 }] } });
   await openScreen(page, 'Betting Strategies', 'settings.betting');
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings'))['betting.ramp']);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings')).values['betting.ramp']);
   expect(saved).toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
 });
 

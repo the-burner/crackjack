@@ -1,11 +1,13 @@
-// @ts-nocheck
 // Random number sources. Everything that needs randomness takes a `random`
 // function returning [0, 1), so tests can pass a seeded one.
 
-export const defaultRandom = () => Math.random();
+/** A source of random numbers in [0, 1). */
+export type Random = () => number;
+
+export const defaultRandom: Random = () => Math.random();
 
 /** Deterministic generator (mulberry32). */
-export function seededRandom(seed) {
+export function seededRandom(seed: number): Random {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) | 0;
@@ -16,10 +18,10 @@ export function seededRandom(seed) {
 }
 
 /** Random integer in [0, n). */
-export const randomInt = (n, random = defaultRandom) => Math.floor(random() * n);
+export const randomInt = (n: number, random: Random = defaultRandom): number => Math.floor(random() * n);
 
 /** Shuffles an array in place (Fisher-Yates). */
-export function shuffle(items, random = defaultRandom) {
+export function shuffle<T>(items: T[], random: Random = defaultRandom): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
     [items[i], items[j]] = [items[j], items[i]];

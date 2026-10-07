@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   EXPORT_HOST,
@@ -15,8 +17,12 @@ import { SIDE_BET_GAME_DEFINITIONS } from '../../src/data/side-bet-games.ts';
 
 const read = file => fs.readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 const sources = () => ({ files: read('src/data/strategy-files.ts'), catalog: read('src/settings/strategies.ts') });
-/** Loads an import-free module from source. */
-const load = src => import(`data:text/javascript,${encodeURIComponent(src)}`);
+/** Loads an import-free TypeScript module from source. */
+const load = async src => {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cj-bundle-')), 'module.ts');
+  fs.writeFileSync(file, src);
+  return import(file);
+};
 
 describe('download URLs', () => {
   it('trims and lowercases a strategy code, as the original did', () => {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Modal overlays that sit above the screens (dialogs, the duration sheet).
 //
 // They live on document.body rather than inside a screen, so a back request has
@@ -6,14 +5,13 @@
 // would leave the overlay covering the wrong screen, swallowing every tap.
 
 /** Dismiss functions for the overlays now open, newest last. */
-const open = [];
+const open: (() => void)[] = [];
 
 /**
- * Registers an open overlay.
- * @param {() => void} dismiss  Closes it as cancelling would.
- * @returns {() => void} call when it closes, however that happened.
+ * Registers an open overlay. `dismiss` closes it as cancelling would.
+ * Returns a function to call when it closes, however that happened.
  */
-export function registerOverlay(dismiss) {
+export function registerOverlay(dismiss: () => void): () => void {
   open.push(dismiss);
   return () => {
     const at = open.indexOf(dismiss);
@@ -22,10 +20,9 @@ export function registerOverlay(dismiss) {
 }
 
 /**
- * Dismisses the overlay on top, if there is one.
- * @returns {boolean} whether an overlay was dismissed.
+ * Dismisses the overlay on top, if there is one; answers whether one was.
  */
-export function dismissTopOverlay() {
+export function dismissTopOverlay(): boolean {
   const dismiss = open[open.length - 1];
   if (!dismiss) return false;
   dismiss();

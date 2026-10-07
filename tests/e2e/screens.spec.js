@@ -124,7 +124,8 @@ async function openFromHub(page, button, screen) {
   return el;
 }
 
-const saved = (page, key) => page.evaluate(k => JSON.parse(localStorage.getItem('cj.settings') ?? '{}')[k], key);
+const saved = (page, key) =>
+  page.evaluate(k => (JSON.parse(localStorage.getItem('cj.settings') ?? '{}').values ?? {})[k], key);
 
 test('the theme dropdown switches the theme and keeps it across a reload', async ({ page }) => {
   const errors = watchErrors(page);
