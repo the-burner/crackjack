@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig(
@@ -8,6 +9,7 @@ export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
   { rules: { eqeqeq: ['error', 'smart'] } },
+  { files: ['src/**/*.tsx'], ...reactHooks.configs.flat.recommended },
   // Allowed while the files are moved to TypeScript one at a time.
   { rules: { '@typescript-eslint/ban-ts-comment': ['error', { 'ts-nocheck': false }] } },
   { files: ['src/**'], languageOptions: { globals: globals.browser } },

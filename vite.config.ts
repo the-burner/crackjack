@@ -1,4 +1,5 @@
 import { defineConfig, type PreviewOptions } from 'vite';
+import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { certificateFor, localHostName } from './tools/certs.mjs';
 
@@ -15,6 +16,7 @@ export default defineConfig(({ mode }) => ({
   base: './',
   preview: previewFor(mode),
   plugins: [
+    react(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
