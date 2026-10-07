@@ -302,49 +302,11 @@ describe('text on a coloured tile', () => {
 describe('the drill screens', () => {
   it('marks the right answer legibly on a secondary button', () => {
     const pairs = THEMES.map((theme): Pair => [
-      `${theme} --answer-correct on --secondary`,
+      `${theme} --answer-correct on --btn-bg`,
       value('--answer-correct', theme),
-      value('--secondary', theme),
+      value('--btn-bg', theme),
     ]);
     expect(below(AA, pairs)).toEqual([]);
-  });
-});
-
-describe("shadcn's tokens", () => {
-  /** The ink and ground pairs the components put text in. */
-  const TEXT: [front: string, back: string][] = [
-    ['--foreground', '--background'],
-    ['--card-foreground', '--card'],
-    ['--muted-foreground', '--background'],
-    ['--muted-foreground', '--card'],
-    ['--popover-foreground', '--popover'],
-    ['--primary-foreground', '--primary'],
-    ['--secondary-foreground', '--secondary'],
-    ['--accent-foreground', '--accent'],
-    // An overdue time, and a destructive button's label.
-    ['--destructive', '--background'],
-    ['--destructive', '--card'],
-  ];
-
-  for (const theme of THEMES) {
-    it(`write text legibly on their grounds in ${theme}`, () => {
-      const pairs = TEXT.map(([front, back]): Pair => [
-        `${theme} ${front} on ${back}`,
-        value(front, theme),
-        value(back, theme),
-      ]);
-      expect(below(AA, pairs)).toEqual([]);
-    });
-  }
-
-  it('show the knob of a switch that is on', () => {
-    // A control's own parts need 3:1, not 4.5. The knob is --background, or
-    // --primary-foreground in the dark theme, on a --primary track.
-    const pairs = THEMES.map((theme): Pair => {
-      const knob = theme === 'mocha' ? '--primary-foreground' : '--background';
-      return [`${theme} ${knob} on --primary`, value(knob, theme), value('--primary', theme)];
-    });
-    expect(below(LARGE, pairs)).toEqual([]);
   });
 });
 

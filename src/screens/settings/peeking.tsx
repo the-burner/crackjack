@@ -1,8 +1,10 @@
 // Peeking: seeing the dealer's hole card and the strategies
 // used once it has been seen.
 
-import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import type { ReactNode } from 'react';
+import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { Label } from '@/components/ui/text';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 import { HOLE_CARD_STRATEGY } from '@/settings/strategies';
@@ -28,13 +30,29 @@ export function Peeking() {
   return (
     <SettingsScreen title="Peeking" help="settings.peeking" note={NOTE}>
       <SettingsGroup>
-        <SettingSwitches items={CHECKS} />
-        <SettingSelect label="Percent of the time" setting="peeking.percent" options={PERCENTS} />
+        <SettingChecks items={CHECKS} />
+        <SettingsRow label="Percent of the time:" trailing className="[&>[data-slot=select]]:flex-[0_0_110px]">
+          <SettingSelect label="Percent of the time" setting="peeking.percent" options={PERCENTS} mini />
+        </SettingsRow>
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSelect label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
-        <SettingSelect label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
+        <TrailingLabel label="HC High">
+          <SettingSelect label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
+        </TrailingLabel>
+        <TrailingLabel label="HC Low">
+          <SettingSelect label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
+        </TrailingLabel>
       </SettingsGroup>
     </SettingsScreen>
+  );
+}
+
+/** A control with its label to the right of it. */
+function TrailingLabel({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <SettingsRow trailing>
+      {children}
+      <Label className="flex-none font-normal">{label}</Label>
+    </SettingsRow>
   );
 }

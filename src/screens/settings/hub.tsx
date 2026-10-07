@@ -1,6 +1,7 @@
 // The settings hub: navigation to every option screen.
 
-import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
+import { ScreenLayout } from '@/components/screen-layout';
+import { ListRow, Section, SettingsCols, SettingsGroup } from '@/components/ui/settings-group';
 import { useNavigate } from 'react-router';
 import { PATHS } from '@/app/paths';
 import type { ScreenName } from '@/app/paths';
@@ -42,20 +43,19 @@ export function SettingsHub() {
   const navigate = useNavigate();
   return (
     <ScreenLayout title="Options" help="settings">
-      <div className="mx-auto grid max-w-4xl items-start gap-4 md:grid-cols-2">
+      <SettingsCols className="gap-6 pt-1">
         {SECTIONS.map(([title, screens], i) => (
-          <div key={title} className="space-y-2">
-            <Section title={title}>
+          <Section key={title} title={title} footer={i === 1 ? NOTE : undefined}>
+            <SettingsGroup>
               {screens.map(([label, screen]) => (
-                <ListButton key={screen} onClick={() => navigate(PATHS[screen])}>
+                <ListRow key={screen} block onClick={() => navigate(PATHS[screen])}>
                   {label}
-                </ListButton>
+                </ListRow>
               ))}
-            </Section>
-            {i === 1 && <p className="px-1 text-sm text-muted-foreground">{NOTE}</p>}
-          </div>
+            </SettingsGroup>
+          </Section>
         ))}
-      </div>
+      </SettingsCols>
     </ScreenLayout>
   );
 }

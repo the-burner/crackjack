@@ -5,7 +5,7 @@ import './index.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { registerSW } from 'virtual:pwa-register';
 import { createServices } from '@/app/app';
 import type { App } from '@/app/app';
@@ -38,8 +38,8 @@ createRoot(root).render(
 );
 
 // Storage can be blocked or full; the app still runs, but says so once.
-app.storage.onWriteError = () => toast.error('Out of storage: this change will not be saved.');
-if (!app.storage.persistent) toast.error('Storage is blocked: settings will not be saved.');
+app.storage.onWriteError = () => toast('Out of storage: this change will not be saved.', { tone: 'error' });
+if (!app.storage.persistent) toast('Storage is blocked: settings will not be saved.', { tone: 'error' });
 
 const updateServiceWorker = registerSW({
   async onNeedRefresh() {

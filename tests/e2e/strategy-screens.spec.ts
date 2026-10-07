@@ -6,10 +6,9 @@ import { answerDialog, openFromHub, setting } from './support/settings';
 
 test.use({ serviceWorkers: 'block' });
 
-/** Opens a select and picks one of its options. */
+/** Picks one of a select's options. */
 async function choose(screen: Locator, name: string, option: string) {
-  await screen.getByRole('combobox', { name, exact: true }).click();
-  await screen.page().getByRole('option', { name: option, exact: true }).click();
+  await screen.getByRole('combobox', { name, exact: true }).selectOption({ label: option });
 }
 
 /** A strategy grid cell; the first cell of each body row is its label. */

@@ -106,7 +106,7 @@ function recorder(sel: typeof SELECTOR) {
           t,
           f,
           text: el.textContent ?? '',
-          className: el.dataset.type,
+          className: el.dataset.tone,
           leaving: null,
           removed: null,
         };
@@ -114,7 +114,7 @@ function recorder(sel: typeof SELECTOR) {
         log.push(entry);
       }
       const entry = toasts.get(el)!;
-      if (entry.leaving === null && el.dataset.removed === 'true') entry.leaving = t;
+      if (entry.leaving === null && el.dataset.leaving !== undefined) entry.leaving = t;
     }
     for (const [el, entry] of toasts) if (entry.removed === null && !el.isConnected) entry.removed = t;
   };
@@ -123,7 +123,7 @@ function recorder(sel: typeof SELECTOR) {
     childList: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ['class', 'hidden', 'data-removed'],
+    attributeFilter: ['class', 'hidden', 'data-leaving'],
   });
 }
 
@@ -533,13 +533,13 @@ test.describe('the result label', () => {
           let el: HTMLElement | undefined;
           for (let i = 0; i < 100 && !el; i++) {
             await new Promise(requestAnimationFrame);
-            el = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-removed="true"])`)].find(
+            el = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-leaving])`)].find(
               li => li.textContent === tone,
             );
           }
           // The box from the pop-up, the type from its text.
           const c = getComputedStyle(el!);
-          const t = getComputedStyle(el!.querySelector('[data-title]')!);
+          const t = getComputedStyle(el!);
           out[tone] = {
             radius: c.borderTopLeftRadius,
             family: t.fontFamily,

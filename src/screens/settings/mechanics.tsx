@@ -1,6 +1,7 @@
 // Speed/Mechanics: the three speed sliders and the operational switches.
 
-import { SettingSlider, SettingSwitches, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
+import { SettingChecks, SettingSlider, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'Operational controls are found here. Move speed controls to the right for faster operation.';
@@ -24,7 +25,7 @@ export function Mechanics() {
         <SettingSlider label="Payoff Speed" setting="mechanics.payoffSpeed" />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSwitches items={CHECKS} />
+        <SettingChecks items={CHECKS} />
       </SettingsGroup>
     </SettingsScreen>
   );

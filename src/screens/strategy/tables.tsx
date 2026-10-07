@@ -7,11 +7,11 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { tablesParams } from '@/app/paths';
 import { useApp, useSettings } from '@/react/app-context';
-import { cn } from 'cn';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScreenLayout } from '@/components/screen-layout';
-import { SettingsGroup } from '@/components/settings-controls';
-import { SwitchRow } from '@/components/settings/controls';
+import { cn } from '@/lib/utils';
+import { CheckList } from '@/components/ui/check-list';
+import { Grid, GRID_LABEL } from '@/components/ui/grid';
+import { Select } from '@/components/ui/select';
+import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
 import {
   TABLE_VIEWS,
@@ -137,12 +137,12 @@ export function StrategyTables({ params }: { params: TablesParams }) {
           />
         </div>
         <div className="flex items-start gap-1.5">
-          <ul aria-label="Legend" className="flex w-28 shrink-0 flex-col" hidden={showErrors}>
+          <ul aria-label="Legend" className="m-0 flex flex-[0_0_112px] flex-col p-0" hidden={showErrors}>
             {view.legend.map((label, i) =>
               label === null ? null : (
                 <li
                   key={i}
-                  className="flex min-h-7.5 items-center justify-center border border-(--grid-mark) px-1 py-0.5 text-center text-xs font-semibold"
+                  className="flex min-h-[30px] items-center justify-center border border-(--grid-mark) px-1 py-0.5 text-center text-[12px] leading-[normal] font-semibold [border-style:groove]"
                   style={{ backgroundColor: themed(LEGEND_COLORS[i]), color: themed(LEGEND_TEXT_COLORS[i]) }}
                 >
                   {label}
@@ -162,54 +162,41 @@ export function StrategyTables({ params }: { params: TablesParams }) {
   const views = TABLE_VIEWS.map(v => ({ value: v.key, label: v.label }));
   return (
     <ScreenLayout title={title} help="strategy.tables">
-      <div className="mx-auto flex max-w-3xl flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate rounded-lg border bg-card px-2 py-1.5 text-center text-sm">
+      <Column wide>
+        <div className="flex items-center gap-1.5">
+          <p className="m-0 min-w-0 flex-1 truncate border-2 border-(--inset-border) bg-(--input-bg) px-2 py-[5px] text-center text-caption [border-style:inset]">
             {strategy.name}
           </p>
           <Select
+            mini
+            aria-label="Table"
+            className="flex-[0_0_48%]"
+            options={views}
             value={view.key}
-            onValueChange={key => {
-              if (key !== null) setView(viewByKey(key));
-            }}
-            items={views}
-          >
-            <SelectTrigger aria-label="Table" className="w-[48%]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {views.map(v => (
-                <SelectItem key={v.value} value={v.value}>
-                  {v.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={key => setView(viewByKey(key))}
+          />
         </div>
         {content}
-        <SettingsGroup>
-          <SwitchRow
-            label="Shade error counts"
-            checked={showErrors}
-            onCheckedChange={on => setTallies(on ? app.errorTallies.load() : null)}
-          />
-        </SettingsGroup>
-      </div>
+        <CheckList
+          items={[
+            {
+              label: 'Shade error counts',
+              checked: showErrors,
+              onChange: on => setTallies(on ? app.errorTallies.load() : null),
+            },
+          ]}
+        />
+      </Column>
     </ScreenLayout>
   );
 }
 
 const Hint = ({ children }: { children: string }) => (
-  <p className="min-h-5 text-center text-xs text-muted-foreground">{children}</p>
+  <p className="m-0 py-0.5 text-center text-[12px] leading-[normal] text-(--text-secondary)">{children}</p>
 );
 
-/** The chart's look: a slate header and ridged cell borders, in the theme's grid colours. */
-const GRID = 'w-full table-fixed border-collapse text-xs font-semibold tabular-nums';
-const HEAD =
-  'border-2 [border-style:ridge] border-(--grid-border) bg-(--grid-head-bg) px-px py-1 text-center text-(--grid-head-text)';
-const CELL =
-  'overflow-hidden border-2 [border-style:ridge] border-(--grid-border) px-px py-1 text-center text-(--grid-text)';
-const LABEL = cn(CELL, 'bg-(--grid-label-bg)');
+/** The cell the game's Error button points at: its outline blinks. */
+const MARKED = 'animate-[marked-cell_1.4s_steps(1,end)_infinite] outline-3 -outline-offset-3 outline-(--grid-mark)';
 
 function TableGrid({
   strategy,
@@ -231,21 +218,19 @@ function TableGrid({
   const labels = rowLabels(view, { extended, earlySurrender: strategy.earlySurrender });
   const heads = columnLabels({ extended });
   return (
-    <table aria-label={view.label} className={GRID}>
+    <Grid aria-label={view.label}>
       <thead>
         <tr>
-          <th className={cn(HEAD, 'w-[11%]')} />
+          <th className="w-[11%]" />
           {heads.map((label, i) => (
-            <th key={i} className={HEAD}>
-              {label}
-            </th>
+            <th key={i}>{label}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {labels.map((label, row) => (
           <tr key={row}>
-            <td className={LABEL}>{label}</td>
+            <td className={GRID_LABEL}>{label}</td>
             {heads.map((_, column) => {
               const cell = gridCell({
                 value: table[row][column],
@@ -257,13 +242,7 @@ function TableGrid({
               return (
                 <td
                   key={column}
-                  className={cn(
-                    CELL,
-                    onCell && 'cursor-pointer',
-                    // The cell the game's Error button points at blinks its outline.
-                    marked &&
-                      'animate-[marked-cell_1.4s_steps(1,end)_infinite] outline-3 -outline-offset-3 outline-(--grid-mark)',
-                  )}
+                  className={cn(onCell && 'cursor-pointer', marked && MARKED)}
                   data-row={row}
                   data-col={column}
                   data-marked={marked || undefined}
@@ -277,7 +256,7 @@ function TableGrid({
           </tr>
         ))}
       </tbody>
-    </table>
+    </Grid>
   );
 }
 
@@ -286,20 +265,20 @@ function SpecialtyList({ strategy, view }: { strategy: Strategy; view: TableGrid
   const columns = extended ? EXTENDED_COLUMNS : BASE_COLUMNS;
   const plays = specialtyPlays(strategy.tables[view.table], view, { extended, columns });
   return (
-    <table className={GRID}>
+    <Grid>
       <thead>
         <tr>
-          <th className={HEAD}>Specialty Plays</th>
+          <th>Specialty Plays</th>
         </tr>
       </thead>
       <tbody>
         {(plays.length ? plays : ['none']).map((text, i) => (
           <tr key={i}>
-            <td className={cn(LABEL, 'pl-1.5 text-left')}>{text}</td>
+            <td className={cn(GRID_LABEL, 'pl-1.5! text-left!')}>{text}</td>
           </tr>
         ))}
       </tbody>
-    </table>
+    </Grid>
   );
 }
 
@@ -310,31 +289,29 @@ function CountsViewTables({ counts }: { counts: CountsTables }) {
     <div className="mx-auto flex max-w-125 flex-col gap-2.5">
       {tables.map((t, i) =>
         t ? (
-          <table key={i} className={GRID}>
-            <caption className="pb-0.5 text-sm font-semibold">{t.caption}</caption>
+          <Grid key={i}>
+            <caption className="pb-0.5 text-caption font-semibold">{t.caption}</caption>
             <thead>
               <tr>
-                {t.rows[0].label !== undefined ? <th className={HEAD} /> : null}
+                {t.rows[0].label !== undefined ? <th /> : null}
                 {t.columns.map((c, j) => (
-                  <th key={j} className={HEAD}>
-                    {c}
-                  </th>
+                  <th key={j}>{c}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {t.rows.map((r, j) => (
                 <tr key={j}>
-                  {r.label !== undefined ? <td className={LABEL}>{r.label}</td> : null}
+                  {r.label !== undefined ? <td className={GRID_LABEL}>{r.label}</td> : null}
                   {r.values.map((v, k) => (
-                    <td key={k} className={LABEL}>
+                    <td key={k} className={GRID_LABEL}>
                       {v}
                     </td>
                   ))}
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Grid>
         ) : null,
       )}
     </div>

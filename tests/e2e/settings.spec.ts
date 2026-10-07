@@ -18,13 +18,12 @@ async function openHub(page: Page, { fresh = false } = {}) {
 const select = (screen: Locator, name: string) => screen.getByRole('combobox', { name, exact: true });
 const check = (screen: Locator, label: string) => screen.getByRole('switch', { name: label });
 
-/** What a select shows, ignoring its arrow. */
-const chosen = (text: string) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+/** The option a select shows. */
+const chosen = (screen: Locator, name: string) => select(screen, name).locator('option:checked');
 
-/** Opens a select and picks one of its options. */
+/** Picks one of a select's options. */
 async function choose(screen: Locator, name: string, option: string) {
-  await select(screen, name).click();
-  await screen.page().getByRole('option', { name: option, exact: true }).click();
+  await select(screen, name).selectOption({ label: option });
 }
 
 /** One case per option screen: a change to make and the state it must keep. */
@@ -41,7 +40,7 @@ const CASES: {
       await choose(el, 'Decks', 'Double Deck');
     },
     async verify(el) {
-      await expect(select(el, 'Decks')).toHaveText(chosen('Double Deck'));
+      await expect(chosen(el, 'Decks')).toHaveText('Double Deck');
     },
   },
   {
@@ -53,7 +52,7 @@ const CASES: {
     },
     async verify(el) {
       await expect(check(el, 'Cards dealt face down')).toBeChecked();
-      await expect(select(el, 'Surrender')).toHaveText(chosen('Late Surrender (common)'));
+      await expect(chosen(el, 'Surrender')).toHaveText('Late Surrender (common)');
     },
   },
   {
@@ -103,7 +102,7 @@ const CASES: {
       await choose(el, 'Game', 'Lucky Ladies');
     },
     async verify(el) {
-      await expect(select(el, 'Game')).toHaveText(chosen('Lucky Ladies'));
+      await expect(chosen(el, 'Game')).toHaveText('Lucky Ladies');
     },
   },
   {
@@ -114,7 +113,7 @@ const CASES: {
       await check(el, 'Lose on a push').check();
     },
     async verify(el) {
-      await expect(select(el, 'Dealing bias')).toHaveText(chosen('Repeat errors'));
+      await expect(chosen(el, 'Dealing bias')).toHaveText('Repeat errors');
       await expect(check(el, 'Lose on a push')).toBeChecked();
     },
   },
@@ -127,7 +126,7 @@ const CASES: {
     },
     async verify(el) {
       await expect(check(el, 'Peek when dealer peeks')).toBeChecked();
-      await expect(select(el, 'Percent of the time')).toHaveText(chosen('50%'));
+      await expect(chosen(el, 'Percent of the time')).toHaveText('50%');
     },
   },
   {
@@ -137,7 +136,7 @@ const CASES: {
       await choose(el, 'Theme', 'Catppuccin Latte');
     },
     async verify(el) {
-      await expect(select(el, 'Theme')).toHaveText(chosen('Catppuccin Latte'));
+      await expect(chosen(el, 'Theme')).toHaveText('Catppuccin Latte');
       await expect(el.page().locator('html')).toHaveAttribute('data-theme', 'latte');
     },
   },
@@ -195,7 +194,7 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
   await games.locator('[data-action="back"]').click();
 
   const rules = await openFromHub(page, 'Common Rules', 'settings.commonRules');
-  await expect(select(rules, 'Insurance')).toHaveText(chosen('No Insurance'));
+  await expect(chosen(rules, 'Insurance')).toHaveText('No Insurance');
   await rules.locator('[data-action="back"]').click();
 
   const play = await openFromHub(page, 'Play Variations', 'settings.playVariations');
@@ -231,7 +230,7 @@ test('a slider value can be typed into its number box', async ({ page }) => {
   await openHub(page, { fresh: true });
   const el = await openFromHub(page, 'Speed/Mechanics', 'settings.mechanics');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
-  const range = el.getByRole('group', { name: 'Dealer Speed' }).getByRole('slider');
+  const range = el.getByRole('slider', { name: 'Dealer Speed' });
   const saved = () =>
     page.evaluate(() => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').state.values['mechanics.dealerSpeed']);
 

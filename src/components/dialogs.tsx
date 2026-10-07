@@ -5,17 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 import { create } from 'zustand';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
+import { DialogBody, DialogButton, DialogButtons, DialogInput, DialogTitle, Modal } from '@/components/ui/dialog';
 
 const APP_TITLE = 'Crackjack';
 
@@ -100,15 +90,14 @@ function RequestDialog({ request }: { request: Request }) {
     if (request.input) request.resolve(ok ? text : null);
     else request.resolve(ok);
   }
+  // The confirming button comes first, as on iOS; Escape answers as the last one would.
   return (
-    <AlertDialog open onOpenChange={open => !open && close(false)}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{request.title}</AlertDialogTitle>
-          <AlertDialogDescription className="whitespace-pre-line">{request.message}</AlertDialogDescription>
-        </AlertDialogHeader>
+    <Modal open onClose={() => close(false)} className="w-[290px]">
+      <DialogTitle>{request.title}</DialogTitle>
+      <DialogBody className="whitespace-pre-line">
+        {request.message}
         {request.input && (
-          <Input
+          <DialogInput
             autoFocus
             type={request.input.type}
             inputMode={request.input.inputMode}
@@ -120,11 +109,11 @@ function RequestDialog({ request }: { request: Request }) {
             }}
           />
         )}
-        <AlertDialogFooter>
-          {request.cancel && <AlertDialogCancel onClick={() => close(false)}>{request.cancel}</AlertDialogCancel>}
-          <AlertDialogAction onClick={() => close(true)}>{request.ok}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      </DialogBody>
+      <DialogButtons>
+        <DialogButton onClick={() => close(true)}>{request.ok}</DialogButton>
+        {request.cancel && <DialogButton onClick={() => close(false)}>{request.cancel}</DialogButton>}
+      </DialogButtons>
+    </Modal>
   );
 }

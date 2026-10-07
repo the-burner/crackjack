@@ -10,8 +10,8 @@ import { createTestApp, renderScreen } from '../../support/render';
 
 /** Opens a select and picks one of its options. */
 async function choose(user: UserEvent, name: string, option: string) {
-  await user.click(screen.getByRole('combobox', { name }));
-  await user.click(await screen.findByRole('option', { name: option }));
+  const select = screen.getByRole('combobox', { name });
+  await user.selectOptions(select, within(select).getByRole('option', { name: option }));
 }
 
 /** Answers the open number prompt. */

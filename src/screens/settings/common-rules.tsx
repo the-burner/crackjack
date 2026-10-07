@@ -1,7 +1,7 @@
 // Common Rules.
 
-import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import { TABLE_LIMITS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
@@ -45,13 +45,13 @@ const SURRENDER: readonly Option<SettingValues['rules.surrender']>[] = [
   { value: 'macao', label: 'Macao Surrender' },
 ];
 
-const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `$${min} to $${max}` }));
+const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
 export function CommonRules() {
   return (
     <SettingsScreen title="Common Rules" help="settings.commonRules" note={NOTE}>
       <SettingsGroup>
-        <SettingSwitches items={CHECKS} />
+        <SettingChecks items={CHECKS} />
       </SettingsGroup>
       <SettingsGroup>
         <SettingSelect label="Hard doubles" setting="rules.hardDoubles" options={HARD_DOUBLES} />

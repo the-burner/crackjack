@@ -1,10 +1,9 @@
 // Flash drills: a hand and a count are flashed and the player picks the play.
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, DeleteIcon } from 'lucide-react';
-import { cn } from 'cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import type { IconName } from '@/components/ui/icon';
 import { useApp } from '@/react/app-context';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
 import { ACTION } from '@/core/strategy/advisor';
@@ -14,15 +13,15 @@ import { useNavigate, useOutlet } from 'react-router';
 import { tablesSearch } from '@/app/paths';
 
 /** The answer buttons, in two rows, with their swipe hints. */
-const ANSWER_BUTTONS: readonly (readonly { action: Action; label: string; Icon: LucideIcon }[])[] = [
+const ANSWER_BUTTONS: readonly (readonly { action: Action; label: string; icon: IconName }[])[] = [
   [
-    { action: ACTION.double, label: 'Double', Icon: ArrowUpIcon },
-    { action: ACTION.split, label: 'Split', Icon: ArrowRightIcon },
-    { action: ACTION.surrender, label: 'Surrender', Icon: DeleteIcon },
+    { action: ACTION.double, label: 'Double', icon: 'arrow-u' },
+    { action: ACTION.split, label: 'Split', icon: 'arrow-r' },
+    { action: ACTION.surrender, label: 'Surrender', icon: 'delete' },
   ],
   [
-    { action: ACTION.hit, label: 'Hit', Icon: ArrowDownIcon },
-    { action: ACTION.stand, label: 'Stand', Icon: ArrowLeftIcon },
+    { action: ACTION.hit, label: 'Hit', icon: 'arrow-d' },
+    { action: ACTION.stand, label: 'Stand', icon: 'arrow-l' },
   ],
 ];
 
@@ -74,7 +73,7 @@ export function FlashDrill() {
           {view.countPanel !== null && (
             <div
               data-slot="count-panel"
-              className="pointer-events-none absolute right-0 bottom-0 flex h-12 w-[34%] items-center justify-center text-xl font-semibold text-(--felt-accent) tabular-nums"
+              className="pointer-events-none absolute right-0 bottom-0 flex h-12 w-[34%] items-center justify-center text-[20px] leading-[normal] font-semibold text-(--felt-accent) tabular-nums"
             >
               {view.countPanel}
             </div>
@@ -94,17 +93,18 @@ export function FlashDrill() {
         <div className={cn('flex flex-col gap-1.5', ANSWER_AREA.flash)}>
           {ANSWER_BUTTONS.map((row, i) => (
             <div key={i} className="flex gap-1.5">
-              {row.map(({ action, label, Icon }) => (
+              {row.map(({ action, label, icon }) => (
                 <Button
                   key={action}
-                  variant="secondary"
-                  className="h-auto min-h-14 flex-1 flex-col gap-0.5 data-correct:text-(--answer-correct) data-correct:underline"
+                  icon={icon}
+                  iconPos="bottom"
+                  className="min-h-14 flex-1 data-correct:text-(--answer-correct) data-correct:underline"
                   hidden={!view.visible[action]}
+                  data-action={label.toLowerCase()}
                   data-correct={view.correct === action || undefined}
                   onClick={() => drill.answer(action)}
                 >
                   {label}
-                  <Icon />
                 </Button>
               ))}
             </div>

@@ -41,7 +41,7 @@ export function DepthDrill() {
           <canvas ref={tray} role="img" aria-label="Discard tray" className="absolute inset-0 block" />
           <div
             ref={panel}
-            className="pointer-events-none absolute inset-x-0 top-0 text-center text-base font-semibold text-(--felt-text)"
+            className="pointer-events-none absolute inset-x-0 top-0 text-center text-[16px] leading-[normal] font-semibold text-(--felt-text)"
           >
             {view.panel}
           </div>

@@ -3,7 +3,9 @@
 // those stay as they are underneath.
 
 import type { ComponentType, ReactNode } from 'react';
-import { createHashRouter, Navigate, Outlet } from 'react-router';
+import { useState } from 'react';
+import { createHashRouter, Navigate, Outlet, useNavigationType } from 'react-router';
+import { cn } from '@/lib/utils';
 import type { RouteObject } from 'react-router';
 import { HelpSheet } from '@/screens/help';
 import { OverlayRoot } from '@/components/overlay-root';
@@ -11,9 +13,14 @@ import { Home } from '@/screens/home';
 
 /** A screen's frame: the whole window inside the safe area. `name` is its data-screen. */
 function Screen({ name, children }: { name: string; children: ReactNode }) {
+  const [entering] = useState(useNavigationType() !== 'POP');
   return (
     <section
-      className="absolute inset-0 flex flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
+      className={cn(
+        'absolute inset-0 flex flex-col overflow-hidden bg-(--page-bg) pt-(--safe-top) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)',
+        // A screen being opened fades in below its title bar, which stays steady; going back shows the screen in place.
+        entering && '[&>:not(header)]:animate-fade-in',
+      )}
       data-screen={name}
     >
       {children}

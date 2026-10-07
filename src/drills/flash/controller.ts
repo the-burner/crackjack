@@ -1,7 +1,7 @@
 // Flash drills: a hand and a count are flashed and the player picks the play.
 // The run and the drawing; the screen component renders around it.
 
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { confirm } from '@/components/dialogs';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/lib/card-sprites';
 import { doubleTapDetector } from '@/lib/double-tap';
@@ -49,7 +49,6 @@ const MAX_REDEALS = 200;
 /** Shorter drags than this are taps, not swipes. */
 const MIN_SWIPE_PIXELS = 10;
 /** One pop-up at a time: a new one replaces the last. */
-const TOAST_ID = 'flash-drill';
 
 /** A pointer on the cards. */
 export interface CardsPointer {
@@ -247,7 +246,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
       if (answerGrid && index !== null) answerGrid.mark(answerGrid.cellFor(index), 'correct');
       changed();
     } else if (nonBlocking) {
-      toast.error('Out of time', { id: TOAST_ID });
+      toast('Out of time', { position: 'top', tone: 'error' });
     } else if (warn) {
       correct = play?.action ?? null;
       changed();
@@ -276,7 +275,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     }
     if (!answered) recordError(action);
     if (nonBlocking) {
-      toast.error(`${ACTION_LABELS[action]} is incorrect`, { id: TOAST_ID });
+      toast(`${ACTION_LABELS[action]} is incorrect`, { position: 'top', tone: 'error' });
     } else if (warn) {
       correct = play.action;
       changed();
@@ -339,7 +338,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     pending = false;
     if (robin?.endsRound) {
       rounds += 1;
-      toast.success(`Round ${rounds} done`, { id: TOAST_ID });
+      toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });
     }
     if (options.timerMode === TIMER_MODE.auto && shell.score.tests >= options.handsPerDrill) finish();
     else nextHand();

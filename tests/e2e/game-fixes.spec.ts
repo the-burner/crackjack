@@ -174,7 +174,7 @@ test.describe('the result shown on a seat at the payoff', () => {
         let pop: HTMLElement | undefined;
         for (let i = 0; i < 100 && !pop; i++) {
           await new Promise(requestAnimationFrame);
-          pop = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-removed="true"])`)].find(
+          pop = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-leaving])`)].find(
             li => li.textContent === 'x',
           );
         }
@@ -199,7 +199,7 @@ test.describe('the result shown on a seat at the payoff', () => {
         return {
           tone,
           result: pick(el, el),
-          popUp: pick(pop!, pop!.querySelector('[data-title]')!),
+          popUp: pick(pop!, pop!),
           chipWidth: holder.getBoundingClientRect().width,
           width: box.width,
           clipped,

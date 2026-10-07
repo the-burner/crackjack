@@ -1,68 +1,30 @@
 @import 'tailwindcss';
 @import './styles/tokens.css';
 @import './styles/themes.css';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
-
-/* Mocha is the dark theme. */
-@custom-variant dark (&:where([data-theme='mocha'], [data-theme='mocha'] *));
-
-/*
- * shadcn/ui's tokens, mapped onto the app's own colours, which every theme
- * (Classic, Latte, Mocha) sets.
- */
-:root {
-  --background: var(--page-bg);
-  --foreground: var(--text);
-  --card: var(--group-bg);
-  --card-foreground: var(--text);
-  --popover: var(--dialog-bg);
-  --popover-foreground: var(--text);
-  --primary: var(--primary-bg);
-  --primary-foreground: var(--primary-text);
-  --secondary: var(--btn-bg);
-  --secondary-foreground: var(--btn-text);
-  --muted: var(--btn-bg-active);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--btn-bg-active);
-  --accent-foreground: var(--text);
-  --destructive: var(--warning);
-  --border: var(--separator);
-  --input: var(--input-border);
-  --ring: var(--focus);
-}
 
 @theme inline {
   --font-sans: var(--font);
-  --font-heading: var(--font);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* The type scale, at the line height the original's controls had. */
+  --text-tiny: 11px;
+  --text-tiny--line-height: normal;
+  --text-caption: 13px;
+  --text-caption--line-height: normal;
+  --text-body: 15px;
+  --text-body--line-height: normal;
+  --text-title: 17px;
+  --text-title--line-height: normal;
+  --text-heading: 22px;
+  --text-heading--line-height: normal;
+
+  --animate-fade-in: fade-in 0.15s ease-out;
+  --animate-dialog-in: dialog-in 0.18s ease-out;
+  --animate-toast-in: toast-in 0.2s ease-out;
+  --animate-toast-in-top: toast-in-top 0.2s ease-out;
+  --animate-result-in: result-in 0.2s ease-out;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   html,
   body,
   #app {
@@ -70,11 +32,50 @@
   }
   html,
   body {
+    margin: 0;
     /* On the root too, so the area an over-swipe reveals is the page colour. */
-    @apply bg-background font-sans text-foreground antialiased;
+    background-color: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
+  }
+  /* On the body only: the root stays at 16px, which Tailwind's rem sizes are in. */
+  body {
+    font: 15px/1.35 var(--font);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+@keyframes toast-in-top {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 

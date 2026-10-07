@@ -168,8 +168,7 @@ test('the options screen hides Two Counts for the Running Count drill', async ({
   const options = page.locator('[data-screen="drills.full.options"]');
   const twoCounts = options.getByRole('switch', { name: 'Two Counts' });
   const chooseDrill = async (name: string) => {
-    await options.getByRole('combobox', { name: 'Drill' }).click();
-    await page.getByRole('option', { name, exact: true }).click();
+    await options.getByRole('combobox', { name: 'Drill' }).selectOption({ label: `Drill: ${name}` });
   };
   // Running Count is the saved default.
   await expect(twoCounts).toBeHidden();

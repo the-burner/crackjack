@@ -5,9 +5,8 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import type { MouseEvent } from 'react';
-import { FlagIcon, InfoIcon, PlusIcon, RefreshCwIcon, ShuffleIcon, SlidersHorizontalIcon } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { IconName } from '@/components/ui/icon';
 import { cssVar } from '@/lib/theme';
 import { setupCanvas } from '@/lib/card-sprites';
 import { gridGeometry, cellIndexAt, drawTile, TILE, TILE_GAP, COLUMNS, ROWS } from './bet-grid';
@@ -30,27 +29,28 @@ export interface BetOverlayHandlers {
 
 function OverlayButton({
   label,
-  Icon,
+  icon,
   action,
   onClick,
   hidden,
 }: {
   label: string;
-  Icon: LucideIcon;
+  icon: IconName;
   action: string;
   onClick: () => void;
   hidden?: boolean;
 }) {
   return (
     <Button
-      variant="secondary"
-      className="h-auto min-h-10 basis-[calc((100%-8px)/3)] px-1.5 py-1 text-[13px]"
+      variant="nav"
+      icon={icon}
+      // Three a row; a shorter last row is centred.
+      className="min-h-10 flex-[0_0_calc((100%-8px)/3)] py-1 pr-[26px] pl-1.5 text-caption [&>[data-slot=icon]]:right-2 [&>[data-slot=icon]]:size-3.5"
       onClick={onClick}
       hidden={hidden}
       data-action={action}
     >
       {label}
-      <Icon data-icon="inline-end" />
     </Button>
   );
 }
@@ -111,7 +111,7 @@ export function BetOverlay({
       data-slot="bet-overlay"
       className="absolute bottom-1.5 left-1/2 z-10 w-[min(598px,calc(100%-8px))] -translate-x-1/2 rounded-(--radius) bg-(--bet-overlay-bg) p-1.5"
     >
-      <h2 className="pt-0.5 pb-1 text-center text-[17px] font-semibold text-(--felt-accent)">{title}</h2>
+      <h2 className="m-0 pt-0.5 pb-1 text-center text-title font-semibold text-(--felt-accent)">{title}</h2>
       <canvas ref={canvas} className="-mx-0.5 block" onClick={tap} data-testid="bet-grid" aria-hidden="true" />
       {/* The tiles, for keyboards and screen readers. */}
       <div role="group" aria-label="Bet amounts">
@@ -122,17 +122,12 @@ export function BetOverlay({
         ))}
       </div>
       <div className="mt-1 flex flex-wrap justify-center gap-1">
-        <OverlayButton label="Side Bet" Icon={PlusIcon} action="side-bet" onClick={handlers.onSideBet} />
-        <OverlayButton label="Reset Bank" Icon={RefreshCwIcon} action="reset-bank" onClick={handlers.onResetBank} />
-        <OverlayButton label="Shuffle" Icon={ShuffleIcon} action="shuffle" onClick={handlers.onShuffle} />
-        <OverlayButton
-          label="Customize"
-          Icon={SlidersHorizontalIcon}
-          action="customize"
-          onClick={handlers.onCustomize}
-        />
-        <OverlayButton label="Last Error" Icon={InfoIcon} action="last-error" onClick={handlers.onLastError} />
-        <OverlayButton label="Foul" Icon={FlagIcon} action="foul" onClick={handlers.onFoul} hidden={!foul} />
+        <OverlayButton label="Side Bet" icon="plus" action="side-bet" onClick={handlers.onSideBet} />
+        <OverlayButton label="Reset Bank" icon="refresh" action="reset-bank" onClick={handlers.onResetBank} />
+        <OverlayButton label="Shuffle" icon="arrow-r" action="shuffle" onClick={handlers.onShuffle} />
+        <OverlayButton label="Customize" icon="grid" action="customize" onClick={handlers.onCustomize} />
+        <OverlayButton label="Last Error" icon="info" action="last-error" onClick={handlers.onLastError} />
+        <OverlayButton label="Foul" icon="minus" action="foul" onClick={handlers.onFoul} hidden={!foul} />
       </div>
     </section>
   );

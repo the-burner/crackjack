@@ -10,7 +10,7 @@ import { openHelp } from '@/app/help';
 import { useGoBack } from '@/app/navigation';
 import { tablesSearch } from '@/app/paths';
 import { confirm } from '@/components/dialogs';
-import { TableToaster, tableToast } from '@/components/game/table-toast';
+import { tableToast } from '@/components/game/table-toast';
 import { useApp } from '@/react/app-context';
 import { useOnHide, useOnShow } from '@/react/screen';
 import { createTableController } from '@/game/table/controller';
@@ -95,8 +95,7 @@ export function TableScreen() {
           </>
         )}
       </div>
-      <TableToaster />
-      {view && cover && <div className="absolute inset-0 z-20 flex flex-col bg-background">{cover}</div>}
+      {view && cover && <div className="absolute inset-0 z-20 flex flex-col bg-(--page-bg)">{cover}</div>}
     </div>
   );
 }

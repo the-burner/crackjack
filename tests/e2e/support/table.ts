@@ -42,15 +42,12 @@ export const SELECTOR = {
   result: '[data-testid="seat-result"]',
   bankroll: '[data-testid="bankroll"]',
   counts: '[data-testid="counts"]',
-  toast: '[data-sonner-toast]',
+  toast: '[data-slot="toast"]',
 } as const;
 
 /** The table's pop-up showing (the newest, not one on its way out), of a tone if given. */
 export const tableToast = (page: Page, tone?: 'plain' | 'good' | 'error'): Locator => {
-  const type = tone && { plain: 'default', good: 'success', error: 'error' }[tone];
-  return page.locator(
-    `${SELECTOR.toast}[data-front="true"]:not([data-removed="true"])${type ? `[data-type="${type}"]` : ''}`,
-  );
+  return page.locator(`${SELECTOR.toast}:not([data-leaving])${tone ? `[data-tone="${tone}"]` : ''}`);
 };
 
 /** The open dialog (a confirmation or a message). */

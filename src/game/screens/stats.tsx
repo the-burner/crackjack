@@ -4,14 +4,12 @@
 
 import { useReducer } from 'react';
 import { useStore } from 'zustand';
-import { RefreshCwIcon } from 'lucide-react';
 import { money } from '@/core/money';
 import { useApp, useSettings } from '@/react/app-context';
 import { useOnShow } from '@/react/screen';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
-import { ScreenLayout, Section } from '@/components/screen-layout';
-import { SettingSwitches } from '@/components/settings-controls';
+import { Column, ScreenLayout } from '@/components/screen-layout';
+import { SettingChecks } from '@/components/settings-controls';
 import { confirm } from '@/components/dialogs';
 import type { SettingReader } from '@/settings/schema';
 import type { GameSession } from '@/game/session';
@@ -25,10 +23,10 @@ const DISPLAY_OPTIONS = [
   { key: 'display.showTrueCount', label: 'Display True Count' },
 ] as const;
 
-type StatRow = { label: string; value?: string | number; head?: boolean };
+type StatRow = { label: string; value: string | number; head?: boolean };
 
-/** A section heading row, across both columns. */
-const section = (name: string): StatRow => ({ label: name, head: true });
+/** A section heading row: the name in both columns. */
+const section = (name: string): StatRow => ({ label: name, value: name, head: true });
 const row = (label: string, value: string | number): StatRow => ({ label, value });
 
 /** The table's rows for `session`, or a placeholder without one. */
@@ -82,39 +80,28 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
     refresh();
   }
 
+  const cell = 'border border-(--panel-border) px-2 py-[5px] text-center text-body font-normal text-(--panel-text)';
   return (
     <ScreenLayout title="Statistics" help="game.stats">
-      <div className="mx-auto flex max-w-xl flex-col gap-4">
-        <div className="overflow-hidden rounded-lg border bg-card">
-          <Table>
-            <TableBody>
-              {statRows(session, key => settings.get(key)).map(({ label, value, head }, i) =>
-                head ? (
-                  <TableRow key={i} className="bg-muted hover:bg-muted">
-                    <TableHead colSpan={2} scope="colgroup" className="font-semibold text-foreground">
-                      {label}
-                    </TableHead>
-                  </TableRow>
-                ) : (
-                  <TableRow key={i}>
-                    <TableHead scope="row" className="font-normal text-foreground">
-                      {label}
-                    </TableHead>
-                    <TableCell className="text-right tabular-nums">{String(value)}</TableCell>
-                  </TableRow>
-                ),
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        <Button variant="secondary" size="lg" onClick={resetStats} data-action="reset-stats">
-          <RefreshCwIcon data-icon="inline-start" />
+      <Column wide className="gap-2.5">
+        <table className="w-full border-collapse bg-(--panel-bg)">
+          <tbody>
+            {statRows(session, key => settings.get(key)).map(({ label, value, head }, i) => (
+              // A section row is a heading across the table; its name shows in both columns.
+              <tr key={i} className={head ? '*:bg-(--panel-head-bg) *:font-semibold' : undefined}>
+                <th scope={head ? 'colgroup' : 'row'} className={cell}>
+                  {label}
+                </th>
+                {head ? <th className={cell}>{String(value)}</th> : <td className={cell}>{String(value)}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <Button block icon="refresh" onClick={resetStats} data-action="reset-stats">
           Reset Stats
         </Button>
-        <Section title="Display">
-          <SettingSwitches items={DISPLAY_OPTIONS} />
-        </Section>
-      </div>
+        <SettingChecks items={DISPLAY_OPTIONS} />
+      </Column>
     </ScreenLayout>
   );
 }

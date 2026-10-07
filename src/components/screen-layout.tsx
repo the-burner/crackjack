@@ -1,10 +1,9 @@
 // The frame of every screen: a title bar (Back, the title, Help and any other
-// actions) over a scrolling body, inside the safe area.
+// buttons) over a scrolling body.
 
 import type { ComponentProps, ReactNode } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { cn } from 'cn';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { TopBar } from '@/components/ui/top-bar';
 import { useGoBack } from '@/app/navigation';
 import { openHelp } from '@/app/help';
 
@@ -16,6 +15,7 @@ export type ScreenLayoutProps = {
   back?: boolean;
   /** Extra title-bar buttons, before Help. */
   actions?: ReactNode;
+  /** Classes for the scrolling body. */
   className?: string;
   children?: ReactNode;
 };
@@ -23,59 +23,31 @@ export type ScreenLayoutProps = {
 export function ScreenLayout({ title, help, back = true, actions, className, children }: ScreenLayoutProps) {
   const goBack = useGoBack();
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
-      <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b px-1">
-        <div>
-          {back && (
-            <Button variant="ghost" onClick={goBack} data-action="back">
-              <ChevronLeftIcon />
-              Back
-            </Button>
-          )}
-        </div>
-        <h1 className="truncate text-base font-semibold">{title}</h1>
-        <div className="flex items-center justify-end">
-          {actions}
-          {help && (
-            <Button variant="ghost" onClick={() => openHelp(help, title || 'Crackjack')} data-action="help">
-              Help
-            </Button>
-          )}
-        </div>
-      </header>
-      <main className={cn('flex-1 overflow-y-auto overscroll-contain p-4', className)}>{children}</main>
-    </div>
+    <>
+      <TopBar
+        title={title}
+        onBack={back ? goBack : undefined}
+        onHelp={help ? () => openHelp(help, title || 'Crackjack') : undefined}
+        end={actions}
+      />
+      <main
+        className={cn(
+          'flex-1 overflow-y-auto overscroll-contain px-4 pt-2 pb-6 [-webkit-overflow-scrolling:touch]',
+          className,
+        )}
+      >
+        {children}
+      </main>
+    </>
   );
 }
 
-/** A titled group of rows, as in iOS settings. */
-export function Section({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+/** A centred column of content, 420px wide at most (740px when `wide`). */
+export function Column({ wide, className, ...props }: ComponentProps<'div'> & { wide?: boolean }) {
   return (
-    <section className={cn('space-y-2', className)}>
-      {title && <h2 className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</h2>}
-      <div className="divide-y overflow-hidden rounded-lg border bg-card">{children}</div>
-    </section>
-  );
-}
-
-/** A row of a Section that opens something (with a chevron) or does something (`chevron={false}`). */
-export function ListButton({
-  children,
-  className,
-  chevron = true,
-  ...props
-}: ComponentProps<'button'> & { chevron?: boolean }) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex min-h-11 w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-muted active:bg-muted',
-        className,
-      )}
+    <div
+      className={cn('mx-auto flex w-full flex-col gap-4', wide ? 'max-w-[740px]' : 'max-w-[420px]', className)}
       {...props}
-    >
-      <span className="flex-1">{children}</span>
-      {chevron && <ChevronRightIcon className="size-4 text-muted-foreground" />}
-    </button>
+    />
   );
 }

@@ -14,7 +14,7 @@ import { openHelp } from '@/app/help';
 import { createTestApp, renderScreen } from '../../support/render';
 
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }));
-vi.mock('sonner', () => ({ toast }));
+vi.mock('@/components/ui/toast', () => ({ toast, Toaster: () => null }));
 
 vi.mock('@/data/help', async importOriginal => {
   const { HELP } = await importOriginal<typeof import('@/data/help')>();
@@ -24,10 +24,9 @@ vi.mock('@/data/help', async importOriginal => {
 const toggle = (name: string) => screen.getByRole('switch', { name });
 const select = (name: string) => screen.getByRole('combobox', { name });
 
-/** Opens a select and picks one of its options. */
+/** Picks one of a select's options. */
 async function choose(user: UserEvent, name: string, option: string) {
-  await user.click(select(name));
-  await user.click(await screen.findByRole('option', { name: option }));
+  await user.selectOptions(select(name), option);
 }
 
 describe('Basic Setup', () => {
@@ -36,7 +35,7 @@ describe('Basic Setup', () => {
     const app = createTestApp();
     app.settings.set('table.cardsBehindCutCard', 300);
     renderScreen(<Setup />, { app });
-    expect(select('Decks')).toHaveTextContent('Six Decks');
+    expect(select('Decks')).toHaveDisplayValue('Six Decks');
     await choose(user, 'Decks', 'Double Deck');
     expect(app.settings.get('table.decks')).toBe(2);
     expect(app.settings.get('table.cardsBehindCutCard')).toBe(103);
@@ -48,7 +47,7 @@ describe('Basic Setup', () => {
     renderScreen(<Setup />);
     expect(screen.getByText('Shuffle Point/Cards:')).toBeVisible();
     expect(screen.getByText('Rounds:')).not.toBeVisible();
-    expect(select('Shuffle')).toHaveTextContent('Shuffle after a Cut Card');
+    expect(select('Shuffle')).toHaveDisplayValue('Shuffle after a Cut Card');
     await choose(user, 'Shuffle', 'Shuffle after Fixed Rounds');
     expect(screen.getByText('Shuffle Point/Cards:')).not.toBeVisible();
     expect(screen.getByText('Rounds:')).toBeVisible();
@@ -58,12 +57,12 @@ describe('Basic Setup', () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Setup />);
     const picker = within(screen.getByRole('group', { name: 'Computer players' }));
-    expect(picker.getAllByRole('button').map(b => b.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
-    await user.click(picker.getByRole('button', { name: '#3' }));
+    expect(picker.getAllByText(/^#\d$/).map(seat => seat.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
+    await user.click(picker.getByRole('checkbox', { name: '#3' }));
     expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, false, false, false]);
-    expect(picker.getByRole('button', { name: '#3' })).toHaveAttribute('aria-pressed', 'true');
-    expect(picker.getByRole('button', { name: '#1' })).toHaveAttribute('aria-pressed', 'true');
-    expect(picker.getByRole('button', { name: '#2' })).toHaveAttribute('aria-pressed', 'false');
+    expect(picker.getByRole('checkbox', { name: '#3' })).toBeChecked();
+    expect(picker.getByRole('checkbox', { name: '#1' })).toBeChecked();
+    expect(picker.getByRole('checkbox', { name: '#2' })).not.toBeChecked();
   });
 
   it('Refresh Bankroll stores the starting bankroll', async () => {
@@ -101,15 +100,15 @@ describe('rule interactions', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     const view = renderScreen(<UnusualGames />, { app });
-    expect(select('Game')).toHaveTextContent('Standard Blackjack');
+    expect(select('Game')).toHaveDisplayValue('Standard Blackjack');
     await choose(user, 'Game', 'Double Exposure');
     expect(app.settings.get('rules.insurance')).toBe('none');
     view.unmount();
     renderScreen(<CommonRules />, { app });
-    expect(select('Insurance')).toHaveTextContent('No Insurance');
+    expect(select('Insurance')).toHaveDisplayValue('No Insurance');
     await choose(user, 'Insurance', 'Insurance');
     expect(app.settings.get('rules.insurance')).toBe('none');
-    expect(select('Insurance')).toHaveTextContent('No Insurance');
+    expect(select('Insurance')).toHaveDisplayValue('No Insurance');
   });
 });
 
@@ -137,12 +136,11 @@ describe('navigation screens', () => {
   it('help opens its links outside the app, and says when there is none', () => {
     renderScreen(<HelpSheet />);
     act(() => openHelp('test.links', 'Links'));
-    const sheet = screen.getByRole('dialog');
-    const link = within(sheet).getByRole('link', { name: 'site' });
+    const link = screen.getByRole('link', { name: 'site' });
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener');
-    expect(within(sheet).getByRole('heading', { name: 'Links' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Links' })).toBeInTheDocument();
     act(() => openHelp('nothing'));
-    expect(within(screen.getByRole('dialog')).getByText(/No help is available/)).toBeInTheDocument();
+    expect(screen.getByText(/No help is available/)).toBeInTheDocument();
   });
 });

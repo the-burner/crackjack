@@ -1,7 +1,6 @@
 // Count drills: cards are flashed, then a discard tray and a grid of counts.
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { StepForwardIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/react/app-context';
 import { ANSWER_AREA, AnswerGridArea, DrillScreen } from '@/components/drills/drill-screen';
@@ -46,8 +45,7 @@ export function CountDrill() {
         />
       }
       controls={
-        <Button variant="secondary" className="h-11 flex-1" hidden={!view.nextShown} onClick={drill.next}>
-          <StepForwardIcon />
+        <Button icon="forward" className="flex-1" hidden={!view.nextShown} onClick={drill.next}>
           Next
         </Button>
       }

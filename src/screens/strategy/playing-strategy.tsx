@@ -2,14 +2,16 @@
 // of its indices to use, the rules the tables are built for, and the table
 // display.
 
-import { Grid3x3Icon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
-import { ListButton, ScreenLayout } from '@/components/screen-layout';
-import { OptionSelect, SettingRow, SettingsGroup } from '@/components/settings-controls';
+import { CheckList } from '@/components/ui/check-list';
+import { Select } from '@/components/ui/select';
+import { Label } from '@/components/ui/text';
+import { ValueButton } from '@/components/ui/value-button';
+import { Column, ScreenLayout } from '@/components/screen-layout';
+import { SettingChecks } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
-import { NumberButton, SwitchRow } from '@/components/settings/controls';
-import { SettingSwitches } from '@/components/settings-controls';
 import { applyIndexRangeChange } from '@/settings/rules-logic';
 import { INDEX_SETS } from '@/core/strategy/strategy-tables';
 import type { IndexSet } from '@/core/strategy/strategy-tables';
@@ -37,6 +39,16 @@ const RULE_CHECKS: SettingCheck[] = [
   { label: 'Double any number of cards', key: 'rules.doubleAnyNumberOfCards' },
 ];
 
+/** A label in the narrow left column and a control filling the rest. */
+function StratRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="flex-[0_0_90px] text-[14px] leading-[normal]">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
 export function PlayingStrategy() {
   const app = useApp();
   const navigate = useNavigate();
@@ -47,21 +59,28 @@ export function PlayingStrategy() {
 
   return (
     <ScreenLayout title="Strategies" help="settings.strategy">
-      <div className="mx-auto grid max-w-4xl items-start gap-4 md:grid-cols-2">
-        <SettingsGroup>
-          <OptionSelect
-            label="Strategy"
-            options={systemOptions}
-            value={settings.get('strategy.system')}
-            onChange={id => settings.set('strategy.system', id)}
-          />
-          <OptionSelect
-            label="Indices"
-            options={INDEX_SET_OPTIONS}
-            value={settings.get('strategy.indexSet')}
-            onChange={value => settings.set('strategy.indexSet', value)}
-          />
-          <ListButton
+      <Column>
+        <StratRow label="Strategy:">
+          <div className="min-w-0 flex-1">
+            <Select
+              aria-label="Strategy"
+              options={systemOptions}
+              value={settings.get('strategy.system')}
+              onChange={id => settings.set('strategy.system', id)}
+            />
+          </div>
+        </StratRow>
+        <StratRow label="Indices:">
+          <div className="min-w-0 flex-1">
+            <Select
+              mini
+              aria-label="Indices"
+              options={INDEX_SET_OPTIONS}
+              value={settings.get('strategy.indexSet')}
+              onChange={value => settings.set('strategy.indexSet', value)}
+            />
+          </div>
+          <Button
             onClick={() =>
               navigate(
                 PATHS['strategy.tables'] + tablesSearch({ mode: 'editMask', maskKey: 'strategy.customIndexMask' }),
@@ -69,10 +88,12 @@ export function PlayingStrategy() {
             }
             data-action="select-indices"
           >
-            Select Custom Indices
-          </ListButton>
-          <SettingRow label="Index Range">
-            <NumberButton
+            Select
+          </Button>
+        </StratRow>
+        <StratRow label="Index Range:">
+          <div className="flex min-w-0 flex-1 items-center gap-2 *:flex-1">
+            <ValueButton
               label="Index range minimum"
               value={settings.get('strategy.indexRangeMin')}
               onChange={v => writeRange('strategy.indexRangeMin', v)}
@@ -80,8 +101,8 @@ export function PlayingStrategy() {
               min={-99}
               max={99}
             />
-            <span className="text-sm text-muted-foreground">to</span>
-            <NumberButton
+            <Label className="flex-none! text-center">to</Label>
+            <ValueButton
               label="Index range maximum"
               value={settings.get('strategy.indexRangeMax')}
               onChange={v => writeRange('strategy.indexRangeMax', v)}
@@ -89,35 +110,41 @@ export function PlayingStrategy() {
               min={-99}
               max={99}
             />
-          </SettingRow>
-        </SettingsGroup>
-        <SettingsGroup title="Rules">
-          <SettingSwitches items={RULE_CHECKS} />
-          <SwitchRow
-            label="Adjust IRC"
-            checked={settings.get('strategy.adjustInitialCount')}
-            onCheckedChange={on => settings.set('strategy.adjustInitialCount', on)}
-          >
-            <NumberButton
-              label="Initial running count"
-              value={settings.get('strategy.initialCount')}
-              onChange={v => settings.set('strategy.initialCount', v)}
-              prompt="Adjust IRC"
-              min={-999}
-              max={999}
-            />
-          </SwitchRow>
-        </SettingsGroup>
+          </div>
+        </StratRow>
+        <StratRow label="Rules:">
+          <div className="min-w-0 flex-1">
+            <SettingChecks items={RULE_CHECKS} />
+          </div>
+        </StratRow>
+        <div className="flex items-center gap-2 *:flex-1">
+          <CheckList
+            items={[
+              {
+                label: 'Adjust IRC',
+                checked: settings.get('strategy.adjustInitialCount'),
+                onChange: on => settings.set('strategy.adjustInitialCount', on),
+              },
+            ]}
+          />
+          <ValueButton
+            label="Initial running count"
+            value={settings.get('strategy.initialCount')}
+            onChange={v => settings.set('strategy.initialCount', v)}
+            prompt="Adjust IRC"
+            min={-999}
+            max={999}
+          />
+        </div>
         <Button
-          size="lg"
-          className="h-12 md:col-span-2"
+          icon="grid"
+          iconPos="bottom"
           onClick={() => navigate(PATHS['strategy.tables'] + tablesSearch({ mode: 'view' }))}
           data-action="display-tables"
         >
-          <Grid3x3Icon />
           Display Tables
         </Button>
-      </div>
+      </Column>
     </ScreenLayout>
   );
 }

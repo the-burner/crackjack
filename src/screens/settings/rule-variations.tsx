@@ -1,7 +1,7 @@
 // Rule Variations: the less common rules.
 
-import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'You will find less common rule variations on this screen.';
@@ -31,10 +31,10 @@ export function RuleVariations() {
   return (
     <SettingsScreen title="Rule Variations" help="settings.ruleVariations" note={NOTE}>
       <SettingsGroup>
-        <SettingSwitches items={DOUBLING} />
+        <SettingChecks items={DOUBLING} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSwitches items={SPLITTING} />
+        <SettingChecks items={SPLITTING} />
       </SettingsGroup>
     </SettingsScreen>
   );

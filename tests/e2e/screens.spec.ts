@@ -117,9 +117,9 @@ test('every screen with a Help button has help text behind it', async ({ page })
       const { openHelp }: typeof import('@/app/help') = await import(url);
       openHelp(t, 'Help');
     }, topic);
-    const sheet = page.getByRole('dialog');
-    await expect(sheet).not.toContainText('No help is available');
-    await expect(sheet.locator('h2, h3, p').first()).toBeVisible();
+    const help = page.locator('[data-screen="help"]');
+    await expect(help).not.toContainText('No help is available');
+    await expect(help.locator('h2, h3, p').first()).toBeVisible();
   }
   expectNoErrors(errors);
 });
@@ -161,8 +161,7 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
     ['Catppuccin Mocha', 'mocha'],
     ['Classic', 'classic'],
   ]) {
-    await theme.click();
-    await page.getByRole('option', { name: label, exact: true }).click();
+    await theme.selectOption({ label });
     await expect(html).toHaveAttribute('data-theme', name);
     expect(await saved(page, 'display.theme')).toBe(name);
   }
@@ -208,10 +207,7 @@ test('choosing an unusual game applies its rules and leaving it puts them back',
   const setting = (key: SettingKey) => page.evaluate(k => window.app.settings.get(k), key);
   const el = await openFromHub(page, 'Unusual Games', 'settings.unusualGames');
   const game = el.getByRole('combobox', { name: 'Game' });
-  const choose = async (label: string) => {
-    await game.click();
-    await page.getByRole('option', { name: label, exact: true }).click();
-  };
+  const choose = (label: string) => game.selectOption({ label });
   expect(await setting('rules.playerBlackjackAlwaysWins')).toBe(false);
   expect(await setting('rules.blackjackPayout')).toBe('3:2');
 

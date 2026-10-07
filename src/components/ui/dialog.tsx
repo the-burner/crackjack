@@ -1,118 +1,70 @@
-'use client';
+// A centred modal card over a dimmed screen. Base UI's dialog handles focus,
+// Escape and the screen reader; the look is the app's own.
 
-import * as React from 'react';
-import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
-import { cn } from 'cn';
+import type { ComponentProps, ReactNode } from 'react';
+import { AlertDialog } from '@base-ui/react/alert-dialog';
+import { cn } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
-import { XIcon } from 'lucide-react';
-
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
-}
-
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
-}
-
-function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
-}
-
-function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
-}
-
-function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
-  return (
-    <DialogPrimitive.Backdrop
-      data-slot="dialog-overlay"
-      className={cn(
-        'fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function DialogContent({
+export function Modal({
+  open,
+  onClose,
   className,
   children,
-  showCloseButton = true,
-  ...props
-}: DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean;
+}: {
+  open: boolean;
+  /** Escape (or Back) asks the modal to close. */
+  onClose: () => void;
+  className?: string;
+  children: ReactNode;
 }) {
   return (
-    <DialogPortal>
-      <DialogOverlay />
-      <DialogPrimitive.Popup
-        data-slot="dialog-content"
-        className={cn(
-          'fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={<Button variant="ghost" className="absolute top-2 right-2" size="icon-sm" />}
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Popup>
-    </DialogPortal>
+    <AlertDialog.Root open={open} onOpenChange={next => !next && onClose()}>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 z-[3000] animate-fade-in bg-(--overlay)" />
+        <AlertDialog.Popup
+          className={cn(
+            'fixed top-1/2 left-1/2 z-[3000] max-w-[calc(100%-40px)] -translate-1/2 overflow-hidden rounded-[14px] bg-(--dialog-bg) text-center shadow-[0_10px_40px_var(--dialog-shadow)] outline-none',
+            className,
+          )}
+        >
+          {/* The pop-in, on an inner box so it does not fight the centring transform. */}
+          <div className="animate-dialog-in">{children}</div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="dialog-header" className={cn('flex flex-col gap-2', className)} {...props} />;
-}
-
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}: React.ComponentProps<'div'> & {
-  showCloseButton?: boolean;
-}) {
+export function DialogTitle({ className, ...props }: ComponentProps<'h2'>) {
   return (
-    <div
-      data-slot="dialog-footer"
-      className={cn(
-        '-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {showCloseButton && <DialogPrimitive.Close render={<Button variant="outline" />}>Close</DialogPrimitive.Close>}
-    </div>
-  );
-}
-
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
-  return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn('font-heading text-base leading-none font-medium', className)}
+    <AlertDialog.Title
+      className={cn('m-0 px-4 pt-[18px] pb-0.5 text-title font-semibold text-(--text)', className)}
       {...props}
     />
   );
 }
 
-function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
   return (
-    <DialogPrimitive.Description
-      data-slot="dialog-description"
+    <AlertDialog.Description
+      render={<div />}
+      className={cn('px-4 pt-1 pb-[18px] text-[14px] leading-[1.4] break-words text-(--dialog-text)', className)}
+      {...props}
+    />
+  );
+}
+
+/** The row of buttons along the bottom, split by hairlines; the first is the bold one. */
+export function DialogButtons({ className, ...props }: ComponentProps<'div'>) {
+  return <div className={cn('flex border-t border-(--dialog-divider)', className)} {...props} />;
+}
+
+export function DialogButton({ className, type = 'button', ...props }: ComponentProps<'button'>) {
+  return (
+    <button
+      type={type}
       className={cn(
-        'text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground',
+        'h-[46px] flex-1 cursor-pointer border-0 border-l border-(--dialog-divider) bg-transparent text-title font-normal text-(--dialog-accent) first:border-l-0 first:font-semibold active:bg-(--separator)',
         className,
       )}
       {...props}
@@ -120,15 +72,15 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   );
 }
 
-export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-};
+/** The text box of a prompt. */
+export function DialogInput({ className, ...props }: ComponentProps<'input'>) {
+  return (
+    <input
+      className={cn(
+        'mt-3 w-full rounded-(--radius-s) border border-(--dialog-input-border) bg-(--input-bg) px-2.5 py-2 text-[16px] text-(--dialog-input-text)',
+        className,
+      )}
+      {...props}
+    />
+  );
+}

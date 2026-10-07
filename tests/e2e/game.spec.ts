@@ -306,12 +306,12 @@ test.describe('the table', () => {
     await expect(toast).toBeVisible();
     // Still dealing: the player has not been asked to act yet.
     await expect(action(page, 'stand')).toBeHidden();
-    await expect(toast).toHaveAttribute('data-type', 'error');
+    await expect(toast).toHaveAttribute('data-tone', 'error');
     const box = await toast.boundingBox();
     expect(box!.y).toBeLessThan(page.viewportSize()!.height / 2);
     // The table's own messages do not replace it while it is up.
     await page.clock.runFor(600);
-    await expect(toast).toHaveAttribute('data-type', 'error');
+    await expect(toast).toHaveAttribute('data-tone', 'error');
   });
 
   test('plays with the action buttons hidden, using swipes', async ({ page }) => {

@@ -3,7 +3,8 @@
 Crackjack is a static, offline-first web app in strict TypeScript, built with
 Vite: `index.html` loads `src/main.tsx`, and `npm run build` bundles it, with the
 files in `public/`, into `dist/`. The UI is React 19 with React Router (hash
-routes), Zustand stores, Tailwind CSS v4 and shadcn/ui components; the canvas
+routes), Zustand stores, and Tailwind CSS v4 with the app's own component
+library (the original app's look); the canvas
 drawing (cards, trays, the table) is plain TypeScript that React drives through
 refs. Everything else (tests, tools, docs) is for development only.
 
@@ -17,9 +18,9 @@ public/          copied into the build as-is
 src/
   main.tsx       entry point: creates the services, renders the router
   sw.ts          service worker source: offline precache, built to dist/sw.js
-  index.css      Tailwind, the theme tokens mapped for shadcn, base styles
+  index.css      Tailwind, the type scale, animations, base styles
   app/           routes.tsx (every screen's route), paths.ts (screen URLs by
-                 name), navigation (useGoBack), the help sheet's store, and
+                 name), navigation (useGoBack), the help screen's store, and
                  createServices()
   core/          pure logic shared by everything, no DOM
     cards.ts       card ids, ranks, suits, hand totals
@@ -32,7 +33,7 @@ src/
                  bet ramp, side-bet game decoding)
   services/      namespaced localStorage, sound effects (Web Audio),
                  strategy-error tallies, the screen wake lock
-  components/    ui/ (shadcn components), the screen layout, settings-bound
+  components/    ui/ (the component library), the screen layout, settings-bound
                  controls, promise dialogs, and area components
   lib/           framework-free helpers: card sprites and setupCanvas(),
                  theme (cssVar), install hint, double tap, the wordmark
@@ -97,12 +98,14 @@ child routes shown over it, so the round underneath stays as it is.
   input into calls.
 - **Screens** are React components with a route, wrapped in `ScreenLayout`
   (title bar with Back and Help, scrolling body). `useOnShow`/`useOnHide` fire
-  when a child route or the help sheet covers or uncovers a screen. Canvas
+  when a child route or the help screen covers or uncovers a screen. Canvas
   screens keep their run in a controller that survives StrictMode's double
   mount: nothing stateful in render, and effects' cleanups call off what they
   started.
-- **UI**: shadcn/ui components, Tailwind classes over the theme tokens,
-  lucide-react icons, sonner toasts, and `alert()`/`confirm()`/`prompt()` from
+- **UI**: the components in `components/ui/` (one file per control, its look
+  in Tailwind classes over the theme tokens; controls restyle themselves inside
+  a settings group or row via `in-data-[slot=…]:` variants), the original's
+  icons (`Icon`), `toast()`, and `alert()`/`confirm()`/`prompt()` from
   `components/dialogs.tsx`. Colours are never hard-coded: Classic values in
   `styles/tokens.css`, Latte and Mocha in `themes.css`, all meeting WCAG AA.
 - **Settings** are declared once in `settings/schema.ts` (dotted keys, typed,

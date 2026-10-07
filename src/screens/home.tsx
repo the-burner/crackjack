@@ -2,12 +2,13 @@
 
 import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
-import { ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
+import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
+import { BarButton } from '@/components/ui/top-bar';
+import { FooterNote } from '@/components/ui/text';
+import { Column, ScreenLayout } from '@/components/screen-layout';
 import type { App } from '@/app/app';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { alert, confirm } from '@/components/dialogs';
 import { openTable } from '@/game/launch';
 import { WORDMARK_SVG } from '@/lib/wordmark';
@@ -32,61 +33,62 @@ export function Home() {
   const dismissInstallHint = () => app.installHintDismissed.setState({ value: true });
   return (
     <ScreenLayout title="" help="home" back={false}>
-      <div className="mx-auto flex max-w-xl flex-col gap-6">
-        <h1 className="mx-auto mt-2 w-64 leading-none" dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }} />
+      <Column className="gap-6 pt-2">
+        <h1
+          className="mx-auto mt-2 mb-0 w-[270px] leading-[0] [&_svg]:h-auto [&_svg]:w-full"
+          dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }}
+        />
         {installHint && (
-          <Card size="sm" role="note">
-            <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="flex-1">
+          <SettingsGroup role="note">
+            <div className="flex items-center gap-2 py-1 pl-3.5">
+              <span className="flex-1 text-caption leading-[1.4] text-(--text-secondary)">
                 To use Crackjack offline, install it: tap <strong>Share</strong>, then{' '}
                 <strong>Add to Home Screen</strong>.
               </span>
-              <Button variant="ghost" onClick={dismissInstallHint} data-action="dismiss-install">
+              <BarButton onClick={dismissInstallHint} data-action="dismiss-install">
                 OK
-              </Button>
-            </CardContent>
-          </Card>
+              </BarButton>
+            </div>
+          </SettingsGroup>
         )}
         <Button
-          size="lg"
-          className="h-12 text-base"
+          variant="primary"
+          large
+          block
+          icon="arrow-r"
           onClick={() => openTable(app, () => navigate(PATHS['game.table']))}
           data-action="play"
         >
           Play Blackjack
-          <ChevronRightIcon />
         </Button>
-        <section className="space-y-2">
-          <h2 className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Drills</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <Section title="Drills">
+          <div className="grid grid-cols-2 gap-2.5 max-[340px]:grid-cols-1">
             {DRILLS.map(([name, detail, screen]) => (
               <button
                 key={screen}
                 type="button"
-                className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted active:bg-muted"
+                className="flex min-h-[76px] cursor-pointer flex-col items-start gap-1 rounded-(--radius) border-0 bg-(--group-bg) p-3.5 text-left text-(--text) transition-[transform,background-color] duration-150 active:scale-[0.98] active:bg-(--btn-bg-active)"
                 onClick={() => navigate(PATHS[screen])}
               >
-                <span className="font-medium">{name}</span>
-                <span className="text-sm text-muted-foreground">{detail}</span>
+                <span className="text-body font-semibold">{name}</span>
+                <span className="text-caption leading-[1.3] text-(--text-secondary)">{detail}</span>
               </button>
             ))}
           </div>
-        </section>
-        <Section>
-          <ListButton onClick={() => navigate(PATHS.settings)} data-action="settings">
-            Settings
-          </ListButton>
-          <ListButton chevron={false} onClick={() => resetDefaults(app)}>
-            Reset Defaults
-          </ListButton>
-          <ListButton chevron={false} onClick={() => screenInfo()}>
-            Screen Info
-          </ListButton>
         </Section>
-        <p className="text-center text-xs text-muted-foreground">
-          {`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}
-        </p>
-      </div>
+        <SettingsGroup>
+          <ListRow block onClick={() => navigate(PATHS.settings)} data-action="settings">
+            Settings
+          </ListRow>
+          <ListRow block chevron={false} onClick={() => resetDefaults(app)}>
+            Reset Defaults
+          </ListRow>
+          <ListRow block chevron={false} onClick={() => screenInfo()}>
+            Screen Info
+          </ListRow>
+        </SettingsGroup>
+      </Column>
+      <FooterNote>{`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}</FooterNote>
     </ScreenLayout>
   );
 }

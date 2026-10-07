@@ -1,4 +1,4 @@
-/* Catppuccin Latte and Mocha: the palette, then the app's colours in its terms. */
+/* Catppuccin themes (https://catppuccin.com/palette/). Classic is :root. */
 
 [data-theme='latte'] {
   --rosewater: #dc8a78;
@@ -27,11 +27,19 @@
   --base: #eff1f5;
   --mantle: #e6e9ef;
   --crust: #dce0e8;
+  /* Text on the saturated accents. */
   --on-accent: var(--base);
+  /* Text on the tints below, which are too light to take --on-accent. */
   --on-tint: var(--ctp-text);
+
+  /* Light enough already that a weak scrim leaves a dialog floating. */
+  --overlay: rgba(76, 79, 105, 0.6);
+  --dialog-shadow: rgba(76, 79, 105, 0.3);
   --bet-overlay-bg: rgba(220, 224, 232, 0.92);
+  /* Over the felt photograph, which stays dark in every theme. */
   --table-text: var(--base);
   --table-accent: var(--yellow);
+  /* Latte's felt is a light page, so the accent over it has to be a dark one. */
   --felt-accent: var(--mauve);
   --text-shadow: var(--ctp-text);
 }
@@ -63,8 +71,12 @@
   --base: #1e1e2e;
   --mantle: #181825;
   --crust: #11111b;
+  /* Text on the pastel accents; every one of them is pale, so one ink does. */
   --on-accent: var(--crust);
   --on-tint: var(--crust);
+
+  --overlay: rgba(17, 17, 27, 0.7);
+  --dialog-shadow: rgba(0, 0, 0, 0.6);
   --bet-overlay-bg: rgba(17, 17, 27, 0.85);
   --table-text: var(--ctp-text);
   --table-accent: var(--yellow);
@@ -72,6 +84,7 @@
   --text-shadow: var(--crust);
 }
 
+/* Shared role mapping: both flavours use the palette the same way. */
 [data-theme='latte'],
 [data-theme='mocha'] {
   --chrome: var(--crust);
@@ -79,22 +92,42 @@
   --text: var(--ctp-text);
   --warning: var(--red);
   --nav-bg: var(--mauve);
+  --nav-bg-active: var(--pink);
+  --nav-text: var(--on-accent);
   --primary-bg: var(--green);
+  --primary-bg-active: var(--teal);
   --primary-text: var(--on-accent);
   --btn-bg: var(--surface0);
   --btn-bg-active: var(--surface1);
   --btn-text: var(--ctp-text);
+  --check-on: var(--mauve);
+  --check-on-text: var(--on-accent);
+  --input-bg: var(--mantle);
+  --input-text: var(--ctp-text);
   --focus: var(--mauve);
   --dialog-bg: var(--surface0);
+  --dialog-accent: var(--mauve);
+  --dialog-text: var(--subtext1);
+  --dialog-input-border: var(--overlay0);
+  --dialog-input-text: var(--ctp-text);
+  --dialog-divider: var(--surface1);
+  --help-bg: var(--base);
+  --help-link: var(--mauve);
+  /* The drills sit on the same background as the settings screens. */
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
   --table-strip: var(--page-bg);
+  --panel-bg: var(--surface0);
+  --panel-head-bg: var(--surface1);
+  --panel-text: var(--ctp-text);
+  --panel-border: var(--surface2);
   --tile-bg: var(--mauve);
   --tile-text: var(--on-accent);
   --tile-good: var(--green);
   --tile-close: var(--yellow);
   --tile-bad: var(--red);
+  --toast-error-text: var(--on-tint);
   --tile-previous: var(--peach);
   --tile-mark-text: var(--on-tint);
   --answer-correct: var(--mauve);
@@ -105,6 +138,7 @@
   --grid-border: var(--surface2);
   --grid-text: var(--ctp-text);
   --grid-label-bg: var(--surface0);
+  --inset-border: var(--surface2);
   --grid-mark: var(--ctp-text);
   --grid-mark-alt: var(--base);
   --chart-action: var(--green);
@@ -115,6 +149,7 @@
   --chart-no-errors: var(--surface0);
   --chart-text: var(--on-accent);
   --chart-text-alt: var(--on-accent);
+  color: var(--text);
 }
 
 [data-theme='latte'] {
@@ -123,38 +158,47 @@
   --primary-bg: color-mix(in srgb, var(--green) 45%, var(--ctp-text));
   --warning: color-mix(in srgb, var(--red) 80%, var(--ctp-text));
   --page-bg: var(--crust);
+  --help-bg: var(--crust);
   --group-bg: var(--base);
   --btn-bg: var(--base);
   --btn-bg-active: var(--surface0);
   --separator: var(--surface0);
+  /* A hairline the colour of a divider leaves a field looking like plain text. */
   --input-border: var(--overlay1);
+  --toggle-off: var(--surface1);
+  --toggle-knob: #fff;
   --dialog-bg: var(--base);
+  /* A card, so the figures on it keep their contrast. */
+  --panel-bg: var(--base);
+  /* The accents are mid-tones that take neither ink, so everything that has to
+     carry text over one is a tint of it instead. */
   --tile-good: color-mix(in srgb, var(--green) 30%, var(--base));
   --tile-close: color-mix(in srgb, var(--yellow) 35%, var(--base));
   --tile-bad: color-mix(in srgb, var(--red) 25%, var(--base));
   --tile-previous: color-mix(in srgb, var(--peach) 35%, var(--base));
+  /* The Full Table drill's second felt: Classic's navy beside its green. */
   --felt-alt: color-mix(in srgb, var(--blue) 35%, var(--crust));
 }
-
 [data-theme='mocha'] {
   color-scheme: dark;
   --group-bg: var(--surface0);
   --separator: var(--surface1);
   --input-border: var(--overlay0);
+  /* Light enough for a dark knob to show on it, on or off. */
+  --toggle-off: var(--overlay1);
+  --toggle-knob: var(--crust);
   --felt-alt: color-mix(in srgb, var(--blue) 40%, var(--base));
 }
-
 [data-theme='latte'],
 [data-theme='mocha'] {
   --text-secondary: var(--subtext0);
   --logo-crack: var(--mauve);
   --logo-jack: var(--peach);
 }
-
+/* Latte's peach all but disappears on its page. */
 [data-theme='latte'] {
   --logo-jack: var(--red);
 }
-
 [data-theme='latte'] {
   --text-secondary: var(--subtext1);
 }

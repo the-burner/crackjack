@@ -1,7 +1,7 @@
 // Bonuses: blackjack payouts and oddball bonus payouts.
 
-import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'Oddball bonuses are found here.';
@@ -34,10 +34,10 @@ export function Bonuses() {
   return (
     <SettingsScreen title="Bonuses" help="settings.bonuses" note={NOTE}>
       <SettingsGroup>
-        <SettingSwitches items={BLACKJACK} />
+        <SettingChecks items={BLACKJACK} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSwitches items={HANDS} />
+        <SettingChecks items={HANDS} />
       </SettingsGroup>
     </SettingsScreen>
   );

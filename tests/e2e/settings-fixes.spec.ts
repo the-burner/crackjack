@@ -75,20 +75,17 @@ test('the Peeking rows fill their group and keep their labels inside it', async 
   const el = await openFromHub(page, 'Peeking', 'settings.peeking');
 
   // The peek modes are list rows, so their separators cross the whole card.
-  // Relative locators, for `has`.
-  const mode = page.getByRole('switch', { name: 'Peek at dealer down card' });
-  const modes = el.locator('section').filter({ has: mode });
+  const modes = el.locator('[data-slot="settings-group"]').first();
   const card = await modes.boundingBox();
-  const row = await el.locator('div').filter({ has: mode }).last().boundingBox();
-  // Inside the card's 1px border.
-  expect(Math.round(row!.width)).toBe(Math.round(card!.width) - 2);
+  const list = await modes.locator('[data-slot="check-list"]').boundingBox();
+  expect(Math.round(list!.width)).toBe(Math.round(card!.width));
 
-  // The strategy labels are inset, so the rounded corners cannot clip them.
-  const label = page.getByText('HC High', { exact: true });
-  const strategies = el.locator('section').filter({ has: label });
+  // The trailing label is inset, so the rounded corner cannot clip it.
+  const strategies = el.locator('[data-slot="settings-group"]').nth(1);
+  const label = strategies.getByText('HC High', { exact: true });
   const group = await strategies.boundingBox();
   const text = await label.boundingBox();
-  expect(text!.x - group!.x).toBeGreaterThanOrEqual(10);
+  expect(group!.x + group!.width - (text!.x + text!.width)).toBeGreaterThanOrEqual(10);
   await expect(el.getByRole('combobox', { name: 'HC High' })).toBeVisible();
   await expect(el.getByRole('combobox', { name: 'HC Low' })).toBeVisible();
 });
@@ -96,7 +93,7 @@ test('the Peeking rows fill their group and keep their labels inside it', async 
 test('the TC Calcs rows sit in one inset group', async ({ page }) => {
   await openHub(page);
   const el = await openFromHub(page, 'True Count Calcs', 'settings.trueCount');
-  const groups = el.locator('section');
+  const groups = el.locator('[data-slot="settings-group"]');
   await expect(groups).toHaveCount(1);
   await expect(groups.getByRole('combobox')).toHaveCount(4);
   await expect(groups.getByRole('button', { name: /^Allowed estimation error: / })).toBeVisible();
@@ -105,7 +102,7 @@ test('the TC Calcs rows sit in one inset group', async ({ page }) => {
 test('the Allowed Bets rows sit in one inset group', async ({ page }) => {
   await openHub(page);
   const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
-  const groups = el.locator('section');
+  const groups = el.locator('[data-slot="settings-group"]');
   await expect(groups).toHaveCount(1);
   await expect(groups.getByRole('switch', { name: 'Warning on Betting Error' })).toBeVisible();
   await expect(groups.getByRole('combobox', { name: 'Chip Value' })).toBeVisible();

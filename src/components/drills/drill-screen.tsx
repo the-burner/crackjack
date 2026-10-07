@@ -5,9 +5,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
-import { ChevronLeftIcon, PauseIcon, PlayIcon, RotateCcwIcon } from 'lucide-react';
-import { cn } from 'cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { BarButton } from '@/components/ui/top-bar';
 import { useApp } from '@/react/app-context';
 import { useOnHide, useOnShow } from '@/react/screen';
 import type { DrillShell } from '@/drills/shared/drill-shell';
@@ -122,19 +122,16 @@ export function DrillScreen({
 
   return (
     <div ref={rootRef} className="relative flex min-h-0 flex-1 flex-col bg-(--felt) text-(--felt-text)">
-      <header className="relative z-6 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-1">
-        <div>
-          <FeltButton onClick={goBack} data-action="back">
-            <ChevronLeftIcon />
-            Back
-          </FeltButton>
-        </div>
-        <h1 className="truncate text-base font-semibold">{title}</h1>
-        <div className="flex justify-end">
-          <FeltButton onClick={() => openHelp(help, title)} data-action="help">
-            Help
-          </FeltButton>
-        </div>
+      {/* Same height and button positions as the standard title bar, so Back and Help stay put on launch. */}
+      <header className="relative z-6 flex min-h-12 shrink-0 items-center justify-between gap-1.5 px-2 py-0.5">
+        <BarButton back className="text-(--felt-text)" onClick={goBack} data-action="back">
+          Back
+        </BarButton>
+        {/* The felt has no visible title; this names the screen for screen readers. */}
+        <h1 className="sr-only">{title}</h1>
+        <BarButton className="text-(--felt-text)" onClick={() => openHelp(help, title)} data-action="help">
+          Help
+        </BarButton>
       </header>
       <div className={cn('min-h-0 flex-1 px-1 pb-1.5', parts.body)}>
         <div ref={displayRef} data-slot="drill-display" className={cn('relative min-h-0', parts.display)}>
@@ -143,30 +140,26 @@ export function DrillScreen({
             <div
               role="timer"
               aria-label="Countdown"
-              className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center text-[120px] leading-none font-semibold text-(--felt-text)"
+              className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center text-[120px] leading-[normal] font-semibold text-(--felt-text)"
             >
               {view.countdown}
             </div>
           )}
         </div>
-        <p role="status" className={cn('min-h-5 text-center font-semibold text-(--felt-accent)', parts.message)}>
+        <p
+          role="status"
+          className={cn('m-0 min-h-5 text-center text-[16px] font-semibold text-(--felt-accent)', parts.message)}
+        >
           {view.message}
         </p>
         <DrillStats stats={view.stats} className={parts.stats} />
         <div className={cn('flex gap-2', parts.controls)}>
           {view.pausable && (
-            <Button
-              variant="secondary"
-              className="h-11 flex-1"
-              disabled={view.pauseDisabled}
-              onClick={() => shell.togglePause()}
-            >
-              {view.pauseLabel === 'Pause' ? <PauseIcon /> : <PlayIcon />}
+            <Button icon="star" className="flex-1" disabled={view.pauseDisabled} onClick={() => shell.togglePause()}>
               {view.pauseLabel}
             </Button>
           )}
-          <Button variant="secondary" className="h-11 flex-1" onClick={() => shell.restart()}>
-            <RotateCcwIcon />
+          <Button icon="refresh" className="flex-1" onClick={() => shell.restart()}>
             Restart
           </Button>
           {controls}
@@ -174,22 +167,8 @@ export function DrillScreen({
         {children}
       </div>
       {cover}
-      {above && <div className="absolute inset-0 z-30 flex flex-col bg-background">{above}</div>}
+      {above && <div className="absolute inset-0 z-30 flex flex-col bg-(--page-bg)">{above}</div>}
     </div>
-  );
-}
-
-/** A title-bar button on the felt. */
-function FeltButton({ className, ...props }: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      variant="ghost"
-      className={cn(
-        'h-10 text-[17px] font-normal text-(--felt-text) hover:bg-transparent active:opacity-50',
-        className,
-      )}
-      {...props}
-    />
   );
 }
 

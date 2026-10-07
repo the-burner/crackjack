@@ -1,49 +1,81 @@
-import { Slider as SliderPrimitive } from '@base-ui/react/slider';
-import { cn } from 'cn';
+// A labelled range slider with a number box. The number can be typed as well
+// as dragged; a typed value is rounded to the step and kept within [min, max].
+// The value is committed when the drag ends or the box is left.
 
-function Slider({
-  className,
-  defaultValue,
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+export function Slider({
+  label,
   value,
-  min = 0,
-  max = 100,
-  thumbLabel,
-  ...props
-}: SliderPrimitive.Root.Props & { /** The accessible name of the thumb(s). */ thumbLabel?: string }) {
-  const _values = Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max];
-
+  onChange,
+  min,
+  max,
+  step = 1,
+  className,
+}: {
+  label?: string;
+  value: number;
+  onChange: (value: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  className?: string;
+}) {
+  const [shown, setShown] = useState(String(value));
+  // A new value from outside (a reset, another control) replaces what is shown.
+  const [prop, setProp] = useState(value);
+  if (prop !== value) {
+    setProp(value);
+    setShown(String(value));
+  }
+  const clamp = (n: number) => Math.min(max, Math.max(min, Math.round((n - min) / step) * step + min));
+  const commitTyped = () => {
+    const typed = Number(shown);
+    if (shown.trim() === '' || !Number.isFinite(typed)) setShown(String(value));
+    else {
+      setShown(String(clamp(typed)));
+      onChange(clamp(typed));
+    }
+  };
   return (
-    <SliderPrimitive.Root
-      className={cn('data-horizontal:w-full data-vertical:h-full', className)}
-      data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
-      thumbAlignment="edge"
-      {...props}
-    >
-      <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
-        <SliderPrimitive.Track
-          data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
-        >
-          <SliderPrimitive.Indicator
-            data-slot="slider-range"
-            className="bg-primary select-none data-horizontal:h-full data-vertical:w-full"
-          />
-        </SliderPrimitive.Track>
-        {Array.from({ length: _values.length }, (_, index) => (
-          <SliderPrimitive.Thumb
-            data-slot="slider-thumb"
-            key={index}
-            getAriaLabel={thumbLabel ? () => thumbLabel : undefined}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
-          />
-        ))}
-      </SliderPrimitive.Control>
-    </SliderPrimitive.Root>
+    <div data-slot="slider" className={cn('flex flex-col gap-1.5', className)}>
+      {label && <div className="text-body font-medium">{label}</div>}
+      <div className="flex items-center gap-3">
+        <input
+          type="number"
+          inputMode="numeric"
+          aria-label={label || 'Value'}
+          min={min}
+          max={max}
+          step={step}
+          value={shown}
+          onChange={event => setShown(event.currentTarget.value)}
+          onBlur={commitTyped}
+          onKeyDown={event => {
+            if (event.key === 'Enter') event.currentTarget.blur();
+          }}
+          onFocus={event => event.currentTarget.select()}
+          className={cn(
+            'h-8 w-14 flex-[0_0_56px] appearance-none rounded-(--radius-s) border-0 bg-(--input-bg) px-1 text-center text-body font-semibold text-(--input-text) tabular-nums',
+            'shadow-[inset_0_0_0_1px_var(--input-border)] focus:outline-2 focus:outline-offset-0 focus:outline-(--focus)',
+            '[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none',
+          )}
+        />
+        <input
+          type="range"
+          aria-label={label || 'Value'}
+          min={min}
+          max={max}
+          step={step}
+          value={shown}
+          onChange={event => setShown(event.currentTarget.value)}
+          // Written once the drag ends (a key press or a tap ends at once).
+          onPointerUp={event => onChange(Number(event.currentTarget.value))}
+          onKeyUp={event => onChange(Number(event.currentTarget.value))}
+          className="min-w-0 flex-1 accent-(--accent)"
+        />
+      </div>
+    </div>
   );
 }
-
-export { Slider };

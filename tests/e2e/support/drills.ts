@@ -29,6 +29,8 @@ export async function launchDrill(page: Page, drill: Drill): Promise<Locator> {
   await options.locator('[data-action="launch"]').click();
   const screen = page.locator(`[data-screen="${drill.play}"]`);
   await expect(screen).toBeVisible();
+  // The opening countdown starts as the screen shows; seen first, so its end is not mistaken for not having begun.
+  await expect(countdownOf(screen)).toBeVisible();
   await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
   return screen;
 }

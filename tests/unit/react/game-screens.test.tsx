@@ -15,7 +15,8 @@ function stat(label: string): string | null {
 describe('statistics screen', () => {
   it('shows a placeholder without a session', () => {
     renderScreen(<GameStats params={{}} />);
-    expect(screen.getAllByRole('row').map(row => row.textContent)).toEqual(['Counts', 'No session-']);
+    // A section row shows its name in both columns, as the original's did.
+    expect(screen.getAllByRole('row').map(row => row.textContent)).toEqual(['CountsCounts', 'No session-']);
   });
 
   it('shows the session, money as the app shows it, and follows its saves', () => {

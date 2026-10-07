@@ -49,10 +49,9 @@ async function tapEveryCell(page: Page, screen: Locator, grid: Locator) {
   }
 }
 
-/** Picks `option` in an options screen's select labelled `label`; the list opens over the page. */
+/** Picks `option` in an options screen's (native) select labelled `label`. */
 async function choose(screen: Locator, label: string, option: string) {
-  await screen.getByRole('combobox', { name: label }).click();
-  await screen.page().getByRole('option', { name: option, exact: true }).click();
+  await screen.getByRole('combobox', { name: label }).selectOption({ label: option });
 }
 
 test('the home screen opens every drill options screen', async ({ page }) => {
@@ -144,7 +143,7 @@ test.describe('flash drill', () => {
     const screen = await launch(page, DRILLS.flash);
 
     await screen.getByRole('button', { name: 'Hit', exact: true }).click();
-    const toast = page.locator('[data-sonner-toast]');
+    const toast = page.locator('[data-slot="toast"]');
     await expect(toast).toHaveText('Hit is incorrect');
     // At the top of the screen, with no dialog and no answer given away.
     const box = await toast.boundingBox();
@@ -167,7 +166,7 @@ test.describe('flash drill', () => {
     const options = page.locator('[data-screen="drills.flash.options"]');
     const toggle = options.getByRole('switch', { name: 'Non-blocking error pop-ups' });
     await expect(toggle).toBeVisible();
-    await choose(options, 'Test mode', 'Number of errors only at end');
+    await choose(options, 'Test mode', 'Test Mode: Number of errors only at end');
     await expect(toggle).toBeHidden();
   });
 
@@ -212,7 +211,7 @@ test.describe('flash drill', () => {
     const toggle = options.getByRole('switch', { name: 'Time limit per hand' });
     const perHand = options.getByRole('button', { name: 'Time per hand', exact: true });
 
-    await choose(options, 'Timer mode', 'Infinite');
+    await choose(options, 'Timer mode', 'Timer Mode: Infinite');
     await expect(toggle).toBeVisible();
     await expect(perHand).toBeVisible();
     await expect(options.getByRole('button', { name: 'Drill time', exact: true })).toBeHidden();
@@ -224,7 +223,7 @@ test.describe('flash drill', () => {
     await expect(perHand).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Progressive Speed' })).toBeHidden();
 
-    await choose(options, 'Timer mode', 'Count Down & Halt');
+    await choose(options, 'Timer mode', 'Timer Mode: Count Down & Halt');
     await expect(toggle).toBeHidden();
     await expect(options.getByRole('button', { name: 'Drill time', exact: true })).toBeVisible();
   });
@@ -286,6 +285,7 @@ test.describe('flash drill', () => {
     // Shown from the countdown on, not only once the first hand is dealt.
     expect(await statsText(page.locator('[data-screen="drills.flash"]'))).toContain('Hands: 0, Rounds: 0');
     const screen = page.locator('[data-screen="drills.flash"]');
+    await expect(countdownOf(screen)).toBeVisible();
     await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
     expect(await statsText(screen)).toContain('Hands: 1, Rounds: 0');
     // A pause deals the same hand again, so it is not skipped from the round.
@@ -302,7 +302,7 @@ test.describe('flash drill', () => {
     expect(await statsText(screen)).toContain('Rounds: 0');
     await hit.click();
     expect(await statsText(screen)).toContain('Hands: 61, Rounds: 1');
-    await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveText('Round 1 done');
+    await expect(page.locator('[data-slot="toast"][data-tone="good"]')).toHaveText('Round 1 done');
   });
 
   test('pauses, restarts and goes back', async ({ page }) => {
@@ -382,7 +382,7 @@ test.describe('depth drill', () => {
     await expect(button('Time per test')).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Progressive Speed' })).toBeHidden();
 
-    await choose(options, 'Timer mode', 'Rounds');
+    await choose(options, 'Timer mode', 'Timer Mode: Rounds');
     await expect(button('Time per test')).toBeVisible();
     await expect(button('Drill time')).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Progressive Speed' })).toBeVisible();
@@ -391,7 +391,7 @@ test.describe('depth drill', () => {
     const minimum = options.getByRole('button', { name: /^Minimum count: / });
     await expect(minimum).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Decks or Aces in Tray' })).toBeVisible();
-    await choose(options, 'Drill', 'TC Conversion');
+    await choose(options, 'Drill', 'Drill: TC Conversion');
     await expect(minimum).toBeVisible();
     await expect(options.getByRole('switch', { name: 'Decks or Aces in Tray' })).toBeHidden();
   });
@@ -460,7 +460,7 @@ test.describe('depth drill', () => {
   });
 });
 
-test('sets the Flash drill time with the duration dialog', async ({ page }) => {
+test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await open(page);
   await page.getByRole('button', { name: 'Flash Drills' }).click();
   const options = page.locator('[data-screen="drills.flash.options"]');
@@ -471,9 +471,10 @@ test('sets the Flash drill time with the duration dialog', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: 'Drill time' });
   await expect(dialog).toBeVisible();
   const minutes = dialog.getByRole('spinbutton', { name: 'Minutes' });
-  await expect(minutes).toHaveValue('3');
-  await minutes.fill('5');
-  await dialog.getByRole('spinbutton', { name: 'Seconds' }).fill('1');
+  await expect(minutes).toHaveAttribute('aria-valuenow', '3');
+  await minutes.press('ArrowDown');
+  await minutes.press('ArrowDown');
+  await dialog.getByRole('spinbutton', { name: 'Seconds' }).press('ArrowDown');
   await dialog.getByRole('button', { name: 'Done' }).click();
   await expect(dialog).toBeHidden();
   await expect(row).toHaveText('00:05:01');
@@ -485,12 +486,12 @@ test('sets the Flash drill time with the duration dialog', async ({ page }) => {
 
   // Cancel, and Escape, leave the setting alone.
   await row.click();
-  await minutes.fill('9');
+  await minutes.press('ArrowDown');
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect(dialog).toBeHidden();
   await expect(row).toHaveText('00:05:01');
   await row.click();
-  await minutes.fill('9');
+  await minutes.press('ArrowDown');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(row).toHaveText('00:05:01');
@@ -532,7 +533,7 @@ test.describe('count drill', () => {
     await expect(button('Deal speed')).toBeVisible();
     await expect(check('Progressive Speed')).toBeVisible();
 
-    await choose(options, 'Timer mode', 'Shoe');
+    await choose(options, 'Timer mode', 'Timer Mode: Shoe');
     await expect(button('Time per test')).toBeVisible();
     await expect(button('Drill time')).toBeHidden();
 
@@ -541,13 +542,13 @@ test.describe('count drill', () => {
     await expect(button('Deal speed')).toBeHidden();
     await expect(check('Progressive Speed')).toBeHidden();
 
-    await choose(options, 'Test', 'No Tests');
+    await choose(options, 'Test', 'Test: No Tests');
     await expect(options.getByRole('combobox', { name: 'Accuracy' })).toBeHidden();
     await expect(button('Time per test')).toBeHidden();
     await expect(check('Two Counts')).toBeHidden();
 
     await expect(options.getByRole('combobox', { name: 'Positions' })).toBeVisible();
-    await choose(options, 'Cards', 'One');
+    await choose(options, 'Cards', 'Cards: One');
     await expect(options.getByRole('combobox', { name: 'Positions' })).toBeHidden();
   });
 
@@ -653,12 +654,12 @@ test.describe('full table drill', () => {
     await expect(select('End warning')).toBeHidden();
     await expect(button('Flash speed')).toBeVisible();
 
-    await choose(options, 'Timer mode', 'Shoe');
+    await choose(options, 'Timer mode', 'Timer Mode: Shoe');
     await expect(button('Time per test')).toBeVisible();
     await expect(select('End warning')).toBeVisible();
 
     // Two Tables deals its own hands and asks only running counts.
-    await choose(options, 'Drill', 'Two Tables');
+    await choose(options, 'Drill', 'Drill: Two Tables');
     await expect(select('Hands')).toBeHidden();
     await expect(select('End warning')).toBeHidden();
     await expect(options.getByRole('switch', { name: 'Two Counts' })).toBeHidden();
@@ -697,8 +698,8 @@ test('the drills record errors that the Flash options screen can clear', async (
   await screen.getByRole('button', { name: 'Back' }).click();
 
   const options = page.locator('[data-screen="drills.flash.options"]');
-  const toasts = page.getByRole('region', { name: /Notifications/ });
-  await choose(options, 'Hands', 'Drill Errors');
+  const toasts = page.locator('[data-slot="toast"]');
+  await choose(options, 'Hands', 'Hands: Drill Errors');
   await expect(toasts.getByText(/Hard H\/S 16 v T/)).toBeVisible();
 
   // Error History breaks the record down.
@@ -716,7 +717,7 @@ test('the drills record errors that the Flash options screen can clear', async (
   await expect(toasts.getByText('Error history cleared', { exact: true })).toBeVisible();
 
   // Choosing the list again reports that it is empty.
-  await choose(options, 'Hands', 'Default Hands');
-  await choose(options, 'Hands', 'Drill Errors');
+  await choose(options, 'Hands', 'Hands: Default Hands');
+  await choose(options, 'Hands', 'Hands: Drill Errors');
   await expect(toasts.getByText('No errors have been recorded yet.', { exact: true })).toBeVisible();
 });

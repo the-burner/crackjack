@@ -43,7 +43,7 @@ export function FullDrill() {
           // Below the title bar, which stays usable.
           <div
             role="alert"
-            className="absolute inset-0 z-5 flex items-center justify-center bg-(--felt) p-6 text-center text-lg font-semibold text-(--felt-text)"
+            className="absolute inset-0 z-5 flex items-center justify-center bg-(--felt) p-6 text-center text-[18px] leading-[normal] font-semibold text-(--felt-text)"
           >
             {ROTATE_MESSAGE}
           </div>

@@ -123,10 +123,10 @@ async function openTable(
             }
             for (const node of r.addedNodes) {
               if (!(node instanceof HTMLElement)) continue;
-              const pops = node.matches('[data-sonner-toast]')
+              const pops = node.matches('[data-slot="toast"]')
                 ? [node]
-                : [...node.querySelectorAll<HTMLElement>('[data-sonner-toast]')];
-              for (const pop of pops) window.__cjToasts.push({ text: pop.textContent, type: pop.dataset.type });
+                : [...node.querySelectorAll<HTMLElement>('[data-slot="toast"]')];
+              for (const pop of pops) window.__cjToasts.push({ text: pop.textContent, type: pop.dataset.tone });
             }
           }
         }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
@@ -705,7 +705,7 @@ test.describe('13. "Are you sure?" on an obviously bad play', () => {
     await expect.poll(async () => (await toasts(page)).filter(t => t.text === question).length).toBe(asked + 1);
     const pop = tableToast(page).filter({ hasText: question });
     await expect(pop).toBeVisible();
-    await expect(pop).toHaveAttribute('data-y-position', 'top');
+    await expect(pop).toHaveAttribute('data-position', 'top');
     await expect(dialog(page)).toHaveCount(0);
     expect(await sounds(page)).toEqual(['card']);
     expect(await settle(page)).toBe('act');

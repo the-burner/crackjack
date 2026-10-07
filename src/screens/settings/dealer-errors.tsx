@@ -1,8 +1,8 @@
 // Dealer Errs/Biases: deliberate dealer mistakes and a
 // non-random dealing bias.
 
-import { SettingSelect, SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 
@@ -35,7 +35,7 @@ export function DealerErrors() {
         <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSwitches items={ERRORS} />
+        <SettingChecks items={ERRORS} />
       </SettingsGroup>
     </SettingsScreen>
   );

@@ -746,8 +746,7 @@ test('Customize changes the bets offered as soon as the table is back', async ({
   await openTable(page);
   await overlayButton(page, 'Customize').click();
   const betting = page.locator('[data-screen="settings.betting"]');
-  await betting.getByRole('combobox', { name: 'Chip Value', exact: true }).click();
-  await page.getByRole('option', { name: '$25', exact: true }).click();
+  await betting.getByRole('combobox', { name: 'Chip Value', exact: true }).selectOption({ label: '$25' });
   await betting.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(overlay(page)).toBeVisible();
   // One chip is now $25: the lost hand costs that.

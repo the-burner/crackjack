@@ -19,8 +19,8 @@ export async function answerDialog(page: Page, text: string | null = null): Prom
   await expect(dialog).toBeVisible();
   const handle = await dialog.elementHandle();
   if (text !== null) await dialog.getByRole('spinbutton').or(dialog.getByRole('textbox')).fill(text);
-  // The confirming button comes last.
-  await dialog.getByRole('button').last().click();
+  // The confirming button comes first.
+  await dialog.getByRole('button').first().click();
   await page.waitForFunction(el => !el?.isConnected, handle);
 }
 

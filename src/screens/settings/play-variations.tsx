@@ -1,7 +1,7 @@
 // Play Variations: dealer behavior and unusual rules.
 
-import { SettingsGroup, SettingsScreen } from '@/components/settings-controls';
-import { SettingSwitches } from '@/components/settings-controls';
+import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'Dealer behavior and unusual rules.';
@@ -29,10 +29,10 @@ export function PlayVariations() {
   return (
     <SettingsScreen title="Play Variations" help="settings.playVariations" note={NOTE}>
       <SettingsGroup>
-        <SettingSwitches items={DEALER} />
+        <SettingChecks items={DEALER} />
       </SettingsGroup>
       <SettingsGroup>
-        <SettingSwitches items={HANDS} />
+        <SettingChecks items={HANDS} />
       </SettingsGroup>
     </SettingsScreen>
   );

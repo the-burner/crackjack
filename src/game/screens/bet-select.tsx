@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { useApp } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
-import { ScreenLayout } from '@/components/screen-layout';
+import { Note } from '@/components/ui/text';
+import { Tile } from '@/components/ui/tile';
+import { Column, ScreenLayout } from '@/components/screen-layout';
 import { promptNumber } from '@/components/dialogs';
 import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '@/settings/bet-ramp';
 import { useGoBack } from '@/app/navigation';
@@ -52,46 +54,44 @@ export function BetSelect({
     pick(amount / chipValue, amount);
   }
 
-  const tile = 'h-11 text-base tabular-nums';
   return (
     <ScreenLayout title={heading} help="game.betSelect">
-      <div className="mx-auto flex max-w-xl flex-col gap-4">
-        <p className="text-center text-sm text-muted-foreground">{HELP_TEXT}</p>
+      <Column>
+        <Note>{HELP_TEXT}</Note>
         {!sideBet && (
           <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Spots">
             {HAND_CHOICES.map(count => (
-              <Button
+              <Tile
                 key={count}
-                variant={count === hands ? 'default' : 'outline'}
-                className={tile}
+                kind="hands"
+                on={count === hands}
                 aria-pressed={count === hands}
                 onClick={() => setHands(count)}
                 data-hands={String(count)}
               >
                 {count === 1 ? '1' : `${count}x`}
-              </Button>
+              </Tile>
             ))}
           </div>
         )}
         <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Chips">
           {CHIP_CHOICES.map(chips => (
-            <Button
+            <Tile
               key={chips}
-              variant="secondary"
-              className={tile}
+              kind="chips"
               disabled={chips > most}
               onClick={() => pick(chips, chips * chipValue)}
               data-chips={String(chips)}
             >
               {String(chips)}
-            </Button>
+            </Tile>
           ))}
         </div>
-        <Button variant="secondary" size="lg" onClick={custom} data-action="custom">
+        <Button block onClick={custom} data-action="custom">
           Custom Bet
         </Button>
-        <p className="text-center text-sm text-muted-foreground">{`One chip is $${chipValue}. Chips x spots may not exceed ${MAX_CHIPS}.`}</p>
-      </div>
+        <Note>{`One chip is $${chipValue}. Chips x spots may not exceed ${MAX_CHIPS}.`}</Note>
+      </Column>
     </ScreenLayout>
   );
 }

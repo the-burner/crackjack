@@ -2,13 +2,14 @@
 
 import type { App } from '@/app/app';
 import { useApp, useSettings } from '@/react/app-context';
-import { Section } from '@/components/screen-layout';
+import { Section } from '@/components/ui/settings-group';
 import { SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { alert } from '@/components/dialogs';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
+  OptionGroup,
   OptionDuration,
   OptionSlider,
   OptionSwitch,
@@ -38,41 +39,44 @@ const DRILL_OPTIONS: Options<'drills.count.drill'> = (
     'aceInsureCount',
     'tenSideCount',
   ] as const
-).map(value => ({ value, label: COUNT_DRILL_LABELS[value] }));
+).map(value => ({ value, label: `Drill: ${COUNT_DRILL_LABELS[value]}` }));
 
 const TEST_OPTIONS: Options<'drills.count.testEvery'> = [
-  { value: 'everyCard', label: 'Every Card' },
-  { value: 'about8', label: 'About 8 cards' },
-  { value: 'about16', label: 'About 16 cards' },
-  { value: 'about36', label: 'About 36 cards' },
-  { value: 'never', label: 'No Tests' },
+  { value: 'everyCard', label: 'Test: Every Card' },
+  { value: 'about8', label: 'Test: About 8 cards' },
+  { value: 'about16', label: 'Test: About 16 cards' },
+  { value: 'about36', label: 'Test: About 36 cards' },
+  { value: 'never', label: 'Test: No Tests' },
 ];
 
 const CARDS_OPTIONS: Options<'drills.count.cardsPerFlash'> = [
-  { value: '1', label: 'One' },
-  { value: '2', label: 'Two' },
-  { value: '3', label: 'Three' },
-  { value: '4', label: 'Four' },
-  { value: '1-2', label: 'One or Two' },
-  { value: '1-3', label: 'One to Three' },
-  { value: '1-4', label: 'One to Four' },
+  { value: '1', label: 'Cards: One' },
+  { value: '2', label: 'Cards: Two' },
+  { value: '3', label: 'Cards: Three' },
+  { value: '4', label: 'Cards: Four' },
+  { value: '1-2', label: 'Cards: One or Two' },
+  { value: '1-3', label: 'Cards: One to Three' },
+  { value: '1-4', label: 'Cards: One to Four' },
 ];
 
 const ORIENTATION_OPTIONS: Options<'drills.count.orientation'> = [
-  { value: 'vertical', label: 'Vertical' },
-  { value: 'horizontal', label: 'Horizontal' },
-  { value: 'mixed', label: 'Mixed' },
+  { value: 'vertical', label: 'Orientation: Vertical' },
+  { value: 'horizontal', label: 'Orientation: Horizontal' },
+  { value: 'mixed', label: 'Orientation: Mixed' },
 ];
 
 const POSITION_OPTIONS: Options<'drills.count.positions'> = [
-  { value: 'vertical', label: 'Vertical' },
-  { value: 'horizontal', label: 'Horizontal' },
-  { value: 'diagonal', label: 'Diagonal' },
-  { value: 'mixed', label: 'Mixed' },
+  { value: 'vertical', label: 'Positions: Vertical' },
+  { value: 'horizontal', label: 'Positions: Horizontal' },
+  { value: 'diagonal', label: 'Positions: Diagonal' },
+  { value: 'mixed', label: 'Positions: Mixed' },
 ];
 
 /** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
-const MODE_OPTIONS: Options<'drills.count.timerMode'> = [{ value: 'auto', label: 'Shoe' }, COUNT_DOWN_HALT_OPTION];
+const MODE_OPTIONS: Options<'drills.count.timerMode'> = [
+  { value: 'auto', label: 'Timer Mode: Shoe' },
+  COUNT_DOWN_HALT_OPTION,
+];
 
 export function CountOptions() {
   const app = useApp();
@@ -105,43 +109,49 @@ export function CountOptions() {
       onLaunch={() => launch(app, () => navigate(PATHS['drills.count']))}
     >
       <Section title="Drill">
-        <SettingSelect label="Drill" setting="drills.count.drill" options={DRILL_OPTIONS} />
-        <SettingSelect label="Test" setting="drills.count.testEvery" options={TEST_OPTIONS} />
-        <SettingSelect
-          label="Accuracy"
-          setting="drills.count.accuracy"
-          options={ACCURACY_OPTIONS}
-          hidden={!shown.accuracy}
-        />
-        <OptionSwitch label="Two Counts" setting="drills.count.twoCounts" hidden={!shown.twoCounts} />
-        <SettingSelect label="Cards" setting="drills.count.cardsPerFlash" options={CARDS_OPTIONS} />
-        <SettingSelect label="Decks" setting="drills.count.decks" options={DECK_OPTIONS} />
+        <OptionGroup>
+          <SettingSelect label="Drill" setting="drills.count.drill" options={DRILL_OPTIONS} />
+          <SettingSelect label="Test" setting="drills.count.testEvery" options={TEST_OPTIONS} />
+          <SettingSelect
+            label="Accuracy"
+            setting="drills.count.accuracy"
+            options={ACCURACY_OPTIONS}
+            hidden={!shown.accuracy}
+          />
+          <OptionSwitch label="Two Counts" setting="drills.count.twoCounts" hidden={!shown.twoCounts} />
+          <SettingSelect label="Cards" setting="drills.count.cardsPerFlash" options={CARDS_OPTIONS} />
+          <SettingSelect label="Decks" setting="drills.count.decks" options={DECK_OPTIONS} />
+        </OptionGroup>
       </Section>
       <Section title="Dealing">
-        <SettingSelect label="Orientation" setting="drills.count.orientation" options={ORIENTATION_OPTIONS} />
-        <SettingSelect
-          label="Positions"
-          setting="drills.count.positions"
-          options={POSITION_OPTIONS}
-          hidden={!shown.positions}
-        />
-        <SettingSelect label="End warning" setting="drills.count.endWarning" options={END_WARNING_OPTIONS} />
-        <SettingSelect label="Bias" setting="drills.count.bias" options={BIAS_OPTIONS} />
-        <SettingSelect
-          label="Tray style"
-          setting="drills.count.trayStyle"
-          options={TRAY_OPTIONS}
-          hidden={!shown.trayStyle}
-        />
-        <OptionSlider label="Thickness" setting="drills.count.cardThickness" hidden={!shown.thickness} />
+        <OptionGroup>
+          <SettingSelect label="Orientation" setting="drills.count.orientation" options={ORIENTATION_OPTIONS} />
+          <SettingSelect
+            label="Positions"
+            setting="drills.count.positions"
+            options={POSITION_OPTIONS}
+            hidden={!shown.positions}
+          />
+          <SettingSelect label="End warning" setting="drills.count.endWarning" options={END_WARNING_OPTIONS} />
+          <SettingSelect label="Bias" setting="drills.count.bias" options={BIAS_OPTIONS} />
+          <SettingSelect
+            label="Tray style"
+            setting="drills.count.trayStyle"
+            options={TRAY_OPTIONS}
+            hidden={!shown.trayStyle}
+          />
+          <OptionSlider label="Thickness:" setting="drills.count.cardThickness" hidden={!shown.thickness} />
+        </OptionGroup>
       </Section>
       <Section title="Timer">
-        <SettingSelect label="Timer mode" setting="drills.count.timerMode" options={MODE_OPTIONS} />
-        <OptionDuration label="Time per test" setting="drills.count.testSeconds" hidden={!shown.perTest} />
-        <OptionDuration label="Drill time" setting="drills.count.alarmSeconds" hidden={!shown.drillTime} />
-        <OptionSwitch label="Deal by hand" setting="drills.count.dealByHand" />
-        <OptionDuration label="Deal speed" setting="drills.count.dealTenths" tenths hidden={!shown.dealSpeed} />
-        <OptionSwitch label="Progressive Speed" setting="drills.count.progressiveSpeed" hidden={!shown.progressive} />
+        <OptionGroup>
+          <SettingSelect label="Timer mode" setting="drills.count.timerMode" options={MODE_OPTIONS} />
+          <OptionDuration label="Time per test" setting="drills.count.testSeconds" hidden={!shown.perTest} />
+          <OptionDuration label="Drill time" setting="drills.count.alarmSeconds" hidden={!shown.drillTime} />
+          <OptionSwitch label="Deal by hand" setting="drills.count.dealByHand" />
+          <OptionDuration label="Deal speed" setting="drills.count.dealTenths" tenths hidden={!shown.dealSpeed} />
+          <OptionSwitch label="Progressive Speed" setting="drills.count.progressiveSpeed" hidden={!shown.progressive} />
+        </OptionGroup>
       </Section>
     </DrillOptionsScreen>
   );
