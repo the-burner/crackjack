@@ -8,7 +8,7 @@ import { GameSession } from '../../../src/game/session.ts';
 import { gameStatsScreen } from '../../../src/game/screens/stats.tsx';
 import { betSelectScreen } from '../../../src/game/screens/bet-select.tsx';
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function makeApp(): App {
   const services = createServices({ backend: new MemoryBackend() });

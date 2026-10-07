@@ -9,7 +9,7 @@ import { strategyTablesScreen } from '../../../src/screens/strategy/tables.tsx';
 import { trueCountScreen } from '../../../src/screens/strategy/true-count.tsx';
 import { playingStrategyScreen } from '../../../src/screens/strategy/playing-strategy.tsx';
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function makeApp(): App {
   const services = createServices({ backend: new MemoryBackend() });
@@ -34,11 +34,11 @@ describe('Allowed Bets', () => {
     const app = makeApp();
     const { el } = bettingScreen(app, {});
     expect($(el, '.bet-table tbody td').textContent).toBe('<=0');
-    expect(el.querySelectorAll('.tc-row')[2].hidden).toBe(false);
+    expect(el.querySelectorAll<HTMLElement>('.tc-row')[2].hidden).toBe(false);
     act(() => $(el, 'input[type="checkbox"]').click());
     expect(app.settings.get('betting.warnOnError')).toBe(false);
     expect($(el, '.bet-table tbody td').textContent).toBe('-');
-    expect(el.querySelectorAll('.tc-row')[2].hidden).toBe(true);
+    expect(el.querySelectorAll<HTMLElement>('.tc-row')[2].hidden).toBe(true);
   });
 
   it('follows ramp changes and opens the picker for a row', () => {

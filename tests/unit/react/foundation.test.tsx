@@ -9,7 +9,7 @@ import { useSettings } from '../../../src/react/app-context.ts';
 import { Select } from '../../../src/react/components.tsx';
 import { SettingChecks, SettingSlider } from '../../../src/react/settings-form.tsx';
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function makeApp(): App {
   const services = createServices({ backend: new MemoryBackend() });

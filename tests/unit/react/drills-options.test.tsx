@@ -10,7 +10,7 @@ import { countOptionsScreen } from '../../../src/drills/count/options.tsx';
 import { fullOptionsScreen } from '../../../src/drills/full/options.tsx';
 import { flashErrorsScreen } from '../../../src/drills/flash/errors.tsx';
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function makeApp(): App {
   const services = createServices({ backend: new MemoryBackend() });

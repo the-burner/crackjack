@@ -23,7 +23,7 @@ vi.mock('../../../src/data/help.ts', async importOriginal => {
   return { HELP: { ...HELP, 'test.links': '<p><a href="https://example.com">site</a></p>' } };
 });
 
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function makeApp(): App {
   const services = createServices({ backend: new MemoryBackend() });
