@@ -15,7 +15,7 @@ export function localHostName() {
 }
 
 /** The mkcert certificate for this Mac, created on first use. */
-export function certificateFor(hostName) {
+export function certificateFor(hostName: string): { cert: Buffer; key: Buffer } {
   const dir = path.join(REPO, '.certs');
   const cert = path.join(dir, `${hostName}.pem`);
   const key = path.join(dir, `${hostName}-key.pem`);

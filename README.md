@@ -111,7 +111,7 @@ npm run lint                         # ESLint
 npm run typecheck                    # TypeScript
 npm run add-strategy -- <code>       # bundle a strategy by its export code (optional --name "...")
 npm run add-side-bet -- <code>       # bundle a side-bet game by its export code (optional --name "...")
-npm run logo                         # redraw the app icon and wordmark (tools/logo.mjs)
+npm run logo                         # redraw the app icon and wordmark (tools/logo.ts)
 ```
 
 The browser tests run twice, once in Chromium and once in WebKit (Safari's

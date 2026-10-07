@@ -20,7 +20,7 @@ npm run lint             # ESLint
 npm run typecheck        # tsc --noEmit
 npm run add-strategy -- <code> [--name "..."]   # download a strategy by its export code and bundle it
 npm run add-side-bet -- <code> [--name "..."]   # same for a side-bet game
-npm run logo             # redraw the CJ icon (SVG + PNGs) and the in-app wordmark from tools/logo.mjs
+npm run logo             # redraw the CJ icon (SVG + PNGs) and the in-app wordmark from tools/logo.ts
 ```
 
 Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
@@ -57,5 +57,5 @@ Run a single test: `npx vitest run tests/unit/game/engine.test.js` or
 - `tests/fixtures/*.json.gz` is behavior recorded from the original apps; it **cannot be regenerated** (the originals were removed — recoverable from git tag `original-apps-reference`). If a fixture test fails, the code changed behavior: either fix the code or, if the change is intentional, adjust the test deliberately.
 - The service worker's precache list is generated at build time; files in `dist/` matching `vite.config.ts`'s `globPatterns` are precached. Installed copies offer a Reload when a new build is deployed.
 - E2E tests import and patch source modules in the page (`import('/src/...')`), which only the dev server serves; tests that need the service worker are tagged `@build` and run on the production build. Locally Playwright reuses any server already on ports 5174/4173; stop a stale one first.
-- The app makes no network requests; users cannot import strategies or side-bet games. New ones are bundled with `tools/bundle-import.mjs` (the npm scripts above), which edits `src/data/` and `src/settings/strategies.js`.
+- The app makes no network requests; users cannot import strategies or side-bet games. New ones are bundled with `tools/bundle-import.ts` (the npm scripts above), which edits `src/data/` and `src/settings/strategies.js`.
 - Don't reintroduce code-generator-style names (`frm*`, numeric option arrays, globals) — the codebase intentionally has none.

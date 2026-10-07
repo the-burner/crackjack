@@ -1,7 +1,7 @@
 // Downloads a strategy or side-bet game by its export code and bundles it into the app.
 //
-//   node tools/bundle-import.mjs strategy <code> [--name "Display name"]
-//   node tools/bundle-import.mjs side-bet <code> [--name "Display name"]
+//   node tools/bundle-import.ts strategy <code> [--name "Display name"]
+//   node tools/bundle-import.ts side-bet <code> [--name "Display name"]
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,14 +16,16 @@ const SIDE_BET_GAMES = 'src/data/side-bet-games.ts';
 
 /** Where exports are downloaded from. */
 export const EXPORT_HOST = 'https://www.qfit.com';
-export const strategyUrl = code => `${EXPORT_HOST}/Apps/z${encodeURIComponent(String(code).trim().toLowerCase())}.php`;
-export const sideBetUrl = code => `${EXPORT_HOST}/Apps/u${encodeURIComponent(String(code).trim())}.php`;
+export const strategyUrl = (code: string | number): string =>
+  `${EXPORT_HOST}/Apps/z${encodeURIComponent(String(code).trim().toLowerCase())}.php`;
+export const sideBetUrl = (code: string | number): string =>
+  `${EXPORT_HOST}/Apps/u${encodeURIComponent(String(code).trim())}.php`;
 
 /** The export host escapes spaces in names. */
-export const normalizeDownload = text => String(text).replaceAll('%20', ' ');
+export const normalizeDownload = (text: string): string => String(text).replaceAll('%20', ' ');
 
 /** True when `text` parses as a strategy file (not, say, a server error page). */
-export function isStrategyFileText(text) {
+export function isStrategyFileText(text: unknown): text is string {
   if (typeof text !== 'string' || !text.startsWith('|')) return false;
   const nameEnd = text.indexOf('|', 1);
   if (nameEnd < 2) return false;
@@ -45,7 +47,7 @@ export function isStrategyFileText(text) {
 }
 
 /** True when `definition` decodes as a side-bet game. */
-export function isSideBetDefinition(definition) {
+export function isSideBetDefinition(definition: unknown): definition is string {
   if (typeof definition !== 'string' || definition.indexOf('|', 1) === -1) return false;
   try {
     decodeSideBetGame(definition);
@@ -55,10 +57,10 @@ export function isSideBetDefinition(definition) {
   }
 }
 
-const singleQuoted = text => `'${String(text).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
+const singleQuoted = (text: string) => `'${String(text).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 
 /** Inserts `line` just before the first `closer` after `opener`. */
-function insertBefore(src, opener, closer, line) {
+function insertBefore(src: string, opener: string, closer: string, line: string): string {
   const start = src.indexOf(opener);
   if (start === -1) throw new Error(`Cannot find ${opener}`);
   const end = src.indexOf(closer, start);
@@ -67,17 +69,18 @@ function insertBefore(src, opener, closer, line) {
 }
 
 /** Numeric keys of the object literal that starts at `opener`. */
-function objectIds(src, opener) {
+function objectIds(src: string, opener: string): number[] {
   const start = src.indexOf(opener);
   const body = src.slice(start, src.indexOf('\n};', start));
   return [...body.matchAll(/^ {2}(\d+): /gm)].map(m => Number(m[1]));
 }
 
-/**
- * Adds a strategy file to the bundled sources.
- * @returns {{id: number, name: string, files: string, catalog: string}}
- */
-export function addStrategy({ files, catalog }, text, name = text.slice(1, text.indexOf('|', 1)).trim()) {
+/** Adds a strategy file to the bundled sources. */
+export function addStrategy(
+  { files, catalog }: { files: string; catalog: string },
+  text: string,
+  name: string = text.slice(1, text.indexOf('|', 1)).trim(),
+): { id: number; name: string; files: string; catalog: string } {
   if (!isStrategyFileText(text)) throw new Error('That is not a strategy file. Probably an incorrect code.');
   if (files.includes(JSON.stringify(text))) throw new Error('That strategy is already bundled.');
   const id = Math.max(...objectIds(files, 'export const STRATEGY_FILES: Readonly<Record<number, string>> = {')) + 1;
@@ -99,11 +102,12 @@ export function addStrategy({ files, catalog }, text, name = text.slice(1, text.
   };
 }
 
-/**
- * Adds a side-bet game to the bundled source.
- * @returns {{id: number, name: string, games: string}}
- */
-export function addSideBetGame(games, definition, name = sideBetGameName(definition)) {
+/** Adds a side-bet game to the bundled source. */
+export function addSideBetGame(
+  games: string,
+  definition: string,
+  name: string = sideBetGameName(definition),
+): { id: number; name: string; games: string } {
   if (!isSideBetDefinition(definition)) throw new Error('That is not a side-bet game. Probably an incorrect code.');
   if (games.includes(JSON.stringify(definition))) throw new Error('That game is already bundled.');
   const id =
@@ -123,20 +127,20 @@ export function addSideBetGame(games, definition, name = sideBetGameName(definit
   return { id, name, games: out };
 }
 
-async function download(url) {
+async function download(url: string): Promise<string> {
   const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!response.ok) throw new Error(`${url} answered ${response.status}`);
   return normalizeDownload(await response.text());
 }
 
-const read = file => fs.readFileSync(path.join(REPO, file), 'utf8');
-const write = (file, text) => fs.writeFileSync(path.join(REPO, file), text);
+const read = (file: string) => fs.readFileSync(path.join(REPO, file), 'utf8');
+const write = (file: string, text: string) => fs.writeFileSync(path.join(REPO, file), text);
 
-async function main([kind, code, ...rest]) {
+async function main([kind, code, ...rest]: string[]) {
   const nameAt = rest.indexOf('--name');
   const name = nameAt === -1 ? undefined : rest[nameAt + 1];
   if (!['strategy', 'side-bet'].includes(kind) || !code || (nameAt !== -1 && !name)) {
-    throw new Error('usage: node tools/bundle-import.mjs <strategy|side-bet> <code> [--name "Display name"]');
+    throw new Error('usage: node tools/bundle-import.ts <strategy|side-bet> <code> [--name "Display name"]');
   }
   let added;
   if (kind === 'strategy') {
@@ -155,8 +159,8 @@ async function main([kind, code, ...rest]) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).catch(error => {
-    console.error(`error: ${error.message}`);
+  main(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   });
 }

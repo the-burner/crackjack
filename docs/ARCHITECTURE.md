@@ -50,9 +50,9 @@ tests/
   e2e/           Playwright tests of the running app
   fixtures/      reference data recorded from the original apps (gzipped JSON)
   support/       the fixture loader
-tools/           certs.mjs (HTTPS certificates for serving to a phone),
-                 bundle-import.mjs, which bundles strategies and side-bet games
-                 from their export codes, and logo.mjs
+tools/           certs.ts (HTTPS certificates for serving to a phone),
+                 bundle-import.ts, which bundles strategies and side-bet games
+                 from their export codes, and logo.ts
 docs/            this document
 ```
 

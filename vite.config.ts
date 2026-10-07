@@ -1,7 +1,7 @@
 import { defineConfig, type PreviewOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { certificateFor, localHostName } from './tools/certs.mjs';
+import { certificateFor, localHostName } from './tools/certs.ts';
 
 /** `--mode phone` serves HTTPS on the network, so a phone can install the app. */
 function previewFor(mode: string): PreviewOptions {

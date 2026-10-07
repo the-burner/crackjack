@@ -11,7 +11,7 @@ import {
   normalizeDownload,
   sideBetUrl,
   strategyUrl,
-} from '../../tools/bundle-import.mjs';
+} from '../../tools/bundle-import.ts';
 import { STRATEGY_FILES } from '../../src/data/strategy-files.ts';
 import { SIDE_BET_GAME_DEFINITIONS } from '../../src/data/side-bet-games.ts';
 
