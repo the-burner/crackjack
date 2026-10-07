@@ -1,4 +1,14 @@
+/* The old stylesheets sit above Tailwind's base styles and below its utilities, until the screens using them are gone. */
+@layer theme, base, legacy, components, utilities;
 @import 'tailwindcss';
+@import './ui/styles/app.css' layer(legacy);
+@import './ui/styles/icons.css' layer(legacy);
+@import './ui/styles/screens.css' layer(legacy);
+@import './ui/styles/settings.css' layer(legacy);
+@import './ui/styles/strategy.css' layer(legacy);
+@import './ui/styles/drills.css' layer(legacy);
+@import './ui/styles/game.css' layer(legacy);
+@import './ui/styles/themes.css' layer(legacy);
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 

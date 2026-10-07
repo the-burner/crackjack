@@ -120,6 +120,8 @@ describe('navigation screens', () => {
     renderScreen(<Home />, { app });
     expect(screen.getByRole('img', { name: 'Crackjack' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Reset Defaults' }));
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('reset all options');
+    await user.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(6));
   });
 

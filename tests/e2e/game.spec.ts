@@ -52,7 +52,7 @@ async function openTable(
   await page.goto('/index.html');
   await page.locator('[data-action="play"]').click();
   await expect(page.locator('.bet-overlay')).toBeVisible();
-  return page.locator('.table');
+  return page.locator('.game-table');
 }
 
 const bankroll = (page: Page) => page.locator('.table__bankroll');

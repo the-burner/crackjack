@@ -8,6 +8,7 @@ import { createServices } from '@/app/app';
 import type { App } from '@/app/app';
 import { MemoryBackend } from '@/services/storage';
 import { createLifecycle, ScreenProviders } from '@/react/screen';
+import { DialogHost } from '@/components/dialogs';
 
 /** An app whose navigation is mocked, so tests can assert on it. */
 export type TestApp = App & { open: Mock<App['open']>; back: Mock<App['back']>; help: Mock<App['help']> };
@@ -28,6 +29,8 @@ export function renderScreen(ui: ReactElement, { app = createTestApp() }: { app?
   const wrapper = ({ children }: { children: ReactNode }) => (
     <ScreenProviders app={app} lifecycle={lifecycle}>
       {children}
+      {/* As at the app's root, so a screen's dialogs show and can be answered. */}
+      <DialogHost />
     </ScreenProviders>
   );
   return {

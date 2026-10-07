@@ -84,7 +84,7 @@ export function Betting() {
           </div>
         </SettingsGroup>
         <div>
-          <table className="grid bet-table">
+          <table className="strategy-grid bet-table">
             <thead>
               <tr>
                 <th>Count</th>

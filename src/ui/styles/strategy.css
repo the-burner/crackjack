@@ -28,21 +28,21 @@
 }
 
 /* Grids: a slate header and ridged cell borders. */
-.grid {
+.strategy-grid {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   font: 600 12px var(--font);
   font-variant-numeric: tabular-nums;
 }
-.grid th {
+.strategy-grid th {
   padding: 4px 1px;
   border: 2px ridge var(--grid-border);
   background: var(--grid-head-bg);
   color: var(--grid-head-text);
   text-align: center;
 }
-.grid td {
+.strategy-grid td {
   padding: 4px 1px;
   border: 2px ridge var(--grid-border);
   color: var(--grid-text);

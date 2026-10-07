@@ -251,7 +251,7 @@ function SpecialtyList({ strategy, view }: { strategy: Strategy; view: TableGrid
   const columns = extended ? EXTENDED_COLUMNS : BASE_COLUMNS;
   const plays = specialtyPlays(strategy.tables[view.table], view, { extended, columns });
   return (
-    <table className="grid">
+    <table className="strategy-grid">
       <thead>
         <tr>
           <th>Specialty Plays</th>
@@ -277,7 +277,7 @@ function CountsViewTables({ counts }: { counts: CountsTables }) {
         t ? (
           <div key={i}>
             <div className="tables__caption">{t.caption}</div>
-            <table className="grid">
+            <table className="strategy-grid">
               <thead>
                 <tr>
                   {t.rows[0].label !== undefined ? <th /> : null}

@@ -73,7 +73,7 @@ export function tableScreen(app: App): Screen {
     onError: openLastError,
     onHelp: () => app.help('game.table', 'Blackjack'),
   });
-  const el = h('section', { class: 'table' }, bar, felt);
+  const el = h('section', { class: 'game-table' }, bar, felt);
 
   // --- play state -----------------------------------------------------------
 

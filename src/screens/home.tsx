@@ -2,11 +2,14 @@
 
 import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
-import { Button, StandardScreen } from '@/react/components';
+import { ChevronRightIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ListButton, ScreenLayout, Section } from '@/components/screen-layout';
 import { reactScreen } from '@/react/screen';
 import type { App } from '@/app/app';
-import { confirm, alert } from '@/ui/dialogs';
-import { toast } from '@/ui/toast';
+import { toast } from 'sonner';
+import { alert, confirm } from '@/components/dialogs';
 import { openTable } from '@/game/launch';
 import { WORDMARK_SVG } from '@/ui/wordmark';
 import { currentNavigator, installHintWanted } from '@/ui/install-hint';
@@ -26,48 +29,58 @@ export function Home() {
   const installHint = installHintWanted(currentNavigator(), dismissed);
   const dismissInstallHint = () => app.installHintDismissed.setState({ value: true });
   return (
-    <StandardScreen title="" help="home" back={false}>
-      <div className="column home">
-        <h1 className="home__name" dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }} />
+    <ScreenLayout title="" help="home" back={false}>
+      <div className="mx-auto flex max-w-xl flex-col gap-6">
+        <h1 className="mx-auto mt-2 w-64 leading-none" dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }} />
         {installHint && (
-          <div className="install-hint" role="note">
-            <span>
-              To use Crackjack offline, install it: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>
-              .
-            </span>
-            <Button variant="nav" onClick={dismissInstallHint} data-action="dismiss-install">
-              OK
-            </Button>
-          </div>
+          <Card size="sm" role="note">
+            <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="flex-1">
+                To use Crackjack offline, install it: tap <strong>Share</strong>, then{' '}
+                <strong>Add to Home Screen</strong>.
+              </span>
+              <Button variant="ghost" onClick={dismissInstallHint} data-action="dismiss-install">
+                OK
+              </Button>
+            </CardContent>
+          </Card>
         )}
-        <Button variant="primary" large icon="arrow-r" block onClick={() => openTable(app)} data-action="play">
+        <Button size="lg" className="h-12 text-base" onClick={() => openTable(app)} data-action="play">
           Play Blackjack
+          <ChevronRightIcon />
         </Button>
-        <div className="section">
-          <h2 className="section__title">Drills</h2>
-          <div className="home__drills">
+        <section className="space-y-2">
+          <h2 className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Drills</h2>
+          <div className="grid grid-cols-2 gap-3">
             {DRILLS.map(([name, detail, screen]) => (
-              <button key={screen} type="button" className="home__drill" onClick={() => app.open(screen)}>
-                <span className="home__drill-name">{name}</span>
-                <span className="home__drill-detail">{detail}</span>
+              <button
+                key={screen}
+                type="button"
+                className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted active:bg-muted"
+                onClick={() => app.open(screen)}
+              >
+                <span className="font-medium">{name}</span>
+                <span className="text-sm text-muted-foreground">{detail}</span>
               </button>
             ))}
           </div>
-        </div>
-        <div className="settings-group">
-          <Button icon="arrow-r" block className="list-row" onClick={() => app.open('settings')} data-action="settings">
+        </section>
+        <Section>
+          <ListButton onClick={() => app.open('settings')} data-action="settings">
             Settings
-          </Button>
-          <Button block className="list-row" onClick={() => resetDefaults(app)}>
+          </ListButton>
+          <ListButton chevron={false} onClick={() => resetDefaults(app)}>
             Reset Defaults
-          </Button>
-          <Button block className="list-row" onClick={() => screenInfo()}>
+          </ListButton>
+          <ListButton chevron={false} onClick={() => screenInfo()}>
             Screen Info
-          </Button>
-        </div>
+          </ListButton>
+        </Section>
+        <p className="text-center text-xs text-muted-foreground">
+          {`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}
+        </p>
       </div>
-      <div className="footer-note">{`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}</div>
-    </StandardScreen>
+    </ScreenLayout>
   );
 }
 
