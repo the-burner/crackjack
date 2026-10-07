@@ -8,7 +8,10 @@ test('records each frame the table draws, when a test asks it to', async ({ page
   // The same cards every run, so the round always reaches the player's turn.
   await page.addInitScript(() => {
     let a = 7;
+    // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
+    const libraryRandom = Math.random;
     Math.random = () => {
+      if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
       a = (a + 0x6d2b79f5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;

@@ -58,7 +58,10 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
       window.__cjRolls = { dealerStandsByMistake: 0, bustsGoodHandByMistake: 0, pickDealerError: 0, ...picked };
+      // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
+      const libraryRandom = Math.random;
       Math.random = () => {
+        if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
         const stack = new Error().stack ?? '';
         if (stack.includes('dealer-errors.ts')) {
           const name = Object.keys(window.__cjRolls).find(fn => stack.includes(fn));
@@ -68,10 +71,6 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
       };
       // What the player hears: the file each sound effect would play.
       window.__cjSounds = [];
-      HTMLMediaElement.prototype.play = function play() {
-        window.__cjSounds.push(this.src.split('/').pop());
-        return Promise.resolve();
-      };
       // Result pills on the seats, with when they appeared.
       window.__cjResults = [];
       window.__cjRecordFrames = true;
@@ -96,6 +95,9 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
     { overrides: { ...BASE_SETTINGS, ...settings }, extra: storage },
   );
   await page.goto('/index.html');
+  await page.evaluate(() => {
+    window.app.sound.output = file => window.__cjSounds.push(file.split('/').pop());
+  });
   await stackTheShoe(page);
   await page.locator('[data-action="play"]').click();
   await expect(overlay(page)).toBeVisible();

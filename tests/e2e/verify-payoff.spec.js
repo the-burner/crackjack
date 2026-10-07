@@ -114,6 +114,8 @@ function recorder() {
 /** Records every sound the table asks for, and every audio file actually started. */
 async function recordSounds(page) {
   await page.evaluate(() => {
+    window.__cjAudio = [];
+    window.app.sound.output = file => window.__cjAudio.push({ src: file, t: performance.now() });
     window.__cjSounds = [];
     const play = window.app.sound.play.bind(window.app.sound);
     window.app.sound.play = name => {
@@ -127,7 +129,10 @@ async function openTable(page, { seed, settings = {}, size = PORTRAIT, sound = f
   await page.setViewportSize(size);
   await page.addInitScript(start => {
     let a = start;
+    // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
+    const libraryRandom = Math.random;
     Math.random = () => {
+      if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
       a = (a + 0x6d2b79f5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -135,15 +140,6 @@ async function openTable(page, { seed, settings = {}, size = PORTRAIT, sound = f
     };
   }, seed);
   await page.addInitScript(recorder);
-  if (sound) {
-    await page.addInitScript(() => {
-      window.__cjAudio = [];
-      HTMLMediaElement.prototype.play = function play() {
-        window.__cjAudio.push({ src: this.src, t: performance.now() });
-        return Promise.resolve();
-      };
-    });
-  }
   await page.addInitScript(
     overrides => {
       localStorage.clear();

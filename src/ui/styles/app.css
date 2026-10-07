@@ -611,6 +611,19 @@ body {
   background: var(--overlay);
   animation: fade-in 0.15s ease-out;
 }
+/* A modal <dialog>: undo the browser's own box, the overlay paints the dimming. */
+dialog.dialog-overlay {
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  color: inherit;
+}
+dialog.dialog-overlay::backdrop {
+  background: none;
+}
 .dialog {
   width: 290px;
   max-width: 100%;

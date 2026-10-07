@@ -4,6 +4,7 @@ import { h } from './dom.ts';
 import { registerOverlay } from './overlays.ts';
 
 const APP_TITLE = 'Crackjack';
+let dialogs = 0;
 
 type DialogButton<T> = { label: string; value: T };
 type DialogInput = { type?: string; value?: string; inputmode?: string };
@@ -35,22 +36,27 @@ function open<T>({
       : null;
     const close = (result: T | string | null) => {
       unregister();
+      // Closing hands focus back to whatever had it before.
+      overlay.close();
       overlay.remove();
       resolve(result);
     };
-    // A back request dismisses the dialog as its last button would (Cancel, No, OK).
+    // A back request or Escape dismisses the dialog as its last button would (Cancel, No, OK).
     const dismissed = buttons[buttons.length - 1].value;
-    const unregister = registerOverlay(() => close(dismissed === 'input' ? null : dismissed));
+    const dismiss = () => close(dismissed === 'input' ? null : dismissed);
+    const unregister = registerOverlay(dismiss);
+    const id = `dialog-${++dialogs}`;
+    // A modal <dialog> keeps focus inside and the screens behind it inert.
     const overlay = h(
-      'div',
-      { class: 'dialog-overlay', role: 'dialog', 'aria-modal': 'true' },
+      'dialog',
+      { class: 'dialog-overlay', 'aria-labelledby': `${id}-title`, 'aria-describedby': `${id}-body` },
       h(
         'div',
         { class: 'dialog' },
-        h('div', { class: 'dialog__title' }, title),
+        h('div', { class: 'dialog__title', id: `${id}-title` }, title),
         h(
           'div',
-          { class: 'dialog__body' },
+          { class: 'dialog__body', id: `${id}-body` },
           ...String(message)
             .split('\n')
             .flatMap((line, i) => (i ? [h('br'), line] : [line])),
@@ -69,7 +75,12 @@ function open<T>({
         ),
       ),
     );
+    overlay.addEventListener('cancel', event => {
+      event.preventDefault();
+      dismiss();
+    });
     document.body.append(overlay);
+    overlay.showModal();
     if (field) {
       field.addEventListener('keydown', e => {
         if (e.key === 'Enter') close(field.value);

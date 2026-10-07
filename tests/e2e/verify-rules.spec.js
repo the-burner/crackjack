@@ -54,7 +54,10 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
+      // Only the app's own calls follow the seed: a library's (React makes ids) must not shift it.
+      const libraryRandom = Math.random;
       Math.random = () => {
+        if (!(new Error().stack ?? '').includes('/src/')) return libraryRandom();
         if (queue.length) {
           const want = queue.shift();
           let before = 0;
