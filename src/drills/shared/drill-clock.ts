@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Timing for a drill run: elapsed seconds, the timer-mode display, the alarm,
 // per-test timeouts and repeating intervals — all pausable and cancellable.
 //
@@ -10,20 +9,44 @@ export const TIMER_MODE = {
   countUp: 'countUp',
   countDownHalt: 'countDownHalt',
   infinite: 'infinite',
-};
+} as const;
+export type TimerMode = (typeof TIMER_MODE)[keyof typeof TIMER_MODE];
+
+/** Whatever `setTimer` returns, handed back to `clearTimer`. */
+type TimerId = ReturnType<typeof setTimeout>;
+
+export interface DrillClockOptions {
+  mode: TimerMode;
+  /** Count-down/up limit in seconds (the drill's alarm time). */
+  limit: number;
+  /** Clock in seconds. */
+  now?: () => number;
+  setTimer?: (fn: () => void, ms: number) => TimerId;
+  clearTimer?: (id: TimerId) => void;
+  /** Called once a second while running. */
+  onTick?: () => void;
+  /** Called once when the limit is reached. */
+  onAlarm?: () => void;
+  /** Called when a count-down-and-halt run ends. */
+  onHalt?: () => void;
+}
 
 export class DrillClock {
-  /**
-   * @param {object} o
-   * @param {string} o.mode             A TIMER_MODE.
-   * @param {number} o.limit            Count-down/up limit in seconds (the drill's alarm time).
-   * @param {() => number} [o.now]      Clock in seconds.
-   * @param {(fn: Function, ms: number) => *} [o.setTimer]
-   * @param {(id: *) => void} [o.clearTimer]
-   * @param {() => void} [o.onTick]     Called once a second while running.
-   * @param {() => void} [o.onAlarm]    Called once when the limit is reached.
-   * @param {() => void} [o.onHalt]     Called when a count-down-and-halt run ends.
-   */
+  mode: TimerMode;
+  limit: number;
+  now: () => number;
+  setTimer: (fn: () => void, ms: number) => TimerId;
+  clearTimer: (id: TimerId) => void;
+  onTick?: () => void;
+  onAlarm?: () => void;
+  onHalt?: () => void;
+  startedAt: number | null = null;
+  pausedAt = 0;
+  stoppedElapsed: number | null = null;
+  paused = false;
+  alarmed = false;
+  timers = new Map<string, TimerId>();
+
   constructor({
     mode,
     limit,
@@ -33,7 +56,7 @@ export class DrillClock {
     onTick,
     onAlarm,
     onHalt,
-  }) {
+  }: DrillClockOptions) {
     this.mode = mode;
     this.limit = limit;
     this.now = now;
@@ -42,13 +65,9 @@ export class DrillClock {
     this.onTick = onTick;
     this.onAlarm = onAlarm;
     this.onHalt = onHalt;
-    this.startedAt = null;
-    this.paused = false;
-    this.alarmed = false;
-    this.timers = new Map();
   }
 
-  start() {
+  start(): void {
     this.stoppedElapsed = null;
     this.startedAt = this.now();
     this.alarmed = false;
@@ -57,12 +76,12 @@ export class DrillClock {
   }
 
   /** Whether time is passing: started, not paused and not stopped. */
-  get running() {
+  get running(): boolean {
     return this.startedAt !== null && !this.paused;
   }
 
   /** Seconds since the run started (0 before it starts; frozen once it stops). */
-  get elapsed() {
+  get elapsed(): number {
     if (this.startedAt === null) return this.stoppedElapsed ?? 0;
     return Math.max(0, (this.paused ? this.pausedAt : this.now()) - this.startedAt);
   }
@@ -72,7 +91,7 @@ export class DrillClock {
    * goes below zero: it rounds up (so it reads the full limit at the start and
    * 0 exactly when time runs out) and stays at 0, marked overdue, from then on.
    */
-  display() {
+  display(): { seconds: number; overdue: boolean } {
     if (this.mode === TIMER_MODE.countDown || this.mode === TIMER_MODE.countDownHalt) {
       const left = this.limit - this.elapsed;
       return { seconds: Math.max(0, Math.ceil(left)), overdue: left <= 0 };
@@ -81,14 +100,14 @@ export class DrillClock {
   }
 
   /** Hands (or tests) per minute, to one decimal place. */
-  rate(count) {
+  rate(count: number): number {
     const elapsed = this.elapsed;
     // Under a second the figure is meaningless, and absurdly large.
     if (elapsed < 1) return 0;
     return Math.floor((count / (elapsed / 60)) * 10) / 10;
   }
 
-  scheduleTick() {
+  scheduleTick(): void {
     this.cancel('tick');
     this.timers.set(
       'tick',
@@ -101,7 +120,7 @@ export class DrillClock {
     );
   }
 
-  checkAlarm() {
+  checkAlarm(): void {
     if (this.alarmed) return;
     const elapsed = this.elapsed;
     const reached = this.mode === TIMER_MODE.countUp ? elapsed >= this.limit : this.limit - elapsed < 0;
@@ -113,7 +132,7 @@ export class DrillClock {
   }
 
   /** Runs `fn` after `seconds`, replacing any previous timer with the same name. */
-  after(name, seconds, fn) {
+  after(name: string, seconds: number, fn: () => void): void {
     this.cancel(name);
     // A stopped clock's run is over; a late call must not start it again.
     if (this.startedAt === null) return;
@@ -127,7 +146,7 @@ export class DrillClock {
   }
 
   /** Runs `fn` every `seconds` until cancelled. */
-  every(name, seconds, fn) {
+  every(name: string, seconds: number, fn: () => void): void {
     const tick = () => {
       this.timers.set(
         name,
@@ -142,15 +161,15 @@ export class DrillClock {
     tick();
   }
 
-  cancel(name) {
-    if (this.timers.has(name)) {
-      this.clearTimer(this.timers.get(name));
-      this.timers.delete(name);
-    }
+  cancel(name: string): void {
+    const id = this.timers.get(name);
+    if (id === undefined) return;
+    this.clearTimer(id);
+    this.timers.delete(name);
   }
 
   /** Stops the clock, keeping the elapsed time so it can resume. */
-  pause() {
+  pause(): void {
     if (this.paused || this.startedAt === null) return;
     this.paused = true;
     this.pausedAt = this.now();
@@ -158,15 +177,15 @@ export class DrillClock {
   }
 
   /** Resumes, excluding the paused time from the elapsed total. */
-  resume() {
+  resume(): void {
     if (!this.paused) return;
-    this.startedAt += this.now() - this.pausedAt;
+    this.startedAt = (this.startedAt ?? 0) + this.now() - this.pausedAt;
     this.paused = false;
     this.scheduleTick();
   }
 
   /** Stops the clock; the time it reached stays on display. */
-  stop() {
+  stop(): void {
     [...this.timers.keys()].forEach(name => this.cancel(name));
     if (this.startedAt !== null) this.stoppedElapsed = this.elapsed;
     this.startedAt = null;
@@ -177,7 +196,7 @@ export class DrillClock {
  * Progressive speed: each automatic restart of a run makes it 10% faster.
  * Returns the speed to use for run number `run` (0-based), never below 1.
  */
-export function progressiveSpeed(baseSpeed, run, enabled) {
+export function progressiveSpeed(baseSpeed: number, run: number, enabled: boolean): number {
   if (!enabled || run <= 0) return baseSpeed;
   const speed = baseSpeed * 0.9 ** run;
   return speed < 1 ? 1 : speed;

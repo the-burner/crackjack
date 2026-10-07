@@ -1,9 +1,19 @@
-// @ts-nocheck
 // Discard-tray photographs, used by the Depth and Count drills to show how
 // many decks have been dealt.
 //
 // The photos are stills of real trays at 1/4-deck steps (assets/trays/drill).
 // Each tray style has its own series and crop.
+
+export interface TrayCrop {
+  width: number;
+  height: number;
+}
+
+interface TrayStyle {
+  base: number;
+  crop: TrayCrop;
+  minEmptyPercent: number;
+}
 
 /** Tray styles, in the order the options screen lists them. */
 /**
@@ -12,7 +22,7 @@
  * every picture held a quarter deck more than the drill claimed and the deepest
  * step of two styles fell out of its own series. Corrected here on purpose.
  */
-export const TRAY_STYLES = {
+export const TRAY_STYLES: Readonly<Record<string, TrayStyle>> = {
   eightDeckFront: { base: 303, crop: { width: 201, height: 332 }, minEmptyPercent: 0 },
   sixDeckFront: { base: 351, crop: { width: 201, height: 287 }, minEmptyPercent: 25 },
   doubleDeckFront: { base: 382, crop: { width: 186, height: 182 }, minEmptyPercent: 75 },
@@ -20,10 +30,16 @@ export const TRAY_STYLES = {
   doubleDeckRear: { base: 447, crop: { width: 185, height: 188 }, minEmptyPercent: 75 },
 };
 
-const FALLBACK_STYLE = 'eightDeckFront';
+const FALLBACK_STYLE: TrayStyle = TRAY_STYLES.eightDeckFront;
 const FIRST_IMAGE = 242;
 /** The photos are of an eight-deck tray. */
 const TRAY_CAPACITY_DECKS = 8;
+
+/** A tray photograph and the part of it to show. */
+export interface TrayPhoto {
+  src: string;
+  crop: TrayCrop;
+}
 
 /**
  * Picks the tray photo for `decksInTray`.
@@ -31,12 +47,12 @@ const TRAY_CAPACITY_DECKS = 8;
  * Styles that only fit 2 or 6 decks fall back to the 8-deck tray's series when
  * more decks than they can hold would be shown; the crop stays that of the
  * chosen style.
- * @returns {{src: string, crop: {width: number, height: number}}|null} null when no photo can show that depth.
+ * @returns null when no photo can show that depth.
  */
-export function trayImage(decksInTray, style) {
+export function trayImage(decksInTray: number, style: string): TrayPhoto | null {
   const emptyPercent = (100 / TRAY_CAPACITY_DECKS) * (TRAY_CAPACITY_DECKS - decksInTray);
-  const chosen = TRAY_STYLES[style] ?? TRAY_STYLES[FALLBACK_STYLE];
-  const series = emptyPercent <= chosen.minEmptyPercent ? TRAY_STYLES[FALLBACK_STYLE] : chosen;
+  const chosen = TRAY_STYLES[style] ?? FALLBACK_STYLE;
+  const series = emptyPercent <= chosen.minEmptyPercent ? FALLBACK_STYLE : chosen;
   const quarterDecksInTray = Math.floor((100 - emptyPercent) / (100 / (TRAY_CAPACITY_DECKS * 4)));
   const number = series.base - 2 * quarterDecksInTray;
   if (number < FIRST_IMAGE) return null;
@@ -44,23 +60,24 @@ export function trayImage(decksInTray, style) {
 }
 
 /** The deepest depth a style can show, in decks (used to validate options). */
-export function maxDecksInTray(style) {
+export function maxDecksInTray(style: string): number {
   for (let decks = TRAY_CAPACITY_DECKS; decks > 0; decks -= 0.25) {
     if (trayImage(decks, style)) return decks;
   }
   return 0;
 }
 
-const cache = new Map();
+const cache = new Map<string, HTMLImageElement>();
 
 /** Loads a tray photo (cached). */
-export function loadTrayImage(src) {
-  if (!cache.has(src)) {
-    const img = new Image();
+export function loadTrayImage(src: string): HTMLImageElement {
+  let img = cache.get(src);
+  if (!img) {
+    img = new Image();
     img.src = src;
     cache.set(src, img);
   }
-  return cache.get(src);
+  return img;
 }
 
 /**
@@ -68,7 +85,13 @@ export function loadTrayImage(src) {
  * `thicknessPercent` (100-110) stretches the cards vertically, as thicker cards
  * fill more of the tray.
  */
-export function drawTray(ctx, image, { x, y, width, height }, crop, thicknessPercent = 100) {
+export function drawTray(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  { x, y, width, height }: { x: number; y: number; width: number; height: number },
+  crop: TrayCrop,
+  thicknessPercent = 100,
+): void {
   const sourceHeight = crop.height;
   const scale = Math.min(width / crop.width, height / (sourceHeight * (thicknessPercent / 100)));
   const drawWidth = crop.width * scale;

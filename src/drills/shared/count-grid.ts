@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The 3 x 6 answer grid the Flash index test, the Count drill and the Full
 // table drill share.
 //
@@ -8,6 +7,7 @@
 // point.
 
 import { numberGrid, windowContaining } from './answer-grid.ts';
+import type { AnswerGrid } from './answer-grid.ts';
 import { mixedNumber } from './format.ts';
 
 const GRID_ROWS = 3;
@@ -17,7 +17,7 @@ const GRID_SIZE = GRID_ROWS * GRID_COLUMNS;
 export const INITIAL_WINDOW = -8;
 
 /** A grid of the 18 indices starting at `lowest`, lowest at the bottom left. */
-export function countGrid(lowest, format = String) {
+export function countGrid(lowest: number, format: (index: number) => string = String): AnswerGrid {
   return numberGrid({ rows: GRID_ROWS, columns: GRID_COLUMNS, lowest, format });
 }
 
@@ -25,9 +25,9 @@ export function countGrid(lowest, format = String) {
  * Moves the visible window (in steps of 9) until it contains `index`.
  * The window keeps its new position for later tests.
  */
-export function countWindow(index, lowest) {
+export function countWindow(index: number, lowest: number): number {
   return windowContaining(index, lowest, GRID_SIZE);
 }
 
 /** Label for an index that counts half a point: 5 -> "2½", -1 -> "-½". */
-export const halfStepLabel = index => mixedNumber(index / 2);
+export const halfStepLabel = (index: number): string => mixedNumber(index / 2);

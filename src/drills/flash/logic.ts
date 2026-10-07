@@ -1,16 +1,68 @@
-// @ts-nocheck
 // Flash drills: which hands to drill, how to deal one, and what the correct
 // play is. No DOM, no timers — the screen drives all of this.
 
 import { cardId, handTotals, valueName } from '../../core/cards.ts';
+import type { CardId } from '../../core/cards.ts';
 import { randomInt, shuffle } from '../../core/random.ts';
+import type { Random } from '../../core/random.ts';
 import { NEVER, ALWAYS, TABLE_NAMES } from '../../core/strategy/strategy-file.ts';
+import type { TableName } from '../../core/strategy/strategy-file.ts';
 import { advisePlay, ACTION, SECTION, PROBE, NO_INDEX_MARKER } from '../../core/strategy/advisor.ts';
+import type { Action, PlayAdvice, PlayContext, PlayHand, Probe, Section } from '../../core/strategy/advisor.ts';
+import type { CustomMask, Strategy } from '../../core/strategy/strategy-tables.ts';
+import type { Tallies, TallyCell } from '../../services/error-tallies.ts';
+
+/** A kind of hand a drill can ask about; also the name of its strategy table. */
+export type Situation = TableName;
+/** Which situations are selected. */
+export type Situations = Record<Situation, boolean>;
+/** The 'drills.flash.hands' choices. */
+export type HandList = 'default' | 'illustrious18' | 'withIndices' | 'drillErrors' | 'custom' | 'roundRobin';
+
+/** One hand of a hand list: a situation's table row against a dealer upcard. */
+export interface Entry {
+  kind: Situation;
+  /** Dealer upcard 1..10 (ace = 1). */
+  upcard: number;
+  /** The hand value the table row stands for. */
+  value: number;
+  /** Round Robin: every situation this hand stands for. */
+  kinds?: Situation[];
+}
+
+/** A dealt hand. */
+export interface FlashHand {
+  entry: Entry;
+  kind: Situation;
+  upcard: number;
+  upcardId: CardId;
+  /** Card values (ace = 1). */
+  cards: number[];
+  cardIds: CardId[];
+  total: number;
+  hardTotal: number;
+  soft: boolean;
+  cardCount: number;
+}
+
+/** Where an error is filed in the strategy tables. */
+export interface ErrorCell {
+  table: Situation;
+  row: number;
+  column: number;
+}
 
 /** The six kinds of hand a drill can ask about; the keys are also the strategy table names. */
-export const SITUATIONS = ['hardStand', 'softStand', 'hardDouble', 'softDouble', 'split', 'surrender'];
+export const SITUATIONS: readonly Situation[] = [
+  'hardStand',
+  'softStand',
+  'hardDouble',
+  'softDouble',
+  'split',
+  'surrender',
+];
 
-export const SITUATION_LABELS = {
+export const SITUATION_LABELS: Readonly<Record<Situation, string>> = {
   hardStand: 'Hard H/S',
   softStand: 'Soft H/S',
   hardDouble: 'Hard DD',
@@ -20,7 +72,7 @@ export const SITUATION_LABELS = {
 };
 
 /** Rows of each table, top to bottom, as the hand value the row stands for. */
-const TABLE_ROWS = {
+const TABLE_ROWS: Readonly<Record<Situation, readonly number[]>> = {
   hardStand: [17, 16, 15, 14, 13, 12, 11, 10],
   hardDouble: [11, 10, 9, 8, 7, 6, 5],
   split: [1, 10, 9, 8, 7, 6, 5, 4, 3, 2],
@@ -30,22 +82,25 @@ const TABLE_ROWS = {
 };
 
 /** The order the tables are scanned in when building a hand list. */
-const SCAN_ORDER = ['hardStand', 'hardDouble', 'split', 'surrender', 'softStand', 'softDouble'];
+const SCAN_ORDER: readonly Situation[] = ['hardStand', 'hardDouble', 'split', 'surrender', 'softStand', 'softDouble'];
 
 /** Table row for a list entry. */
-export const rowOf = ({ kind, value }) => TABLE_ROWS[kind].indexOf(value);
+export const rowOf = ({ kind, value }: Pick<Entry, 'kind' | 'value'>): number => TABLE_ROWS[kind].indexOf(value);
 /** Table column for a dealer upcard 1..10 (ace = 1). */
-export const columnOf = upcard => (upcard === 1 ? 9 : upcard - 2);
+export const columnOf = (upcard: number): number => (upcard === 1 ? 9 : upcard - 2);
 /** Dealer upcard 1..10 for a table column. */
-export const upcardOf = column => (column === 9 ? 1 : column + 2);
+export const upcardOf = (column: number): number => (column === 9 ? 1 : column + 2);
 
-const entry = (kind, upcard, value) => ({ kind, upcard, value });
+const entry = (kind: Situation, upcard: number, value: number): Entry => ({ kind, upcard, value });
 
-/**
- * The 127 "Default Hands", weighted by repetition.
- * Each line is one dealer upcard and the hand values drilled against it.
- */
-const DEFAULT_HANDS = [
+/** Hand values drilled against each dealer upcard, per situation. */
+type HandGroups = readonly (readonly [Situation, readonly (readonly [number, readonly number[]])[]])[];
+
+const DEFAULT_HAND_GROUPS: HandGroups = [
+  /**
+   * The 127 "Default Hands", weighted by repetition.
+   * Each line is one dealer upcard and the hand values drilled against it.
+   */
   [
     'hardStand',
     [
@@ -112,10 +167,13 @@ const DEFAULT_HANDS = [
       [1, [8, 7]],
     ],
   ],
-].flatMap(([kind, byUpcard]) => byUpcard.flatMap(([upcard, values]) => values.map(v => entry(kind, upcard, v))));
+];
+const DEFAULT_HANDS = DEFAULT_HAND_GROUPS.flatMap(([kind, byUpcard]) =>
+  byUpcard.flatMap(([upcard, values]) => values.map(v => entry(kind, upcard, v))),
+);
 
 /** The Illustrious 18 playing indices (insurance is not a playing decision). */
-const ILLUSTRIOUS_18_HANDS = [
+const ILLUSTRIOUS_18_HANDS: Entry[] = [
   ...[
     [2, 13],
     [2, 12],
@@ -142,17 +200,20 @@ const ILLUSTRIOUS_18_HANDS = [
 ];
 
 /** Hand lists that are not built from the strategy tables. */
-const FIXED_LISTS = { default: DEFAULT_HANDS, illustrious18: ILLUSTRIOUS_18_HANDS };
+const FIXED_LISTS: Readonly<Record<'default' | 'illustrious18', Entry[]>> = {
+  default: DEFAULT_HANDS,
+  illustrious18: ILLUSTRIOUS_18_HANDS,
+};
 
 /** A strategy cell holds an index (rather than "always" or "never"). */
-const hasIndex = value => value !== ALWAYS && value !== NEVER;
+const hasIndex = (value: number): boolean => value !== ALWAYS && value !== NEVER;
 
 /**
  * Scans the strategy tables (column by column) and keeps
  * the cells `keep(table, row, column)` accepts.
  */
-function scanTables(situations, keep) {
-  const list = [];
+function scanTables(situations: Situations, keep: (table: Situation, row: number, column: number) => boolean): Entry[] {
+  const list: Entry[] = [];
   for (const kind of SCAN_ORDER) {
     if (!situations[kind]) continue;
     for (let column = 0; column < 10; column++) {
@@ -165,7 +226,7 @@ function scanTables(situations, keep) {
 }
 
 /** Which kind of player hand each situation's rows stand for. */
-const HAND_TYPE = {
+const HAND_TYPE: Readonly<Record<Situation, 'hard' | 'soft' | 'pair'>> = {
   hardStand: 'hard',
   hardDouble: 'hard',
   surrender: 'hard',
@@ -180,10 +241,9 @@ const HAND_TYPE = {
  * hard 10 v 10 appears once even though Hard H/S and Hard DD both have it, and
  * the entry remembers both (`kinds`), so either may be dealt. A pair is its own
  * hand, so 5,5 v 10 is separate from hard 10 v 10.
- * @returns {{kind: string, kinds: string[], upcard: number, value: number}[]}
  */
-export function roundRobinEntries(situations) {
-  const byHand = new Map();
+export function roundRobinEntries(situations: Situations): (Entry & { kinds: Situation[] })[] {
+  const byHand = new Map<string, Entry & { kinds: Situation[] }>();
   for (const e of scanTables(situations, () => true)) {
     const key = `${HAND_TYPE[e.kind]} ${e.value} ${e.upcard}`;
     const found = byHand.get(key);
@@ -198,14 +258,17 @@ export function roundRobinEntries(situations) {
  * random order. A new round never begins with the hand the last one ended on.
  */
 export class RoundRobin {
-  constructor(entries, random) {
+  entries: readonly Entry[];
+  random: Random;
+  queue: Entry[] = [];
+  last: Entry | null = null;
+
+  constructor(entries: readonly Entry[], random: Random) {
     this.entries = entries;
     this.random = random;
-    this.queue = [];
-    this.last = null;
   }
 
-  next() {
+  next(): Entry | null {
     if (this.queue.length === 0) {
       this.queue = shuffle(this.entries.slice(), this.random);
       // Taken from the end, so the first one dealt is the last element.
@@ -218,13 +281,13 @@ export class RoundRobin {
   }
 
   /** Whether the hand last dealt was the last of its round. */
-  get endsRound() {
+  get endsRound(): boolean {
     return this.last !== null && this.queue.length === 0;
   }
 }
 
 /** Message shown when the chosen hand list turns out to be empty. */
-const EMPTY_LIST_MESSAGES = {
+const EMPTY_LIST_MESSAGES: Readonly<Record<'withIndices' | 'drillErrors' | 'custom', string>> = {
   withIndices: 'You have an INDEXES option set. There are no indexes for the situations specified.',
   drillErrors: 'You have an ERRORS option set. There have been no errors of the type and situation specified.',
   custom: 'You have CUSTOM hands set. Use the Select button to choose the hands to be tested.',
@@ -232,28 +295,36 @@ const EMPTY_LIST_MESSAGES = {
 
 /**
  * The hands a drill will ask about.
- * @param {object} o
- * @param {string} o.hands        A 'drills.flash.hands' value.
- * @param {Record<string, boolean>} o.situations
- * @param {object} o.strategy     Built strategy (for the index tables).
- * @param {object} [o.customMask] Per-table boolean grids of hands the user picked.
- * @param {object} [o.tallies]    Per-table error counts (for 'drillErrors').
- * @returns {{entries: object[], error: string|null}}
+ * @param o.strategy    Built strategy (for the index tables).
+ * @param o.customMask  Per-table boolean grids of hands the user picked.
+ * @param o.tallies     Per-table error counts (for 'drillErrors').
  */
-export function buildHandList({ hands, situations, strategy, customMask, tallies }) {
-  if (FIXED_LISTS[hands]) return { entries: FIXED_LISTS[hands], error: null };
+export function buildHandList({
+  hands,
+  situations,
+  strategy,
+  customMask,
+  tallies,
+}: {
+  hands: HandList;
+  situations: Situations;
+  strategy: Pick<Strategy, 'tables'>;
+  customMask?: CustomMask;
+  tallies?: Tallies;
+}): { entries: Entry[]; error: string | null } {
+  if (hands === 'default' || hands === 'illustrious18') return { entries: FIXED_LISTS[hands], error: null };
   if (hands === 'roundRobin') return { entries: roundRobinEntries(situations), error: null };
   const keep = {
-    withIndices: (table, row, column) => hasIndex(strategy.tables[table][row][column]),
-    drillErrors: (table, row, column) => (tallies?.[table]?.[row][column] ?? 0) !== 0,
-    custom: (table, row, column) => Boolean(customMask?.[table]?.[row][column]),
+    withIndices: (table: Situation, row: number, column: number) => hasIndex(strategy.tables[table][row][column]),
+    drillErrors: (table: Situation, row: number, column: number) => (tallies?.[table]?.[row][column] ?? 0) !== 0,
+    custom: (table: Situation, row: number, column: number) => Boolean(customMask?.[table]?.[row][column]),
   }[hands];
   const entries = scanTables(situations, keep);
   return { entries, error: entries.length ? null : EMPTY_LIST_MESSAGES[hands] };
 }
 
 /** Picks the random extra ranks that fill a hand up to its total. */
-function randomRank(maxCards, random) {
+function randomRank(maxCards: number, random: Random): number {
   if (maxCards !== 5) return randomInt(10, random);
   // With five cards J/Q/K are re-mapped onto 2/3/4, favouring small cards.
   const rank = randomInt(13, random);
@@ -263,9 +334,9 @@ function randomRank(maxCards, random) {
 /**
  * Builds a hand of card values summing to `total`, starting with `first`.
  * Hands of 21, soft 21 and pairs of more than two cards are rejected.
- * @returns {number[]|null} card values (ace = 1), 2..maxCards of them
+ * @returns card values (ace = 1), 2..maxCards of them
  */
-export function fillHand(first, total, maxCards, random) {
+export function fillHand(first: number, total: number, maxCards: number, random: Random): number[] | null {
   for (let attempt = 0; attempt < 300; attempt++) {
     const cards = [first];
     let sum = first;
@@ -297,8 +368,8 @@ export function fillHand(first, total, maxCards, random) {
 }
 
 /** Card values of one hand of the given kind, or null when none could be built. */
-function handValues(e, { maxCards, doubleAnyCards }, random) {
-  const swapAceToSecond = cards => (random() > 0.5 ? [cards[1], cards[0], ...cards.slice(2)] : cards);
+function handValues(e: Entry, { maxCards, doubleAnyCards }: DealOptions, random: Random): number[] | null {
+  const swapAceToSecond = (cards: number[]) => (random() > 0.5 ? [cards[1], cards[0], ...cards.slice(2)] : cards);
   switch (e.kind) {
     case 'hardStand':
       return fillHand(2 + randomInt(9, random), e.value, maxCards, random);
@@ -324,8 +395,8 @@ function handValues(e, { maxCards, doubleAnyCards }, random) {
 }
 
 /** Card ids for a list of card values: a random suit each, tens becoming 10/J/Q/K. */
-function dealCardIds(values, random) {
-  const ids = [];
+function dealCardIds(values: readonly number[], random: Random): CardId[] {
+  const ids: CardId[] = [];
   for (const value of values) {
     const rank = value === 10 ? 10 + randomInt(4, random) : value;
     let id = cardId(rank, randomInt(4, random));
@@ -336,14 +407,19 @@ function dealCardIds(values, random) {
   return ids;
 }
 
+/** What dealing a hand needs to know. */
+export interface DealOptions {
+  maxCards: number;
+  doubleAnyCards: boolean;
+  situations: Situations;
+}
+
 /**
  * Deals one hand for the drill.
- * @param {object[]} list    Hand list from buildHandList().
- * @param {object} options   {maxCards, doubleAnyCards, situations}
- * @param {() => number} random
- * @returns {object|null} the hand, or null when no hand could be dealt
+ * @param list  Hand list from buildHandList().
+ * @returns the hand, or null when no hand could be dealt
  */
-export function dealHand(list, options, random) {
+export function dealHand(list: readonly Entry[], options: DealOptions, random: Random): FlashHand | null {
   for (let attempt = 0; attempt < 300; attempt++) {
     const picked = list[randomInt(list.length, random)];
     // A Round Robin entry may stand for several situations; deal one of those
@@ -376,7 +452,7 @@ export function dealHand(list, options, random) {
 }
 
 /** The hand as the advisor wants it. */
-const advisorHand = hand => ({
+const advisorHand = (hand: FlashHand): PlayHand => ({
   total: hand.total,
   hardTotal: hand.hardTotal,
   card1: hand.cards[0],
@@ -385,7 +461,12 @@ const advisorHand = hand => ({
   cardIds: hand.cardIds,
 });
 
-const advisorContext = (hand, trueCount, allowed, probe) => ({
+const advisorContext = (
+  hand: FlashHand,
+  trueCount: number,
+  allowed: PlayContext['allowed'],
+  probe: Probe,
+): PlayContext => ({
   upcard: hand.upcard,
   trueCount,
   runningCount: trueCount,
@@ -396,7 +477,7 @@ const advisorContext = (hand, trueCount, allowed, probe) => ({
 });
 
 /** Only the hand's own situation is allowed, so its own table decides. */
-function ownSituation(kind) {
+function ownSituation(kind: Situation): PlayContext['allowed'] {
   return {
     double: kind === 'hardDouble',
     softDouble: kind === 'softDouble',
@@ -405,7 +486,7 @@ function ownSituation(kind) {
   };
 }
 
-const allowedFrom = situations => ({
+const allowedFrom = (situations: Situations): PlayContext['allowed'] => ({
   double: situations.hardDouble,
   softDouble: situations.softDouble,
   split: situations.split,
@@ -413,7 +494,10 @@ const allowedFrom = situations => ({
 });
 
 /** The index the hand's own tables hold, before the grid range is applied. */
-function rawIndex(strategy, hand, situations) {
+/** What finding a hand's play needs of the strategy. */
+type PlayStrategy = Pick<Strategy, 'tables' | 'extended' | 'earlySurrender'>;
+
+function rawIndex(strategy: PlayStrategy, hand: FlashHand, situations: Situations): number | null {
   const probe = advisePlay(
     strategy,
     advisorHand(hand),
@@ -432,31 +516,47 @@ function rawIndex(strategy, hand, situations) {
 }
 
 /** An index far outside any count a player could hold is no use as an answer. */
-const inRange = index => (index !== null && Math.abs(index) <= 150 ? index : null);
+const inRange = (index: number | null): number | null => (index !== null && Math.abs(index) <= 150 ? index : null);
 
 /**
  * The hand's own playing index: the count at which its basic play changes, or
  * null when it has none (so the index test must not ask about it).
  */
-export const ownIndex = (strategy, hand, situations) => inRange(rawIndex(strategy, hand, situations));
+export const ownIndex = (strategy: PlayStrategy, hand: FlashHand, situations: Situations): number | null =>
+  inRange(rawIndex(strategy, hand, situations));
 
 /** `ownIndex`, falling back to the insurance index as the original app did. */
-export function handIndex(strategy, hand, situations) {
+export function handIndex(
+  strategy: PlayStrategy & Pick<Strategy, 'insurance'>,
+  hand: FlashHand,
+  situations: Situations,
+): number | null {
   return inRange(rawIndex(strategy, hand, situations) ?? strategy.insurance / 10);
 }
 
 /** Where the "Random" count sits for a hand with no index: zero, or the pivot. */
-export const countCentre = strategy => (strategy.unbalanced ? strategy.realPivot : 0);
+export const countCentre = (strategy: Pick<Strategy, 'unbalanced' | 'realPivot'>): number =>
+  strategy.unbalanced ? strategy.realPivot : 0;
 
 /**
  * The count to show with a hand.
- * @param {object} o
- * @param {string} o.countMode  zero | fixed | random | indexTest
- * @param {number} o.fixedCount
- * @param {number|null} o.index The hand's own playing index.
- * @param {number} [o.centre]   Where to sit when the hand has no index.
+ * @param o.index   The hand's own playing index.
+ * @param o.centre  Where to sit when the hand has no index.
  */
-export function countForHand({ countMode, fixedCount, index, centre = 0 }, random) {
+export function countForHand(
+  {
+    countMode,
+    fixedCount,
+    index,
+    centre = 0,
+  }: {
+    countMode: 'zero' | 'fixed' | 'random' | 'indexTest';
+    fixedCount: number;
+    index: number | null;
+    centre?: number;
+  },
+  random: Random,
+): number {
   if (countMode === 'fixed') return fixedCount;
   if (countMode !== 'random') return 0;
   // A count near the hand's own index, so the decision is actually in doubt.
@@ -470,9 +570,17 @@ export function countForHand({ countMode, fixedCount, index, centre = 0 }, rando
  * The strategy-correct action for a hand at the shown count.
  * Only the situations the user enabled are allowed, so turning Splits off makes
  * Stand the right answer for 8,8.
- * @returns {{action: number, section: number, row: number, sectionRows: object}}
  */
-export function correctPlay(strategy, hand, { count, situations, doubleAnyCards, splitAlwaysAllowed = false }) {
+export function correctPlay(
+  strategy: PlayStrategy,
+  hand: FlashHand,
+  {
+    count,
+    situations,
+    doubleAnyCards,
+    splitAlwaysAllowed = false,
+  }: { count: number; situations: Situations; doubleAnyCards: boolean; splitAlwaysAllowed?: boolean },
+): PlayAdvice {
   const allowed = { ...allowedFrom(situations), split: situations.split || splitAlwaysAllowed };
   if (hand.cardCount === 2) {
     return advisePlay(strategy, advisorHand(hand), advisorContext(hand, count, allowed, PROBE.none));
@@ -490,14 +598,14 @@ export function correctPlay(strategy, hand, { count, situations, doubleAnyCards,
 }
 
 /** Section (strategy table) an action belongs to, so an error can be filed. */
-function sectionForAction(action, soft) {
+function sectionForAction(action: Action, soft: boolean): Section {
   if (action === ACTION.surrender) return SECTION.surrender;
   if (action === ACTION.split) return SECTION.split;
   if (action === ACTION.double) return soft ? SECTION.softDouble : SECTION.hardDouble;
   return soft ? SECTION.softStand : SECTION.hardStand;
 }
 
-const SECTION_TABLES = {
+const SECTION_TABLES: Readonly<Partial<Record<Section, Situation>>> = {
   [SECTION.surrender]: 'surrender',
   [SECTION.split]: 'split',
   [SECTION.softDouble]: 'softDouble',
@@ -510,10 +618,13 @@ const SECTION_TABLES = {
  * Where an error belongs in the strategy tables: it is filed under
  * the earlier of the two tables involved (the one the player's action would
  * have come from, or the one that decided), which is the more basic decision.
- * @returns {{table: string, row: number, column: number}|null}
  */
-export function errorCell(play, action, hand) {
-  let section = play.section;
+export function errorCell(
+  play: Pick<PlayAdvice, 'section' | 'row' | 'sectionRows'>,
+  action: Action | null,
+  hand: Pick<FlashHand, 'soft' | 'upcard'>,
+): ErrorCell | null {
+  let section: Section = play.section;
   let row = play.row;
   if (action !== null) {
     const userSection = sectionForAction(action, hand.soft);
@@ -528,12 +639,12 @@ export function errorCell(play, action, hand) {
   return { table, row, column: columnOf(hand.upcard) };
 }
 
-export const ACTION_LABELS = ['Hit', 'Stand', 'Double', 'Split', 'Surrender'];
+export const ACTION_LABELS: Readonly<Record<Action, string>> = ['Hit', 'Stand', 'Double', 'Split', 'Surrender'];
 
-const cardName = value => (value === 1 ? 'Ace' : valueName(value));
+const cardName = (value: number): string => (value === 1 ? 'Ace' : valueName(value));
 
 /** "Soft 18 (Ace, 7)" / "Hard 16 (Pair of 8s)" / "Hard 15" */
-export function describeHand(hand) {
+export function describeHand(hand: Pick<FlashHand, 'soft' | 'cardCount' | 'cards' | 'total'>): string {
   const kind = hand.soft ? 'Soft' : 'Hard';
   if (hand.cardCount === 2 && hand.cards[0] === hand.cards[1]) {
     return `${kind} ${hand.total} (Pair of ${cardName(hand.cards[0])}s)`;
@@ -543,7 +654,7 @@ export function describeHand(hand) {
 }
 
 /** Cells that have recorded errors, as hand-list entries (for the options screen). */
-export function errorCellsAsHands(cells) {
+export function errorCellsAsHands(cells: readonly TallyCell[]): (Entry & { count: number })[] {
   return cells
     .filter(c => TABLE_NAMES.includes(c.table) && c.row < TABLE_ROWS[c.table].length)
     .map(c => ({ ...entry(c.table, upcardOf(c.column), TABLE_ROWS[c.table][c.row]), count: c.count }));
@@ -552,13 +663,15 @@ export function errorCellsAsHands(cells) {
 /**
  * Statistics for the Error History screen, from error-tally cells: each hand's
  * and each situation's share of all recorded errors, most-missed first.
- * @returns {{total: number, hands: {entry: object, count: number, share: number}[],
- *   situations: {kind: string, label: string, count: number, share: number}[]}}
  */
-export function errorSummary(cells) {
+export function errorSummary(cells: readonly TallyCell[]): {
+  total: number;
+  hands: { entry: Entry; count: number; share: number }[];
+  situations: { kind: Situation; label: string; count: number; share: number }[];
+} {
   const entries = errorCellsAsHands(cells);
   const total = entries.reduce((sum, e) => sum + e.count, 0);
-  const share = count => (total ? count / total : 0);
+  const share = (count: number) => (total ? count / total : 0);
   const hands = entries
     .map(e => ({ entry: e, count: e.count, share: share(e.count) }))
     .sort((a, b) => b.count - a.count);
@@ -572,10 +685,10 @@ export function errorSummary(cells) {
 }
 
 /** A share as a whole percentage: 0.4 -> "40%", tiny shares -> "<1%". */
-export const percent = share => (share > 0 && share < 0.005 ? '<1%' : `${Math.round(share * 100)}%`);
+export const percent = (share: number): string => (share > 0 && share < 0.005 ? '<1%' : `${Math.round(share * 100)}%`);
 
 /** "Hard 16 v 10" for a hand-list entry. */
-export function describeEntry(e) {
+export function describeEntry(e: Pick<Entry, 'kind' | 'value' | 'upcard'>): string {
   const hand =
     e.kind === 'split'
       ? `Pair of ${valueName(e.value)}s`

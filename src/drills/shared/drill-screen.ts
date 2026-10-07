@@ -1,34 +1,91 @@
-// @ts-nocheck
 // The common shell of a drill play screen: green felt, a display area, the
 // stats panel, the Pause / Restart buttons and the opening countdown.
 //
 // A drill supplies callbacks; the shell owns the layout and the counters.
 
 import { h, replaceChildren } from '../../ui/dom.ts';
+import type { Children } from '../../ui/dom.ts';
 import { button } from '../../ui/components.ts';
+import type { App, Screen } from '../../app/app.ts';
 import { DrillScore } from './scoring.ts';
 import { DrillClock } from './drill-clock.ts';
+import type { TimerMode } from './drill-clock.ts';
 import { clockTime } from './format.ts';
 
-/**
- * @param {object} app
- * @param {object} o
- * @param {string} o.title
- * @param {string} o.help                 Help topic.
- * @param {string} o.countLabel           "Hands" or "Tests".
- * @param {string} [o.className]          Extra class on the screen element.
- * @param {boolean} [o.pausable]
- * @param {(shell: DrillShell) => void} o.onStart    Begins a fresh run.
- * @param {(shell: DrillShell) => void} [o.onStop]
- * @param {(shell: DrillShell) => void} [o.onLayout] Called when the size changes.
- * @param {(shell: DrillShell) => void} [o.onPause]
- * @param {(shell: DrillShell) => void} [o.onResume]
- * @param {(score: DrillScore) => string} [o.accuracyText]  Text of the accuracy cell
- *   (the Flash drill hides the accuracy until the end in some test modes).
- * @param {(score: DrillScore) => string} [o.countText]  Text of the count cell.
- */
+export interface DrillShellOptions {
+  title: string;
+  /** Help topic. */
+  help: string;
+  /** "Hands" or "Tests". */
+  countLabel: string;
+  /** Extra class on the screen element. */
+  className?: string;
+  pausable?: boolean;
+  /** Begins a fresh run. */
+  onStart: (shell: DrillShell) => void;
+  onStop?: (shell: DrillShell) => void;
+  /** Called when the size changes. */
+  onLayout?: (shell: DrillShell) => void;
+  onPause?: (shell: DrillShell) => void;
+  onResume?: (shell: DrillShell) => void;
+  /** Text of the accuracy cell (the Flash drill hides the accuracy until the end in some test modes). */
+  accuracyText?: (score: DrillScore) => string;
+  /** Text of the count cell. */
+  countText?: (score: DrillScore) => string;
+}
+
+/** What `drillShell` builds: the screen element and the run controls a drill drives. */
+export interface DrillShell {
+  readonly el: HTMLElement;
+  readonly app: App;
+  readonly score: DrillScore;
+  /** The drill's own area, between the title bar and the stats panel. */
+  readonly display: HTMLDivElement;
+  /** The column holding display, stats and controls; drills append their answer area to it. */
+  readonly body: HTMLDivElement;
+  /** The Pause / Restart row; drills may add buttons of their own. */
+  readonly controls: HTMLDivElement;
+  readonly message: HTMLDivElement;
+  paused: boolean;
+  /** The current run number; used for progressive speed. */
+  run: number;
+  /** The current run's clock (see `drillClockFor`); null before the first run. */
+  clock: DrillClock | null;
+  /** Replaces the display area's contents. */
+  setDisplay(...children: Children[]): void;
+  /** Shows a message under the display area (cleared by `clearMessage`). */
+  setMessage(text: string): void;
+  clearMessage(): void;
+  /** Refreshes the stats panel. */
+  updateStats(clock: DrillClock | null): void;
+  /** Shows a "2, 1" countdown, then calls `then`. */
+  countdown(then: () => void): void;
+  /** Runs the opening countdown, then starts the drill. Pause waits for the start, as on Restart. */
+  begin(): void;
+  start(): void;
+  /** Ends the current run and starts a new one after the same countdown as Launch. */
+  restart(): void;
+  /** Ends the run and shows a closing message. */
+  finish(text?: string): void;
+  /** Pauses, or resumes after a countdown (the drill stays paused until it ends). */
+  togglePause(): void;
+  /**
+   * Another screen covered the drill (Help, say), so time must stop: the drill
+   * pauses as if the player had, and `resumeIfSuspended` picks it back up.
+   */
+  suspend(): void;
+  /** Picks the drill back up after `suspend`, counting down first; returns whether it had been suspended. */
+  resumeIfSuspended(): boolean;
+  destroy(): void;
+  /**
+   * The drill's Screen: the first show runs `onFirstShow` and begins the
+   * drill; later shows resume a suspended run and call `redraw`.
+   */
+  screen(o: { redraw: () => void; onFirstShow?: () => void }): Screen;
+}
+
 export function drillShell(
-  app,
+  app: App,
   {
     title,
     help,
@@ -42,13 +99,14 @@ export function drillShell(
     onResume,
     accuracyText = score => `Accuracy: ${score.accuracy}%`,
     countText = score => `${countLabel}: ${score.tests}`,
-  },
-) {
+  }: DrillShellOptions,
+): DrillShell {
   const score = new DrillScore();
   /** Paused because another screen covered the drill, rather than by the player. */
   let suspended = false;
   /** What the running countdown will do when it finishes, so it can be restarted. */
-  let pendingThen = null;
+  let pendingThen: (() => void) | null = null;
+  let countdownTimer: ReturnType<typeof setTimeout> | undefined;
   const display = h('div', { class: 'drill__display' });
   const message = h('div', { class: 'drill__message' });
   const statsCells = {
@@ -89,28 +147,24 @@ export function drillShell(
   );
   display.append(countdown);
 
-  /** @typedef {object} DrillShell */
-  const shell = {
+  let started = false;
+
+  const shell: DrillShell = {
     el,
     app,
     score,
-    /** The drill's own area, between the title bar and the stats panel. */
     display,
-    /** The column holding display, stats and controls; drills append their answer area to it. */
     body,
-    /** The Pause / Restart row; drills may add buttons of their own. */
     controls,
     message,
     paused: false,
-    /** The current run number; used for progressive speed. */
     run: 0,
+    clock: null,
 
-    /** Replaces the display area's contents. */
     setDisplay(...children) {
       replaceChildren(display, ...children, countdown);
     },
 
-    /** Shows a message under the display area (cleared by `clearMessage`). */
     setMessage(text) {
       message.textContent = text;
     },
@@ -119,7 +173,6 @@ export function drillShell(
       message.textContent = '';
     },
 
-    /** Refreshes the stats panel. `clock` is a DrillClock. */
     updateStats(clock) {
       statsCells.count.textContent = countText(score);
       statsCells.accuracy.textContent = accuracyText(score);
@@ -131,9 +184,8 @@ export function drillShell(
       }
     },
 
-    /** Shows a "2, 1" countdown, then calls `then`. */
     countdown(then) {
-      clearTimeout(shell.countdownTimer);
+      clearTimeout(countdownTimer);
       pendingThen = then;
       let remaining = 2;
       countdown.textContent = String(remaining);
@@ -142,24 +194,23 @@ export function drillShell(
         remaining -= 1;
         if (remaining > 0) {
           countdown.textContent = String(remaining);
-          shell.countdownTimer = setTimeout(tick, 1000);
+          countdownTimer = setTimeout(tick, 1000);
           return;
         }
         countdown.hidden = true;
         pendingThen = null;
         then();
       };
-      shell.countdownTimer = setTimeout(tick, 1000);
+      countdownTimer = setTimeout(tick, 1000);
     },
 
-    /** Runs the opening countdown, then starts the drill. Pause waits for the start, as on Restart. */
     begin() {
       if (pauseButton) pauseButton.disabled = true;
       shell.countdown(() => shell.start());
     },
 
     start() {
-      clearTimeout(shell.countdownTimer);
+      clearTimeout(countdownTimer);
       countdown.hidden = true;
       if (pauseButton) pauseButton.disabled = false;
       score.reset();
@@ -170,7 +221,6 @@ export function drillShell(
       shell.updateStats(shell.clock);
     },
 
-    /** Ends the current run and starts a new one after the same countdown as Launch. */
     restart() {
       onStop?.(shell);
       shell.run = 0;
@@ -182,14 +232,12 @@ export function drillShell(
       shell.countdown(() => shell.start());
     },
 
-    /** Ends the run and shows a closing message. */
     finish(text = '') {
       onStop?.(shell);
       if (pauseButton) pauseButton.disabled = true;
       if (text) shell.setMessage(text);
     },
 
-    /** Pauses, or resumes after a countdown (the drill stays paused until it ends). */
     togglePause() {
       if (shell.paused) {
         if (pauseButton) pauseButton.disabled = true;
@@ -210,14 +258,10 @@ export function drillShell(
       shell.updateStats(shell.clock);
     },
 
-    /**
-     * Another screen covered the drill (Help, say), so time must stop: the drill
-     * pauses as if the player had, and `resumeIfSuspended` picks it back up.
-     */
     suspend() {
       if (suspended) return;
       if (pendingThen) {
-        clearTimeout(shell.countdownTimer);
+        clearTimeout(countdownTimer);
         countdown.hidden = true;
         suspended = true;
         return;
@@ -231,10 +275,6 @@ export function drillShell(
       shell.updateStats(shell.clock);
     },
 
-    /**
-     * Picks the drill back up after `suspend`, counting down first.
-     * @returns {boolean} whether it had been suspended.
-     */
     resumeIfSuspended() {
       if (!suspended) return false;
       suspended = false;
@@ -244,9 +284,27 @@ export function drillShell(
     },
 
     destroy() {
-      clearTimeout(shell.countdownTimer);
+      clearTimeout(countdownTimer);
       onStop?.(shell);
       observer.disconnect();
+    },
+
+    screen({ redraw, onFirstShow }) {
+      return {
+        el,
+        onShow() {
+          if (started) {
+            shell.resumeIfSuspended();
+            redraw();
+            return;
+          }
+          started = true;
+          onFirstShow?.();
+          shell.begin();
+        },
+        onHide: () => shell.suspend(),
+        destroy: () => shell.destroy(),
+      };
     },
   };
 
@@ -259,10 +317,11 @@ export function drillShell(
 /**
  * The clock for one run of a drill: ticks the stats panel once a second, beeps
  * at the alarm time and, in "count down and halt" mode, ends the run.
- * @param {DrillShell} shell
- * @param {{mode: string, limit: number, onHalt?: () => void}} o
  */
-export function drillClockFor(shell, { mode, limit, onHalt }) {
+export function drillClockFor(
+  shell: DrillShell,
+  { mode, limit, onHalt }: { mode: TimerMode; limit: number; onHalt?: () => void },
+): DrillClock {
   const clock = new DrillClock({
     mode,
     limit,

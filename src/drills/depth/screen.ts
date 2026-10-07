@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Depth drills: a photo of a discard tray, and a grid of depths to pick from.
 
 import { h } from '../../ui/dom.ts';
@@ -8,15 +7,17 @@ import { drillShell, drillClockFor } from '../shared/drill-screen.ts';
 import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.ts';
 import { drillStrategy } from '../shared/drill-settings.ts';
 import { drawGridIn } from '../shared/answer-grid.ts';
-import { gradeAnswer } from '../shared/scoring.ts';
+import type { AnswerGrid } from '../shared/answer-grid.ts';
+import { AnswerPause, gridAnswers } from '../shared/grid-answers.ts';
 import { loadTrayImage, drawTray } from '../shared/discard-tray.ts';
+import type { App, Screen } from '../../app/app.ts';
 import { depthGrid, generateDepthTest } from './logic.ts';
+import type { DepthTest } from './logic.ts';
 
 /** How many draws to try before giving up on finding a usable test. */
 const MAX_DRAWS = 200;
-const PAUSE_AFTER_ANSWER_MS = 100;
 
-export function depthScreen(app) {
+export function depthScreen(app: App): Screen {
   const s = app.settings;
   const options = {
     drill: s.get('drills.depth.drill'),
@@ -41,13 +42,12 @@ export function depthScreen(app) {
   const gridWrap = h('div', { class: 'drill__answers-wrap' }, gridCanvas);
 
   let run = -1;
-  let grid = null;
-  let test = null;
-  let image = null;
-  let previousAnswer = null;
-  let started = false;
+  let grid: AnswerGrid | null = null;
+  let test: DepthTest | null = null;
+  let image: HTMLImageElement | null = null;
+  let previousAnswer: number | null = null;
   /** The wait between a right answer and the next test, so it can be called off. */
-  let advanceTimer = null;
+  const advanceTimer = new AnswerPause();
 
   const shell = drillShell(app, {
     title: 'Depth Drills',
@@ -63,6 +63,7 @@ export function depthScreen(app) {
   });
   shell.setDisplay(tray, panel);
   shell.body.append(gridWrap);
+  const answers = gridAnswers({ shell, canvas: gridCanvas, redraw: draw, timers: ['test'] });
 
   const rounds = options.timerMode === TIMER_MODE.auto;
   /** Seconds per test (Rounds mode); with Progressive Speed, 10% less on each Restart. */
@@ -78,7 +79,8 @@ export function depthScreen(app) {
 
   function stop() {
     shell.clock?.stop();
-    cancelAdvance();
+    // Calls off a test that has not been built yet.
+    advanceTimer.cancel();
     test = null;
     image = null;
     grid?.clearMarks();
@@ -99,59 +101,29 @@ export function depthScreen(app) {
     previousAnswer = test.answer;
     image = loadTrayImage(test.tray.src);
     if (!image.complete) image.addEventListener('load', draw, { once: true });
-    grid.clearMarks();
+    grid?.clearMarks();
     shell.score.beginTest();
     shell.clearMessage();
     draw();
     shell.updateStats(shell.clock);
     // Only Rounds mode times each test; Count Down & Halt times the whole drill.
-    if (rounds) shell.clock.after('test', speed(), timeout);
+    if (rounds) shell.clock?.after('test', speed(), timeout);
   }
 
   /** A timeout shows the answer and counts as an error; the player taps it to go on. */
   function timeout() {
-    shell.score.recordError();
-    app.sound.play('error');
-    grid.mark(grid.cellFor(test.answer), 'correct');
-    draw();
-    shell.updateStats(shell.clock);
+    if (grid && test) answers.timeout(grid, test.answer);
   }
 
-  function tap(event) {
+  function tap(event: MouseEvent) {
     // Once the answer is in, further taps are ignored until the next test.
-    if (!test || !grid || advanceTimer) return;
-    const box = gridCanvas.getBoundingClientRect();
-    const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
-    if (!cell) return;
-    shell.clock.cancel('test');
-    const verdict = gradeAnswer(cell.value, test.answer, options.accuracy);
-    if (verdict === 'correct') {
-      grid.mark(cell, 'correct');
-      draw();
-      app.sound.play('correct');
-      advanceTimer = setTimeout(advance, PAUSE_AFTER_ANSWER_MS);
-      return;
-    }
-    grid.mark(cell, verdict === 'close' ? 'close' : 'wrong');
-    grid.mark(grid.cellFor(test.answer), 'correct');
-    if (verdict === 'wrong') {
-      shell.score.recordError();
-      app.sound.play('error');
-    }
-    draw();
-    shell.updateStats(shell.clock);
+    if (!test || !grid || advanceTimer.pending) return;
+    if (answers.tap(event, grid, test.answer, options.accuracy) === 'correct') advanceTimer.start(advance);
   }
 
   function advance() {
-    advanceTimer = null;
     if (rounds && shell.score.tests >= options.testsPerDrill) finish();
     else nextTest();
-  }
-
-  /** Calls off a test that has not been built yet (on Pause, Back or Restart). */
-  function cancelAdvance() {
-    clearTimeout(advanceTimer);
-    advanceTimer = null;
   }
 
   function finish() {
@@ -159,8 +131,8 @@ export function depthScreen(app) {
   }
 
   function pause() {
-    shell.clock.pause();
-    cancelAdvance();
+    shell.clock?.pause();
+    advanceTimer.cancel();
     shell.score.discardTest();
     test = null;
     image = null;
@@ -168,7 +140,7 @@ export function depthScreen(app) {
   }
 
   function resume() {
-    shell.clock.resume();
+    shell.clock?.resume();
     nextTest();
   }
 
@@ -190,18 +162,5 @@ export function depthScreen(app) {
 
   gridCanvas.addEventListener('click', tap);
 
-  return {
-    el: shell.el,
-    onShow() {
-      if (started) {
-        shell.resumeIfSuspended();
-        draw();
-        return;
-      }
-      started = true;
-      shell.begin();
-    },
-    onHide: shell.suspend,
-    destroy: shell.destroy,
-  };
+  return shell.screen({ redraw: draw });
 }

@@ -1,19 +1,23 @@
-// @ts-nocheck
 // Count drills: cards are flashed, then a discard tray and a grid of counts.
 
 import { h } from '../../ui/dom.ts';
 import { button } from '../../ui/components.ts';
 import { setupCanvas, drawCard, loadCardImages } from '../../ui/card-sprites.ts';
 import { cssVar } from '../../ui/theme.ts';
+import type { App, Screen } from '../../app/app.ts';
+import type { CardId } from '../../core/cards.ts';
 import { drillShell, drillClockFor } from '../shared/drill-screen.ts';
 import { progressiveSpeed, TIMER_MODE } from '../shared/drill-clock.ts';
 import { drillStrategy } from '../shared/drill-settings.ts';
 import { DrillShoe } from '../shared/shoe.ts';
-import { drillCounts } from '../shared/count-answers.ts';
+import { drillCounts, testsPossible } from '../shared/count-answers.ts';
 import { countGrid, countWindow, halfStepLabel, INITIAL_WINDOW } from '../shared/count-grid.ts';
 import { drawGridIn } from '../shared/answer-grid.ts';
-import { gradeAnswer } from '../shared/scoring.ts';
+import type { AnswerGrid } from '../shared/answer-grid.ts';
+import { AnswerPause, gridAnswers } from '../shared/grid-answers.ts';
+import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '../shared/end-warning.ts';
 import { loadTrayImage, drawTray, trayImage } from '../shared/discard-tray.ts';
+import type { TrayPhoto } from '../shared/discard-tray.ts';
 import {
   flashSize,
   maxFlashSize,
@@ -24,16 +28,17 @@ import {
   countAnswer,
   halfSteps,
   answerIndex,
-  isAceCountDrill,
 } from './logic.ts';
+import type { FlashLayout } from './logic.ts';
 
-const PAUSE_AFTER_ANSWER_MS = 100;
-/** How long the deal waits after the "one card left" warning. */
-const END_WARNING_SECONDS = 3;
-const WARNING_TEXT = { oneCardLeft: 'One card left', twoCardsLeft: 'Two cards left' };
-const WARNING_REMAINING = { oneCardLeft: 1, twoCardsLeft: 2 };
+/** One group of cards on the felt. */
+interface Flash {
+  ids: CardId[];
+  rotated: boolean;
+  layout: FlashLayout;
+}
 
-export function countScreen(app) {
+export function countScreen(app: App): Screen {
   const s = app.settings;
   const options = {
     drill: s.get('drills.count.drill'),
@@ -75,24 +80,23 @@ export function countScreen(app) {
   });
 
   let run = -1;
-  let shoe = null;
+  let shoe: DrillShoe | null = null;
   /** Cards still to deal before the next test. */
   let cardsToDeal = 0;
-  let flash = null;
-  let tray = null;
-  let trayPicture = null;
-  let grid = null;
+  let flash: Flash | null = null;
+  let tray: TrayPhoto | null = null;
+  let trayPicture: HTMLImageElement | null = null;
+  let grid: AnswerGrid | null = null;
   let gridWindow = INITIAL_WINDOW;
-  let correctIndex = null;
+  let correctIndex = 0;
   /** With "Two Counts" the true count is asked first, then the drill's own value. */
   let askingTrueCount = false;
   let notice = '';
   let done = false;
-  let started = false;
   /** A correct answer came in while paused: deal again on resume. */
   let resumePending = false;
   /** The wait between a right answer and the next deal, so it can be called off. */
-  let advanceTimer = null;
+  const advanceTimer = new AnswerPause();
 
   const shell = drillShell(app, {
     title: 'Count Drills',
@@ -109,6 +113,7 @@ export function countScreen(app) {
   shell.setDisplay(canvas);
   shell.controls.append(nextButton);
   shell.body.append(gridWrap);
+  const answers = gridAnswers({ shell, canvas: gridCanvas, redraw: draw, timers: ['test'] });
 
   const dealSpeed = () => progressiveSpeed(options.dealSeconds, run, options.progressive);
 
@@ -128,10 +133,15 @@ export function countScreen(app) {
     });
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
-    drillClockFor(shell, { mode: options.timerMode, limit: options.alarmSeconds, onHalt: () => finishShoe() }).start();
+    const clock = drillClockFor(shell, {
+      mode: options.timerMode,
+      limit: options.alarmSeconds,
+      onHalt: () => finishShoe(),
+    });
+    clock.start();
     if (auto) {
       dealFlash();
-      shell.clock.every('deal', dealSpeed(), dealFlash);
+      clock.every('deal', dealSpeed(), dealFlash);
     } else {
       draw();
     }
@@ -139,8 +149,7 @@ export function countScreen(app) {
 
   function stop() {
     shell.clock?.stop();
-    clearTimeout(advanceTimer);
-    advanceTimer = null;
+    advanceTimer.cancel();
     nextButton.hidden = true;
     grid = null;
     tray = null;
@@ -148,13 +157,10 @@ export function countScreen(app) {
     draw();
   }
 
-  /** Tests stop once the aces the drill is about have all been dealt. */
-  const testsPossible = () => !(isAceCountDrill(options.drill) && shoe.counter.aces === 4 * options.decks);
-
   function dealFlash() {
     if (done || !shoe) return;
     notice = '';
-    if (cardsToDeal < 1 && testsPossible()) {
+    if (cardsToDeal < 1 && testsPossible(options.drill, shoe)) {
       startTest();
       return;
     }
@@ -162,13 +168,14 @@ export function countScreen(app) {
     // The last card is shown on its own, so the warning is not missed.
     if (options.endWarning === 'oneCardLeft' && shoe.remaining === 2) cards = 1;
     cardsToDeal -= cards;
-    const ids = [];
+    const ids: CardId[] = [];
     for (let i = 0; i < cards && shoe.remaining > 0; i++) {
       shoe.biasNext(options.bias);
-      ids.push(shoe.deal());
+      const card = shoe.deal();
+      if (card !== null) ids.push(card);
       if (auto && shoe.remaining === WARNING_REMAINING[options.endWarning]) {
-        notice = WARNING_TEXT[options.endWarning];
-        shell.clock.every('deal', END_WARNING_SECONDS, dealFlash);
+        notice = WARNING_TEXT[options.endWarning] ?? '';
+        shell.clock?.every('deal', END_WARNING_SECONDS, dealFlash);
         break;
       }
     }
@@ -187,13 +194,14 @@ export function countScreen(app) {
   }
 
   function startTest() {
-    shell.clock.cancel('deal');
+    shell.clock?.cancel('deal');
     askingTrueCount = options.twoCounts;
     showTest();
   }
 
   /** Shows the tray and the grid, and asks for one count. */
   function showTest() {
+    if (!shoe) return;
     const counts = drillCounts(shoe);
     const value = askingTrueCount ? counts.trueCount : countAnswer(options.drill, counts);
     correctIndex = answerIndex(value, inHalfSteps);
@@ -212,48 +220,23 @@ export function countScreen(app) {
     nextButton.hidden = true;
     draw();
     shell.updateStats(shell.clock);
-    if (timedTests) shell.clock.after('test', options.testSeconds, timeout);
+    if (timedTests) shell.clock?.after('test', options.testSeconds, timeout);
   }
 
   function timeout() {
-    shell.score.recordError();
-    app.sound.play('error');
-    grid.mark(grid.cellFor(correctIndex), 'correct');
-    draw();
-    shell.updateStats(shell.clock);
+    if (grid) answers.timeout(grid, correctIndex);
   }
 
-  function tap(event) {
+  function tap(event: MouseEvent) {
     // Once the answer is in, further taps are ignored until the next deal.
-    if (!grid || done || shell.paused || advanceTimer) return;
-    const box = gridCanvas.getBoundingClientRect();
-    const cell = grid.cellAt(event.clientX - box.left, event.clientY - box.top, box.width, box.height);
-    if (!cell) return;
-    shell.clock.cancel('test');
-    const verdict = gradeAnswer(cell.value, correctIndex, options.accuracy);
-    if (verdict === 'correct') {
-      grid.mark(cell, 'correct');
-      draw();
-      app.sound.play('correct');
-      if (askingTrueCount) {
-        askingTrueCount = false;
-        showTest();
-        return;
-      }
-      advanceTimer = setTimeout(() => {
-        advanceTimer = null;
-        resumeDealing();
-      }, PAUSE_AFTER_ANSWER_MS);
+    if (!grid || done || shell.paused || advanceTimer.pending) return;
+    if (answers.tap(event, grid, correctIndex, options.accuracy) !== 'correct') return;
+    if (askingTrueCount) {
+      askingTrueCount = false;
+      showTest();
       return;
     }
-    grid.mark(cell, verdict === 'close' ? 'close' : 'wrong');
-    grid.mark(grid.cellFor(correctIndex), 'correct');
-    if (verdict === 'wrong') {
-      shell.score.recordError();
-      app.sound.play('error');
-    }
-    draw();
-    shell.updateStats(shell.clock);
+    advanceTimer.start(resumeDealing);
   }
 
   function resumeDealing() {
@@ -266,7 +249,7 @@ export function countScreen(app) {
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextButton.hidden = auto;
     dealFlash();
-    if (auto && !done) shell.clock.every('deal', dealSpeed(), dealFlash);
+    if (auto && !done) shell.clock?.every('deal', dealSpeed(), dealFlash);
   }
 
   /** Stops dealing and the test clock, and covers the cards. */
@@ -283,9 +266,9 @@ export function countScreen(app) {
       resumeDealing();
     } else if (grid) {
       // A test still waiting for its answer gets its full time again.
-      if (timedTests && !shell.score.currentTestFailed) shell.clock.after('test', options.testSeconds, timeout);
+      if (timedTests && !shell.score.currentTestFailed) shell.clock?.after('test', options.testSeconds, timeout);
     } else if (auto) {
-      shell.clock.every('deal', dealSpeed(), dealFlash);
+      shell.clock?.every('deal', dealSpeed(), dealFlash);
     }
     draw();
   }
@@ -315,7 +298,7 @@ export function countScreen(app) {
       }
       if (notice && !shell.paused) {
         const size = notice === 'Done.' ? 32 : 20;
-        ctx.font = `bold ${size}px Helvetica, Arial, sans-serif`;
+        ctx.font = `600 ${size}px ${cssVar('--font', 'Helvetica, Arial, sans-serif')}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         // On a plate of felt, so a warning over the cards can be read.
@@ -330,7 +313,9 @@ export function countScreen(app) {
     if (grid && !shell.paused) drawGridIn(grid, gridCanvas, gridWrap);
   }
 
-  function drawFlash(ctx, width, height) {
+  function drawFlash(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    if (!flash) return;
+    const { ids } = flash;
     const { cards, cardWidth, cardHeight } = flashPositions({
       layout: flash.layout,
       rotated: flash.rotated,
@@ -345,7 +330,7 @@ export function countScreen(app) {
       ctx.translate(width, 0);
       ctx.rotate(Math.PI / 2);
     }
-    cards.forEach((place, i) => drawCard(ctx, flash.ids[i], place.x, place.y, cardWidth, cardHeight));
+    cards.forEach((place, i) => drawCard(ctx, ids[i], place.x, place.y, cardWidth, cardHeight));
     ctx.restore();
   }
 
@@ -357,18 +342,5 @@ export function countScreen(app) {
 
   loadCardImages().then(draw);
 
-  return {
-    el: shell.el,
-    onShow() {
-      if (started) {
-        shell.resumeIfSuspended();
-        draw();
-        return;
-      }
-      started = true;
-      shell.begin();
-    },
-    onHide: shell.suspend,
-    destroy: shell.destroy,
-  };
+  return shell.screen({ redraw: draw });
 }

@@ -1,21 +1,42 @@
-// @ts-nocheck
 // A shoe of cards for the counting drills: shuffled card ids dealt in order,
 // with the running count kept by a Counter.
 
 import { CARDS_PER_DECK } from '../../core/cards.ts';
+import type { CardId } from '../../core/cards.ts';
 import { shuffle as shuffleArray, defaultRandom } from '../../core/random.ts';
+import type { Random } from '../../core/random.ts';
 import { Counter } from '../../core/counting.ts';
+import type { CounterSettings } from '../../core/counting.ts';
+import type { Strategy } from '../../core/strategy/strategy-tables.ts';
+
+/** Which sign of count value the drills deal more of. */
+export type Bias = 'none' | 'negative' | 'positive';
+
+export interface DrillShoeOptions {
+  decks: number;
+  /** Built strategy (for count values and the initial count). */
+  strategy: Strategy;
+  trueCountSettings: CounterSettings;
+  random?: Random;
+  /** 48 for Spanish decks (no tens). */
+  cardsPerDeck?: number;
+}
 
 export class DrillShoe {
-  /**
-   * @param {object} o
-   * @param {number} o.decks
-   * @param {object} o.strategy            Built strategy (for count values and the initial count).
-   * @param {object} o.trueCountSettings   {division, lastDeck, rounding, aceSideCount}
-   * @param {() => number} [o.random]
-   * @param {number} [o.cardsPerDeck]      48 for Spanish decks (no tens).
-   */
-  constructor({ decks, strategy, trueCountSettings, random = defaultRandom, cardsPerDeck = CARDS_PER_DECK }) {
+  decks: number;
+  cardsPerDeck: number;
+  random: Random;
+  counter: Counter;
+  cards: CardId[] = [];
+  dealt = 0;
+
+  constructor({
+    decks,
+    strategy,
+    trueCountSettings,
+    random = defaultRandom,
+    cardsPerDeck = CARDS_PER_DECK,
+  }: DrillShoeOptions) {
     this.decks = decks;
     this.cardsPerDeck = cardsPerDeck;
     this.random = random;
@@ -24,8 +45,8 @@ export class DrillShoe {
     this.shuffle();
   }
 
-  shuffle() {
-    const cards = [];
+  shuffle(): void {
+    const cards: CardId[] = [];
     for (let deck = 0; deck < this.decks; deck++) {
       for (let id = 1; id <= CARDS_PER_DECK; id++) {
         // Spanish decks have no tens.
@@ -38,12 +59,12 @@ export class DrillShoe {
     this.counter.reset(this.decks, { cardsPerDeck: this.cardsPerDeck });
   }
 
-  get remaining() {
+  get remaining(): number {
     return this.cards.length - this.dealt;
   }
 
   /** Deals the next card and counts it. */
-  deal() {
+  deal(): CardId | null {
     if (this.remaining === 0) return null;
     const card = this.cards[this.dealt];
     this.dealt += 1;
@@ -54,9 +75,8 @@ export class DrillShoe {
   /**
    * Reorders the cards still to come so the next card's count value has the
    * wanted sign, which is how the drills bias a shoe.
-   * @param {'none'|'negative'|'positive'} bias
    */
-  applyBias(bias) {
+  applyBias(bias: Bias): void {
     if (bias === 'none') return;
     const wanted = bias === 'positive' ? 1 : -1;
     const values = this.counter.strategy.countValues;
@@ -72,9 +92,8 @@ export class DrillShoe {
   /**
    * Deals the next card and also reports how much it moved the running count,
    * which the Two Tables drill needs to count cards as they are revealed.
-   * @returns {{card: number, countValue: number}|null}
    */
-  dealWithCountValue() {
+  dealWithCountValue(): { card: CardId; countValue: number } | null {
     const before = this.counter.running;
     const card = this.deal();
     return card === null ? null : { card, countValue: this.counter.running - before };
@@ -84,9 +103,8 @@ export class DrillShoe {
    * Biases the next card the way the Count and Full drills do: while more than
    * half the shoe is left, a card whose count value has the unwanted sign is
    * pushed back most of the time.
-   * @param {'none'|'negative'|'positive'} bias
    */
-  biasNext(bias) {
+  biasNext(bias: Bias): void {
     if (bias === 'none' || this.remaining * 2 <= this.cards.length) return;
     const values = this.counter.strategy.countValues;
     const rank = Math.min(((this.cards[this.dealt] - 1) % 13) + 1, 10);
@@ -96,12 +114,12 @@ export class DrillShoe {
   }
 
   /** Decks still in the shoe, by the true-count settings. */
-  decksRemaining() {
+  decksRemaining(): number {
     return this.counter.decksRemaining(this.dealt);
   }
 
   /** Decks sitting in the discard tray. */
-  decksInTray() {
+  decksInTray(): number {
     return this.decks - this.remaining / this.cardsPerDeck;
   }
 }

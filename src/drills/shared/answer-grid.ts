@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The grid of answer buttons the Depth, Count and Full drills use, drawn on a
 // canvas as rounded tiles.
 //
@@ -8,37 +7,53 @@
 import { setupCanvas } from '../../ui/card-sprites.ts';
 import { cssVar } from '../../ui/theme.ts';
 
+export type CellState = 'idle' | 'correct' | 'close' | 'wrong';
+
+export interface GridCell {
+  row: number;
+  column: number;
+  /** Shifts the cell sideways by part of a column. */
+  offset?: number;
+  label: string;
+  value: number;
+}
+
+type ColorVar = readonly [name: string, fallback: string];
+
 /** Cell states and their colors. */
-const COLORS = {
+const COLORS: Record<CellState, { fill: ColorVar; text: ColorVar }> = {
   idle: { fill: ['--tile-bg', '#0000c4'], text: ['--tile-text', '#ffffff'] },
   correct: { fill: ['--tile-good', '#00ff00'], text: ['--tile-mark-text', '#000000'] },
   close: { fill: ['--tile-close', '#ffff00'], text: ['--tile-mark-text', '#000000'] },
   wrong: { fill: ['--tile-bad', '#ff0000'], text: ['--tile-mark-text', '#000000'] },
 };
 
-const resolve = ([name, fallback]) => cssVar(name, fallback);
+interface TileColors {
+  fill: string;
+  text: string;
+}
+
+const resolve = ([name, fallback]: ColorVar): string => cssVar(name, fallback);
 
 export class AnswerGrid {
-  /**
-   * @param {object} o
-   * @param {{row: number, column: number, label: string, value: *}[]} o.cells
-   * @param {number} o.rows
-   * @param {number} o.columns
-   */
-  constructor({ cells, rows, columns }) {
+  cells: GridCell[];
+  rows: number;
+  columns: number;
+  states = new Map<GridCell, CellState>();
+
+  constructor({ cells, rows, columns }: { cells: GridCell[]; rows: number; columns: number }) {
     this.cells = cells;
     this.rows = rows;
     this.columns = columns;
-    this.states = new Map();
   }
 
   /** The cell standing for `value`, or null. */
-  cellFor(value) {
+  cellFor(value: number): GridCell | null {
     return this.cells.find(c => c.value === value) ?? null;
   }
 
   /** The cell at a pixel position inside a box of `width` x `height`, or null. */
-  cellAt(x, y, width, height) {
+  cellAt(x: number, y: number, width: number, height: number): GridCell | null {
     const cellWidth = width / this.columns;
     const row = Math.floor((y / height) * this.rows);
     return (
@@ -50,16 +65,22 @@ export class AnswerGrid {
     );
   }
 
-  mark(cell, state) {
-    this.states.set(cell, state);
+  /** Marks a cell; marking no cell does nothing. */
+  mark(cell: GridCell | null, state: CellState): void {
+    if (cell) this.states.set(cell, state);
   }
 
-  clearMarks() {
+  clearMarks(): void {
     this.states.clear();
   }
 
   /** Draws the grid, sizing the canvas for the device pixel ratio. */
-  draw(canvas, width, height, { smallText = false } = {}) {
+  draw(
+    canvas: HTMLCanvasElement,
+    width: number,
+    height: number,
+    { smallText = false }: { smallText?: boolean } = {},
+  ): CanvasRenderingContext2D {
     const ctx = setupCanvas(canvas, width, height);
     const cellWidth = width / this.columns;
     const cellHeight = height / this.rows;
@@ -67,9 +88,16 @@ export class AnswerGrid {
     ctx.font = `600 ${smallText ? 18 : 24}px ${cssVar('--font', 'Helvetica, Arial, sans-serif')}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const colors = Object.fromEntries(
-      Object.entries(COLORS).map(([state, { fill, text }]) => [state, { fill: resolve(fill), text: resolve(text) }]),
-    );
+    const tile = (state: CellState): TileColors => ({
+      fill: resolve(COLORS[state].fill),
+      text: resolve(COLORS[state].text),
+    });
+    const colors: Record<CellState, TileColors> = {
+      idle: tile('idle'),
+      correct: tile('correct'),
+      close: tile('close'),
+      wrong: tile('wrong'),
+    };
     for (const cell of this.cells) {
       if (cell.label === '') continue;
       drawTile(
@@ -87,10 +115,18 @@ export class AnswerGrid {
 }
 
 /** A cell's left edge in columns; `offset` shifts a row sideways by part of a cell. */
-const cellLeft = cell => cell.column + (cell.offset ?? 0);
+const cellLeft = (cell: GridCell): number => cell.column + (cell.offset ?? 0);
 
 /** One answer button: a rounded tile with centred text. */
-function drawTile(ctx, x, y, width, height, label, { fill, text }) {
+function drawTile(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  { fill, text }: TileColors,
+): void {
   const gap = 2;
   ctx.fillStyle = fill;
   ctx.beginPath();
@@ -103,15 +139,23 @@ function drawTile(ctx, x, y, width, height, label, { fill, text }) {
 /**
  * A grid of consecutive numbers, lowest at the bottom left, increasing to the
  * right and upwards (the layout the Count, Full and index-test drills use).
- * @param {object} o
- * @param {number} o.rows
- * @param {number} o.columns
- * @param {number} o.lowest     Value of the bottom-left cell.
- * @param {(value: number) => string} [o.format]
- * @param {(value: number) => boolean} [o.include]  Cells to leave blank.
+ * @param o.lowest   Value of the bottom-left cell.
+ * @param o.include  Cells to leave blank.
  */
-export function numberGrid({ rows, columns, lowest, format = String, include = () => true }) {
-  const cells = [];
+export function numberGrid({
+  rows,
+  columns,
+  lowest,
+  format = String,
+  include = () => true,
+}: {
+  rows: number;
+  columns: number;
+  lowest: number;
+  format?: (value: number) => string;
+  include?: (value: number) => boolean;
+}): AnswerGrid {
+  const cells: GridCell[] = [];
   for (let i = 0; i < rows * columns; i++) {
     const value = lowest + i;
     const row = rows - 1 - Math.floor(i / columns);
@@ -125,9 +169,9 @@ export function numberGrid({ rows, columns, lowest, format = String, include = (
  * Shifts a window of consecutive values so it contains `answer`.
  * The window moves by half its size at a time and keeps the new position for
  * later tests.
- * @returns {number} the new lowest value of the window
+ * @returns the new lowest value of the window
  */
-export function windowContaining(answer, lowest, size) {
+export function windowContaining(answer: number, lowest: number, size: number): number {
   const step = Math.floor(size / 2);
   let low = lowest;
   while (answer < low) low -= step;
@@ -135,13 +179,13 @@ export function windowContaining(answer, lowest, size) {
   return low;
 }
 
-/**
- * Draws a grid so it fills its wrapper element.
- * @param {AnswerGrid} grid
- * @param {HTMLCanvasElement} canvas
- * @param {HTMLElement} wrap
- */
-export function drawGridIn(grid, canvas, wrap, { smallText } = {}) {
+/** Draws a grid so it fills its wrapper element. */
+export function drawGridIn(
+  grid: AnswerGrid,
+  canvas: HTMLCanvasElement,
+  wrap: HTMLElement,
+  { smallText }: { smallText?: boolean } = {},
+): void {
   const width = wrap.clientWidth;
   const height = wrap.clientHeight;
   if (width < 2 || height < 2) return;
