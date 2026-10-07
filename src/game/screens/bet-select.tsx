@@ -2,12 +2,14 @@
 // of spot counts and a grid of chip counts, plus a custom amount.
 
 import { useState } from 'react';
+import { Navigate, useParams } from 'react-router';
 import { useApp } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { ScreenLayout } from '@/components/screen-layout';
 import { promptNumber } from '@/components/dialogs';
 import { CHIP_CHOICES, HAND_CHOICES, MAX_CHIPS, maxChipsForHands } from '@/settings/bet-ramp';
 import { useGoBack } from '@/app/navigation';
+import { useTableContext } from '@/game/screens/table-screen';
 
 const HELP_TEXT =
   'Tap the number of chips to bet. To play more than one spot, ' +
@@ -92,4 +94,12 @@ export function BetSelect({
       </div>
     </ScreenLayout>
   );
+}
+
+/** A side-bet picker over the table (`side-bet/:spot`). */
+export function SideBetRoute() {
+  const { spot } = useParams();
+  const params = useTableContext().sideBetParams(Number(spot));
+  // A reload or a stale link has no picker to show: back to the table.
+  return params ? <BetSelect params={params} /> : <Navigate to="../.." relative="path" replace />;
 }

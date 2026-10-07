@@ -15,6 +15,7 @@ import { SettingSwitches } from '@/components/settings-controls';
 import { confirm } from '@/components/dialogs';
 import type { SettingReader } from '@/settings/schema';
 import type { GameSession } from '@/game/session';
+import { useTableContext } from '@/game/screens/table-screen';
 
 /** The in-table readouts, in display order. */
 const DISPLAY_OPTIONS = [
@@ -120,3 +121,9 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Stats over the table, for its session. */
+export function GameStatsRoute() {
+  const { session } = useTableContext();
+  return <GameStats params={{ session }} />;
+}

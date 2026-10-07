@@ -4,6 +4,8 @@
 // it in a 6 x 10 x 10 boolean mask held in a setting.
 
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { tablesParams } from '@/app/paths';
 import { useApp, useSettings } from '@/react/app-context';
 import { cn } from 'cn';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -337,4 +339,11 @@ function CountsViewTables({ counts }: { counts: CountsTables }) {
       )}
     </div>
   );
+}
+
+/** The viewer at its route, with its options from the URL. */
+export function StrategyTablesRoute() {
+  const [search] = useSearchParams();
+  // A new set of options is a new viewer.
+  return <StrategyTables key={search.toString()} params={tablesParams(search)} />;
 }

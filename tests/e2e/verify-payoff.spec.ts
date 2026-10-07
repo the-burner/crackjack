@@ -617,33 +617,30 @@ test.describe('the turn pointer', () => {
       expect(dwell(frames, key), `pointer rests on ${key}`).toBeGreaterThanOrEqual(pauseFor(speed) * 0.85);
     }
     // Drawn just above the hand it points at.
-    for (const f of frames.filter(fr => fr.pointer)) {
-      const top = handIn(f, f.pointer.hand).slots.at(-1);
-      expect(f.pointer.y).toBeLessThan(top.y);
-      expect(Math.abs(f.pointer.x - top.x)).toBeLessThan(60);
+    for (const f of frames) {
+      const pointer = f.pointer;
+      if (!pointer) continue;
+      const top = handIn(f, pointer.hand).slots.at(-1)!;
+      expect(pointer.y).toBeLessThan(top.y);
+      expect(Math.abs(pointer.x - top.x)).toBeLessThan(60);
     }
     // Gone before the dealer plays.
     const reveal = dealerPlays(frames);
-    expect(
-      frames
-        .slice(reveal)
-        .filter(f => f.pointer)
-        .map(f => f.pointer.hand),
-    ).toEqual([]);
+    expect(frames.slice(reveal).flatMap(f => (f.pointer ? [f.pointer.hand] : []))).toEqual([]);
   });
 
   for (const [name, seed, choose, extra] of [
     ['a bust', 1, POLICY.hit, {}],
     ['a computer bust', 2, POLICY.double, {}],
     ['a surrender', 2, POLICY.surrender, { 'rules.surrender': 'late' }],
-  ]) {
+  ] satisfies [string, number, Policy, SavedSettings][]) {
     test(`leaves a hand before it is paid, and never points at an emptied seat, after ${name}`, async ({ page }) => {
       await openTable(page, {
         seed,
         settings: { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60, ...extra },
       });
       const { frames, log } = await playRound(page, choose);
-      expect(frames.filter(f => f.pointer && !has(f, f.pointer.hand)).map(f => f.pointer.hand)).toEqual([]);
+      expect(frames.flatMap(f => (f.pointer && !has(f, f.pointer.hand) ? [f.pointer.hand] : []))).toEqual([]);
       // While a seat shows a result, the pointer is not on any of its hands.
       for (const entry of log.filter(e => e.kind === 'chip' && e.pill !== null)) {
         const frame = frames[entry.f - 1];
@@ -655,7 +652,7 @@ test.describe('the turn pointer', () => {
   }
 
   /** Bets, waits with no input, and returns how long after the turn began the pointer was first drawn. */
-  async function firstPointerDelay(page) {
+  async function firstPointerDelay(page: Page) {
     await page.evaluate(() => {
       window.__cjFrames = [];
       window.__cjLog.length = 0;
@@ -663,8 +660,8 @@ test.describe('the turn pointer', () => {
     await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(1500);
-    const { frames, log } = await page.evaluate(() => ({ frames: window.__cjFrames, log: window.__cjLog }));
-    const turn = log.find(e => e.kind === 'actions' && e.text.includes('stand'));
+    const { frames, log } = await page.evaluate(() => ({ frames: window.__cjFrames ?? [], log: window.__cjLog }));
+    const turn = log.find(e => e.kind === 'actions' && e.text.includes('stand'))!;
     const drawn = frames.find(f => f.pointer?.hand === '1-0');
     test
       .info()
@@ -702,7 +699,7 @@ test.describe('the turn pointer', () => {
     await betGrid(page).click({ position: { x: 25, y: 25 } });
     await expect(actionButton(page, 'stand')).toBeVisible({ timeout: 15000 });
     await expect
-      .poll(() => page.evaluate(() => window.__cjFrames.at(-1).pointer?.hand ?? null), { timeout: 5000 })
+      .poll(() => page.evaluate(() => window.__cjFrames?.at(-1)?.pointer?.hand ?? null), { timeout: 5000 })
       .toBe('1-0');
   });
 
@@ -725,10 +722,11 @@ test.describe('the turn pointer', () => {
 
 test.describe('split hands', () => {
   /** Where the layout puts the first card of each hand column, by seat. */
-  const columns = page =>
+  const columns = (page: Page) =>
     page.evaluate(async () => {
-      const { tableLayout } = await import('/src/game/table/layout.ts');
-      const felt = document.querySelector('[data-testid="felt"]');
+      const url = '/src/game/table/layout.ts';
+      const { tableLayout }: typeof import('@/game/table/layout') = await import(url);
+      const felt = document.querySelector<HTMLElement>('[data-testid="felt"]')!;
       const layout = tableLayout({
         width: Math.max(200, Math.round(felt.clientWidth)),
         height: Math.max(200, Math.round(felt.clientHeight)),
@@ -765,7 +763,7 @@ test.describe('split hands', () => {
       expect(['1-0', '1-1', '1-2'].map(key => handIn(f, key).slots[0].x)).toEqual(cols[1].slice(0, 3));
     }
     // Two hands span three column steps; three hands step one at a time.
-    const two = frames.find(f => has(f, '1-1') && !has(f, '1-2'));
+    const two = frames.find(f => has(f, '1-1') && !has(f, '1-2'))!;
     const span = handIn(two, '1-0').slots[0].x - handIn(two, '1-1').slots[0].x;
     const step = handIn(three[0], '1-0').slots[0].x - handIn(three[0], '1-1').slots[0].x;
     expect(step).toBeGreaterThan(0);
@@ -777,7 +775,7 @@ test.describe('split hands at the payoff', () => {
   for (const [name, seed, choose] of [
     ['one split', 14, POLICY.splitOnce],
     ['two splits', 22, () => POLICY.splitAll],
-  ]) {
+  ] satisfies [string, number, () => Policy][]) {
     test(`stay where they are while the seat is paid, after ${name}`, async ({ page }) => {
       await openTable(page, { seed });
       const { frames } = await playRound(page, choose());
@@ -798,7 +796,7 @@ test.describe('split hands at the payoff', () => {
 // --- 8. the count readout ---------------------------------------------------
 
 test.describe('the count readout', () => {
-  const rc = text => text.match(/RC: (-?[\d.]+)/)?.[1] ?? null;
+  const rc = (text: string | null) => text?.match(/RC: (-?[\d.]+)/)?.[1] ?? null;
 
   test('counts card by card during the deal, and matches the Stats screen after every round', async ({ page }) => {
     test.setTimeout(90000);
@@ -813,7 +811,7 @@ test.describe('the count readout', () => {
       if (round === 0) {
         // The readout moves several times as the cards land, not once at the end.
         expect(values.length, `readout during the deal: ${values}`).toBeGreaterThanOrEqual(3);
-        expect(changes.at(-1).t - changes[0].t).toBeGreaterThanOrEqual(pauseFor(speed));
+        expect(changes.at(-1)!.t - changes[0].t).toBeGreaterThanOrEqual(pauseFor(speed));
       }
       const shown = rc(await readout(page).textContent());
       expect(shown, `round ${round}`).toBe(await statsRunningCount(page));
@@ -830,8 +828,8 @@ test.describe('table messages', () => {
     const { log } = await playRound(page, POLICY.waitOutInsurance);
     const offer = log.find(e => e.kind === 'toast' && e.text.includes('Insurance'));
     expect(offer).toBeTruthy();
-    expect(offer.leaving - offer.t).toBeGreaterThan(3300);
-    expect(offer.leaving - offer.t).toBeLessThan(3900);
+    expect(offer!.leaving! - offer!.t).toBeGreaterThan(3300);
+    expect(offer!.leaving! - offer!.t).toBeLessThan(3900);
   });
 
   test('never say "No Dealer Blackjack" or "Dealer busts"', async ({ page }) => {
@@ -855,11 +853,11 @@ test.describe('table messages', () => {
   for (const [name, seed, extra] of [
     ['the dealer checks for it', 43, {}],
     ['the dealer has no hole card', 14, { 'rules.noHoleCard': true }],
-  ]) {
+  ] satisfies [string, number, SavedSettings][]) {
     test(`announce a dealer blackjack once when ${name}`, async ({ page }) => {
       await openTable(page, { seed, settings: extra });
       const { frames, log } = await playRound(page);
-      const dealer = frames.findLast(f => f.dealer.cards.length > 0).dealer.cards;
+      const dealer = frames.findLast(f => f.dealer.cards.length > 0)!.dealer.cards;
       expect(total(dealer)).toBe(21);
       expect(dealer).toHaveLength(2);
       const texts = log.filter(e => e.kind === 'toast').map(e => e.text);
@@ -933,7 +931,7 @@ test.describe('sounds', () => {
     for (let round = 0; round < 40 && !caught; round++) {
       await playRound(page, POLICY.hitTo17);
       const heard = await claim();
-      if ((await betTitle(page).textContent()).includes('caught')) caught = heard;
+      if ((await betTitle(page).textContent())?.includes('caught')) caught = heard;
     }
     expect(caught, 'a dealer error was made and caught').not.toBeNull();
     expect(caught).toEqual({ sounds: ['card'], audio: ['click.mp3'] });

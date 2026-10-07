@@ -11,7 +11,7 @@ import { ScreenLayout } from '@/components/screen-layout';
 import { OptionSelect, SettingsGroup } from '@/components/settings-controls';
 import { NumberRow, SwitchRow } from '@/components/settings/controls';
 import { promptNumber } from '@/components/dialogs';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useGoBack } from '@/app/navigation';
 import {
   CHIP_CHOICES,
@@ -184,4 +184,10 @@ export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) 
       </div>
     </ScreenLayout>
   );
+}
+
+/** The row picker at its route (`betting/:row`). */
+export function BetSelectRoute() {
+  const { row } = useParams();
+  return <BetSelect params={{ row: Number(row) || 0 }} />;
 }

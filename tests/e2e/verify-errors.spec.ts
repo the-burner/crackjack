@@ -9,6 +9,8 @@
 // it has cards, so each test deals exactly the hands it describes.
 
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import type { SavedSettings } from './support/app';
 import {
   bankroll,
   barButton,
@@ -22,7 +24,7 @@ import {
 } from './support/table';
 
 /** Card ids are suit * 13 + rank; spades by default. */
-const card = (rank, suit = 0) => suit * 13 + rank;
+const card = (rank: number, suit = 0) => suit * 13 + rank;
 const [A, Q, K] = [1, 12, 13];
 
 const ALL_HUMAN = [false, false, false, false, false, false];
@@ -58,7 +60,14 @@ const BASE_SETTINGS = {
  * other `cj.*` keys. The setup runs once per tab, so a reload keeps what the
  * app saved.
  */
-async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {}) {
+async function openTable(
+  page: Page,
+  {
+    settings = {},
+    rolls = {},
+    storage = {},
+  }: { settings?: SavedSettings; rolls?: Record<string, number>; storage?: Record<string, unknown> } = {},
+) {
   await page.addInitScript(
     ({ rolls: picked }) => {
       let a = 11;
@@ -89,7 +98,9 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
       window.__cjResults = [];
       window.__cjRecordFrames = true;
       new MutationObserver(() => {
-        for (const pill of document.querySelectorAll('[data-testid="seat-chip"] [data-testid="seat-result"]')) {
+        for (const pill of document.querySelectorAll<HTMLElement>(
+          '[data-testid="seat-chip"] [data-testid="seat-result"]',
+        )) {
           if (pill.dataset.seen) continue;
           pill.dataset.seen = '1';
           window.__cjResults.push({ text: pill.textContent, t: performance.now() });
@@ -110,7 +121,7 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
   );
   await page.goto('/index.html');
   await page.evaluate(() => {
-    window.app.sound.output = file => window.__cjSounds.push(file.split('/').pop());
+    window.app.sound.output = file => window.__cjSounds.push(file.split('/').pop()!);
   });
   await stackTheShoe(page);
   await page.locator('[data-action="play"]').click();
@@ -118,9 +129,10 @@ async function openTable(page, { settings = {}, rolls = {}, storage = {} } = {})
 }
 
 /** Makes the shoe deal from `window.__cjStack` while it has cards. */
-async function stackTheShoe(page) {
+async function stackTheShoe(page: Page) {
   await page.evaluate(async () => {
-    const { Shoe } = await import('/src/game/engine/shoe.ts');
+    const url = '/src/game/engine/shoe.ts';
+    const { Shoe }: typeof import('@/game/engine/shoe') = await import(url);
     const draw = Shoe.prototype.draw;
     window.__cjStack = [];
     Shoe.prototype.draw = function stackedDraw() {
@@ -136,17 +148,25 @@ async function stackTheShoe(page) {
 
 const overlay = betOverlay;
 const action = playButton;
-const foul = page => overlayButton(page, 'Foul');
-const statsScreen = page => page.locator('[data-screen="game.stats"]');
-const statsTable = page => statsScreen(page).getByRole('table');
-const closeStats = page => statsScreen(page).getByRole('button', { name: 'Back', exact: true }).click();
+const foul = (page: Page) => overlayButton(page, 'Foul');
+const statsScreen = (page: Page) => page.locator('[data-screen="game.stats"]');
+const statsTable = (page: Page) => statsScreen(page).getByRole('table');
+const closeStats = (page: Page) => statsScreen(page).getByRole('button', { name: 'Back', exact: true }).click();
 
 /**
  * Plays one round from stacked cards. With one seat the deal is player,
  * dealer up card, player, hole card; then the player's draws, then the
  * dealer's. `tile` is which bet tile to tap (0 is the smallest).
  */
-async function playRound(page, { cards, actions = ['stand'], tile = 0, insure = null }) {
+async function playRound(
+  page: Page,
+  {
+    cards,
+    actions = ['stand'],
+    tile = 0,
+    insure = null,
+  }: { cards: number[]; actions?: string[]; tile?: number; insure?: boolean | null },
+) {
   await page.evaluate(stack => {
     window.__cjStack = stack;
   }, cards);
@@ -166,36 +186,40 @@ async function playRound(page, { cards, actions = ['stand'], tile = 0, insure = 
   await expect(overlay(page)).toBeVisible();
 }
 
-async function tapTile(page, index) {
+async function tapTile(page: Page, index: number) {
   const grid = betGrid(page);
-  const box = await grid.boundingBox();
+  const box = (await grid.boundingBox())!;
   await grid.click({ position: { x: 25 + (index * box.width) / 6, y: 25 } });
   await expect(overlay(page)).toBeHidden();
 }
 
 /** Frames drawn since the round began. */
-const roundFrames = page => page.evaluate(() => window.__cjFrames.filter(frame => frame.t >= window.__cjRoundStart));
+const roundFrames = (page: Page) =>
+  page.evaluate(() => (window.__cjFrames ?? []).filter(frame => frame.t >= window.__cjRoundStart));
 
 /** The most cards the dealer held this round. */
-async function dealerCards(page) {
+async function dealerCards(page: Page) {
   const frames = await roundFrames(page);
-  return frames.reduce((most, frame) => (frame.dealer.cards.length > most.length ? frame.dealer.cards : most), []);
+  return frames.reduce(
+    (most, frame) => (frame.dealer.cards.length > most.length ? frame.dealer.cards : most),
+    [] as number[],
+  );
 }
 
 /** Result pills shown this round. */
-const roundResults = page =>
+const roundResults = (page: Page) =>
   page.evaluate(() => window.__cjResults.filter(r => r.t >= window.__cjRoundStart).map(r => r.text));
 
 /** Sounds played since `from` (an index into the sound log). */
-const soundsSince = (page, from) => page.evaluate(start => window.__cjSounds.slice(start), from);
-const soundCount = page => page.evaluate(() => window.__cjSounds.length);
+const soundsSince = (page: Page, from: number) => page.evaluate(start => window.__cjSounds.slice(start), from);
+const soundCount = (page: Page) => page.evaluate(() => window.__cjSounds.length);
 
-async function callFoul(page) {
+async function callFoul(page: Page) {
   await expect(foul(page)).toBeVisible();
   await foul(page).click();
 }
 
-async function openStats(page) {
+async function openStats(page: Page) {
   await barButton(page, 'Stats').click();
   await expect(statsTable(page)).toBeVisible();
 }
@@ -219,7 +243,7 @@ test.describe('busted a good hand', () => {
     expect(results.map(r => r.text)).toEqual(['Bust']);
 
     const frames = await roundFrames(page);
-    const revealed = frames.find(frame => frame.dealer.faceUp[1] === true);
+    const revealed = frames.find(frame => frame.dealer.faceUp[1] === true)!;
     expect(revealed).toBeTruthy();
     // The label showed, and the hand left the table, while the hole card was still down.
     expect(results[0].t).toBeLessThan(revealed.t);
@@ -308,7 +332,7 @@ test.describe('busted a good hand', () => {
 test.describe('stood on 16', () => {
   const settings = { 'dealerErrors.standOn16': true };
   // The player stands on 10 and 2.
-  const player12 = (up, hole) => [card(10), up, card(2), hole];
+  const player12 = (up: number, hole: number) => [card(10), up, card(2), hole];
 
   test('the dealer stops on a four-card hard 16 when the player has less than 17, and Foul catches it', async ({
     page,
@@ -359,7 +383,7 @@ test.describe('stood on 16', () => {
 test.describe('should have busted', () => {
   const settings = { 'dealerErrors.shouldHaveBusted': true };
   // The player stands on 20.
-  const player20 = (up, hole) => [card(10), up, card(K), hole];
+  const player20 = (up: number, hole: number) => [card(10), up, card(K), hole];
 
   test('a four-card 22 is claimed as 21, and Foul refunds the win', async ({ page }) => {
     await openTable(page, { settings });
@@ -595,7 +619,7 @@ test('bet accuracy is floored and play accuracy rounded, on the Stats screen and
     },
   });
   // Neutral cards only. Player 9, 8 against the dealer's 9, 8.
-  const round = suit => [card(9, suit), card(9, (suit + 1) % 4), card(8, suit), card(8, (suit + 1) % 4)];
+  const round = (suit: number) => [card(9, suit), card(9, (suit + 1) % 4), card(8, suit), card(8, (suit + 1) % 4)];
   await playRound(page, { cards: round(0) });
   await playRound(page, { cards: round(1) });
   // The wrong bet ($20) and the wrong play (hitting 17).

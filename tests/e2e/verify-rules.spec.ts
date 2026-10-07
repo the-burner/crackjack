@@ -10,6 +10,9 @@
 // With one human seat the deal order is: player, dealer up, player, hole card.
 
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import type { Frame } from './globals.d';
+import type { SavedSettings } from './support/app';
 import {
   bankroll,
   betGrid,
@@ -25,8 +28,8 @@ import {
 const RANKS = 'A23456789TJQK';
 const SUITS = 'schd';
 /** 'Ts' -> card id (suit * 13 + rank; spades, clubs, hearts, diamonds). */
-const card = name => SUITS.indexOf(name[1]) * 13 + RANKS.indexOf(name[0]) + 1;
-const cards = names => names.map(card);
+const card = (name: string) => SUITS.indexOf(name[1]) * 13 + RANKS.indexOf(name[0]) + 1;
+const cards = (names: string[]) => names.map(card);
 
 const BASE = {
   'mechanics.dealerSpeed': 99,
@@ -49,9 +52,12 @@ const BASE = {
 };
 
 /** Opens the table with these settings and this stacked shoe, at the betting overlay. */
-async function openTable(page, { settings = {}, stack = [] } = {}) {
+async function openTable(
+  page: Page,
+  { settings = {}, stack = [] }: { settings?: SavedSettings; stack?: string[] } = {},
+) {
   await page.setViewportSize({ width: 390, height: 844 });
-  const decks = settings['table.decks'] ?? BASE['table.decks'];
+  const decks = Number(settings['table.decks'] ?? BASE['table.decks']);
   await page.addInitScript(
     ({ stack, decks }) => {
       const remaining = new Array(53).fill(decks);
@@ -74,7 +80,7 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
         const library = stack.indexOf('/node_modules/');
         if (app < 0 || (library >= 0 && library < app)) return libraryRandom();
         if (queue.length) {
-          const want = queue.shift();
+          const want = queue.shift()!;
           let before = 0;
           for (let c = 1; c < want; c++) before += remaining[c];
           const r = (before + 0.5) / total;
@@ -98,7 +104,7 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
     { stack: cards(stack), decks },
   );
   await page.addInitScript(
-    overrides => {
+    (overrides: SavedSettings) => {
       window.__cjRecordFrames = true;
       // Every action button shown, and every pop-up, however briefly.
       window.__cjOffered = [];
@@ -106,17 +112,20 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
       document.addEventListener('DOMContentLoaded', () => {
         new MutationObserver(records => {
           for (const r of records) {
+            const target = r.target;
             if (
               r.type === 'attributes' &&
-              r.target.matches?.('[data-testid="table-actions"] [data-action]') &&
-              !r.target.hidden
+              target instanceof HTMLElement &&
+              target.matches('[data-testid="table-actions"] [data-action]') &&
+              !target.hidden
             ) {
-              window.__cjOffered.push(r.target.dataset.action);
+              window.__cjOffered.push(target.dataset.action!);
             }
-            for (const node of r.addedNodes ?? []) {
-              const pops = node.matches?.('[data-sonner-toast]')
+            for (const node of r.addedNodes) {
+              if (!(node instanceof HTMLElement)) continue;
+              const pops = node.matches('[data-sonner-toast]')
                 ? [node]
-                : [...(node.querySelectorAll?.('[data-sonner-toast]') ?? [])];
+                : [...node.querySelectorAll<HTMLElement>('[data-sonner-toast]')];
               for (const pop of pops) window.__cjToasts.push({ text: pop.textContent, type: pop.dataset.type });
             }
           }
@@ -144,18 +153,18 @@ async function openTable(page, { settings = {}, stack = [] } = {}) {
 const overlay = betOverlay;
 const overlayTitle = betTitle;
 const action = playButton;
-const insure = page => playButton(page, 'insure');
-const pass = page => playButton(page, 'pass');
+const insure = (page: Page) => playButton(page, 'insure');
+const pass = (page: Page) => playButton(page, 'pass');
 const ACTIONS = ['hit', 'stand', 'double', 'split', 'surrender'];
 
 /** Taps the first bet tile and waits for the deal to start. */
-async function bet(page) {
+async function bet(page: Page) {
   await betGrid(page).click({ position: { x: 25, y: 25 } });
   await expect(overlay(page)).toBeHidden();
 }
 
 /** Waits until the table wants something: an action, the insurance answer, or the next bet. */
-async function settle(page) {
+async function settle(page: Page) {
   await expect
     .poll(
       async () => {
@@ -172,43 +181,44 @@ async function settle(page) {
 }
 
 /** The action buttons showing now. */
-async function offered(page) {
-  const shown = [];
+async function offered(page: Page) {
+  const shown: string[] = [];
   for (const name of ACTIONS) if (await action(page, name).isVisible()) shown.push(name);
   return shown;
 }
 
 /** Taps an action and waits for the table to want something again. */
-async function tap(page, name) {
+async function tap(page: Page, name: string) {
   await action(page, name).click();
   return settle(page);
 }
 
-const frames = page => page.evaluate(() => window.__cjFrames);
-const lastFrame = async page => (await frames(page)).at(-1);
+const frames = (page: Page) => page.evaluate(() => window.__cjFrames ?? []);
+const lastFrame = async (page: Page) => (await frames(page)).at(-1)!;
 /** The dealer's cards as last drawn before the table was cleared. */
-const dealerLast = async page => (await frames(page)).findLast(f => f.dealer.cards.length > 0).dealer;
-const handIn = (frame, key) => frame.hands.find(hand => hand.key === key);
+const dealerLast = async (page: Page) => (await frames(page)).findLast(f => f.dealer.cards.length > 0)!.dealer;
+const handIn = (frame: Frame, key: string) => frame.hands.find(hand => hand.key === key);
 /** The most cards a hand ever showed this round. */
-const mostCards = async (page, key) => Math.max(0, ...(await frames(page)).map(f => handIn(f, key)?.cards.length ?? 0));
-const resetOffered = page =>
+const mostCards = async (page: Page, key: string) =>
+  Math.max(0, ...(await frames(page)).map(f => handIn(f, key)?.cards.length ?? 0));
+const resetOffered = (page: Page) =>
   page.evaluate(() => {
     window.__cjOffered = [];
   });
-const offeredLog = page => page.evaluate(() => window.__cjOffered);
-const toasts = page => page.evaluate(() => window.__cjToasts);
+const offeredLog = (page: Page) => page.evaluate(() => window.__cjOffered);
+const toasts = (page: Page) => page.evaluate(() => window.__cjToasts);
 
 // A plain dealer 17 (9 up, 8 in the hole) that never peeks.
 const D17 = ['9h', '8h'];
 /** Interleaves the player's two cards with the dealer's, in deal order. */
-const deal = ([p1, p2], [up, hole]) => [p1, up, p2, hole];
+const deal = ([p1, p2]: string[], [up, hole]: string[]) => [p1, up, p2, hole];
 
 test.describe('1. many unbusted cards win', () => {
   for (const [count, key, stack] of [
     [5, 'rules.autoWinFiveCards', ['2c', '3c', '4s']],
     [6, 'rules.autoWinSixCards', ['2c', '3c', '2h', '4s']],
     [7, 'rules.autoWinSevenCards', ['2c', '3c', '2h', 'Ac', 'Ah']],
-  ]) {
+  ] satisfies [number, string, string[]][]) {
     test(`${count} unbusted cards stand the hand and pay it as a win`, async ({ page }) => {
       // 2+3 against a dealer 17 (T up, 7 in the hole); every hit stays low.
       await openTable(page, { settings: { [key]: true }, stack: [...deal(['2s', '3s'], ['Ts', '7s']), ...stack] });
@@ -280,7 +290,7 @@ test.describe('2. auto-stand on 21', () => {
     expect(await offeredLog(page)).toEqual([]);
     // Still on the table when the dealer drew to 21: not swept as a bust.
     const all = await frames(page);
-    const dealerDrew = all.find(f => f.dealer.cards.length === 3);
+    const dealerDrew = all.find(f => f.dealer.cards.length === 3)!;
     expect(handIn(dealerDrew, '1-0')?.cards).toEqual(cards(['Ts', '5s', '7s']));
     expect((await toasts(page)).map(t => t.text)).not.toContain('Bust');
     await expect(bankroll(page)).toHaveText('$1,000.00');
@@ -334,7 +344,7 @@ test.describe('4. split aces', () => {
     await bet(page);
     await settle(page);
     expect(await tap(page, 'split')).toBe('act');
-    expect(handIn(await lastFrame(page), '1-0').cards).toEqual(cards(['As', 'Ah']));
+    expect(handIn(await lastFrame(page), '1-0')!.cards).toEqual(cards(['As', 'Ah']));
     const shown = await offered(page);
     expect(shown).toContain('split');
     expect(shown).not.toContain('hit');
@@ -360,7 +370,7 @@ test.describe('4. split aces', () => {
     await expect(bankroll(page)).toHaveText('$950.00');
     await tap(page, 'double');
     await expect(bankroll(page)).toHaveText('$925.00');
-    expect(handIn(await lastFrame(page), '1-0').cards).toEqual(cards(['As', '5s', '2s']));
+    expect(handIn(await lastFrame(page), '1-0')!.cards).toEqual(cards(['As', '5s', '2s']));
   });
 
   test('with none of the split-ace rules, split aces stand at once', async ({ page }) => {
@@ -550,7 +560,7 @@ test.describe('10. suited 6-7-8 pays 2:1 if it wins', () => {
 
 test.describe('11. side bets', () => {
   /** Picks a side bet of `chips` chips for each spot the game asks about. */
-  async function sideBets(page, chips, titles = []) {
+  async function sideBets(page: Page, chips: number[], titles: string[] = []) {
     await overlayButton(page, 'Side Bet').click();
     const picker = page.locator('[data-screen="game.betSelect"]');
     for (const [index, amount] of chips.entries()) {
@@ -610,12 +620,12 @@ test.describe('11. side bets', () => {
 });
 
 test.describe('12. bankroll limits', () => {
-  const ramp = chips => ({ minCount: 0, rows: [{ chips, hands: 1 }] });
+  const ramp = (chips: number) => ({ minCount: 0, rows: [{ chips, hands: 1 }] });
 
   for (const [bank, enabled] of [
     [100, false],
     [150, true],
-  ]) {
+  ] satisfies [number, boolean][]) {
     test(`Insure is ${enabled ? 'available' : 'unavailable'} with $${bank - 100} left after a $100 bet`, async ({
       page,
     }) => {
@@ -636,7 +646,7 @@ test.describe('12. bankroll limits', () => {
     ['a double', {}, 10, true],
     ['a triple-down', { 'rules.tripleDown': true }, 8, false],
     ['a triple-down', { 'rules.tripleDown': true }, 6, true],
-  ]) {
+  ] satisfies [string, SavedSettings, number, boolean][]) {
     test(`Double is ${shown ? '' : 'not '}offered for ${label} with $${100 - chips * 5} left after a $${chips * 5} bet`, async ({
       page,
     }) => {
@@ -654,7 +664,7 @@ test.describe('12. bankroll limits', () => {
   for (const [chips, shown] of [
     [6, false],
     [5, true],
-  ]) {
+  ] satisfies [number, boolean][]) {
     test(`a redouble is ${shown ? '' : 'not '}offered with $${100 - chips * 10} left after doubling a $${chips * 5} bet`, async ({
       page,
     }) => {
@@ -680,14 +690,14 @@ test.describe('12. bankroll limits', () => {
 
 test.describe('13. "Are you sure?" on an obviously bad play', () => {
   const sure = { 'mechanics.dealerPointsOutStupidPlays': true };
-  const sounds = page => page.evaluate(() => window.__cjSounds);
-  const clearSounds = page =>
+  const sounds = (page: Page) => page.evaluate(() => window.__cjSounds);
+  const clearSounds = (page: Page) =>
     page.evaluate(() => {
       window.__cjSounds = [];
     });
 
   /** Taps an action the dealer should query: nothing is dealt, the question drops down with a click. */
-  async function expectQueried(page, name, question) {
+  async function expectQueried(page: Page, name: string, question: string) {
     const before = (await lastFrame(page)).hands[0].cards.length;
     const asked = (await toasts(page)).filter(t => t.text === question).length;
     await clearSounds(page);
@@ -747,7 +757,7 @@ test.describe('14. speed mapping', () => {
   const SLOW_MS = Math.round(((101 - SLOW) / 120) * 1000);
 
   /** Plays the round and returns the time each step took, by what it was. */
-  async function measure(page, { dealer, other }) {
+  async function measure(page: Page, { dealer, other }: { dealer: number; other: number }) {
     await openTable(page, {
       settings: {
         'mechanics.dealerSpeed': dealer,
@@ -767,15 +777,16 @@ test.describe('14. speed mapping', () => {
     expect(await tap(page, 'stand')).toBe('bet');
 
     const log = await frames(page);
-    const count = (f, key) => (key === 'dealer' ? f.dealer.cards.length : (handIn(f, key)?.cards.length ?? 0));
+    const count = (f: Frame, key: string) =>
+      key === 'dealer' ? f.dealer.cards.length : (handIn(f, key)?.cards.length ?? 0);
     /** The frame where a hand first shows n cards. */
-    const reach = (key, n, from = 0) => log.findIndex((f, i) => i >= from && count(f, key) >= n);
+    const reach = (key: string, n: number, from = 0) => log.findIndex((f, i) => i >= from && count(f, key) >= n);
     // Until the picture next changes: a stray redraw of the same picture is not a step.
-    const look = f =>
+    const look = (f: Frame) =>
       JSON.stringify([f.dealer.cards, f.dealer.faceUp, f.hands.map(h => [h.key, h.cards, h.faceUp]), f.pointer?.hand]);
-    const after = i => log[log.findIndex((f, j) => j > i && look(f) !== look(log[i]))].t - log[i].t;
+    const after = (i: number) => log[log.findIndex((f, j) => j > i && look(f) !== look(log[i]))].t - log[i].t;
     // From when the previous picture first appeared: a stray redraw of it is not a step.
-    const before = i => {
+    const before = (i: number) => {
       let start = i - 1;
       while (start > 0 && look(log[start - 1]) === look(log[i - 1])) start -= 1;
       return log[i].t - log[start].t;
@@ -796,8 +807,8 @@ test.describe('14. speed mapping', () => {
     const dealerDraw = reach('dealer', 3);
     for (const i of [...deal, split, doubled, secondHand, computerDraw, dealerDraw]) expect(i).toBeGreaterThan(0);
     // Order check: the stack played out as planned.
-    expect(handIn(log[doubled], '1-0').cards).toEqual(cards(['8s', '3s', '9s']));
-    expect(handIn(log[computerDraw], '2-0').cards).toEqual(cards(['2d', '3d', 'Td']));
+    expect(handIn(log[doubled], '1-0')!.cards).toEqual(cards(['8s', '3s', '9s']));
+    expect(handIn(log[computerDraw], '2-0')!.cards).toEqual(cards(['2d', '3d', 'Td']));
     expect(log[dealerDraw].dealer.cards).toEqual(cards(['6h', 'Th', '5h']));
     return {
       deal: deal.map(after),
@@ -811,20 +822,20 @@ test.describe('14. speed mapping', () => {
     };
   }
 
-  const fast = (ms, name = '') => expect(ms, name).toBeLessThan(SLOW_MS / 2);
-  const slow = (ms, name = '') => expect(ms, name).toBeGreaterThan(SLOW_MS * 0.8);
+  const fast = (ms: number, name = '') => expect(ms, name).toBeLessThan(SLOW_MS / 2);
+  const slow = (ms: number, name = '') => expect(ms, name).toBeGreaterThan(SLOW_MS * 0.8);
 
   test('a slow Other Player Speed slows play but not the deal or the dealer', async ({ page }) => {
     const ms = await measure(page, { dealer: FAST, other: SLOW });
-    ms.deal.forEach(fast);
-    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw']) slow(ms[step], step);
+    ms.deal.forEach(step => fast(step));
+    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) slow(ms[step], step);
     fast(ms.dealerDraw);
   });
 
   test('a slow Dealer Speed slows the deal and the dealer but not play', async ({ page }) => {
     const ms = await measure(page, { dealer: SLOW, other: FAST });
-    ms.deal.forEach(slow);
-    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw']) fast(ms[step], step);
+    ms.deal.forEach(step => slow(step));
+    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) fast(ms[step], step);
     slow(ms.dealerDraw);
   });
 });
@@ -832,7 +843,7 @@ test.describe('14. speed mapping', () => {
 test.describe('15. computer seats', () => {
   const computerSeat = { 'table.seatCount': 2, 'table.computerSeats': [false, true, false, false, false, false] };
   // Seat order: player, computer, dealer up, player, computer, hole card.
-  const deal2 = ([h1, h2], [c1, c2], [up, hole]) => [h1, c1, up, h2, c2, hole];
+  const deal2 = ([h1, h2]: string[], [c1, c2]: string[], [up, hole]: string[]) => [h1, c1, up, h2, c2, hole];
 
   test('a computer 16 against a 10 follows the Playing Strategy, not "hit to 17"', async ({ page }) => {
     // Seen before it acts: 5 4 T 6 T, a running count of +1. The default
@@ -865,7 +876,7 @@ test.describe('15. computer seats', () => {
     expect((await toasts(page)).map(t => t.text)).not.toContain('Surrender');
     // Still on the table when the dealer turned the hole card.
     const log = await frames(page);
-    const revealed = log.find(f => f.dealer.faceUp[1]);
+    const revealed = log.find(f => f.dealer.faceUp[1])!;
     expect(handIn(revealed, '2-0')?.cards).toEqual(cards(['Tc', '6c']));
   });
 
@@ -878,9 +889,9 @@ test.describe('15. computer seats', () => {
     await bet(page);
     expect(await tap(page, 'stand')).toBe('bet');
     const log = await frames(page);
-    const both = log.find(f => handIn(f, '2-0') && handIn(f, '2-1') && handIn(f, '2-1').cards.length === 3);
+    const both = log.find(f => handIn(f, '2-0') && handIn(f, '2-1')?.cards.length === 3)!;
     expect(both).toBeTruthy();
-    expect(handIn(both, '2-0').cards).toEqual(cards(['8d', 'Tc']));
-    expect(handIn(both, '2-1').cards).toEqual(cards(['8c', '2s', '9c']));
+    expect(handIn(both, '2-0')!.cards).toEqual(cards(['8d', 'Tc']));
+    expect(handIn(both, '2-1')!.cards).toEqual(cards(['8c', '2s', '9c']));
   });
 });
