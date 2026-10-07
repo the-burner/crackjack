@@ -32,7 +32,6 @@ const INDEX_SET_OPTIONS = INDEX_SETS.map(value => ({ value, label: INDEX_SET_LAB
 // A rule here is the same rule as on the settings screens, so it goes through
 // the same constraints.
 const RULE_CHECKS: SettingCheck[] = [
-  { label: 'Warning on Strategy Error', key: 'strategy.warnOnError' },
   { label: 'Double after split', key: 'rules.doubleAfterSplit' },
   { label: 'Hit soft 17', key: 'rules.dealerHitsSoft17' },
   { label: 'No hole card', key: 'rules.noHoleCard' },

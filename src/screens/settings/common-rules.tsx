@@ -11,9 +11,6 @@ const NOTE = 'Common rule variations are set using this screen.';
 const CHECKS: readonly SettingCheck[] = [
   { label: 'Cards dealt face down', key: 'table.cardsFaceDown' },
   { label: 'DD card dealt face up', key: 'table.doubleDownCardFaceUp' },
-  { label: 'Double down after split', key: 'rules.doubleAfterSplit' },
-  { label: 'Dealer hits soft 17', key: 'rules.dealerHitsSoft17' },
-  { label: 'No dealer hole card', key: 'rules.noHoleCard' },
   { label: 'Dealer BJ wins all', key: 'rules.dealerBlackjackWinsAll' },
 ];
 
@@ -49,7 +46,7 @@ const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits:
 
 export function CommonRules() {
   return (
-    <SettingsScreen title="Common Rules" help="settings.commonRules" note={NOTE}>
+    <SettingsScreen title="Common Rules" help="game.commonRules" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={CHECKS} />
       </SettingsGroup>

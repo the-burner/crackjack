@@ -65,7 +65,7 @@ export function Betting() {
   const openRow = (row: number) => navigate(String(row));
 
   return (
-    <ScreenLayout title="Allowed Bets" help="settings.betting">
+    <ScreenLayout title="Allowed Bets" help="game.betting">
       <Column>
         <SettingsNote>
           Enter the number of different bets in the table and then click on a table cell to enter a new bet.
@@ -172,7 +172,7 @@ export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) 
   }
 
   return (
-    <ScreenLayout title="Allowed Bets" help="settings.betting">
+    <ScreenLayout title="Allowed Bets" help="game.betting">
       <div className="mx-auto flex max-w-[365px] flex-col gap-4">
         <Note className="my-0">
           In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the

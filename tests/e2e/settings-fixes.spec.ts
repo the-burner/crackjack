@@ -72,7 +72,7 @@ test('tapping a dealer-total column of an extended strategy keeps the picked ind
 
 test('the Peeking rows fill their group and keep their labels inside it', async ({ page }) => {
   await openHub(page);
-  const el = await openFromHub(page, 'Peeking', 'settings.peeking');
+  const el = await openFromHub(page, 'Peeking', 'game.peeking');
 
   // The peek modes are list rows, so their separators cross the whole card.
   const modes = el.locator('[data-slot="settings-group"]').first();
@@ -101,7 +101,7 @@ test('the TC Calcs rows sit in one inset group', async ({ page }) => {
 
 test('the Allowed Bets rows sit in one inset group', async ({ page }) => {
   await openHub(page);
-  const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+  const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
   const groups = el.locator('[data-slot="settings-group"]');
   await expect(groups).toHaveCount(1);
   await expect(groups.getByRole('switch', { name: 'Warning on Betting Error' })).toBeVisible();
@@ -112,19 +112,26 @@ test('the Allowed Bets rows sit in one inset group', async ({ page }) => {
 
 test('Allowed Bets saves the bet ramp it brought back into range', async ({ page }) => {
   await openHub(page, { 'betting.ramp': { minCount: 1.5, rows: [{ chips: 999, hands: 9 }] } });
-  await openFromHub(page, 'Betting Strategies', 'settings.betting');
+  await openFromHub(page, 'Betting Strategies', 'game.betting');
   const saved = await page.evaluate(
     () => JSON.parse(localStorage.getItem('cj.settings') ?? '{}').state.values['betting.ramp'],
   );
   expect(saved).toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
 });
 
-test('the Settings hub uses both columns in landscape', async ({ page }) => {
+test('Game Options keeps its sections and Play button in one centred column in landscape', async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await openHub(page);
-  const sections = page.locator('[data-screen="settings"]').getByRole('heading', { level: 2 });
-  const first = await sections.nth(0).boundingBox();
-  const second = await sections.nth(1).boundingBox();
-  expect(second!.x).toBeGreaterThan(first!.x + first!.width / 2);
-  expect(Math.round(second!.y)).toBe(Math.round(first!.y));
+  await page.evaluate(() => window.app.router.navigate('/'));
+  const el = page.locator('[data-screen="home"]');
+  await el.locator('[data-action="play"]').click();
+  const options = page.locator('[data-screen="game.options"]');
+  const sections = options.getByRole('heading', { level: 2 });
+  await expect(sections).toHaveCount(3);
+  const play = (await options.locator('[data-action="play"]').boundingBox())!;
+  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(2).boundingBox()]) {
+    expect(box!.x).toBeGreaterThanOrEqual(play.x);
+    expect(box!.x).toBeLessThan(play.x + 40);
+  }
+  expect(Math.abs(play.x + play.width / 2 - 844 / 2)).toBeLessThan(40);
 });

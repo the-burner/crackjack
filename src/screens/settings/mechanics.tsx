@@ -7,8 +7,6 @@ import type { SettingCheck } from '@/components/settings-controls';
 const NOTE = 'Operational controls are found here. Move speed controls to the right for faster operation.';
 
 const CHECKS: readonly SettingCheck[] = [
-  { label: 'Sound on', key: 'display.sound' },
-  { label: 'Use quieter sound for errors', key: 'display.quietErrorSound' },
   { label: 'Refresh bankroll at startup', key: 'table.refreshBankrollOnStart' },
   { label: 'Hide Buttons', key: 'display.hideActionButtons' },
   { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
@@ -18,7 +16,7 @@ const CHECKS: readonly SettingCheck[] = [
 
 export function Mechanics() {
   return (
-    <SettingsScreen title="Speed/Ops" help="settings.mechanics" note={NOTE}>
+    <SettingsScreen title="Speed/Ops" help="game.mechanics" note={NOTE}>
       <SettingsGroup>
         <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />
         <SettingSlider label="Other Player Speed" setting="mechanics.otherPlayerSpeed" />

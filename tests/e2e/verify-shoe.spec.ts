@@ -17,6 +17,7 @@ import {
   SELECTOR,
   statsRunningCount as statsCount,
   tapBetTile,
+  startGame,
 } from './support/table';
 
 /** Opens the table with a seeded deal and the frame, overlay and chip logs on. */
@@ -68,7 +69,7 @@ async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: S
     { overrides: settings, sel: SELECTOR },
   );
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(betOverlay(page)).toBeVisible({ timeout: 20000 });
 }
 

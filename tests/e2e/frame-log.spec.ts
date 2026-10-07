@@ -3,7 +3,7 @@
 
 import { test, expect } from '@playwright/test';
 import { seedRandom } from './support/app';
-import { betGrid, betOverlay, playButton } from './support/table';
+import { betGrid, betOverlay, playButton, startGame } from './support/table';
 
 test('records each frame the table draws, when a test asks it to', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -25,7 +25,7 @@ test('records each frame the table draws, when a test asks it to', async ({ page
     );
   });
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await betGrid(page).click({ position: { x: 25, y: 25 } });
   await expect(playButton(page, 'stand')).toBeVisible({ timeout: 30000 });
 
@@ -50,7 +50,7 @@ test('records each frame the table draws, when a test asks it to', async ({ page
 
 test('records nothing unless asked', async ({ page }) => {
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(betOverlay(page)).toBeVisible({ timeout: 10000 });
   expect(await page.evaluate(() => window.__cjFrames)).toBeUndefined();
 });

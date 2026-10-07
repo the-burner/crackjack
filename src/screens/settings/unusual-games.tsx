@@ -14,7 +14,7 @@ const GAMES = BUILTIN_SIDE_BET_GAMES.map(({ id, name }) => ({ value: id, label: 
 export function UnusualGames() {
   const settings = useSettings();
   return (
-    <SettingsScreen title="Unusual Games" help="settings.unusualGames">
+    <SettingsScreen title="Unusual Games" help="game.unusualGames">
       <SettingsGroup>
         <Select
           name="bonuses.game"

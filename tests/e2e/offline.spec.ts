@@ -1,7 +1,7 @@
 // The installed app must work with no network once the service worker has
 // cached it.
 import { test, expect } from '@playwright/test';
-import { betOverlay } from './support/table';
+import { betOverlay, startGame } from './support/table';
 
 test.use({ serviceWorkers: 'allow' });
 
@@ -27,7 +27,7 @@ test('runs offline after the first visit', { tag: '@build' }, async ({ page, con
   await page.locator('[data-screen="drills.depth.options"] button', { hasText: 'Launch the Drill' }).click();
   await expect(page.locator('[data-screen="drills.depth"]')).toBeVisible();
   await page.evaluate(() => window.app.router.navigate('/'));
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(betOverlay(page)).toBeVisible();
 
   const failed: string[] = [];

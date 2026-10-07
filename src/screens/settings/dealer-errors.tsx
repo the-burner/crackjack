@@ -30,7 +30,7 @@ const ERRORS: readonly SettingCheck[] = [
 
 export function DealerErrors() {
   return (
-    <SettingsScreen title="Errs/Biases" help="settings.dealerErrors" note={NOTE}>
+    <SettingsScreen title="Errs/Biases" help="game.dealerErrors" note={NOTE}>
       <SettingsGroup>
         <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />
       </SettingsGroup>

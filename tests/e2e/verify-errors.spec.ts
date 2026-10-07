@@ -21,6 +21,7 @@ import {
   readout,
   statValue,
   tableToast,
+  startGame,
 } from './support/table';
 
 /** Card ids are suit * 13 + rank; spades by default. */
@@ -124,7 +125,7 @@ async function openTable(
     window.app.sound.output = file => window.__cjSounds.push(file.split('/').pop()!);
   });
   await stackTheShoe(page);
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(overlay(page)).toBeVisible();
 }
 
@@ -745,7 +746,7 @@ test('the insurance offer waits while another screen covers the table', async ({
 test('Customize changes the bets offered as soon as the table is back', async ({ page }) => {
   await openTable(page);
   await overlayButton(page, 'Customize').click();
-  const betting = page.locator('[data-screen="settings.betting"]');
+  const betting = page.locator('[data-screen="game.betting"]');
   await betting.getByRole('combobox', { name: 'Chip Value', exact: true }).selectOption({ label: '$25' });
   await betting.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(overlay(page)).toBeVisible();

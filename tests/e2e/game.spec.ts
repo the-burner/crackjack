@@ -20,6 +20,7 @@ import {
   tableScreen,
   tableToast,
   tapBetTile,
+  startGame,
 } from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
@@ -64,7 +65,7 @@ async function openTable(
     );
   }, settings);
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(overlay(page)).toBeVisible();
   return tableScreen(page);
 }
@@ -266,7 +267,7 @@ test.describe('the table', () => {
       `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     await expect(bankroll(page)).toHaveText(money(before - 5));
     await barButton(page, 'Back').click();
-    await expect(page.locator('[data-screen="home"]')).toBeVisible();
+    await expect(page.locator('[data-screen="game.options"]')).toBeVisible();
     const saved = await page.evaluate(
       () => JSON.parse(localStorage.getItem('cj.bankroll') ?? 'null')?.state.value ?? null,
     );

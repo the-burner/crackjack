@@ -14,6 +14,7 @@ import {
   tableScreen,
   readoutRunningCount as feltCount,
   statsRunningCount,
+  startGame,
 } from './support/table';
 
 const PORTRAIT = { width: 390, height: 844 };
@@ -51,7 +52,7 @@ async function openTable(
     );
   }, settings);
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(betOverlay(page)).toBeVisible();
 }
 
@@ -231,7 +232,7 @@ test.describe('opening the table', () => {
       );
     });
     await page.goto('/index.html');
-    await page.locator('[data-action="play"]').click();
+    await startGame(page);
     await expect(tableScreen(page)).toBeVisible();
     // The burn is still being shown, so the betting menu must not be up yet.
     await page.clock.runFor(400);

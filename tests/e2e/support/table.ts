@@ -1,6 +1,12 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
+/** Opens the table from the home screen, through Game Options. */
+export async function startGame(page: Page): Promise<void> {
+  await page.locator('[data-screen="home"] [data-action="play"]').click();
+  await page.locator('[data-screen="game.options"] [data-action="play"]').click();
+}
+
 /** The table's elements, as the specs find them. */
 export const tableScreen = (page: Page): Locator => page.locator('[data-screen="game.table"]');
 export const felt = (page: Page): Locator => page.getByTestId('felt');

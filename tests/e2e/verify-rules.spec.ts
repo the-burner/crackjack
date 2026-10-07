@@ -23,6 +23,7 @@ import {
   playButton,
   seatChip,
   tableToast,
+  startGame,
 } from './support/table';
 
 const RANKS = 'A23456789TJQK';
@@ -146,7 +147,7 @@ async function openTable(
       return play(name);
     };
   });
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(overlay(page)).toBeVisible({ timeout: 10000 });
 }
 

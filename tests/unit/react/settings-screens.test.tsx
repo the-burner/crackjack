@@ -8,6 +8,7 @@ import { PlayVariations } from '@/screens/settings/play-variations';
 import { Bonuses } from '@/screens/settings/bonuses';
 import { UnusualGames } from '@/screens/settings/unusual-games';
 import { SettingsHub } from '@/screens/settings/hub';
+import { GameOptions } from '@/game/screens/options';
 import { Home } from '@/screens/home';
 import { HelpSheet } from '@/screens/help';
 import { openHelp } from '@/app/help';
@@ -113,12 +114,48 @@ describe('rule interactions', () => {
 });
 
 describe('navigation screens', () => {
-  it('the hub opens each option screen', async () => {
+  it('Settings holds only what the whole app shares', async () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<SettingsHub />);
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3);
+    expect(screen.getAllByRole('button').map(b => b.textContent)).toEqual([
+      'Back',
+      'Help',
+      'Playing Strategies',
+      'True Count Calcs',
+      'Appearance & Sound',
+    ]);
+    await user.click(screen.getByRole('button', { name: 'True Count Calcs' }));
+    expect(location().pathname).toBe('/settings/true-count');
+  });
+
+  it("Game Options opens the game's own screens", async () => {
+    const user = userEvent.setup();
+    const { location } = renderScreen(<GameOptions />, { path: '/game' });
+    expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
+      'Table and Rules',
+      'Betting and Peeking',
+      'Table',
+    ]);
+    expect(screen.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Common Rules' }));
-    expect(location().pathname).toBe('/settings/common-rules');
+    expect(location().pathname).toBe('/game/common-rules');
+  });
+
+  it('Game Options starts the game, freeing a seat for the player', async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    app.settings.set('table.computerSeats', [true, true, true, true, true, true]);
+    const { location } = renderScreen(<GameOptions />, { app, path: '/game' });
+    await user.click(screen.getByRole('button', { name: 'Play Blackjack' }));
+    expect(location().pathname).toBe('/game/play');
+    expect(app.settings.get('table.computerSeats').some(computer => !computer)).toBe(true);
+  });
+
+  it('Play Blackjack on the home screen opens Game Options', async () => {
+    const user = userEvent.setup();
+    const { location } = renderScreen(<Home />);
+    await user.click(screen.getByRole('button', { name: 'Play Blackjack' }));
+    expect(location().pathname).toBe('/game');
   });
 
   it('Reset Defaults asks, then resets', async () => {

@@ -136,7 +136,7 @@ const bets = (el: Locator) => el.getByRole('table', { name: 'Bets' });
 test.describe('Allowed Bets', () => {
   test('shows the count column only when betting errors are flagged', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
     // Warning on betting errors is on by default.
     const firstCount = bets(el).locator('tbody tr').first().getByRole('cell').first();
     await expect(firstCount).toHaveText('<=0');
@@ -149,7 +149,7 @@ test.describe('Allowed Bets', () => {
 
   test('resizes the table and edits a row', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
     // The default ramp has six bets: 1, 2, 4, 6, 12 and 16 chips.
     await expect(bets(el).locator('tbody tr')).toHaveCount(6);
 
@@ -158,7 +158,7 @@ test.describe('Allowed Bets', () => {
     await expect(bets(el).locator('tbody tr')).toHaveCount(3);
 
     await bets(el).locator('tbody tr').nth(2).click();
-    const pad = page.locator('[data-screen="settings.betting.select"]');
+    const pad = page.locator('[data-screen="game.betting.select"]');
     await expect(pad).toBeVisible();
     await pad.getByRole('button', { name: '3x' }).click();
     // 200 chips on three hands is over the limit, so that button is disabled.
@@ -179,9 +179,9 @@ test.describe('Allowed Bets', () => {
 
   test('takes a custom bet', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
     await bets(el).locator('tbody tr').first().click();
-    const pad = page.locator('[data-screen="settings.betting.select"]');
+    const pad = page.locator('[data-screen="game.betting.select"]');
     await pad.locator('[data-action="custom-bet"]').click();
     await answerDialog(page, '400');
     // Clamped to the 200 chip limit.
@@ -190,7 +190,7 @@ test.describe('Allowed Bets', () => {
 
   test('sets the chip value', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
     await choose(el, 'Chip Value', '$25');
     expect(await setting(page, 'betting.chipValue')).toBe(25);
   });

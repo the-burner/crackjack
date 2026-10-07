@@ -52,7 +52,7 @@ export function Setup() {
   // shown depends on the shuffle mode.
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
-    <SettingsScreen title="Basic Setup" help="settings.setup" note={NOTE}>
+    <SettingsScreen title="Basic Setup" help="game.setup" note={NOTE}>
       <SettingsGroup>
         <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
         <SettingsNote>Below, highlighted seats are computer players. Click to change.</SettingsNote>

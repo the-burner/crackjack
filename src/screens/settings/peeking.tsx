@@ -28,7 +28,7 @@ const STRATEGIES = [{ value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.na
 
 export function Peeking() {
   return (
-    <SettingsScreen title="Peeking" help="settings.peeking" note={NOTE}>
+    <SettingsScreen title="Peeking" help="game.peeking" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={CHECKS} />
         <SettingsRow label="Percent of the time:" trailing className="[&>[data-slot=select]]:flex-[0_0_110px]">

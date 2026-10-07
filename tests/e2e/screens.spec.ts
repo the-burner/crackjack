@@ -2,8 +2,9 @@
 // plus the behaviour of the screens the other specs only pass through.
 
 import { test, expect } from '@playwright/test';
-import { barButton, betOverlay, overlayButton } from './support/table';
+import { barButton, betOverlay, overlayButton, startGame } from './support/table';
 import type { Page } from '@playwright/test';
+import { hubOf, openHubFromHome } from './support/settings';
 import type { SettingKey } from '@/settings/schema';
 import { PATHS } from '@/app/paths';
 import type { ScreenName } from '@/app/paths';
@@ -41,28 +42,28 @@ const showing = (page: Page, name: string) => page.locator(`[data-screen="${name
  */
 /** The router keeps its factories to itself. */
 /** Every screen: those with a URL of their own, and those under another screen's. */
-const ALL_SCREENS = [...Object.keys(PATHS), 'settings.betting.select', 'game.betSelect', 'game.stats', 'help'];
+const ALL_SCREENS = [...Object.keys(PATHS), 'game.betting.select', 'game.betSelect', 'game.stats', 'help'];
 
 /** The URL that opens a screen directly. */
-const urlOf = (name: string) =>
-  name === 'settings.betting.select' ? '/settings/betting/0' : PATHS[name as ScreenName];
+const urlOf = (name: string) => (name === 'game.betting.select' ? '/game/betting/0' : PATHS[name as ScreenName]);
 
 const SCREENS = [
-  { name: 'settings', title: 'Options', control: 'role=button[name="Basic Setup"]' },
-  { name: 'settings.setup', title: 'Basic Setup', control: 'role=combobox[name="Decks"]' },
-  { name: 'settings.commonRules', title: 'Common Rules', control: 'role=combobox[name="Surrender"]' },
-  { name: 'settings.ruleVariations', title: 'Rule Variations', control: 'role=switch[name="Triple Down"]' },
-  { name: 'settings.playVariations', title: 'Play Variations', control: 'role=switch[name="Dealer wins ties"]' },
-  { name: 'settings.bonuses', title: 'Bonuses', control: 'role=switch[name="Blackjack pays 6:5"]' },
-  { name: 'settings.unusualGames', title: 'Unusual Games', control: 'role=combobox[name="Game"]' },
-  { name: 'settings.mechanics', title: 'Speed/Ops', control: 'role=slider' },
-  { name: 'settings.dealerErrors', title: 'Errs/Biases', control: 'role=combobox[name="Dealing bias"]' },
-  { name: 'settings.peeking', title: 'Peeking', control: 'role=switch[name="Peek when dealer peeks"]' },
-  { name: 'settings.appearance', title: 'Appearance', control: 'role=combobox[name="Theme"]' },
+  { name: 'settings', title: 'Settings', control: 'role=button[name="Playing Strategies"]' },
+  { name: 'game.options', title: 'Game Options', control: '[data-action="play"]' },
+  { name: 'game.setup', title: 'Basic Setup', control: 'role=combobox[name="Decks"]' },
+  { name: 'game.commonRules', title: 'Common Rules', control: 'role=combobox[name="Surrender"]' },
+  { name: 'game.ruleVariations', title: 'Rule Variations', control: 'role=switch[name="Triple Down"]' },
+  { name: 'game.playVariations', title: 'Play Variations', control: 'role=switch[name="Dealer wins ties"]' },
+  { name: 'game.bonuses', title: 'Bonuses', control: 'role=switch[name="Blackjack pays 6:5"]' },
+  { name: 'game.unusualGames', title: 'Unusual Games', control: 'role=combobox[name="Game"]' },
+  { name: 'game.mechanics', title: 'Speed/Ops', control: 'role=slider' },
+  { name: 'game.dealerErrors', title: 'Errs/Biases', control: 'role=combobox[name="Dealing bias"]' },
+  { name: 'game.peeking', title: 'Peeking', control: 'role=switch[name="Peek when dealer peeks"]' },
+  { name: 'settings.appearance', title: 'Appearance & Sound', control: 'role=combobox[name="Theme"]' },
   { name: 'settings.strategy', title: 'Strategies', control: 'role=combobox[name="Strategy"]' },
   { name: 'settings.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
-  { name: 'settings.betting', title: 'Allowed Bets', control: 'role=table[name="Bets"]' },
-  { name: 'settings.betting.select', title: 'Allowed Bets', control: 'role=group[name="Chips"]' },
+  { name: 'game.betting', title: 'Allowed Bets', control: 'role=table[name="Bets"]' },
+  { name: 'game.betting.select', title: 'Allowed Bets', control: 'role=group[name="Chips"]' },
   { name: 'strategy.tables', title: 'Tables', control: 'role=table[name="Hard Hit/Stand"]' },
   { name: 'drills.flash.options', title: 'Flash Options', control: '[data-action="launch"]' },
   { name: 'drills.depth.options', title: 'Depth Options', control: '[data-action="launch"]' },
@@ -134,10 +135,13 @@ test('every screen a Help button names is a screen the app registers', async ({ 
   expect(topics.filter(topic => !ALL_SCREENS.includes(topic))).toEqual([]);
 });
 
-/** Opens one screen from the settings hub, the way the user does. */
+/** Opens one screen from its hub, the way the user does. */
 async function openFromHub(page: Page, button: string, screen: string) {
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await page.locator('[data-screen="settings"]').getByRole('button', { name: button, exact: true }).click();
+  await openHubFromHome(page, hubOf(screen));
+  await page
+    .locator(`[data-screen="${hubOf(screen)}"]`)
+    .getByRole('button', { name: button, exact: true })
+    .click();
   const el = showing(page, screen);
   await expect(el).toBeVisible();
   return el;
@@ -153,7 +157,7 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
   // Mocha is the shipped default.
   await expect(html).toHaveAttribute('data-theme', 'mocha');
 
-  const el = await openFromHub(page, 'Appearance & Customization', 'settings.appearance');
+  const el = await openFromHub(page, 'Appearance & Sound', 'settings.appearance');
   const theme = el.getByRole('combobox', { name: 'Theme' });
   for (const [label, name] of [
     ['Classic', 'classic'],
@@ -174,7 +178,7 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
 test('the two peek modes exclude each other and survive a reload', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  let el = await openFromHub(page, 'Peeking', 'settings.peeking');
+  let el = await openFromHub(page, 'Peeking', 'game.peeking');
   const holeCard = el.getByRole('switch', { name: 'Peek at dealer down card' });
   const whenDealerPeeks = el.getByRole('switch', { name: 'Peek when dealer peeks' });
   // Peeking is off until one of the modes is chosen.
@@ -191,7 +195,7 @@ test('the two peek modes exclude each other and survive a reload', async ({ page
 
   // The URL keeps the screen across the reload.
   await page.reload();
-  el = showing(page, 'settings.peeking');
+  el = showing(page, 'game.peeking');
   await expect(el.getByRole('switch', { name: 'Peek when dealer peeks' })).toBeChecked();
   await expect(el.getByRole('switch', { name: 'Peek at dealer down card' })).not.toBeChecked();
 
@@ -205,7 +209,7 @@ test('choosing an unusual game applies its rules and leaving it puts them back',
   const errors = watchErrors(page);
   await openApp(page);
   const setting = (key: SettingKey) => page.evaluate(k => window.app.settings.get(k), key);
-  const el = await openFromHub(page, 'Unusual Games', 'settings.unusualGames');
+  const el = await openFromHub(page, 'Unusual Games', 'game.unusualGames');
   const game = el.getByRole('combobox', { name: 'Game' });
   const choose = (label: string) => game.selectOption({ label });
   expect(await setting('rules.playerBlackjackAlwaysWins')).toBe(false);
@@ -245,7 +249,7 @@ test('the True Count screen shows a row for every calculation it sets', async ({
 test('the Betting screen shows the bet ramp as a table', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const el = await openFromHub(page, 'Betting Strategies', 'settings.betting');
+  const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
   // The default ramp: six bets, the first of them one chip at a count of 0 or less.
   const rows = el.getByRole('table', { name: 'Bets' }).locator('tbody tr');
   await expect(rows).toHaveCount(6);
@@ -268,7 +272,7 @@ test('the game table and the screens it opens log nothing while a round is playe
     );
   });
   await page.goto('/index.html');
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   const overlay = betOverlay(page);
   await expect(overlay).toBeVisible();
 

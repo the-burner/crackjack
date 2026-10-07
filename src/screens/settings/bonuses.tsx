@@ -32,7 +32,7 @@ const HANDS: readonly SettingCheck[] = [
 
 export function Bonuses() {
   return (
-    <SettingsScreen title="Bonuses" help="settings.bonuses" note={NOTE}>
+    <SettingsScreen title="Bonuses" help="game.bonuses" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={BLACKJACK} />
       </SettingsGroup>

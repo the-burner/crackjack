@@ -42,10 +42,15 @@ const page = (name: string, load: () => Promise<ComponentType>): Pick<RouteObjec
   },
 });
 
-const settings = (path: string, name: string, load: () => Promise<ComponentType>): RouteObject => ({
-  path: `settings/${path}`,
-  ...page(`settings.${name}`, load),
-});
+/** A screen of the global settings (`settings/…`) or of the game's (`game/…`). */
+const area =
+  (prefix: 'settings' | 'game') =>
+  (path: string, name: string, load: () => Promise<ComponentType>): RouteObject => ({
+    path: `${prefix}/${path}`,
+    ...page(`${prefix}.${name}`, load),
+  });
+const settings = area('settings');
+const game = area('game');
 
 const tables = () => import('@/screens/strategy/tables').then(m => m.StrategyTablesRoute);
 const betting = () => import('@/screens/strategy/betting').then(m => m.Betting);
@@ -75,30 +80,27 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: 'settings', ...page('settings', () => import('@/screens/settings/hub').then(m => m.SettingsHub)) },
-      settings('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
-      settings('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),
-      settings('rule-variations', 'ruleVariations', () =>
-        import('@/screens/settings/rule-variations').then(m => m.RuleVariations),
-      ),
-      settings('mechanics', 'mechanics', () => import('@/screens/settings/mechanics').then(m => m.Mechanics)),
-      settings('bonuses', 'bonuses', () => import('@/screens/settings/bonuses').then(m => m.Bonuses)),
-      settings('play-variations', 'playVariations', () =>
-        import('@/screens/settings/play-variations').then(m => m.PlayVariations),
-      ),
-      settings('unusual-games', 'unusualGames', () =>
-        import('@/screens/settings/unusual-games').then(m => m.UnusualGames),
-      ),
-      settings('dealer-errors', 'dealerErrors', () =>
-        import('@/screens/settings/dealer-errors').then(m => m.DealerErrors),
-      ),
-      settings('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),
-      settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
       settings('strategy', 'strategy', () =>
         import('@/screens/strategy/playing-strategy').then(m => m.PlayingStrategy),
       ),
       settings('true-count', 'trueCount', () => import('@/screens/strategy/true-count').then(m => m.TrueCount)),
-      settings('betting', 'betting', betting),
-      settings('betting/:row', 'betting.select', betRow),
+      settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
+      { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
+      game('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
+      game('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),
+      game('rule-variations', 'ruleVariations', () =>
+        import('@/screens/settings/rule-variations').then(m => m.RuleVariations),
+      ),
+      game('bonuses', 'bonuses', () => import('@/screens/settings/bonuses').then(m => m.Bonuses)),
+      game('play-variations', 'playVariations', () =>
+        import('@/screens/settings/play-variations').then(m => m.PlayVariations),
+      ),
+      game('unusual-games', 'unusualGames', () => import('@/screens/settings/unusual-games').then(m => m.UnusualGames)),
+      game('dealer-errors', 'dealerErrors', () => import('@/screens/settings/dealer-errors').then(m => m.DealerErrors)),
+      game('betting', 'betting', betting),
+      game('betting/:row', 'betting.select', betRow),
+      game('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),
+      game('mechanics', 'mechanics', () => import('@/screens/settings/mechanics').then(m => m.Mechanics)),
       { path: 'strategy/tables', ...page('strategy.tables', tables) },
       {
         path: 'drills/flash',
@@ -135,13 +137,13 @@ export const routes: RouteObject[] = [
       },
       { path: 'drills/full/play', ...page('drills.full', () => import('@/drills/full/screen').then(m => m.FullDrill)) },
       {
-        path: 'play',
+        path: 'game/play',
         ...page('game.table', () => import('@/game/screens/table-screen').then(m => m.TableScreen)),
         children: [
           { path: 'stats', ...page('game.stats', () => import('@/game/screens/stats').then(m => m.GameStatsRoute)) },
           { path: 'error', ...page('strategy.tables', tables) },
-          { path: 'customize', ...page('settings.betting', betting) },
-          { path: 'customize/:row', ...page('settings.betting.select', betRow) },
+          { path: 'customize', ...page('game.betting', betting) },
+          { path: 'customize/:row', ...page('game.betting.select', betRow) },
           {
             path: 'side-bet/:spot',
             ...page('game.betSelect', () => import('@/game/screens/bet-select').then(m => m.SideBetRoute)),

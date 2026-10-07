@@ -15,6 +15,7 @@ import {
   readout,
   SELECTOR,
   statsRunningCount,
+  startGame,
 } from './support/table';
 import type { SavedSettings } from './support/app';
 import type { PillLook, Rect, TableLogEntry } from './support/types';
@@ -179,7 +180,7 @@ async function openTable(
   );
   await page.goto('/index.html');
   if (sound) await recordSounds(page);
-  await page.locator('[data-action="play"]').click();
+  await startGame(page);
   await expect(betOverlay(page)).toBeVisible({ timeout: 15000 });
 }
 

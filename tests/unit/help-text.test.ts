@@ -43,14 +43,14 @@ describe('each screen gets its own help', () => {
 
   it('tells the bet picker apart from the betting settings', () => {
     expect(HELP['game.betSelect']).toBeDefined();
-    expect(HELP['game.betSelect']).not.toBe(HELP['settings.betting']);
+    expect(HELP['game.betSelect']).not.toBe(HELP['game.betting']);
     // The picker is where a bet is chosen, not where the ramp is configured.
     expect(HELP['game.betSelect']).not.toContain('Warning on Betting Error');
   });
 });
 
 describe('the unusual games help', () => {
-  const html = HELP['settings.unusualGames'];
+  const html = HELP['game.unusualGames'];
   const named = [...html.matchAll(/<li>\s*<strong>\s*([^<]+?)\s*<\/strong>/g)].map(m =>
     m[1].replace(/\s+/g, ' ').trim(),
   );

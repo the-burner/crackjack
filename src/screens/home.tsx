@@ -10,7 +10,6 @@ import { Column, ScreenLayout } from '@/components/screen-layout';
 import type { App } from '@/app/app';
 import { toast } from '@/components/ui/toast';
 import { alert, confirm } from '@/components/dialogs';
-import { openTable } from '@/game/launch';
 import { WORDMARK_SVG } from '@/lib/wordmark';
 import { currentNavigator, installHintWanted } from '@/lib/install-hint';
 import { useNavigate } from 'react-router';
@@ -56,7 +55,7 @@ export function Home() {
           large
           block
           icon="arrow-r"
-          onClick={() => openTable(app, () => navigate(PATHS['game.table']))}
+          onClick={() => navigate(PATHS['game.options'])}
           data-action="play"
         >
           Play Blackjack

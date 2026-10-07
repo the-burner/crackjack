@@ -8,7 +8,6 @@ const NOTE = 'You will find less common rule variations on this screen.';
 
 const DOUBLING: readonly SettingCheck[] = [
   { label: 'Double down on 3 cards', key: 'rules.doubleOnThreeCards' },
-  { label: 'Double down any # of cards', key: 'rules.doubleAnyNumberOfCards' },
   { label: 'ReDouble', key: 'rules.redouble' },
   { label: 'Triple Down', key: 'rules.tripleDown' },
   { label: 'Hit after Double Down', key: 'rules.hitAfterDouble' },
@@ -29,7 +28,7 @@ const SPLITTING: readonly SettingCheck[] = [
 
 export function RuleVariations() {
   return (
-    <SettingsScreen title="Rule Variations" help="settings.ruleVariations" note={NOTE}>
+    <SettingsScreen title="Rule Variations" help="game.ruleVariations" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={DOUBLING} />
       </SettingsGroup>

@@ -27,7 +27,7 @@ const HANDS: readonly SettingCheck[] = [
 
 export function PlayVariations() {
   return (
-    <SettingsScreen title="Play Variations" help="settings.playVariations" note={NOTE}>
+    <SettingsScreen title="Play Variations" help="game.playVariations" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={DEALER} />
       </SettingsGroup>
