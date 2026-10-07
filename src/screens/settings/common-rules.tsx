@@ -1,12 +1,15 @@
-// @ts-nocheck
 // Common Rules.
 
+import { reactScreen } from '../../react/screen.tsx';
+import { SettingChecks, SettingSelect, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
+import type { SettingCheck } from '../../react/settings-form.tsx';
 import { TABLE_LIMITS } from '../../settings/schema.ts';
-import { group, settingsScreen } from './controls.ts';
+import type { SettingValues } from '../../settings/schema.ts';
+import type { SelectOption } from '../../ui/components.ts';
 
 const NOTE = 'Common rule variations are set using this screen.';
 
-const CHECKS = [
+const CHECKS: readonly SettingCheck[] = [
   { label: 'Cards dealt face down', key: 'table.cardsFaceDown' },
   { label: 'DD card dealt face up', key: 'table.doubleDownCardFaceUp' },
   { label: 'Double down after split', key: 'rules.doubleAfterSplit' },
@@ -15,7 +18,7 @@ const CHECKS = [
   { label: 'Dealer BJ wins all', key: 'rules.dealerBlackjackWinsAll' },
 ];
 
-const HARD_DOUBLES = [
+const HARD_DOUBLES: readonly SelectOption<SettingValues['rules.hardDoubles']>[] = [
   { value: 'none', label: 'No hard doubles' },
   { value: '10-11', label: 'Double 10-11' },
   { value: '9-11', label: 'Double 9-11' },
@@ -23,19 +26,19 @@ const HARD_DOUBLES = [
   { value: 'any', label: 'Any hard doubles' },
 ];
 
-const SOFT_DOUBLES = [
+const SOFT_DOUBLES: readonly SelectOption<SettingValues['rules.softDoubles']>[] = [
   { value: 'none', label: 'No soft doubles' },
   { value: 'a8a9', label: 'Soft double A8 or A9 only' },
   { value: 'any', label: 'Any soft doubles' },
 ];
 
-const INSURANCE = [
+const INSURANCE: readonly SelectOption<SettingValues['rules.insurance']>[] = [
   { value: 'none', label: 'No Insurance' },
   { value: 'normal', label: 'Insurance' },
   { value: 'blackjackOnly', label: 'Insure BJ only' },
 ];
 
-const SURRENDER = [
+const SURRENDER: readonly SelectOption<SettingValues['rules.surrender']>[] = [
   { value: 'none', label: 'No Surrender' },
   { value: 'late', label: 'Late Surrender (common)' },
   { value: 'early', label: 'Early Surrender (rare)' },
@@ -45,21 +48,21 @@ const SURRENDER = [
 
 const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
-export function commonRulesScreen(app) {
-  const { el, columns, form } = settingsScreen(app, {
-    title: 'Common Rules',
-    help: 'settings.commonRules',
-    note: NOTE,
-  });
-  columns.append(
-    group(form.checks(CHECKS)),
-    group(
-      form.select('rules.hardDoubles', HARD_DOUBLES),
-      form.select('rules.softDoubles', SOFT_DOUBLES),
-      form.select('rules.insurance', INSURANCE),
-      form.select('rules.surrender', SURRENDER),
-      form.select('table.limits', LIMITS),
-    ),
+function CommonRules() {
+  return (
+    <SettingsScreen title="Common Rules" help="settings.commonRules" note={NOTE}>
+      <SettingsGroup>
+        <SettingChecks items={CHECKS} />
+      </SettingsGroup>
+      <SettingsGroup>
+        <SettingSelect setting="rules.hardDoubles" options={HARD_DOUBLES} />
+        <SettingSelect setting="rules.softDoubles" options={SOFT_DOUBLES} />
+        <SettingSelect setting="rules.insurance" options={INSURANCE} />
+        <SettingSelect setting="rules.surrender" options={SURRENDER} />
+        <SettingSelect setting="table.limits" options={LIMITS} />
+      </SettingsGroup>
+    </SettingsScreen>
   );
-  return { el };
 }
+
+export const commonRulesScreen = reactScreen(CommonRules, { className: 'settings' });

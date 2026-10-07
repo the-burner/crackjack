@@ -1,11 +1,12 @@
-// @ts-nocheck
 // Play Variations: dealer behavior and unusual rules.
 
-import { group, settingsScreen } from './controls.ts';
+import { reactScreen } from '../../react/screen.tsx';
+import { SettingChecks, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
+import type { SettingCheck } from '../../react/settings-form.tsx';
 
 const NOTE = 'Dealer behavior and unusual rules.';
 
-const DEALER = [
+const DEALER: readonly SettingCheck[] = [
   { label: 'Dealer makes obvious plays', key: 'mechanics.dealerMakesObviousPlays' },
   { label: 'Dealer points out stupid plays', key: 'mechanics.dealerPointsOutStupidPlays' },
   { label: 'Insure then Surrender allowed', key: 'rules.surrenderAfterInsurance' },
@@ -14,7 +15,7 @@ const DEALER = [
   { label: 'Dealer peeks on ace', key: 'rules.dealerPeeksAce' },
 ];
 
-const HANDS = [
+const HANDS: readonly SettingCheck[] = [
   { label: 'Dealer wins tied 17', key: 'rules.dealerWinsTied17' },
   { label: 'Dealer wins ties', key: 'rules.dealerWinsTies' },
   { label: 'Five unbusted cards wins', key: 'rules.autoWinFiveCards' },
@@ -24,12 +25,17 @@ const HANDS = [
   { label: 'Dealer ties 17, 18 and 19', key: 'rules.dealerWinsTies17to19' },
 ];
 
-export function playVariationsScreen(app) {
-  const { el, columns, form } = settingsScreen(app, {
-    title: 'Play Variations',
-    help: 'settings.playVariations',
-    note: NOTE,
-  });
-  columns.append(group(form.checks(DEALER)), group(form.checks(HANDS)));
-  return { el };
+function PlayVariations() {
+  return (
+    <SettingsScreen title="Play Variations" help="settings.playVariations" note={NOTE}>
+      <SettingsGroup>
+        <SettingChecks items={DEALER} />
+      </SettingsGroup>
+      <SettingsGroup>
+        <SettingChecks items={HANDS} />
+      </SettingsGroup>
+    </SettingsScreen>
+  );
 }
+
+export const playVariationsScreen = reactScreen(PlayVariations, { className: 'settings' });

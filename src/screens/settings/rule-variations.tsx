@@ -1,11 +1,12 @@
-// @ts-nocheck
 // Rule Variations: the less common rules.
 
-import { group, settingsScreen } from './controls.ts';
+import { reactScreen } from '../../react/screen.tsx';
+import { SettingChecks, SettingsGroup, SettingsScreen } from '../../react/settings-form.tsx';
+import type { SettingCheck } from '../../react/settings-form.tsx';
 
 const NOTE = 'You will find less common rule variations on this screen.';
 
-const DOUBLING = [
+const DOUBLING: readonly SettingCheck[] = [
   { label: 'Double down on 3 cards', key: 'rules.doubleOnThreeCards' },
   { label: 'Double down any # of cards', key: 'rules.doubleAnyNumberOfCards' },
   { label: 'ReDouble', key: 'rules.redouble' },
@@ -15,7 +16,7 @@ const DOUBLING = [
 ];
 
 // The two resplit limits are one setting; clearing both allows no resplits.
-const SPLITTING = [
+const SPLITTING: readonly SettingCheck[] = [
   { label: 'Resplit to 3 hands', key: 'rules.maxSplitHands', value: 3, off: 2 },
   { label: 'Resplit to 4 hands', key: 'rules.maxSplitHands', value: 4, off: 2 },
   { label: 'Double after ace split', key: 'rules.doubleAfterSplitAces' },
@@ -26,12 +27,17 @@ const SPLITTING = [
   { label: 'No 4, 5, or ten splits', key: 'rules.noSplit4s5s10s' },
 ];
 
-export function ruleVariationsScreen(app) {
-  const { el, columns, form } = settingsScreen(app, {
-    title: 'Rule Variations',
-    help: 'settings.ruleVariations',
-    note: NOTE,
-  });
-  columns.append(group(form.checks(DOUBLING)), group(form.checks(SPLITTING)));
-  return { el };
+function RuleVariations() {
+  return (
+    <SettingsScreen title="Rule Variations" help="settings.ruleVariations" note={NOTE}>
+      <SettingsGroup>
+        <SettingChecks items={DOUBLING} />
+      </SettingsGroup>
+      <SettingsGroup>
+        <SettingChecks items={SPLITTING} />
+      </SettingsGroup>
+    </SettingsScreen>
+  );
 }
+
+export const ruleVariationsScreen = reactScreen(RuleVariations, { className: 'settings' });

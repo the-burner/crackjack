@@ -10,8 +10,6 @@ export default defineConfig(
   tseslint.configs.recommended,
   { rules: { eqeqeq: ['error', 'smart'] } },
   { files: ['src/**/*.tsx'], ...reactHooks.configs.flat.recommended },
-  // Allowed while the files are moved to TypeScript one at a time.
-  { rules: { '@typescript-eslint/ban-ts-comment': ['error', { 'ts-nocheck': false }] } },
   { files: ['src/**'], languageOptions: { globals: globals.browser } },
   { files: ['src/sw.ts'], languageOptions: { globals: globals.serviceworker } },
   { files: ['tools/**', 'tests/**', '*.config.*'], languageOptions: { globals: globals.node } },

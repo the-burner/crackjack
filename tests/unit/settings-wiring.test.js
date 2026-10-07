@@ -194,7 +194,7 @@ describe('every setting does something', () => {
     file.includes('data/help.ts') ||
     file.includes('screens/settings/') ||
     file.includes('screens/strategy/') ||
-    (file.includes('drills/') && file.endsWith('options.ts')) ||
+    (file.includes('drills/') && /options\.tsx?$/.test(file)) ||
     file.includes('drills/shared/options-screen.ts');
 
   const consumers = new Map();
