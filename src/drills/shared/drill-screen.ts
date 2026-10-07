@@ -290,9 +290,11 @@ export function drillShell(
     },
 
     screen({ redraw, onFirstShow }) {
+      let releaseWakeLock: (() => void) | null = null;
       return {
         el,
         onShow() {
+          releaseWakeLock ??= app.wakeLock.hold();
           if (started) {
             shell.resumeIfSuspended();
             redraw();
@@ -302,7 +304,11 @@ export function drillShell(
           onFirstShow?.();
           shell.begin();
         },
-        onHide: () => shell.suspend(),
+        onHide() {
+          releaseWakeLock?.();
+          releaseWakeLock = null;
+          shell.suspend();
+        },
         destroy: () => shell.destroy(),
       };
     },

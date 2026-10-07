@@ -11,6 +11,7 @@ import { Router } from './router.ts';
 import type { Screen, ScreenParams } from './router.ts';
 import { dismissTopOverlay } from '../ui/overlays.ts';
 import { ErrorTallies } from '../services/error-tallies.ts';
+import { ScreenWakeLock } from '../services/wake-lock.ts';
 
 export type { Screen, ScreenFactory, ScreenParams } from './router.ts';
 
@@ -21,6 +22,8 @@ export interface Services {
   strategies: StrategyLibrary;
   sound: Sound;
   errorTallies: ErrorTallies;
+  /** Keeps the screen on during drills and play. */
+  wakeLock: ScreenWakeLock;
 }
 
 /** The services plus navigation: what every screen factory receives. */
@@ -45,6 +48,7 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     strategies: new StrategyLibrary(),
     sound: new Sound(settings),
     errorTallies: new ErrorTallies(storage),
+    wakeLock: new ScreenWakeLock(),
   };
 }
 

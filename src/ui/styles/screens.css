@@ -13,6 +13,16 @@
   width: 100%;
   height: auto;
 }
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--group-bg);
+  color: var(--text-secondary);
+  font: 400 13px/1.4 var(--font);
+}
 .home__drills {
   display: grid;
   grid-template-columns: 1fr 1fr;

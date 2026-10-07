@@ -178,7 +178,8 @@ export class DrillClock {
 
   /** Resumes, excluding the paused time from the elapsed total. */
   resume(): void {
-    if (!this.paused) return;
+    // A clock stopped while paused stays stopped.
+    if (!this.paused || this.startedAt === null) return;
     this.startedAt = (this.startedAt ?? 0) + this.now() - this.pausedAt;
     this.paused = false;
     this.scheduleTick();

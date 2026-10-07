@@ -82,6 +82,9 @@ const isReady = (src: string) => Boolean(images.get(src)?.img.naturalWidth);
  * drawn until both images are loaded; `onLoad` runs when they arrive.
  * @returns {boolean} whether anything was drawn
  */
+/** The photo pairs each redraw callback is already waiting on, so a frame drawn while they load adds no more. */
+const waiting = new WeakMap<() => void, Set<string>>();
+
 export function drawMasked(
   ctx: CanvasRenderingContext2D,
   {
@@ -97,7 +100,18 @@ export function drawMasked(
   const photo = loadImage(photoSrc);
   const mask = loadImage(maskSrc);
   if (!isReady(photoSrc) || !isReady(maskSrc)) {
-    Promise.all([photo.ready, mask.ready]).then(() => onLoad?.());
+    if (onLoad) {
+      const pairs = waiting.get(onLoad) ?? new Set<string>();
+      waiting.set(onLoad, pairs);
+      const pair = `${photoSrc} ${maskSrc}`;
+      if (!pairs.has(pair)) {
+        pairs.add(pair);
+        Promise.all([photo.ready, mask.ready]).then(() => {
+          pairs.delete(pair);
+          onLoad();
+        });
+      }
+    }
     return false;
   }
   const buffer = scratch(width, height);

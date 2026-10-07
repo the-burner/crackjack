@@ -649,7 +649,9 @@ export class BlackjackGame {
     const moved = hand.cards.pop()!;
     const movedFaceUp = hand.faceUp.pop();
     // The card's counted mark goes with it, or the card drawn into its place is skipped.
-    const movedCounted = hand.counted.pop();
+    // Marks are by position and may be missing for unseen cards, so not pop().
+    const movedCounted = hand.counted[hand.cards.length];
+    hand.counted.length = Math.min(hand.counted.length, hand.cards.length);
     const splitCount = hand.splitCount + 1;
     hand.splitCount = splitCount;
 

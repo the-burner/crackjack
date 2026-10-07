@@ -101,6 +101,8 @@ export function tableScreen(app: App): Screen {
   const swept = new Set<HandKey>();
   /** False once the screen has been closed, so late callbacks stop drawing. */
   let alive = true;
+  /** Keeps the screen on while the table shows. */
+  let releaseWakeLock: (() => void) | null = null;
 
   const animator = createAnimator({ onStep: applyStep, onIdle: whenIdle });
 
@@ -455,6 +457,7 @@ export function tableScreen(app: App): Screen {
     el,
 
     onShow() {
+      releaseWakeLock ??= app.wakeLock.hold();
       observer.observe(felt);
       renderer.whenReady().then(() => {
         relayout();
@@ -477,6 +480,8 @@ export function tableScreen(app: App): Screen {
     },
 
     onHide() {
+      releaseWakeLock?.();
+      releaseWakeLock = null;
       observer.disconnect();
       stopInsuranceTimer();
       clearTimeout(nextRoundTimer ?? undefined);

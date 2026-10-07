@@ -92,7 +92,10 @@ function wheel({ label, unit, count }: DurationColumn, value: number): WheelColu
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(curve);
   });
-  const scrollToIndex = (n: number, behavior: ScrollBehavior = 'smooth') =>
+  // With reduced motion the wheel jumps rather than glides.
+  const glide = (): ScrollBehavior =>
+    globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  const scrollToIndex = (n: number, behavior: ScrollBehavior = glide()) =>
     el.scrollTo({ top: n * ITEM_HEIGHT, behavior });
   el.addEventListener('keydown', event => {
     const step = ARROW_STEPS[event.key];
