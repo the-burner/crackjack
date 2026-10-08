@@ -13,7 +13,7 @@ import { useOnHide, useOnShow } from '@/react/screen';
 import type { DrillShell } from '@/drills/shared/drill-shell';
 import { DrillStats } from './drill-stats';
 import { useGoBack } from '@/app/navigation';
-import { openHelp } from '@/app/help';
+import { useOpenHelp } from '@/app/help';
 
 /**
  * How the parts sit: `grid` (Depth, Count) gives the display half the height
@@ -97,6 +97,7 @@ export function DrillScreen({
 }: DrillScreenProps) {
   const app = useApp();
   const goBack = useGoBack();
+  const openHelp = useOpenHelp();
   const view = useSyncExternalStore(shell.subscribe, shell.getSnapshot);
   const parts = LAYOUTS[layout];
 

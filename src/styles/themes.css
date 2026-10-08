@@ -1,4 +1,4 @@
-/* Catppuccin themes (https://catppuccin.com/palette/). Classic is :root. */
+/* The colour themes: Catppuccin Latte and Mocha (https://catppuccin.com/palette/). */
 
 [data-theme='latte'] {
   --rosewater: #dc8a78;
@@ -88,6 +88,9 @@
 [data-theme='latte'],
 [data-theme='mocha'] {
   --chrome: var(--crust);
+  --accent: var(--nav-bg);
+  /* Back / Help over the table's felt photograph, which is dark in every theme. */
+  --bar-text: var(--table-text);
   --page-bg: var(--base);
   --text: var(--ctp-text);
   --warning: var(--red);
@@ -138,7 +141,6 @@
   --grid-border: var(--surface2);
   --grid-text: var(--ctp-text);
   --grid-label-bg: var(--surface0);
-  --inset-border: var(--surface2);
   --grid-mark: var(--ctp-text);
   --grid-mark-alt: var(--base);
   --chart-action: var(--green);
@@ -176,7 +178,7 @@
   --tile-close: color-mix(in srgb, var(--yellow) 35%, var(--base));
   --tile-bad: color-mix(in srgb, var(--red) 25%, var(--base));
   --tile-previous: color-mix(in srgb, var(--peach) 35%, var(--base));
-  /* The Full Table drill's second felt: Classic's navy beside its green. */
+  /* The Full Table drill's second felt, a navy beside the first. */
   --felt-alt: color-mix(in srgb, var(--blue) 35%, var(--crust));
 }
 [data-theme='mocha'] {

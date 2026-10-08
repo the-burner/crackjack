@@ -78,35 +78,39 @@ export function SettingChecks({
   );
 }
 
-/** A select bound to a setting. `onChange` replaces the plain write; `label` names it for screen readers. */
+/**
+ * A select bound to a setting. `onChange` replaces the plain write. `label` names
+ * it; with `labelled`, the label is shown in the row and the choice at its end.
+ */
 export function SettingSelect<K extends SettingKey>({
   setting,
   options,
   onChange,
   label,
-  mini,
+  labelled,
   hidden,
 }: {
   setting: K;
   options: readonly Option<SettingValues[K]>[];
   onChange?: (value: SettingValues[K]) => void;
   label?: string;
-  mini?: boolean;
+  labelled?: boolean;
   hidden?: boolean;
 }) {
   const settings = useSettings();
   const write = useWriteSetting();
   if (hidden) return null;
-  return (
+  const select = (
     <Select
       name={setting}
       aria-label={label}
-      mini={mini}
+      align={labelled ? 'end' : 'start'}
       options={options}
       value={settings.get(setting)}
       onChange={onChange ?? (value => write(setting, value))}
     />
   );
+  return labelled ? <SettingsRow label={label}>{select}</SettingsRow> : select;
 }
 
 type NumberKey = { [K in SettingKey]: SettingValues[K] extends number ? K : never }[SettingKey];

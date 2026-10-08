@@ -1,10 +1,8 @@
 // Peeking: seeing the dealer's hole card and the strategies
 // used once it has been seen.
 
-import type { ReactNode } from 'react';
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
-import { Label } from '@/components/ui/text';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 import { HOLE_CARD_STRATEGY } from '@/settings/strategies';
@@ -31,28 +29,12 @@ export function Peeking() {
     <SettingsScreen title="Peeking" help="game.peeking" note={NOTE}>
       <SettingsGroup>
         <SettingChecks items={CHECKS} />
-        <SettingsRow label="Percent of the time:" trailing className="[&>[data-slot=select]]:flex-[0_0_110px]">
-          <SettingSelect label="Percent of the time" setting="peeking.percent" options={PERCENTS} mini />
-        </SettingsRow>
+        <SettingSelect labelled label="Percent of the time" setting="peeking.percent" options={PERCENTS} />
       </SettingsGroup>
       <SettingsGroup>
-        <TrailingLabel label="HC High">
-          <SettingSelect label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
-        </TrailingLabel>
-        <TrailingLabel label="HC Low">
-          <SettingSelect label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
-        </TrailingLabel>
+        <SettingSelect labelled label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
+        <SettingSelect labelled label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
       </SettingsGroup>
     </SettingsScreen>
-  );
-}
-
-/** A control with its label to the right of it. */
-function TrailingLabel({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <SettingsRow trailing>
-      {children}
-      <Label className="flex-none font-normal">{label}</Label>
-    </SettingsRow>
   );
 }

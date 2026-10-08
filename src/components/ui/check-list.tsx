@@ -23,7 +23,7 @@ const LIST = {
 } as const;
 
 const ROW = {
-  list: 'min-h-(--control-h) gap-3 border-t border-(--separator) px-3.5 py-2 text-body font-normal text-(--text) first:border-t-0 engaged:bg-(--btn-bg-active)',
+  list: 'min-h-(--control-h) gap-3 border-t border-(--separator) px-3.5 py-2 text-body font-normal text-(--text) first:border-t-0',
   horizontal:
     'min-h-[34px] flex-1 justify-center rounded-lg px-1.5 py-1 text-caption font-medium text-(--btn-text) transition-colors engaged:bg-(--btn-bg-active) data-on:bg-(--check-on) data-on:font-semibold data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90',
   chips:
@@ -50,23 +50,35 @@ export function CheckList({
       aria-label={ariaLabel}
       className={cn(LIST[layout], className)}
     >
-      {items.map(item => (
-        <label
-          key={item.label}
-          data-on={item.checked || undefined}
-          className={cn('flex cursor-pointer items-center select-none', ROW[layout])}
-        >
-          <span className={layout === 'list' ? 'flex-1' : undefined}>{item.label}</span>
+      {items.map(item => {
+        const input = (
           <input
             type="checkbox"
             role={layout === 'list' ? 'switch' : undefined}
+            aria-label={layout === 'list' ? item.label : undefined}
             checked={item.checked}
             disabled={item.disabled}
             onChange={event => item.onChange(event.currentTarget.checked)}
             className={layout === 'list' ? SWITCH : 'sr-only'}
           />
-        </label>
-      ))}
+        );
+        // A switch row is text and a switch; only the switch toggles. Segments and chips are tapped whole.
+        return layout === 'list' ? (
+          <div key={item.label} className={cn('flex items-center', ROW.list)}>
+            <span className="flex-1">{item.label}</span>
+            {input}
+          </div>
+        ) : (
+          <label
+            key={item.label}
+            data-on={item.checked || undefined}
+            className={cn('flex cursor-pointer items-center select-none', ROW[layout])}
+          >
+            <span>{item.label}</span>
+            {input}
+          </label>
+        );
+      })}
     </div>
   );
 }
@@ -75,5 +87,5 @@ export function CheckList({
 export const SWITCH = cn(
   'm-0 h-[26px] w-11 flex-none cursor-pointer appearance-none rounded-[13px] bg-(--toggle-off) bg-no-repeat',
   'bg-[radial-gradient(circle,var(--toggle-knob)_10px,transparent_10.5px)] bg-size-[26px_26px] bg-position-[0_0]',
-  'transition-[background-color,background-position] duration-200 checked:bg-(--check-on) checked:bg-position-[18px_0] disabled:opacity-40',
+  'transition-[background-color,background-position] duration-200 checked:bg-(--check-on) checked:bg-position-[18px_0] disabled:opacity-40 outline-none engaged:brightness-90',
 );

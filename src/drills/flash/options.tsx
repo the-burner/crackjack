@@ -6,7 +6,7 @@ import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { ListRow, Section } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
@@ -16,7 +16,6 @@ import {
   DrillOptionsScreen,
   OptionDuration,
   OptionGroup,
-  OptionPair,
   OptionSwitch,
   COUNT_DOWN_HALT_OPTION,
 } from '@/drills/shared/options-screen';
@@ -115,7 +114,7 @@ export function FlashOptions() {
               })
             }
           />
-          <OptionPair>
+          <SettingsRow>
             <SettingSelect
               label="Hands"
               setting="drills.flash.hands"
@@ -144,8 +143,8 @@ export function FlashOptions() {
                 Select
               </Button>
             )}
-          </OptionPair>
-          <OptionPair>
+          </SettingsRow>
+          <SettingsRow>
             <SettingSelect label="Count" setting="drills.flash.countMode" options={COUNT_OPTIONS} />
             {/* The set count; only Count: Set Count to: uses it. */}
             {settings.get('drills.flash.countMode') === 'fixed' && (
@@ -158,7 +157,7 @@ export function FlashOptions() {
                 onChange={value => settings.set('drills.flash.fixedCount', value)}
               />
             )}
-          </OptionPair>
+          </SettingsRow>
           <SettingSelect label="Test mode" setting="drills.flash.testMode" options={TEST_MODE_OPTIONS} />
           {/* Only Warn on error shows error pop-ups, so only it can make them non-blocking. */}
           {settings.get('drills.flash.testMode') === 'warn' && (
@@ -179,7 +178,7 @@ export function FlashOptions() {
       {/* Rounds and Infinite may time each hand; Count Down & Halt times the whole drill. */}
       <Section title="Timer">
         <OptionGroup>
-          <OptionPair>
+          <SettingsRow>
             <SettingSelect label="Timer mode" setting="drills.flash.timerMode" options={FLASH_TIMER_OPTIONS} />
             {mode === 'auto' && (
               <ValueButton
@@ -191,7 +190,7 @@ export function FlashOptions() {
                 onChange={value => settings.set('drills.flash.handsPerDrill', value)}
               />
             )}
-          </OptionPair>
+          </SettingsRow>
           {handsCanBeTimed && <OptionSwitch label="Time limit per hand" setting="drills.flash.timePerHand" />}
           {handsTimed && <OptionDuration label="Time per hand" setting="drills.flash.seconds" />}
           {/* Progressive Speed shortens the time per hand, so it goes with it. */}
@@ -204,9 +203,9 @@ export function FlashOptions() {
           <ListRow block onClick={() => navigate(PATHS['drills.flash.errors'])} data-action="error-history">
             Error history
           </ListRow>
-          <Button icon="back" onClick={() => clearErrors(app)}>
+          <ListRow block chevron={false} onClick={() => clearErrors(app)}>
             Clear error history
-          </Button>
+          </ListRow>
         </OptionGroup>
       </Section>
     </DrillOptionsScreen>

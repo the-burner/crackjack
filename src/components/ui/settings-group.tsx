@@ -30,8 +30,8 @@ export function SettingsGroup({ className, ...props }: ComponentProps<'div'>) {
         'flex flex-col overflow-hidden rounded-(--radius) bg-(--group-bg)',
         // A divider above every visible row that follows another visible row.
         '[&>:not([hidden])~:not([hidden])]:border-t [&>:not([hidden])~:not([hidden])]:border-(--separator)',
-        // A button in a group is a row that does something: accent text on the left.
-        '*:data-[slot=button]:justify-start *:data-[slot=button]:rounded-none *:data-[slot=button]:bg-transparent *:data-[slot=button]:font-normal *:data-[slot=button]:text-(--accent) *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
+        // A button in a group is a row, as a ListRow is: plain text on the left.
+        '*:data-[slot=button]:justify-start *:data-[slot=button]:rounded-none *:data-[slot=button]:bg-transparent *:data-[slot=button]:font-normal *:data-[slot=button]:px-3.5 *:data-[slot=button]:text-(--text) *:data-[slot=button]:engaged:bg-(--btn-bg-active) *:data-[slot=button]:active:scale-100',
         // A slider row of its own (not one beside a label).
         '*:data-[slot=slider]:px-3.5 *:data-[slot=slider]:py-2.5',
         className,
@@ -66,7 +66,12 @@ export function Section({
   );
 }
 
-/** A label on one side of a control (a value button, a select). `trailing` insets the right edge too. */
+/**
+ * A row of a group: a label, or a select, then the controls after it. A button
+ * here is the value at the row's end: accent text in a 96px cell split off by a
+ * divider, the row's full height, so the divider and its highlight reach the
+ * row's edges. `trailing` insets the right edge.
+ */
 export function SettingsRow({
   label,
   trailing,
@@ -78,13 +83,18 @@ export function SettingsRow({
     <div
       data-slot="settings-row"
       className={cn(
-        'flex min-h-(--control-h) items-center gap-2 pl-3.5 [&>[data-slot=select]]:flex-auto',
+        // No gap: a select's highlight runs up to the divider of the value cell after it.
+        'flex min-h-(--control-h) items-center [&>[data-slot=select]]:min-w-0 [&>[data-slot=select]]:flex-auto',
+        label !== undefined && 'pl-3.5',
         trailing && 'pr-3.5',
+        '*:data-[slot=button]:min-h-0 *:data-[slot=button]:flex-[0_0_96px] *:data-[slot=button]:self-stretch *:data-[slot=button]:rounded-none *:data-[slot=button]:border-l *:data-[slot=button]:border-(--separator)',
+        '*:data-[slot=button]:bg-transparent *:data-[slot=button]:px-3.5 *:data-[slot=button]:py-0 *:data-[slot=button]:font-medium *:data-[slot=button]:text-(--accent) *:data-[slot=button]:tabular-nums',
+        '*:data-[slot=button]:active:scale-100 *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
         className,
       )}
       {...props}
     >
-      {label !== undefined && <Label className="flex-auto font-normal">{label}</Label>}
+      {label !== undefined && <Label className="flex-auto shrink-0 pr-2 font-normal">{label}</Label>}
       {children}
     </div>
   );
@@ -97,7 +107,7 @@ export function ListRow({ chevron = true, className, ...props }: ButtonProps & {
       data-slot="list-row"
       icon={chevron ? 'arrow-r' : undefined}
       className={cn(
-        'justify-start font-normal text-(--text) in-data-[slot=settings-group]:rounded-none in-data-[slot=settings-group]:bg-transparent in-data-[slot=settings-group]:engaged:bg-(--btn-bg-active)',
+        'justify-start font-normal text-(--text) in-data-[slot=settings-group]:rounded-none in-data-[slot=settings-group]:bg-transparent in-data-[slot=settings-group]:pl-3.5 in-data-[slot=settings-group]:engaged:bg-(--btn-bg-active) in-data-[slot=settings-group]:active:scale-100',
         className,
       )}
       {...props}

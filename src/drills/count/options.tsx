@@ -140,7 +140,7 @@ export function CountOptions() {
             options={TRAY_OPTIONS}
             hidden={!shown.trayStyle}
           />
-          <OptionSlider label="Thickness:" setting="drills.count.cardThickness" hidden={!shown.thickness} />
+          <OptionSlider label="Thickness" setting="drills.count.cardThickness" hidden={!shown.thickness} />
         </OptionGroup>
       </Section>
       <Section title="Timer">

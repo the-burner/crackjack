@@ -2,9 +2,8 @@
 
 import { toast } from '@/components/ui/toast';
 import { useApp, useSettings } from '@/react/app-context';
-import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
-import { SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
+import { ListRow, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
 import { SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { DECKS } from '@/settings/schema';
@@ -78,25 +77,25 @@ export function Setup() {
           onChange={value => settings.set('table.shuffleMode', value)}
         />
         <SettingNumber
-          label="Shuffle Point/Cards:"
+          label="Shuffle Point/Cards"
           setting="table.cardsBehindCutCard"
           prompt="Cards after the cut card"
           clamp={value => Math.min(value, maxCardsBehindCutCard(decks))}
           hidden={!byCutCard}
         />
-        <SettingNumber label="Rounds:" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />
-        <SettingNumber label="Burn Cards:" setting="table.burnCards" prompt="Burn Cards" />
-        <SettingNumber label="Starting Bankroll:" setting="table.startingBankroll" prompt="Starting Bankroll" />
-        <Button
-          icon="refresh"
+        <SettingNumber label="Rounds" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />
+        <SettingNumber label="Burn Cards" setting="table.burnCards" prompt="Burn Cards" />
+        <SettingNumber label="Starting Bankroll" setting="table.startingBankroll" prompt="Starting Bankroll" />
+        <ListRow
           block
+          chevron={false}
           onClick={() => {
             app.bankroll.setState({ value: settings.get('table.startingBankroll') });
             toast('Bankroll refreshed');
           }}
         >
           Refresh Bankroll
-        </Button>
+        </ListRow>
       </SettingsGroup>
     </SettingsScreen>
   );

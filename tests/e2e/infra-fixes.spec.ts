@@ -8,6 +8,7 @@ test('boots with a settings value that is not an object', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('cj.settings', 'null'));
   await page.goto('/index.html');
   await expect(page.locator('[data-screen="home"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('button', { name: 'Reset Defaults' })).toBeVisible();
 });
 
@@ -28,12 +29,13 @@ test('boots without localStorage, saying that settings will not be saved', async
 test('Escape closes a dialog as its cancelling button would', async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
+  await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Reset Defaults' }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
-  await expect(page.locator('[data-screen="home"]')).toBeVisible();
+  await expect(page.locator('[data-screen="settings"]')).toBeVisible();
 });
 
 test('going back with a dialog open closes the dialog with its screen', async ({ page }) => {

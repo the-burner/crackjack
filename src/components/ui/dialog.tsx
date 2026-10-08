@@ -23,12 +23,11 @@ export function Modal({
         <AlertDialog.Backdrop className="fixed inset-0 z-[3000] animate-fade-in bg-(--overlay)" />
         <AlertDialog.Popup
           className={cn(
-            'fixed top-1/2 left-1/2 z-[3000] max-w-[calc(100%-40px)] -translate-1/2 overflow-hidden rounded-[14px] bg-(--dialog-bg) text-center shadow-[0_10px_40px_var(--dialog-shadow)] outline-none',
+            'fixed top-1/2 left-1/2 z-[3000] max-w-[calc(100%-40px)] -translate-1/2 animate-dialog-in overflow-hidden rounded-[14px] bg-(--dialog-bg) text-center shadow-[0_10px_40px_var(--dialog-shadow)] outline-none',
             className,
           )}
         >
-          {/* The pop-in, on an inner box so it does not fight the centring transform. */}
-          <div className="animate-dialog-in">{children}</div>
+          {children}
         </AlertDialog.Popup>
       </AlertDialog.Portal>
     </AlertDialog.Root>

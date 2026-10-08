@@ -1,10 +1,31 @@
-// Which help page is open, if any. Help is a sheet over the current screen.
+// Help is a page over the current screen, opened as a history entry of its own
+// (same URL, the topic in the entry's state), so Back or a swipe closes it.
 
-import { create } from 'zustand';
+import { useLocation, useNavigate } from 'react-router';
 
-type HelpState = { open: { topic: string; title: string } | null };
+export type HelpPage = { topic: string; title: string };
 
-export const useHelpStore = create<HelpState>(() => ({ open: null }));
+/** The history state that opens help for `topic`. */
+export const helpState = (topic: string, title = 'Help') => ({ help: { topic, title } });
 
-export const openHelp = (topic: string, title = 'Help') => useHelpStore.setState({ open: { topic, title } });
-export const closeHelp = () => useHelpStore.setState({ open: null });
+const helpOf = (state: unknown): HelpPage | null =>
+  typeof state === 'object' && state !== null && 'help' in state ? (state.help as HelpPage) : null;
+
+/** The help page open over this screen, if any. */
+export function useHelp(): HelpPage | null {
+  return helpOf(useLocation().state);
+}
+
+/** Opens help for a topic over the current screen. */
+export function useOpenHelp(): (topic: string, title?: string) => void {
+  const navigate = useNavigate();
+  const { pathname, search } = useLocation();
+  return (topic, title) => void navigate({ pathname, search }, { state: helpState(topic, title) });
+}
+
+/** Closes the help page: back to the screen, or in place when the app was reloaded on it. */
+export function useCloseHelp(): () => void {
+  const navigate = useNavigate();
+  const { pathname, search, key } = useLocation();
+  return () => void (key === 'default' ? navigate({ pathname, search }, { replace: true }) : navigate(-1));
+}

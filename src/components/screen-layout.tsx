@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { TopBar } from '@/components/ui/top-bar';
 import { useGoBack } from '@/app/navigation';
-import { openHelp } from '@/app/help';
+import { useOpenHelp } from '@/app/help';
 
 export type ScreenLayoutProps = {
   title: string;
@@ -22,6 +22,7 @@ export type ScreenLayoutProps = {
 
 export function ScreenLayout({ title, help, back = true, actions, className, children }: ScreenLayoutProps) {
   const goBack = useGoBack();
+  const openHelp = useOpenHelp();
   return (
     <>
       <TopBar

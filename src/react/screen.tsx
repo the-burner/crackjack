@@ -1,15 +1,15 @@
 // A screen's lifecycle, worked out from the router: a screen is showing while
-// no child route (Stats over the table, say) and no help sheet covers it.
+// no child route (Stats over the table, say) and no help page covers it.
 
 import { useLayoutEffect, useRef } from 'react';
 import { useOutlet } from 'react-router';
-import { useHelpStore } from '@/app/help';
+import { useHelp } from '@/app/help';
 
 /** Whether the screen this component belongs to is the one in view. */
 export function useScreenShowing(): boolean {
   const covered = useOutlet() !== null;
-  const helpOpen = useHelpStore(state => state.open !== null);
-  return !covered && !helpOpen;
+  const help = useHelp();
+  return !covered && help === null;
 }
 
 function useLatest<T>(value: T) {

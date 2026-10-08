@@ -37,8 +37,8 @@ src/
                  controls, promise dialogs, and area components
   lib/           framework-free helpers: card sprites and setupCanvas(),
                  theme (cssVar), install hint, double tap, the wordmark
-  styles/        tokens.css (colours, Classic values) and themes.css
-                 (Catppuccin Latte and Mocha)
+  styles/        tokens.css (type, shapes, safe area) and themes.css (the
+                 colours: Catppuccin Latte and Mocha)
   react/         useApp()/useSetting()/useSettings(), useOnShow/useOnHide
   screens/       (React) Home and Help, the settings screens (settings/) and
                  the strategy, true count and betting screens (strategy/)
@@ -106,8 +106,8 @@ child routes shown over it, so the round underneath stays as it is.
   in Tailwind classes over the theme tokens; controls restyle themselves inside
   a settings group or row via `in-data-[slot=…]:` variants), the original's
   icons (`Icon`), `toast()`, and `alert()`/`confirm()`/`prompt()` from
-  `components/dialogs.tsx`. Colours are never hard-coded: Classic values in
-  `styles/tokens.css`, Latte and Mocha in `themes.css`, all meeting WCAG AA.
+  `components/dialogs.tsx`. Colours are never hard-coded: they are custom
+  properties set by Latte and Mocha in `styles/themes.css`, all meeting WCAG AA.
 - **Settings** are declared once in `settings/schema.ts` (dotted keys, typed,
   with defaults); `app.settings.get/set` are typed per key and `useSetting(key)`
   re-renders on that key. They are a persisted Zustand store, and `migrate()`

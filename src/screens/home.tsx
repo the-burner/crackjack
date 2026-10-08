@@ -7,9 +7,8 @@ import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group'
 import { BarButton } from '@/components/ui/top-bar';
 import { FooterNote } from '@/components/ui/text';
 import { Column, ScreenLayout } from '@/components/screen-layout';
-import type { App } from '@/app/app';
-import { toast } from '@/components/ui/toast';
-import { alert, confirm } from '@/components/dialogs';
+import { alert } from '@/components/dialogs';
+import { CardButton } from '@/components/ui/card-button';
 import { WORDMARK_SVG } from '@/lib/wordmark';
 import { currentNavigator, installHintWanted } from '@/lib/install-hint';
 import { useNavigate } from 'react-router';
@@ -63,24 +62,13 @@ export function Home() {
         <Section title="Drills">
           <div className="grid grid-cols-2 gap-2.5 max-[340px]:grid-cols-1">
             {DRILLS.map(([name, detail, screen]) => (
-              <button
-                key={screen}
-                type="button"
-                className="flex min-h-[76px] cursor-pointer flex-col items-start gap-1 rounded-(--radius) border-0 bg-(--group-bg) p-3.5 text-left text-(--text) transition-[transform,background-color] duration-150 outline-none active:scale-[0.98] engaged:bg-(--btn-bg-active)"
-                onClick={() => navigate(PATHS[screen])}
-              >
-                <span className="text-body font-semibold">{name}</span>
-                <span className="text-caption leading-[1.3] text-(--text-secondary)">{detail}</span>
-              </button>
+              <CardButton key={screen} title={name} detail={detail} onClick={() => navigate(PATHS[screen])} />
             ))}
           </div>
         </Section>
         <SettingsGroup>
           <ListRow block onClick={() => navigate(PATHS.settings)} data-action="settings">
             Settings
-          </ListRow>
-          <ListRow block chevron={false} onClick={() => resetDefaults(app)}>
-            Reset Defaults
           </ListRow>
           <ListRow block chevron={false} onClick={() => screenInfo()}>
             Screen Info
@@ -90,12 +78,6 @@ export function Home() {
       <FooterNote>{`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}</FooterNote>
     </ScreenLayout>
   );
-}
-
-async function resetDefaults(app: App) {
-  if (!(await confirm('Are you sure that you want to reset all options to their defaults?'))) return;
-  app.settings.reset();
-  toast('Settings reset to defaults');
 }
 
 function screenInfo() {

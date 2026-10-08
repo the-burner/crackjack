@@ -1,13 +1,11 @@
 // True Count Calcs: how the running count is turned into a true
 // count. The arithmetic itself lives in core/counting.js.
 
-import type { ReactNode } from 'react';
 import { useSettings } from '@/react/app-context';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
-import { Label } from '@/components/ui/text';
+import { SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import type { SettingValues } from '@/settings/schema';
 
@@ -18,7 +16,7 @@ type Row<K extends keyof SettingValues> = {
 };
 
 const RESOLUTION: Row<'trueCount.resolution'> = {
-  label: 'True Count Resolution:',
+  label: 'True Count Resolution',
   key: 'trueCount.resolution',
   options: [
     ['full', 'Full Deck'],
@@ -28,7 +26,7 @@ const RESOLUTION: Row<'trueCount.resolution'> = {
   ],
 };
 const LAST_DECK: Row<'trueCount.lastDeckResolution'> = {
-  label: 'Last Deck Resolution:',
+  label: 'Last Deck Resolution',
   key: 'trueCount.lastDeckResolution',
   options: [
     ['half', 'Half Deck'],
@@ -37,7 +35,7 @@ const LAST_DECK: Row<'trueCount.lastDeckResolution'> = {
   ],
 };
 const ROUNDING: Row<'trueCount.rounding'> = {
-  label: 'True Count Division:',
+  label: 'True Count Division',
   key: 'trueCount.rounding',
   options: [
     ['round', 'Round'],
@@ -46,7 +44,7 @@ const ROUNDING: Row<'trueCount.rounding'> = {
   ],
 };
 const REMAINING: Row<'trueCount.remainingCards'> = {
-  label: 'Remaining Cards:',
+  label: 'Remaining Cards',
   key: 'trueCount.remainingCards',
   options: [
     ['dealt', 'Cards dealt'],
@@ -60,28 +58,18 @@ const SIDE_COUNTS = [
   { label: 'Ten side count', key: 'trueCount.tenSideCount' },
 ] as const;
 
-/** A long label and a fixed-width control. */
-function TcRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-(--control-h) items-center justify-between gap-2 px-3.5 *:not-data-[slot=label]:flex-[0_0_150px]">
-      <Label className="min-w-0 flex-1">{label}</Label>
-      {children}
-    </div>
-  );
-}
-
 function SelectRow<K extends keyof SettingValues>({ row }: { row: Row<K> }) {
   const settings = useSettings();
   return (
-    <TcRow label={row.label}>
+    <SettingsRow label={row.label}>
       <Select
-        mini
-        aria-label={row.label.replace(/:$/, '')}
+        align="end"
+        aria-label={row.label}
         options={row.options.map(([value, label]) => ({ value, label }))}
         value={settings.get(row.key)}
         onChange={value => settings.set(row.key, value)}
       />
-    </TcRow>
+    </SettingsRow>
   );
 }
 
@@ -96,7 +84,7 @@ export function TrueCount() {
           <SelectRow row={LAST_DECK} />
           <SelectRow row={ROUNDING} />
           <SelectRow row={REMAINING} />
-          <TcRow label="Allowed estimation error:">
+          <SettingsRow label="Allowed estimation error">
             <ValueButton
               label="Allowed estimation error"
               value={settings.get('trueCount.allowedErrorCards')}
@@ -105,7 +93,7 @@ export function TrueCount() {
               min={0}
               max={13}
             />
-          </TcRow>
+          </SettingsRow>
           <CheckList
             items={SIDE_COUNTS.map(({ label, key }) => ({
               label,

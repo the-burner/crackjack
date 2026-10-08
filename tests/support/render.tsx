@@ -6,12 +6,16 @@ import { act, render } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { createServices } from '@/app/app';
 import type { App } from '@/app/app';
-import { closeHelp, openHelp, useHelpStore } from '@/app/help';
+import { helpState } from '@/app/help';
+import type { HelpPage } from '@/app/help';
 import { MemoryBackend } from '@/services/storage';
 import { AppContext } from '@/react/app-context';
 import { DialogHost } from '@/components/dialogs';
 
 export type TestApp = App;
+
+const helpOf = (router: { state: { location: { state: unknown } } }): HelpPage | null =>
+  (router.state.location.state as { help?: HelpPage } | null)?.help ?? null;
 
 export function createTestApp(): TestApp {
   return createServices({ backend: new MemoryBackend() });
@@ -21,7 +25,6 @@ export function renderScreen(
   ui: ReactElement,
   { app = createTestApp(), path = '/screen' }: { app?: TestApp; path?: string } = {},
 ) {
-  closeHelp();
   const router = createMemoryRouter(
     [
       { path: '/', element: <p>Home</p> },
@@ -50,11 +53,14 @@ export function renderScreen(
     router,
     /** Where the screen has navigated to. */
     location: () => router.state.location,
-    /** The help sheet's topic and title, when open. */
-    help: () => useHelpStore.getState().open,
-    /** Covers the screen (with the help sheet), as another screen would. */
-    cover: () => act(() => openHelp('test')),
+    /** The help page's topic and title, when open. */
+    help: () => helpOf(router),
+    /** Covers the screen (with a help page), as another screen would. */
+    cover: () => act(() => void router.navigate(router.state.location, { state: helpState('test') })),
     /** Uncovers it again. */
-    show: () => act(() => closeHelp()),
+    show: () =>
+      act(() => {
+        if (helpOf(router)) void router.navigate(-1);
+      }),
   };
 }

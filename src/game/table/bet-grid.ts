@@ -9,9 +9,9 @@ export const COLUMNS = 6;
 export const ROWS = 3;
 /** Space between a tile and its cell edge, so neighbouring tiles sit 2 x TILE_GAP apart. */
 export const TILE_GAP = 2;
-/** A colour: custom property and Classic fallback. */
+/** A colour: custom property and its fallback without a document. */
 export type TileColor = readonly [name: string, fallback: string];
-/** Tile colours: custom property and Classic fallback. */
+/** Tile colours: custom property and fallback without a document. */
 export const TILE = {
   normal: ['--tile-bg', '#0000c4'],
   single: ['--tile-good', '#00ff00'],

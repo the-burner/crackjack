@@ -182,9 +182,10 @@ describe('DrillScreen', () => {
   });
 
   it('goes back and opens its help from the title bar', () => {
-    const { location, help } = setup();
+    const { location, help, show } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Help' }));
     expect(help()).toEqual({ topic: 'drills.count', title: 'Test Drill' });
+    show();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(location().pathname).toBe('/');
   });

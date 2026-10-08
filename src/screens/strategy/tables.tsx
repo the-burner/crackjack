@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { CheckList } from '@/components/ui/check-list';
 import { Grid, GRID_LABEL } from '@/components/ui/grid';
 import { Select } from '@/components/ui/select';
+import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
 import {
@@ -163,19 +164,21 @@ export function StrategyTables({ params }: { params: TablesParams }) {
   return (
     <ScreenLayout title={title} help="strategy.tables">
       <Column wide>
-        <div className="flex items-center gap-1.5">
-          <p className="m-0 min-w-0 flex-1 truncate border-2 border-(--inset-border) bg-(--input-bg) px-2 py-[5px] text-center text-caption [border-style:inset]">
-            {strategy.name}
-          </p>
-          <Select
-            mini
-            aria-label="Table"
-            className="flex-[0_0_48%]"
-            options={views}
-            value={view.key}
-            onChange={key => setView(viewByKey(key))}
-          />
-        </div>
+        <SettingsGroup>
+          <SettingsRow
+            label={<span className="block truncate">{strategy.name}</span>}
+            className="[&>[data-slot=label]]:min-w-0 [&>[data-slot=label]]:shrink"
+          >
+            <Select
+              align="end"
+              aria-label="Table"
+              className="flex-[0_0_50%]"
+              options={views}
+              value={view.key}
+              onChange={key => setView(viewByKey(key))}
+            />
+          </SettingsRow>
+        </SettingsGroup>
         {content}
         <CheckList
           items={[

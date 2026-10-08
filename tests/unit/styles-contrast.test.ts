@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 const FILES = ['src/styles/tokens.css', 'src/styles/themes.css', 'src/index.css'];
 const SOURCE = FILES.map(file => readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''));
 
-const THEMES = ['classic', 'latte', 'mocha'];
+const THEMES = ['latte', 'mocha'];
 
 interface Rgba {
   r: number;
@@ -48,7 +48,7 @@ function styles(selector: string, theme: string) {
   return selector
     .split(',')
     .map(part => part.trim())
-    .some(part => part === ':root' || (theme !== 'classic' && part === `[data-theme='${theme}']`));
+    .some(part => part === ':root' || part === `[data-theme='${theme}']`);
 }
 
 /** Every custom property a theme ends up with, last declaration winning. */
@@ -180,9 +180,8 @@ const show = (number: number) => number.toFixed(2);
 const AA = 4.5;
 const LARGE = 3;
 /**
- * Ink on one of the saturated chips and tiles. Classic writes #fff on #ff0000
- * there, just short of 4, and Classic is the fidelity reference: that pair is
- * itself the floor, and the themes have to match it.
+ * Ink on one of the saturated chips and tiles: the original app wrote #fff on
+ * #ff0000 there, just short of 4, so that pair is the floor the themes match.
  */
 const CHIP = contrast(parse('#fff'), parse('#ff0000'));
 
@@ -277,7 +276,7 @@ describe('text on a coloured tile', () => {
   });
 
   /**
-   * Classic defines these pairs the opposite way round on purpose, so code can
+   * These pairs are defined the opposite way round on purpose, so code can
    * pick whichever member stays legible on the cell it is filling: the strategy
    * files say #000 or #fff per cell and tables.js translates that into the pair.
    * A theme that maps both members to one colour makes the choice a no-op.

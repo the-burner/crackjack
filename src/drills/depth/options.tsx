@@ -2,7 +2,7 @@
 
 import type { App } from '@/app/app';
 import { useApp, useSettings } from '@/react/app-context';
-import { Section } from '@/components/ui/settings-group';
+import { Section, SettingsRow } from '@/components/ui/settings-group';
 import { SettingNumber, SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { ValueButton } from '@/components/ui/value-button';
@@ -11,7 +11,6 @@ import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
   OptionGroup,
-  OptionPair,
   OptionDuration,
   OptionSlider,
   OptionSwitch,
@@ -62,7 +61,7 @@ export function DepthOptions() {
           <SettingSelect label="Resolution" setting="drills.depth.resolution" options={RESOLUTION_OPTIONS} />
           <SettingSelect label="Decks" setting="drills.depth.decks" options={DECK_OPTIONS} />
           <SettingSelect label="Tray style" setting="drills.depth.trayStyle" options={TRAY_OPTIONS} />
-          <OptionSlider label="Thickness:" setting="drills.depth.cardThickness" />
+          <OptionSlider label="Thickness" setting="drills.depth.cardThickness" />
         </OptionGroup>
       </Section>
       {/* One group for the drill-specific settings: the count range feeds the TC
@@ -87,7 +86,7 @@ export function DepthOptions() {
       {/* Rounds times each test; Count Down & Halt times the whole drill. */}
       <Section title="Timer">
         <OptionGroup>
-          <OptionPair>
+          <SettingsRow>
             <SettingSelect label="Timer mode" setting="drills.depth.timerMode" options={DEPTH_TIMER_OPTIONS} />
             {rounds && (
               <ValueButton
@@ -99,7 +98,7 @@ export function DepthOptions() {
                 onChange={value => settings.set('drills.depth.testsPerDrill', value)}
               />
             )}
-          </OptionPair>
+          </SettingsRow>
           <OptionDuration label="Time per test" setting="drills.depth.seconds" hidden={!rounds} />
           <OptionSwitch label="Progressive Speed" setting="drills.depth.progressiveSpeed" hidden={!rounds} />
           <OptionDuration label="Drill time" setting="drills.depth.drillSeconds" hidden={rounds} />

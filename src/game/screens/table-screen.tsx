@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { useNavigate, useOutlet, useOutletContext } from 'react-router';
 import type { GameSession } from '@/game/session';
 import type { BetSelectParams } from '@/game/screens/bet-select';
-import { openHelp } from '@/app/help';
+import { useOpenHelp } from '@/app/help';
 import { useGoBack } from '@/app/navigation';
 import { tablesSearch } from '@/app/paths';
 import { confirm } from '@/components/dialogs';
@@ -30,6 +30,7 @@ export function TableScreen() {
   const app = useApp();
   const navigate = useNavigate();
   const goBack = useGoBack();
+  const openHelp = useOpenHelp();
   const [table] = useState(() =>
     createTableController(app, {
       notify: tableToast,

@@ -14,7 +14,6 @@ import { CheckList } from '@/components/ui/check-list';
 import type { CheckListLayout } from '@/components/ui/check-list';
 import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
 import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/text';
 import { DurationPicker } from '@/components/ui/time-wheel';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { useSettings } from '@/react/app-context';
@@ -63,23 +62,6 @@ export const OptionGroup = ({ className, ...props }: ComponentProps<'div'>) => (
   <SettingsGroup className={cn('[--control-h:50px]', className)} {...props} />
 );
 
-/**
- * A select and a small button side by side (Rounds beside the timer mode). The
- * button sits in the same 96px column as the value rows, so the dividers line up.
- */
-export const OptionPair = ({ className, ...props }: ComponentProps<'div'>) => (
-  <div
-    className={cn(
-      'flex items-stretch *:first:min-w-0 *:first:flex-1',
-      '*:data-[slot=button]:my-2 *:data-[slot=button]:min-h-7 *:data-[slot=button]:flex-[0_0_96px] *:data-[slot=button]:rounded-none *:data-[slot=button]:border-l *:data-[slot=button]:border-(--separator)',
-      '*:data-[slot=button]:bg-transparent *:data-[slot=button]:px-3.5 *:data-[slot=button]:py-0 *:data-[slot=button]:font-medium *:data-[slot=button]:text-(--accent)',
-      '*:data-[slot=button]:active:scale-100 *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
-      className,
-    )}
-    {...props}
-  />
-);
-
 /** Switch rows for boolean settings. A `hidden` row below renders nothing, as the original hid it. */
 export function OptionChecks({
   items,
@@ -105,22 +87,19 @@ export function OptionChecks({
 export const OptionSwitch = ({ label, setting, hidden }: { label: string; setting: BoolKey; hidden?: boolean }) =>
   hidden ? null : <OptionChecks items={[{ label, setting }]} />;
 
-/** A labelled slider row (Thickness) over the schema's range. */
+/** A labelled slider (Thickness) over the schema's range. */
 export function OptionSlider({ label, setting, hidden }: { label: string; setting: IntKey; hidden?: boolean }) {
   const settings = useSettings();
   const { min = 0, max = 100 } = settings.schema[setting];
   if (hidden) return null;
   return (
-    <div data-slot="field" className="flex min-h-(--control-h) flex-row items-center gap-2 px-3.5">
-      <Label className="flex-[0_0_96px] font-normal">{label}</Label>
-      <Slider
-        className="flex-1"
-        value={settings.get(setting)}
-        min={min}
-        max={max}
-        onChange={value => settings.set(setting, value)}
-      />
-    </div>
+    <Slider
+      label={label}
+      value={settings.get(setting)}
+      min={min}
+      max={max}
+      onChange={value => settings.set(setting, value)}
+    />
   );
 }
 
@@ -146,9 +125,9 @@ export function OptionDuration({
   if (hidden) return null;
   return (
     <SettingsRow label={label}>
-      <ValueRowButton aria-label={label} onClick={() => setOpen(true)}>
+      <Button aria-label={label} onClick={() => setOpen(true)}>
         {tenths ? `${(value / 10).toFixed(1)} s` : clockTime(value)}
-      </ValueRowButton>
+      </Button>
       <DurationPicker
         title={label}
         value={value}
@@ -164,18 +143,6 @@ export function OptionDuration({
     </SettingsRow>
   );
 }
-
-/** The value at the end of a settings row, as a ValueButton shows it, for values that are not plain numbers. */
-const ValueRowButton = ({ className, ...props }: ComponentProps<typeof Button>) => (
-  <Button
-    className={cn(
-      'my-2 min-h-7 min-w-16 flex-[0_0_96px] rounded-none border-l border-(--separator) bg-transparent px-3.5 py-0 font-medium text-(--accent) tabular-nums',
-      'active:scale-100 engaged:bg-(--btn-bg-active)',
-      className,
-    )}
-    {...props}
-  />
-);
 
 /** Deck-count options; drills that allow Spanish decks add them separately. */
 export const DECK_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8].map(value => ({

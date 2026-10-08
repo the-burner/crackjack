@@ -11,7 +11,7 @@ import { SettingsHub } from '@/screens/settings/hub';
 import { GameOptions } from '@/game/screens/options';
 import { Home } from '@/screens/home';
 import { HelpSheet } from '@/screens/help';
-import { openHelp } from '@/app/help';
+import { helpState } from '@/app/help';
 import { createTestApp, renderScreen } from '../../support/render';
 
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }));
@@ -46,12 +46,12 @@ describe('Basic Setup', () => {
   it('shows the cut card row or the rounds row by shuffle mode', async () => {
     const user = userEvent.setup();
     renderScreen(<Setup />);
-    expect(screen.getByText('Shuffle Point/Cards:')).toBeVisible();
-    expect(screen.getByText('Rounds:')).not.toBeVisible();
+    expect(screen.getByText('Shuffle Point/Cards')).toBeVisible();
+    expect(screen.getByText('Rounds')).not.toBeVisible();
     expect(select('Shuffle')).toHaveDisplayValue('Shuffle after a Cut Card');
     await choose(user, 'Shuffle', 'Shuffle after Fixed Rounds');
-    expect(screen.getByText('Shuffle Point/Cards:')).not.toBeVisible();
-    expect(screen.getByText('Rounds:')).toBeVisible();
+    expect(screen.getByText('Shuffle Point/Cards')).not.toBeVisible();
+    expect(screen.getByText('Rounds')).toBeVisible();
   });
 
   it('seats run 6..1 and toggle computer players', async () => {
@@ -123,6 +123,7 @@ describe('navigation screens', () => {
       'Playing Strategies',
       'True Count Calcs',
       'Appearance & Sound',
+      'Reset Defaults',
     ]);
     await user.click(screen.getByRole('button', { name: 'True Count Calcs' }));
     expect(location().pathname).toBe('/settings/true-count');
@@ -158,26 +159,56 @@ describe('navigation screens', () => {
     expect(location().pathname).toBe('/game');
   });
 
-  it('Reset Defaults asks, then resets', async () => {
+  it('Reset Defaults (in Settings) says what it resets, asks, then resets every setting', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.set('table.decks', 2);
-    renderScreen(<Home />, { app });
-    expect(screen.getByRole('img', { name: 'Crackjack' })).toBeInTheDocument();
+    app.settings.set('drills.flash.decks', 2);
+    renderScreen(<SettingsHub />, { app });
+    expect(screen.getByText(/Resets every setting in the app/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Reset Defaults' }));
-    expect(await screen.findByRole('alertdialog')).toHaveTextContent('reset all options');
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Reset every setting');
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(6));
+    expect(app.settings.get('drills.flash.decks')).toBe(app.settings.schema['drills.flash.decks'].default);
+  });
+
+  it('the home screen draws the wordmark and has no Reset Defaults', () => {
+    renderScreen(<Home />);
+    expect(screen.getByRole('img', { name: 'Crackjack' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reset Defaults' })).not.toBeInTheDocument();
   });
 
   it('help opens its links outside the app, and says when there is none', () => {
-    renderScreen(<HelpSheet />);
-    act(() => openHelp('test.links', 'Links'));
+    const { router } = renderScreen(<HelpSheet />);
+    act(() => void router.navigate(router.state.location, { state: helpState('test.links', 'Links') }));
     const link = screen.getByRole('link', { name: 'site' });
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener');
     expect(screen.getByRole('heading', { level: 1, name: 'Links' })).toBeInTheDocument();
-    act(() => openHelp('nothing'));
+    act(() => void router.navigate(router.state.location, { state: helpState('nothing') }));
     expect(screen.getByText(/No help is available/)).toBeInTheDocument();
+  });
+
+  it('help is a history entry over the screen: going back (a swipe, Back, Escape) closes it in place', async () => {
+    const user = userEvent.setup();
+    const { router, location, help } = renderScreen(
+      <>
+        <GameOptions />
+        <HelpSheet />
+      </>,
+      { path: '/game' },
+    );
+    await user.click(screen.getAllByRole('button', { name: 'Help' })[0]);
+    expect(help()).toEqual({ topic: 'game.options', title: 'Game Options' });
+    act(() => void router.navigate(-1));
+    expect(help()).toBeNull();
+    expect(location().pathname).toBe('/game');
+    expect(screen.queryByRole('heading', { level: 1, name: 'Help' })).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'Help' })[0]);
+    await user.keyboard('{Escape}');
+    expect(help()).toBeNull();
+    expect(location().pathname).toBe('/game');
   });
 });

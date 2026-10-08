@@ -76,22 +76,23 @@
     opacity: 0;
   }
 }
+/* Scale and translate, not transform, so they combine with the -translate-1/2 that centres a dialog or toast. */
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: scale(1.06);
+    scale: 1.06;
   }
 }
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 8px);
+    translate: -50% 8px;
   }
 }
 @keyframes toast-in-top {
   from {
     opacity: 0;
-    transform: translate(-50%, -8px);
+    translate: -50% -8px;
   }
 }
 

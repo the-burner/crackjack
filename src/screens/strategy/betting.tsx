@@ -4,13 +4,12 @@
 import { useState } from 'react';
 import { useOnShow } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
-import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Grid } from '@/components/ui/grid';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
-import { Label, Note } from '@/components/ui/text';
+import { SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { Note } from '@/components/ui/text';
 import { Tile } from '@/components/ui/tile';
 import { ValueButton } from '@/components/ui/value-button';
 import { Column, ScreenLayout } from '@/components/screen-layout';
@@ -32,19 +31,6 @@ import {
 } from '@/settings/bet-ramp';
 
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
-
-/** A long label and a fixed-width control. */
-function TcRow({ label, hidden, children }: { label: string; hidden?: boolean; children: ReactNode }) {
-  return (
-    <div
-      hidden={hidden}
-      className="flex min-h-(--control-h) items-center justify-between gap-2 px-3.5 *:not-data-[slot=label]:flex-[0_0_150px]"
-    >
-      <Label className="min-w-0 flex-1">{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 const chunk = <T,>(items: readonly T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));
@@ -80,15 +66,16 @@ export function Betting() {
               },
             ]}
           />
-          <TcRow label="Chip Value:">
+          <SettingsRow label="Chip Value">
             <Select
+              align="end"
               aria-label="Chip Value"
               options={CHIP_OPTIONS}
               value={settings.get('betting.chipValue')}
               onChange={value => settings.set('betting.chipValue', value)}
             />
-          </TcRow>
-          <TcRow label="Number of bets:">
+          </SettingsRow>
+          <SettingsRow label="Number of bets">
             <ValueButton
               label="Number of bets"
               value={ramp.rows.length}
@@ -97,8 +84,8 @@ export function Betting() {
               min={MIN_ROWS}
               max={MAX_ROWS}
             />
-          </TcRow>
-          <TcRow label="Minimum bet count:" hidden={!showCounts}>
+          </SettingsRow>
+          <SettingsRow label="Minimum bet count" hidden={!showCounts}>
             <ValueButton
               label="Minimum bet count"
               value={ramp.minCount}
@@ -107,7 +94,7 @@ export function Betting() {
               min={-99}
               max={99}
             />
-          </TcRow>
+          </SettingsRow>
         </SettingsGroup>
         <div>
           <Grid

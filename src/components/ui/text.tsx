@@ -33,34 +33,3 @@ export function Note({ warning, className, ...props }: ComponentProps<'p'> & { w
 export function FooterNote({ className, ...props }: ComponentProps<'p'>) {
   return <p className={cn('m-0 pt-2 pb-2.5 text-center text-tiny text-(--text-secondary)', className)} {...props} />;
 }
-
-/** A label above a control, or beside it (`inline`). */
-export function Field({
-  label,
-  inline,
-  className,
-  children,
-}: {
-  label: string;
-  inline?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      data-slot="field"
-      className={cn(
-        'flex',
-        inline
-          ? 'flex-row items-center gap-2 *:not-data-[slot=label]:flex-1 in-data-[slot=settings-group]:min-h-(--control-h) in-data-[slot=settings-group]:px-3.5'
-          : 'flex-col gap-1.5 in-data-[slot=settings-group]:px-3.5 in-data-[slot=settings-group]:pt-2.5 in-data-[slot=settings-group]:pb-1',
-        className,
-      )}
-    >
-      <Label className={inline ? 'flex-[0_0_78px] in-data-[slot=settings-group]:font-normal' : undefined}>
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
-}

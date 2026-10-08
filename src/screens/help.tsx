@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { HELP } from '@/data/help';
 import { TopBar } from '@/components/ui/top-bar';
-import { closeHelp, useHelpStore } from '@/app/help';
+import { useCloseHelp, useHelp } from '@/app/help';
 
 /** `html` with its links opening outside the app. */
 function withExternalLinks(html: string): string {
@@ -28,9 +28,10 @@ export function HelpText({ topic }: { topic: string }) {
   );
 }
 
-/** The help screen; open with openHelp(topic, title). Back or Escape closes it. */
+/** The help page, when the history entry asks for one (useOpenHelp). Back, a swipe or Escape closes it. */
 export function HelpSheet() {
-  const open = useHelpStore(state => state.open);
+  const open = useHelp();
+  const closeHelp = useCloseHelp();
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
@@ -38,7 +39,7 @@ export function HelpSheet() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  }, [open, closeHelp]);
   if (!open) return null;
   return (
     <section

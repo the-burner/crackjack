@@ -2,8 +2,7 @@
 
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
-import { Field } from '@/components/ui/text';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { THEMES } from '@/lib/theme';
 
 const SOUND: readonly SettingCheck[] = [
@@ -14,14 +13,16 @@ const SOUND: readonly SettingCheck[] = [
 export function Appearance() {
   return (
     <SettingsScreen title="Appearance & Sound" help="settings.appearance">
-      <SettingsGroup>
-        <Field label="Theme">
+      <Section title="Theme">
+        <SettingsGroup>
           <SettingSelect label="Theme" setting="display.theme" options={THEMES} />
-        </Field>
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingChecks items={SOUND} />
-      </SettingsGroup>
+        </SettingsGroup>
+      </Section>
+      <Section title="Sound">
+        <SettingsGroup>
+          <SettingChecks items={SOUND} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

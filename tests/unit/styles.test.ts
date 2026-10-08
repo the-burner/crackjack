@@ -1,9 +1,9 @@
-// The colour tokens' own rules: every custom property used exists, every
-// Classic colour has a Latte and a Mocha value, no component hard-codes a
-// colour, and no token is left behind.
+// The colour tokens' own rules: every custom property used exists, Latte and
+// Mocha define the same colours, no component hard-codes a colour, and no
+// token is left behind.
 //
 // None of this is visible to the other tests: a property missing from one theme
-// just inherits the Classic colour and looks wrong only to the eye.
+// is simply unset there and looks wrong only to the eye.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -120,27 +120,25 @@ describe('custom properties', () => {
 const FELT_ARTWORK_NAMES = ['--felt-fallback', '--bet-circle'];
 
 describe('the themes', () => {
-  const classicColours = definitions(TOKENS)
-    .filter(({ value }) => COLOUR.test(value))
-    .map(({ name }) => name);
+  /** Catppuccin's own colour names; everything else a theme sets is one of the app's roles. */
+  const PALETTE = new Set(
+    'rosewater flamingo pink mauve red maroon peach yellow green teal sky sapphire blue lavender ctp-text subtext1 subtext0 overlay2 overlay1 overlay0 surface2 surface1 surface0 base mantle crust'
+      .split(' ')
+      .map(name => `--${name}`),
+  );
 
-  it('give Classic a literal colour for the ones they theme', () => {
-    expect(classicColours.length).toBeGreaterThan(50);
+  it('define the same colours in Latte and Mocha', () => {
+    const [latte, mocha] = [themeBlock('latte'), themeBlock('mocha')];
+    expect(latte.size).toBeGreaterThan(80);
+    expect([...latte].filter(name => !mocha.has(name))).toEqual([]);
+    expect([...mocha].filter(name => !latte.has(name))).toEqual([]);
   });
-
-  for (const theme of ['latte', 'mocha']) {
-    it(`map every Classic colour in ${theme}`, () => {
-      const mapped = themeBlock(theme);
-      expect(classicColours.filter(name => !mapped.has(name) && !FELT_ARTWORK_NAMES.includes(name))).toEqual([]);
-    });
-  }
 
   it('reach the palette through named roles, not raw hex', () => {
     // Deliberately the same in both flavours, so it takes a literal.
     const SHARED = ['--toggle-knob'];
-    const appTokens = new Set(definitions(TOKENS).map(({ name }) => name));
     const rawHex = definitions(THEMES)
-      .filter(({ name, value }) => appTokens.has(name) && /^#[0-9a-fA-F]{3,8}$/.test(value))
+      .filter(({ name, value }) => !PALETTE.has(name) && /^#[0-9a-fA-F]{3,8}$/.test(value))
       .map(({ name }) => name)
       .filter(name => !SHARED.includes(name));
     expect(rawHex).toEqual([]);
@@ -169,7 +167,7 @@ describe('hard-coded colours', () => {
     'src/screens/strategy/tables.tsx': ['LEGEND_TEXT_COLORS'],
   };
 
-  it('are only the Classic fallbacks of a named custom property', () => {
+  it('are only the fallbacks of a named custom property', () => {
     expect(COMPONENTS.length).toBeGreaterThan(50);
     const bare = COMPONENTS.flatMap(file =>
       SOURCE[file]

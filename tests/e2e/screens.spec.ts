@@ -115,8 +115,9 @@ test('every screen with a Help button has help text behind it', async ({ page })
   for (const topic of topics) {
     await page.evaluate(async t => {
       const url = '/src/app/help.ts';
-      const { openHelp }: typeof import('@/app/help') = await import(url);
-      openHelp(t, 'Help');
+      const { helpState }: typeof import('@/app/help') = await import(url);
+      const { router } = window.app;
+      await router.navigate(router.state.location, { state: helpState(t, 'Help') });
     }, topic);
     const help = page.locator('[data-screen="help"]');
     await expect(help).not.toContainText('No help is available');
@@ -160,10 +161,9 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
   const el = await openFromHub(page, 'Appearance & Sound', 'settings.appearance');
   const theme = el.getByRole('combobox', { name: 'Theme' });
   for (const [label, name] of [
-    ['Classic', 'classic'],
     ['Catppuccin Latte', 'latte'],
     ['Catppuccin Mocha', 'mocha'],
-    ['Classic', 'classic'],
+    ['Catppuccin Latte', 'latte'],
   ]) {
     await theme.selectOption({ label });
     await expect(html).toHaveAttribute('data-theme', name);
@@ -171,7 +171,7 @@ test('the theme dropdown switches the theme and keeps it across a reload', async
   }
 
   await page.reload();
-  await expect(html).toHaveAttribute('data-theme', 'classic');
+  await expect(html).toHaveAttribute('data-theme', 'latte');
   expectNoErrors(errors);
 });
 
