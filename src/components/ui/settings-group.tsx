@@ -31,7 +31,7 @@ export function SettingsGroup({ className, ...props }: ComponentProps<'div'>) {
         // A divider above every visible row that follows another visible row.
         '[&>:not([hidden])~:not([hidden])]:border-t [&>:not([hidden])~:not([hidden])]:border-(--separator)',
         // A button in a group is a row that does something: accent text on the left.
-        '*:data-[slot=button]:justify-start *:data-[slot=button]:rounded-none *:data-[slot=button]:bg-transparent *:data-[slot=button]:font-normal *:data-[slot=button]:text-(--accent)',
+        '*:data-[slot=button]:justify-start *:data-[slot=button]:rounded-none *:data-[slot=button]:bg-transparent *:data-[slot=button]:font-normal *:data-[slot=button]:text-(--accent) *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
         // A slider row of its own (not one beside a label).
         '*:data-[slot=slider]:px-3.5 *:data-[slot=slider]:py-2.5',
         className,
@@ -97,7 +97,7 @@ export function ListRow({ chevron = true, className, ...props }: ButtonProps & {
       data-slot="list-row"
       icon={chevron ? 'arrow-r' : undefined}
       className={cn(
-        'justify-start font-normal text-(--text) in-data-[slot=settings-group]:rounded-none in-data-[slot=settings-group]:bg-transparent',
+        'justify-start font-normal text-(--text) in-data-[slot=settings-group]:rounded-none in-data-[slot=settings-group]:bg-transparent in-data-[slot=settings-group]:engaged:bg-(--btn-bg-active)',
         className,
       )}
       {...props}

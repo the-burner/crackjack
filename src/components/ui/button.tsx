@@ -11,15 +11,15 @@ import type { IconName } from './icon';
 export const buttonVariants = cva(
   [
     'relative inline-flex cursor-pointer touch-manipulation items-center justify-center gap-2 rounded-(--radius-s) border-0 px-4 py-2.5 select-none',
-    'min-h-(--control-h) text-body font-semibold transition-[background-color,transform,opacity] duration-150 active:scale-[0.98]',
+    'min-h-(--control-h) text-body font-semibold outline-none transition-[background-color,transform,opacity] duration-150 active:scale-[0.98]',
     'disabled:cursor-default disabled:bg-(--btn-bg) disabled:text-(--btn-text) disabled:opacity-40 disabled:active:scale-100',
   ],
   {
     variants: {
       variant: {
-        default: 'bg-(--btn-bg) text-(--btn-text) active:bg-(--btn-bg-active)',
-        nav: 'bg-(--nav-bg) text-(--nav-text) active:bg-(--nav-bg-active)',
-        primary: 'bg-(--primary-bg) text-(--primary-text) active:bg-(--primary-bg-active)',
+        default: 'bg-(--btn-bg) text-(--btn-text) engaged:bg-(--btn-bg-active)',
+        nav: 'bg-(--nav-bg) text-(--nav-text) engaged:bg-(--nav-bg-active)',
+        primary: 'bg-(--primary-bg) text-(--primary-text) engaged:bg-(--primary-bg-active)',
       },
       large: { true: 'min-h-[52px] rounded-(--radius) text-title' },
       block: { true: 'flex w-full' },

@@ -58,9 +58,9 @@ export function DrillOptionsScreen({
   );
 }
 
-/** A group of controls kept together: a settings group with a little air between its rows. */
+/** A group of controls kept together: a settings group with taller rows, so a highlight fills one from divider to divider. */
 export const OptionGroup = ({ className, ...props }: ComponentProps<'div'>) => (
-  <SettingsGroup className={cn('gap-1.5', className)} {...props} />
+  <SettingsGroup className={cn('[--control-h:50px]', className)} {...props} />
 );
 
 /**
@@ -73,7 +73,7 @@ export const OptionPair = ({ className, ...props }: ComponentProps<'div'>) => (
       'flex items-stretch *:first:min-w-0 *:first:flex-1',
       '*:data-[slot=button]:my-2 *:data-[slot=button]:min-h-7 *:data-[slot=button]:flex-[0_0_96px] *:data-[slot=button]:rounded-none *:data-[slot=button]:border-l *:data-[slot=button]:border-(--separator)',
       '*:data-[slot=button]:bg-transparent *:data-[slot=button]:px-3.5 *:data-[slot=button]:py-0 *:data-[slot=button]:font-medium *:data-[slot=button]:text-(--accent)',
-      '*:data-[slot=button]:active:scale-100 *:data-[slot=button]:active:bg-transparent *:data-[slot=button]:active:opacity-50',
+      '*:data-[slot=button]:active:scale-100 *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
       className,
     )}
     {...props}
@@ -170,7 +170,7 @@ const ValueRowButton = ({ className, ...props }: ComponentProps<typeof Button>) 
   <Button
     className={cn(
       'my-2 min-h-7 min-w-16 flex-[0_0_96px] rounded-none border-l border-(--separator) bg-transparent px-3.5 py-0 font-medium text-(--accent) tabular-nums',
-      'active:scale-100 active:bg-transparent active:opacity-50',
+      'active:scale-100 engaged:bg-(--btn-bg-active)',
       className,
     )}
     {...props}

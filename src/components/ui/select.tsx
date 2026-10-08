@@ -41,8 +41,8 @@ export function Select<T>({
           'w-full cursor-pointer appearance-none truncate rounded-(--radius-s) border-0 bg-(--btn-bg) text-left text-body font-medium text-(--btn-text) [text-align-last:left]',
           mini ? 'min-h-9 py-1.5 pr-[30px] pl-2.5 text-caption' : 'min-h-(--control-h) py-2.5 pr-10 pl-3.5',
           'in-data-[slot=settings-group]:rounded-none in-data-[slot=settings-group]:bg-transparent',
-          // Focus shows as the pressed shade: Safari's ring would be clipped by the group to two bars.
-          'outline-none focus-visible:bg-(--btn-bg-active) in-data-[slot=settings-group]:focus-visible:bg-(--btn-bg-active)',
+          // Hover, a press and keyboard focus show the pressed shade, in place of Safari's focus ring (which the group would clip to two bars).
+          'outline-none engaged:bg-(--btn-bg-active) in-data-[slot=settings-group]:engaged:bg-(--btn-bg-active)',
           '[[data-slot=settings-group]_[data-slot=field]_&]:pl-0',
         )}
       >

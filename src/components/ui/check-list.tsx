@@ -23,11 +23,11 @@ const LIST = {
 } as const;
 
 const ROW = {
-  list: 'min-h-(--control-h) gap-3 border-t border-(--separator) px-3.5 py-2 text-body font-normal text-(--text) first:border-t-0',
+  list: 'min-h-(--control-h) gap-3 border-t border-(--separator) px-3.5 py-2 text-body font-normal text-(--text) first:border-t-0 engaged:bg-(--btn-bg-active)',
   horizontal:
-    'min-h-[34px] flex-1 justify-center rounded-lg px-1.5 py-1 text-caption font-medium text-(--btn-text) transition-colors data-on:bg-(--check-on) data-on:font-semibold data-on:text-(--check-on-text)',
+    'min-h-[34px] flex-1 justify-center rounded-lg px-1.5 py-1 text-caption font-medium text-(--btn-text) transition-colors engaged:bg-(--btn-bg-active) data-on:bg-(--check-on) data-on:font-semibold data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90',
   chips:
-    'min-h-10 justify-center rounded-(--radius-s) bg-(--btn-bg) px-2 py-1.5 text-[14px] font-medium text-(--btn-text) transition-colors data-on:bg-(--check-on) data-on:font-semibold data-on:text-(--check-on-text)',
+    'min-h-10 justify-center rounded-(--radius-s) bg-(--btn-bg) px-2 py-1.5 text-[14px] font-medium text-(--btn-text) transition-colors engaged:bg-(--btn-bg-active) data-on:bg-(--check-on) data-on:font-semibold data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90',
 } as const;
 
 export function CheckList({

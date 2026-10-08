@@ -33,7 +33,7 @@ export function ValueButton({
         'in-data-[slot=settings-row]:my-2 in-data-[slot=settings-row]:min-h-7 in-data-[slot=settings-row]:flex-[0_0_96px] in-data-[slot=settings-row]:rounded-none',
         'in-data-[slot=settings-row]:border-l in-data-[slot=settings-row]:border-(--separator) in-data-[slot=settings-row]:bg-transparent in-data-[slot=settings-row]:px-3.5 in-data-[slot=settings-row]:py-0',
         'in-data-[slot=settings-row]:font-medium in-data-[slot=settings-row]:text-(--accent)',
-        'in-data-[slot=settings-row]:active:scale-100 in-data-[slot=settings-row]:active:bg-transparent in-data-[slot=settings-row]:active:opacity-50',
+        'in-data-[slot=settings-row]:active:scale-100 in-data-[slot=settings-row]:engaged:bg-(--btn-bg-active)',
         className,
       )}
       onClick={async () => {

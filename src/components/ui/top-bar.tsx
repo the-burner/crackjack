@@ -19,7 +19,7 @@ export function BarButton({
     <button
       type={type}
       className={cn(
-        'inline-flex min-h-10 cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent px-2 text-title font-normal text-(--accent) select-none active:opacity-50',
+        'inline-flex min-h-10 cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent px-2 text-title font-normal text-(--accent) outline-none select-none rounded-(--radius-s) engaged:bg-(--btn-bg-active)',
         back && 'gap-0.5 pl-[7px]',
         icon && 'relative pr-[26px]',
         className,

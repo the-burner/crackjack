@@ -2,6 +2,29 @@
 @import './styles/tokens.css';
 @import './styles/themes.css';
 
+/*
+ * A control that is hovered, pressed, or focused from the keyboard. Every
+ * clickable control shows its pressed shade under `engaged:`. Focus that came
+ * from a tap or click is marked (lib/pointer-focus.ts) and left out, since
+ * Safari would otherwise keep a clicked control shaded.
+ */
+@custom-variant engaged {
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      @slot;
+    }
+  }
+  &:active:not(:disabled) {
+    @slot;
+  }
+  &:focus-visible:not([data-pointer-focus]) {
+    @slot;
+  }
+  &:has(:focus-visible:not([data-pointer-focus])) {
+    @slot;
+  }
+}
+
 @theme inline {
   --font-sans: var(--font);
 

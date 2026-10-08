@@ -64,7 +64,7 @@ export function DialogButton({ className, type = 'button', ...props }: Component
     <button
       type={type}
       className={cn(
-        'h-[46px] flex-1 cursor-pointer border-0 border-l border-(--dialog-divider) bg-transparent text-title font-normal text-(--dialog-accent) first:border-l-0 first:font-semibold active:bg-(--separator)',
+        'h-[46px] flex-1 cursor-pointer border-0 border-l border-(--dialog-divider) bg-transparent text-title font-normal text-(--dialog-accent) first:border-l-0 first:font-semibold outline-none engaged:bg-(--separator)',
         className,
       )}
       {...props}

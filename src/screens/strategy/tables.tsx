@@ -242,7 +242,7 @@ function TableGrid({
               return (
                 <td
                   key={column}
-                  className={cn(onCell && 'cursor-pointer', marked && MARKED)}
+                  className={cn(onCell && 'cursor-pointer engaged:brightness-90', marked && MARKED)}
                   data-row={row}
                   data-col={column}
                   data-marked={marked || undefined}

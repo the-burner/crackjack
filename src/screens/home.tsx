@@ -66,7 +66,7 @@ export function Home() {
               <button
                 key={screen}
                 type="button"
-                className="flex min-h-[76px] cursor-pointer flex-col items-start gap-1 rounded-(--radius) border-0 bg-(--group-bg) p-3.5 text-left text-(--text) transition-[transform,background-color] duration-150 active:scale-[0.98] active:bg-(--btn-bg-active)"
+                className="flex min-h-[76px] cursor-pointer flex-col items-start gap-1 rounded-(--radius) border-0 bg-(--group-bg) p-3.5 text-left text-(--text) transition-[transform,background-color] duration-150 outline-none active:scale-[0.98] engaged:bg-(--btn-bg-active)"
                 onClick={() => navigate(PATHS[screen])}
               >
                 <span className="text-body font-semibold">{name}</span>

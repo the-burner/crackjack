@@ -13,6 +13,7 @@ import { router } from '@/app/routes';
 import { confirm } from '@/components/dialogs';
 import { AppContext } from '@/react/app-context';
 import { applyTheme } from '@/lib/theme';
+import { trackPointerFocus } from '@/lib/pointer-focus';
 
 declare global {
   interface Window {
@@ -21,6 +22,7 @@ declare global {
   }
 }
 
+trackPointerFocus(document);
 const app = createServices();
 applyTheme(app.settings.get('display.theme'));
 app.settings.subscribe((key, value) => {

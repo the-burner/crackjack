@@ -10,7 +10,7 @@ import type { DurationColumn } from '@/drills/shared/duration';
 const ITEM_HEIGHT = 36;
 
 const ACTION =
-  'min-h-10 cursor-pointer border-0 bg-transparent px-2 text-title font-normal text-(--dialog-accent) active:opacity-50';
+  'min-h-10 cursor-pointer border-0 bg-transparent px-2 text-title font-normal text-(--dialog-accent) outline-none rounded-(--radius-s) engaged:bg-(--separator)';
 
 export function DurationPicker({
   title,
