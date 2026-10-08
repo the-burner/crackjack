@@ -16,87 +16,23 @@ A comprehensive card counting training suite
 39 counting systems are built in (plus a hole-carding strategy). Everything
 works offline.
 
-## Trying it on a desktop browser
+## Installing on an iPhone or iPad
 
-You don't need a phone or any installation to try the app. You need
-[Node.js](https://nodejs.org/) 22 or newer.
+The app is published at **https://the-burner.github.io/crackjack/**.
 
-```bash
-npm install
-npm run dev                          # http://localhost:5173/, reloads as you edit
-npm run preview                      # the production build: http://127.0.0.1:4173/
-```
+1. Open the link in **Safari** (required for Add to Home Screen) and wait a few
+   seconds while it caches itself.
+2. Share → **Add to Home Screen**.
+3. Tap the icon: it runs fully offline from then on.
 
-Open the URL in Chrome, Safari or Firefox. `npm run dev` serves the source
-with hot reload and no service worker; `npm run preview` builds `dist/` and
-serves it as an installed copy would see it, offline cache included.
-
-Tips for desktop testing:
-
-- **Use a phone-sized window.** The app is laid out for phones. In Chrome open
-  DevTools (`Cmd+Option+I`), turn on the device toolbar (`Cmd+Shift+M`) and pick
-  an iPhone. Use its rotate button for landscape, which the Full Table Drills
-  need. A mouse drag works as a swipe on the table and in the Flash drill.
-- **Seeing your edits.** Use `npm run dev`, which has no service worker. The
-  preview build caches itself for offline use; after rebuilding, the app asks
-  to reload.
-- **Starting fresh.** Settings, bankroll and statistics are kept in local
-  storage. **Reset Defaults** on the home screen resets the
-  settings only; to wipe everything use DevTools → Application → Storage →
-  **Clear site data**.
-
-## Serving it to a phone
-
-iOS Safari only installs a web app served over HTTPS, so there is a phone
-mode that builds the app and serves it over HTTPS to your local network:
-
-```bash
-npm run serve                        # https://<your-mac>.local:8443/  (also https://localhost:8443/)
-npm run serve -- --port 9000         # a different port
-```
-
-It uses [`mkcert`](https://github.com/FiloSottile/mkcert) to make a certificate
-your Mac trusts:
-
-```bash
-brew install mkcert nss
-mkcert -install        # once per Mac
-```
-
-On first run it writes a certificate for your Mac's `.local` hostname into
-`.certs/` (git-ignored). Only the build in `dist/` is served.
-
-## Installing on an iPhone (offline home-screen app)
-
-The phone has to trust your Mac's certificate authority once; after that the app
-installs and runs with no server at all.
-
-1. On the Mac (same Wi-Fi as the phone) run `npm run serve` and note the
-   `https://<your-mac>.local:8443/` URL.
-2. Trust the local certificate authority on the iPhone:
-   - Run `mkcert -CAROOT` on the Mac and AirDrop `rootCA.pem` from that folder
-     to the phone.
-   - iPhone: open the file → **Settings → Profile Downloaded → Install**.
-   - **Settings → General → About → Certificate Trust Settings** → turn on full
-     trust for the mkcert certificate.
-3. In **Safari** (required for Add to Home Screen) open the `https://…` URL and
-   wait a few seconds while it caches itself.
-4. Share → **Add to Home Screen**.
-5. Stop the server or turn on airplane mode, then tap the icon: it runs fully
-   offline.
-
-The certificate and the installed app are tied to your Mac's `.local` hostname,
-so the installed app keeps working even if the Mac's IP address changes. If you
-rename the Mac, delete `.certs/` and repeat the setup.
-
-### Keeping settings across reinstalls
-
-Settings live in the browser's local storage under the `cj.` prefix, so they
-survive reloads and app updates. Deleting the installed app (or clearing Safari's
-data for the site) clears them, and the app starts from the defaults in
-`src/settings/schema.ts` — edit that file if you want different defaults.
+When a new version is published, the installed app asks whether to reload the
+next time it is opened online. Settings, bankroll and statistics are kept on
+the device; deleting the app (or clearing Safari's data for the site) resets
+them to the defaults in `src/settings/schema.ts`.
 
 ## Development
+
+You need [Node.js](https://nodejs.org/) 22 or newer.
 
 ```bash
 npm install                          # dev dependencies (Vite, TypeScript, ESLint, Vitest, Playwright)
@@ -115,16 +51,64 @@ npm run add-side-bet -- <code>       # bundle a side-bet game by its export code
 npm run logo                         # redraw the app icon and wordmark (tools/logo.ts)
 ```
 
+### In a desktop browser
+
+`npm run dev` serves the source with hot reload and no service worker;
+`npm run preview` builds `dist/` and serves it as an installed copy would see
+it, offline cache included (after rebuilding, it asks to reload).
+
+- **Use a phone-sized window.** In Chrome open DevTools (`Cmd+Option+I`), turn
+  on the device toolbar (`Cmd+Shift+M`) and pick an iPhone. Use its rotate
+  button for landscape, which the Full Table Drills need. A mouse drag works as
+  a swipe on the table and in the Flash drill.
+- **Starting fresh.** **Reset Defaults** on the home screen resets the settings
+  only; to wipe everything use DevTools → Application → Storage → **Clear site
+  data**.
+
+### On a phone, from your Mac
+
+To try a build on a phone before publishing it, `npm run serve` builds the app
+and serves it over HTTPS to your local network (iOS only installs web apps
+served over HTTPS):
+
+```bash
+npm run serve                        # https://<your-mac>.local:8443/  (also https://localhost:8443/)
+npm run serve -- --port 9000         # a different port
+```
+
+It uses [`mkcert`](https://github.com/FiloSottile/mkcert) for a certificate
+your Mac trusts (`brew install mkcert nss`, then `mkcert -install` once per
+Mac); on first run it writes one for your Mac's `.local` hostname into `.certs/`
+(git-ignored). The phone has to trust that certificate authority once:
+
+1. Run `mkcert -CAROOT` on the Mac and AirDrop `rootCA.pem` from that folder to
+   the phone.
+2. On the phone: open the file → **Settings → Profile Downloaded → Install**,
+   then **Settings → General → About → Certificate Trust Settings** → turn on
+   full trust for the mkcert certificate.
+3. With the phone on the same Wi-Fi, open `https://<your-mac>.local:8443/` in
+   Safari; it can be added to the Home Screen like the published app.
+
+A copy installed this way is a separate app from the published one, with its
+own settings. If you rename the Mac, delete `.certs/` and repeat the setup.
+
+### Tests
+
 The browser tests run in WebKit (Safari's engine) as an iPhone 15 Pro and an
 iPad (A16), each upright and sideways; the offline tests run once on the
 production build. To run one device only: `npx playwright test --project=iphone`
 (or `iphone-landscape`, `ipad`, `ipad-landscape`).
 
-The service worker's file list is generated by each build (vite-plugin-pwa), so
-installed copies pick up every change; they ask before reloading. CI runs lint,
-the type check, the unit tests and the build on every push and pull request,
-and publishes each passing push to `main` to GitHub Pages. The browser tests run
-locally (`npm run test:e2e`).
+### Publishing
+
+CI (`.github/workflows/ci.yml`) runs lint, the type check, the unit tests and
+the build on every push and pull request, and publishes each passing push to
+`main` to GitHub Pages (the repository's **Settings → Pages → Source** is
+**GitHub Actions**). The browser tests are run locally (`npm run test:e2e`);
+they are timing-sensitive and too slow on CI runners. The service worker's file
+list is generated by each build, so installed copies pick up every change.
+
+### More
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the code is organised and
   the conventions it follows.
