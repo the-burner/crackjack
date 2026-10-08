@@ -141,7 +141,9 @@ child routes shown over it, so the round underneath stays as it is.
   and running each drill. It runs on the Vite dev server, so tests can import
   and patch the app's modules in the page; the tests tagged `@build` (offline
   use) run on the production build instead.
-- CI (`.github/workflows/ci.yml`) runs lint, the type check, and both suites.
+- CI (`.github/workflows/ci.yml`) runs lint, the type check, the unit tests and
+  the build, then deploys `main` to GitHub Pages. The browser tests are run
+  locally; they are timing-sensitive and too slow on CI runners.
 
 ## Offline
 
