@@ -48,6 +48,8 @@ const TRAY_HEIGHT_IN_CARDS = 2.4;
 const MIN_TRAY_HEIGHT = 60;
 /** Smallest and largest shoe photo height, in pixels. */
 const SHOE_HEIGHT = { min: 60, max: 220 };
+/** The title bar's height (Back, Stats, Error, Help), which floats over the top of the felt in landscape. */
+const BAR_HEIGHT = 48;
 /** Height of the status band, in pixels. */
 const STATUS_HEIGHT = 34;
 
@@ -229,7 +231,7 @@ export function tableLayout({
   const topOfSeats = Math.min(...seatLayouts.map(s => s.hands[0][FAN_CARDS - 1].y));
   const tray = showTray ? trayRect({ width, cardWidth, cardHeight, decks, portrait, seatLayouts }) : null;
   // The shoe photo only fits beside the dealer in landscape.
-  const shoe = showShoe && !portrait ? shoeRect({ width, topOfSeats, cardWidth }) : null;
+  const shoe = showShoe && !portrait ? shoeRect({ width, seats: seatLayouts, cardWidth }) : null;
   const dealer = dealerRow({ width, cardWidth, cardHeight, portrait, topOfSeats, tray, noHoleCard });
 
   return {
@@ -430,16 +432,46 @@ export function traySilhouette(decks: number): { name: string; width: number; he
   return { name: '2deck', width: 134, height: 131 };
 }
 
-/** The shoe photo sits in the top-right corner, left of nothing else. */
-function shoeRect({ width, topOfSeats, cardWidth }: { width: number; topOfSeats: number; cardWidth: number }): Box {
-  let height = clamp(topOfSeats, SHOE_HEIGHT.min, SHOE_HEIGHT.max);
-  let boxWidth = Math.floor(height * SHOE_ASPECT);
-  const maxWidth = Math.max(80, width * 0.33 - cardWidth * 0.1);
-  if (boxWidth > maxWidth) {
-    boxWidth = Math.round(maxWidth);
-    height = Math.round(boxWidth / SHOE_ASPECT);
+/**
+ * The shoe photo sits in the top-right corner, left of nothing else: below
+ * the title bar (which floats over the top of the felt in landscape), and above
+ * the highest any seat's fan of cards reaches among the seats beneath it.
+ */
+function shoeRect({
+  width,
+  seats,
+  cardWidth,
+}: {
+  width: number;
+  seats: readonly SeatLayout[];
+  cardWidth: number;
+}): Box {
+  /** The highest a fan of cards reaches (its last card) among the seats reaching right of `x`. */
+  const reach = (x: number) =>
+    Math.min(
+      Infinity,
+      ...seats
+        .filter(seat => Math.max(...seat.hands[0].map(p => p.x)) + cardWidth > x)
+        .map(seat => seat.hands[0][FAN_CARDS - 1].y),
+    );
+  const fit = (bottom: number): Box => {
+    let height = clamp(bottom - BAR_HEIGHT, SHOE_HEIGHT.min, SHOE_HEIGHT.max);
+    let boxWidth = Math.floor(height * SHOE_ASPECT);
+    const maxWidth = Math.max(80, width * 0.33 - cardWidth * 0.1);
+    if (boxWidth > maxWidth) {
+      boxWidth = Math.round(maxWidth);
+      height = Math.round(boxWidth / SHOE_ASPECT);
+    }
+    return { x: width - boxWidth, y: BAR_HEIGHT, width: boxWidth, height: Math.round(height) };
+  };
+  // Clear of every seat first; then as tall as the seats beneath it allow, while that holds.
+  let box = fit(reach(-Infinity));
+  for (let i = 0; i < 3; i++) {
+    const next = fit(reach(box.x));
+    if (next.y + next.height > reach(next.x)) break;
+    box = next;
   }
-  return { x: width - boxWidth, y: 1, width: boxWidth, height: Math.round(height) };
+  return box;
 }
 
 /** The bankroll label: centred over the felt, above the dealer's cards. */

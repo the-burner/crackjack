@@ -154,6 +154,18 @@ describe('table layout', () => {
     expect(layout.shoe!.x).toBeGreaterThan(layout.dealer.right + layout.cardWidth);
   });
 
+  it('sits the shoe below the title bar (48px over the top of the felt), above the seats beneath it', () => {
+    for (const size of [LANDSCAPE, { width: 1180, height: 796 }, { width: 852, height: 372 }]) {
+      const layout = tableLayout({ ...size, seatCount: 4, humanSeats: [1] });
+      const right = layout.seats.filter(
+        seat => Math.max(...seat.hands[0].map(p => p.x)) + layout.cardWidth > layout.shoe!.x,
+      );
+      const reach = Math.min(...right.map(seat => seat.hands[0][6].y));
+      expect(layout.shoe!.y).toBeGreaterThanOrEqual(48);
+      expect(layout.shoe!.y + layout.shoe!.height).toBeLessThanOrEqual(Math.max(reach, 48 + 60));
+    }
+  });
+
   it('narrows the shoe on a small screen rather than let it crowd the felt', () => {
     const layout = tableLayout({ width: 320, height: 200, seatCount: 4, humanSeats: [1, 2] });
     expect(layout.shoe!.width).toBe(Math.round(layout.width * 0.33 - layout.cardWidth * 0.1));
