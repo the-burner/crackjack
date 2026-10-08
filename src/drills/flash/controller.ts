@@ -141,6 +141,9 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
       options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`,
     onStart: start,
     onStop: stop,
+    onRestart: () => {
+      finished = false;
+    },
     onPause: pause,
     onResume: resume,
   });

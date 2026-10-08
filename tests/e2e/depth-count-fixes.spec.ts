@@ -341,6 +341,79 @@ test.describe('count drill answers', () => {
   });
 });
 
+test.describe('count drill time up', () => {
+  /** Count Down & Halt over ten seconds, a card every three, and no tests of its own. */
+  const HALT = {
+    'drills.count.decks': 1,
+    'drills.count.cardsPerFlash': '1',
+    'drills.count.testEvery': 'never',
+    'drills.count.accuracy': 0,
+    'drills.count.dealTenths': 30,
+    'drills.count.timerMode': 'countDownHalt',
+    'drills.count.alarmSeconds': 10,
+  };
+
+  test('asks one last test when the time runs out, and ends only once it is answered', async ({ page }) => {
+    await page.clock.install();
+    await open(page, HALT);
+    const screen = await launch(page, COUNT);
+    const grid = screen.getByRole('img', { name: 'Answer grid' });
+    await page.clock.runFor(8000);
+    await expect(grid).toBeHidden();
+    await page.clock.runFor(4000);
+    // A test, though no test was due.
+    await expect(grid).toBeVisible();
+    await page.clock.runFor(10000);
+    await expect(grid).toBeVisible();
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+    await tapEveryCellTwice(page);
+    await page.clock.runFor(2000);
+    await expect(grid).toBeHidden();
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+  });
+
+  test('time running out mid-flash leaves the cards their full time before the last test', async ({ page }) => {
+    await page.clock.install();
+    await open(page, HALT);
+    const screen = await launch(page, COUNT);
+    const grid = screen.getByRole('img', { name: 'Answer grid' });
+    // Cards at 0, 3, 6, 9 and 12 s; the time runs out at 11 s, between two of them.
+    await page.clock.runFor(11500);
+    await expect(grid).toBeHidden();
+    await page.clock.runFor(1000);
+    await expect(grid).toBeVisible();
+  });
+
+  test('a test on screen when the time runs out is the last one', async ({ page }) => {
+    await page.clock.install();
+    await open(page, { ...HALT, 'drills.count.testEvery': 'everyCard', 'drills.count.dealTenths': 5 });
+    const screen = await launch(page, COUNT);
+    const grid = screen.getByRole('img', { name: 'Answer grid' });
+    await expect(grid).toBeVisible();
+    await page.clock.runFor(12000);
+    await expect(grid).toBeVisible();
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+    await tapEveryCellTwice(page);
+    await page.clock.runFor(2000);
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+  });
+
+  test("Restart takes the last round's Done off the screen at once", async ({ page }) => {
+    await page.clock.install();
+    await open(page, HALT);
+    const screen = await launch(page, COUNT);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+    await page.clock.runFor(12000);
+    await tapEveryCellTwice(page);
+    await page.clock.runFor(2000);
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+    expect(await feltAtCentre(cards)).toBeLessThan(100);
+    await screen.getByRole('button', { name: 'Restart' }).click();
+    await expect(countdownOf(screen)).toBeVisible();
+    await expect.poll(() => feltAtCentre(cards)).toBe(100);
+  });
+});
+
 test('a finished drill offers no Pause', async ({ page }) => {
   await open(page, {
     'drills.depth.drill': 'trueCount',

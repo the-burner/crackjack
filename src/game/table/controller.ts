@@ -280,7 +280,12 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
       showShoe: !settings.get('display.hideShoe'),
       noHoleCard: session.rules.noHoleCard,
     });
-    renderer.resize(layout);
+    // The canvas fills the felt element's parent (the window); the layout sits where the felt element is.
+    const room = rendererCanvas?.parentElement;
+    renderer.resize(
+      layout,
+      room ? { width: room.clientWidth, height: room.clientHeight, x: felt.offsetLeft, y: felt.offsetTop } : undefined,
+    );
     render();
   }
 

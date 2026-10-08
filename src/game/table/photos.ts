@@ -45,6 +45,32 @@ export function shoePhoto(cards: number): Photo {
   return { number, src: `assets/shoe/${number}.jpg` };
 }
 
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+/** Every photo a table with this tray can show: its tray series and the shoe. */
+export const tablePhotos = (silhouette: string): string[] => {
+  const series = TRAY_SERIES[silhouette] ?? TRAY_SERIES['6deck'];
+  return [
+    ...range(series.full, series.empty).map(n => `assets/trays/table/${n}.jpg`),
+    ...range(SHOE_FULLEST, SHOE_EMPTY).map(n => `assets/shoe/${n}.jpg`),
+  ];
+};
+
+const preloaded = new Set<string>();
+
+/**
+ * Loads and decodes, ahead of time, every photo a table can show, so a tray or
+ * shoe moving to its next photo has it at once.
+ */
+export function preloadTablePhotos(silhouette: string): void {
+  if (preloaded.has(silhouette)) return;
+  preloaded.add(silhouette);
+  for (const src of tablePhotos(silhouette)) {
+    const { img } = loadImage(src);
+    img.decode?.().catch(() => {});
+  }
+}
+
 /** Mask that is opaque inside the tray silhouette. */
 export const trayMaskSrc = (silhouette: string): string => `assets/trays/table/mask-${silhouette}-inside.png`;
 /** Mask that is opaque inside the shoe silhouette. */
@@ -77,14 +103,18 @@ export function loadImage(src: string): LoadedImage {
 /** True when the image has loaded and can be drawn. */
 const isReady = (src: string) => Boolean(images.get(src)?.img.naturalWidth);
 
-/**
- * Draws `photoSrc` clipped to `maskSrc` into the given rectangle. Nothing is
- * drawn until both images are loaded; `onLoad` runs when they arrive.
- * @returns {boolean} whether anything was drawn
- */
 /** The photo pairs each redraw callback is already waiting on, so a frame drawn while they load adds no more. */
 const waiting = new WeakMap<() => void, Set<string>>();
 
+/** The last photo drawn in each mask (tray or shoe), shown while the next one loads. */
+const lastDrawn = new Map<string, string>();
+
+/**
+ * Draws `photoSrc` clipped to `maskSrc` into the given rectangle. While the
+ * photo loads, the last one drawn in that mask stands in, so the tray or shoe
+ * never blinks out; `onLoad` runs when it arrives.
+ * @returns {boolean} whether anything was drawn
+ */
 export function drawMasked(
   ctx: CanvasRenderingContext2D,
   {
@@ -97,23 +127,28 @@ export function drawMasked(
   }: { photoSrc: string; maskSrc: string; x: number; y: number; width: number; height: number },
   onLoad?: () => void,
 ): boolean {
-  const photo = loadImage(photoSrc);
+  const wanted = loadImage(photoSrc);
   const mask = loadImage(maskSrc);
-  if (!isReady(photoSrc) || !isReady(maskSrc)) {
+  const ready = isReady(photoSrc) && isReady(maskSrc);
+  if (!ready) {
     if (onLoad) {
       const pairs = waiting.get(onLoad) ?? new Set<string>();
       waiting.set(onLoad, pairs);
       const pair = `${photoSrc} ${maskSrc}`;
       if (!pairs.has(pair)) {
         pairs.add(pair);
-        Promise.all([photo.ready, mask.ready]).then(() => {
+        Promise.all([wanted.ready, mask.ready]).then(() => {
           pairs.delete(pair);
           onLoad();
         });
       }
     }
-    return false;
   }
+  const standIn = lastDrawn.get(maskSrc);
+  const src = ready ? photoSrc : standIn;
+  if (!src || !isReady(src) || !isReady(maskSrc)) return false;
+  if (ready) lastDrawn.set(maskSrc, photoSrc);
+  const photo = loadImage(src);
   const buffer = scratch(width, height);
   buffer.ctx.clearRect(0, 0, width, height);
   buffer.ctx.globalCompositeOperation = 'source-over';

@@ -135,6 +135,9 @@ export function createFullDrill(app: App) {
     pausable: true,
     onStart: start,
     onStop: stop,
+    onRestart: () => {
+      notice = '';
+    },
     onPause: pause,
     onResume: resume,
     onShow: layout,

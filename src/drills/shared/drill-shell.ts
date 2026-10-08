@@ -17,6 +17,8 @@ export interface DrillShellOptions {
   /** Begins a fresh run. */
   onStart: (shell: DrillShell) => void;
   onStop?: (shell: DrillShell) => void;
+  /** Called on Restart: clear whatever the last run left on screen (its closing notice). */
+  onRestart?: (shell: DrillShell) => void;
   onPause?: (shell: DrillShell) => void;
   onResume?: (shell: DrillShell) => void;
   /** Called on every show: before the first run begins, and after a suspended run resumes. */
@@ -188,6 +190,9 @@ export class DrillShell {
   /** Ends the current run and starts a new one after the same countdown as Launch. */
   restart(): void {
     this.options.onStop?.(this);
+    this.options.onRestart?.(this);
+    // The last run's closing message goes now, not after the countdown.
+    this.message = '';
     this.run = 0;
     this.paused = false;
     this.setPause('Pause', true);

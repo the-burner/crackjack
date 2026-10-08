@@ -1,16 +1,12 @@
 // Home screen: the four drills, the game and the settings.
 
-import { useStore } from 'zustand';
-import { useApp } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
-import { BarButton } from '@/components/ui/top-bar';
 import { FooterNote } from '@/components/ui/text';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { alert } from '@/components/dialogs';
 import { CardButton } from '@/components/ui/card-button';
 import { WORDMARK_SVG } from '@/lib/wordmark';
-import { currentNavigator, installHintWanted } from '@/lib/install-hint';
 import { useNavigate } from 'react-router';
 import { PATHS } from '@/app/paths';
 
@@ -24,11 +20,7 @@ const DRILLS = [
 ] as const;
 
 export function Home() {
-  const app = useApp();
   const navigate = useNavigate();
-  const dismissed = useStore(app.installHintDismissed, state => state.value);
-  const installHint = installHintWanted(currentNavigator(), dismissed);
-  const dismissInstallHint = () => app.installHintDismissed.setState({ value: true });
   return (
     <ScreenLayout title="" help="home" back={false}>
       <Column className="gap-6 pt-2">
@@ -36,19 +28,6 @@ export function Home() {
           className="mx-auto mt-2 mb-0 w-[270px] leading-[0] [&_svg]:h-auto [&_svg]:w-full"
           dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }}
         />
-        {installHint && (
-          <SettingsGroup role="note">
-            <div className="flex items-center gap-2 py-1 pl-3.5">
-              <span className="flex-1 text-caption leading-[1.4] text-(--text-secondary)">
-                To use Crackjack offline, install it: tap <strong>Share</strong>, then{' '}
-                <strong>Add to Home Screen</strong>.
-              </span>
-              <BarButton onClick={dismissInstallHint} data-action="dismiss-install">
-                OK
-              </BarButton>
-            </div>
-          </SettingsGroup>
-        )}
         <Button
           variant="primary"
           large

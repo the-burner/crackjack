@@ -22,7 +22,7 @@ type ColorVar = readonly [name: string, fallback: string];
 
 /** Cell states and their colors. */
 const COLORS: Record<CellState, { fill: ColorVar; text: ColorVar }> = {
-  idle: { fill: ['--tile-bg', '#0000c4'], text: ['--tile-text', '#ffffff'] },
+  idle: { fill: ['--btn-bg', '#313244'], text: ['--btn-text', '#cdd6f4'] },
   correct: { fill: ['--tile-good', '#00ff00'], text: ['--tile-mark-text', '#000000'] },
   close: { fill: ['--tile-close', '#ffff00'], text: ['--tile-mark-text', '#000000'] },
   wrong: { fill: ['--tile-bad', '#ff0000'], text: ['--tile-mark-text', '#000000'] },

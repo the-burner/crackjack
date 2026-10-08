@@ -64,16 +64,15 @@ export function TableScreen() {
   useOnHide(() => table.onHide());
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-(--table-bg)">
-      <TableBar onBack={table.back} onStats={table.openStats} onError={table.openLastError} onHelp={table.help} />
-      <div ref={felt} className="relative min-h-0 flex-1 touch-none overflow-hidden" data-testid="felt">
-        <canvas
-          ref={canvas}
-          className="absolute top-0 left-0"
-          data-testid="table-canvas"
-          aria-label="Table"
-          role="img"
-        />
+    // The felt and rail fill the window edge to edge; the table laid out on them
+    // (the felt element) stays inside the safe area, below the bar in portrait.
+    <div className="relative min-h-0 flex-1 overflow-hidden bg-(--table-bg)">
+      <canvas ref={canvas} className="absolute top-0 left-0" data-testid="table-canvas" aria-label="Table" role="img" />
+      <div
+        ref={felt}
+        className="absolute top-[calc(var(--safe-top)+3rem)] right-(--safe-right) bottom-(--safe-bottom) left-(--safe-left) touch-none overflow-hidden landscape:top-(--safe-top)"
+        data-testid="felt"
+      >
         {view && (
           <>
             <Bankroll box={view.layout?.bankroll} amount={view.bankroll} />
@@ -84,7 +83,6 @@ export function TableScreen() {
             <TableActions controls={view.controls} onAction={table.play} onInsurance={table.answerInsurance} />
             <BetOverlay
               view={view.overlay}
-              layout={view.layout}
               onBet={table.placeBet}
               onSideBet={table.chooseSideBet}
               onCustomize={table.customize}
@@ -96,6 +94,7 @@ export function TableScreen() {
           </>
         )}
       </div>
+      <TableBar onBack={table.back} onStats={table.openStats} onError={table.openLastError} onHelp={table.help} />
       {view && cover && <div className="absolute inset-0 z-20 flex flex-col bg-(--page-bg)">{cover}</div>}
     </div>
   );

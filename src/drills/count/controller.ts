@@ -99,6 +99,8 @@ export function createCountDrill(app: App) {
   let askingTrueCount = false;
   let notice = '';
   let done = false;
+  /** Time is up: the test on screen, or the next one, is the last. */
+  let lastTest = false;
   let nextShown = false;
   /** A correct answer came in while paused: deal again on resume. */
   let resumePending = false;
@@ -110,6 +112,9 @@ export function createCountDrill(app: App) {
     pausable: true,
     onStart: start,
     onStop: stop,
+    onRestart: () => {
+      notice = '';
+    },
     onPause: pause,
     onResume: resume,
   });
@@ -122,6 +127,7 @@ export function createCountDrill(app: App) {
     run += 1;
     resumePending = false;
     done = false;
+    lastTest = false;
     notice = '';
     gridWindow = INITIAL_WINDOW;
     grid = null;
@@ -137,7 +143,7 @@ export function createCountDrill(app: App) {
     const clock = drillClockFor(shell, {
       mode: options.timerMode,
       limit: options.alarmSeconds,
-      onHalt: () => finishShoe(),
+      onHalt: timeUp,
     });
     clock.start();
     if (auto) {
@@ -161,6 +167,11 @@ export function createCountDrill(app: App) {
   function dealFlash() {
     if (done || !shoe) return;
     notice = '';
+    if (lastTest) {
+      if (testsPossible(options.drill, shoe)) startTest();
+      else finishShoe();
+      return;
+    }
     if (cardsToDeal < 1 && testsPossible(options.drill, shoe)) {
       startTest();
       return;
@@ -239,9 +250,22 @@ export function createCountDrill(app: App) {
     advanceTimer.start(resumeDealing);
   }
 
+  /**
+   * The drill time ran out: the test on screen is the last, or else the next
+   * deal (at its usual time, so the cards showing get their full time) is.
+   */
+  function timeUp() {
+    if (done) return;
+    lastTest = true;
+  }
+
   function resumeDealing() {
     if (shell.paused) {
       resumePending = true;
+      return;
+    }
+    if (lastTest) {
+      finishShoe();
       return;
     }
     grid = null;

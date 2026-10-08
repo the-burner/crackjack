@@ -7,7 +7,7 @@
 import { setupCanvas, drawCard, loadCardImages } from '@/lib/card-sprites';
 import { cardSlot, RAIL_SIZE } from './layout';
 import type { Point, TableLayout } from './layout';
-import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage } from './photos';
+import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage, preloadTablePhotos } from './photos';
 import { cssVar } from '@/lib/theme';
 import { DEALER_KEY } from './table-state';
 import type { BurnCard, ShownHand } from './table-state';
@@ -69,10 +69,22 @@ declare global {
   }
 }
 
+/**
+ * The canvas around the table: its full size (the window) and where the
+ * table's layout sits in it (the safe area). The felt and rail fill it all.
+ */
+export interface TableFrame {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+}
+
 /** @param canvas  The visible table canvas. */
 export function createTableRenderer(canvas: HTMLCanvasElement) {
   const background = document.createElement('canvas');
   let layout: TableLayout | null = null;
+  let frame: TableFrame = { width: 0, height: 0, x: 0, y: 0 };
   let ctx: CanvasRenderingContext2D | null = null;
   let redraw = () => {};
   let awaitingPointer = false;
@@ -91,21 +103,23 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
 
   const buildBackground = (layout: TableLayout) => {
     const ratio = window.devicePixelRatio || 1;
-    background.width = Math.round(layout.width * ratio);
-    background.height = Math.round(layout.height * ratio);
+    background.width = Math.round(frame.width * ratio);
+    background.height = Math.round(frame.height * ratio);
     const bg = background.getContext('2d');
     if (!bg) throw new Error('No 2D canvas context');
     bg.setTransform(ratio, 0, 0, ratio, 0, 0);
-    drawFelt(bg, layout);
-    drawRail(bg, layout);
+    drawFelt(bg, frame);
+    drawRail(bg, layout, frame);
+    bg.translate(frame.x, frame.y);
     drawBetCircles(bg, layout);
   };
 
   return {
-    /** Sizes the canvas for a new layout and rebuilds the background. */
-    resize(next: TableLayout) {
+    /** Sizes the canvas for a new layout in its frame and rebuilds the background. */
+    resize(next: TableLayout, nextFrame: TableFrame = { width: next.width, height: next.height, x: 0, y: 0 }) {
       layout = next;
-      ctx = setupCanvas(canvas, layout.width, layout.height);
+      frame = nextFrame;
+      ctx = setupCanvas(canvas, frame.width, frame.height);
       buildBackground(layout);
     },
 
@@ -113,8 +127,10 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
     render(state: TableView) {
       if (!ctx || !layout) return;
       redraw = () => this.render(state);
-      ctx.clearRect(0, 0, layout.width, layout.height);
-      ctx.drawImage(background, 0, 0, background.width, background.height, 0, 0, layout.width, layout.height);
+      ctx.clearRect(0, 0, frame.width, frame.height);
+      ctx.drawImage(background, 0, 0, background.width, background.height, 0, 0, frame.width, frame.height);
+      ctx.save();
+      ctx.translate(frame.x, frame.y);
       drawTray(ctx, layout, state.trayCards ?? 0, onPhotoLoad);
       drawShoe(ctx, layout, state.shoeCards ?? 0, onPhotoLoad);
       drawBurns(ctx, layout, state.burns ?? []);
@@ -123,6 +139,7 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
         if (hand) drawn.push({ hand, slots: drawHand(ctx, layout, hand, handsInSeat(state.hands, hand.seat)) });
       }
       const pointer = drawPointer(ctx, layout, state, onPointerLoad);
+      ctx.restore();
       if (window.__cjRecordFrames) recordFrame(state, drawn, pointer);
     },
 
@@ -138,21 +155,23 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
   };
 }
 
-/** The felt photograph, stretched over the whole table. */
-function drawFelt(ctx: CanvasRenderingContext2D, layout: TableLayout) {
+/** The felt photograph, stretched over the whole window. */
+function drawFelt(ctx: CanvasRenderingContext2D, frame: TableFrame) {
   ctx.fillStyle = cssVar(...FELT_FALLBACK);
-  ctx.fillRect(0, 0, layout.width, layout.height);
+  ctx.fillRect(0, 0, frame.width, frame.height);
   const felt = loadImage(FELT_SRC);
-  if (felt.img.naturalWidth) ctx.drawImage(felt.img, 0, 0, layout.width, layout.height);
+  if (felt.img.naturalWidth) ctx.drawImage(felt.img, 0, 0, frame.width, frame.height);
 }
 
-/** The padded rail and its shadow along the bottom edge. */
-function drawRail(ctx: CanvasRenderingContext2D, layout: TableLayout) {
+/** The padded rail and its shadow along the bottom edge, across the window and down to its foot. */
+function drawRail(ctx: CanvasRenderingContext2D, layout: TableLayout, frame: TableFrame) {
   const { y, height, sourceHeight } = layout.rail;
+  const top = frame.y + y;
+  const below = frame.height - (frame.y + layout.height);
   for (const src of [RAIL_SHADOW_SRC, RAIL_SRC]) {
     const image = loadImage(src);
     if (!image.img.naturalWidth) continue;
-    ctx.drawImage(image.img, 0, 0, RAIL_SIZE.width, sourceHeight, 0, y, layout.width, height);
+    ctx.drawImage(image.img, 0, 0, RAIL_SIZE.width, sourceHeight, 0, top, frame.width, height + below);
   }
 }
 
@@ -207,6 +226,7 @@ function drawBurns(ctx: CanvasRenderingContext2D, layout: TableLayout, burns: re
 
 function drawTray(ctx: CanvasRenderingContext2D, layout: TableLayout, cards: number, onLoad: () => void) {
   if (!layout.tray) return;
+  preloadTablePhotos(layout.tray.silhouette);
   const { src } = trayPhoto(cards, layout.tray.silhouette);
   drawMasked(ctx, { photoSrc: src, maskSrc: trayMaskSrc(layout.tray.silhouette), ...layout.tray }, onLoad);
 }

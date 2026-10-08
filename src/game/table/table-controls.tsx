@@ -101,10 +101,10 @@ export function TableActions({
   );
 }
 
-/** Over the felt photograph, which is dark in every theme, so not the accent colour. */
-const BAR_BUTTON = 'pointer-events-auto text-(--bar-text)';
+/** The bar floats over the felt, so only its buttons take taps. */
+const BAR_BUTTON = 'pointer-events-auto';
 
-/** The bar above the felt: Back, and the Stats, Error and Help buttons. In landscape it floats over the felt. */
+/** The bar over the top of the felt, inside the safe area: Back, and the Stats, Error and Help buttons. */
 export function TableBar({
   onBack,
   onStats,
@@ -117,7 +117,7 @@ export function TableBar({
   onHelp: () => void;
 }) {
   return (
-    <header className="flex min-h-12 shrink-0 items-center justify-between gap-0.5 bg-(--table-strip) px-2 py-0.5 landscape:pointer-events-none landscape:absolute landscape:inset-x-0 landscape:top-0 landscape:z-[9] landscape:bg-transparent">
+    <header className="pointer-events-none absolute top-(--safe-top) right-[calc(var(--safe-right)+0.5rem)] left-[calc(var(--safe-left)+0.5rem)] z-[9] flex min-h-12 items-center justify-between gap-0.5 py-0.5">
       <BarButton back className={BAR_BUTTON} onClick={onBack} data-action="back">
         Back
       </BarButton>

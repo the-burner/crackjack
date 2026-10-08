@@ -11,13 +11,18 @@ import { HelpSheet } from '@/screens/help';
 import { OverlayRoot } from '@/components/overlay-root';
 import { Home } from '@/screens/home';
 
-/** A screen's frame: the whole window inside the safe area. `name` is its data-screen. */
-function Screen({ name, children }: { name: string; children: ReactNode }) {
+/**
+ * A screen's frame: the whole window inside the safe area. `name` is its
+ * data-screen. A `fullBleed` screen (the table) fills the window, safe area and
+ * all, and keeps its own content clear of the edges.
+ */
+function Screen({ name, fullBleed, children }: { name: string; fullBleed?: boolean; children: ReactNode }) {
   const [entering] = useState(useNavigationType() !== 'POP');
   return (
     <section
       className={cn(
-        'absolute inset-0 flex flex-col overflow-hidden bg-(--page-bg) pt-(--safe-top) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)',
+        'absolute inset-0 flex flex-col overflow-hidden bg-(--page-bg)',
+        !fullBleed && 'pt-(--safe-top) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)',
         // A screen being opened fades in below its title bar, which stays steady; going back shows the screen in place.
         entering && '[&>:not(header)]:animate-fade-in',
       )}
@@ -29,12 +34,16 @@ function Screen({ name, children }: { name: string; children: ReactNode }) {
 }
 
 /** A route whose screen is loaded the first time it opens (its own chunk). */
-const page = (name: string, load: () => Promise<ComponentType>): Pick<RouteObject, 'lazy'> => ({
+const page = (
+  name: string,
+  load: () => Promise<ComponentType>,
+  { fullBleed = false } = {},
+): Pick<RouteObject, 'lazy'> => ({
   lazy: async () => {
     const Component = await load();
     return {
       element: (
-        <Screen name={name}>
+        <Screen name={name} fullBleed={fullBleed}>
           <Component />
         </Screen>
       ),
@@ -138,7 +147,9 @@ export const routes: RouteObject[] = [
       { path: 'drills/full/play', ...page('drills.full', () => import('@/drills/full/screen').then(m => m.FullDrill)) },
       {
         path: 'game/play',
-        ...page('game.table', () => import('@/game/screens/table-screen').then(m => m.TableScreen)),
+        ...page('game.table', () => import('@/game/screens/table-screen').then(m => m.TableScreen), {
+          fullBleed: true,
+        }),
         children: [
           { path: 'stats', ...page('game.stats', () => import('@/game/screens/stats').then(m => m.GameStatsRoute)) },
           { path: 'error', ...page('strategy.tables', tables) },

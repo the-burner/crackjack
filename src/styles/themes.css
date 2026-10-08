@@ -35,7 +35,6 @@
   /* Light enough already that a weak scrim leaves a dialog floating. */
   --overlay: rgba(76, 79, 105, 0.6);
   --dialog-shadow: rgba(76, 79, 105, 0.3);
-  --bet-overlay-bg: rgba(220, 224, 232, 0.92);
   /* Over the felt photograph, which stays dark in every theme. */
   --table-text: var(--base);
   --table-accent: var(--yellow);
@@ -77,7 +76,6 @@
 
   --overlay: rgba(17, 17, 27, 0.7);
   --dialog-shadow: rgba(0, 0, 0, 0.6);
-  --bet-overlay-bg: rgba(17, 17, 27, 0.85);
   --table-text: var(--ctp-text);
   --table-accent: var(--yellow);
   --felt-accent: var(--yellow);
@@ -89,8 +87,6 @@
 [data-theme='mocha'] {
   --chrome: var(--crust);
   --accent: var(--nav-bg);
-  /* Back / Help over the table's felt photograph, which is dark in every theme. */
-  --bar-text: var(--table-text);
   --page-bg: var(--base);
   --text: var(--ctp-text);
   --warning: var(--red);
@@ -120,18 +116,14 @@
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
-  --table-strip: var(--page-bg);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
   --panel-text: var(--ctp-text);
   --panel-border: var(--surface2);
-  --tile-bg: var(--mauve);
-  --tile-text: var(--on-accent);
   --tile-good: var(--green);
   --tile-close: var(--yellow);
   --tile-bad: var(--red);
   --toast-error-text: var(--on-tint);
-  --tile-previous: var(--peach);
   --tile-mark-text: var(--on-tint);
   --answer-correct: var(--mauve);
   --table-bg: var(--crust);
@@ -177,7 +169,6 @@
   --tile-good: color-mix(in srgb, var(--green) 30%, var(--base));
   --tile-close: color-mix(in srgb, var(--yellow) 35%, var(--base));
   --tile-bad: color-mix(in srgb, var(--red) 25%, var(--base));
-  --tile-previous: color-mix(in srgb, var(--peach) 35%, var(--base));
   /* The Full Table drill's second felt, a navy beside the first. */
   --felt-alt: color-mix(in srgb, var(--blue) 35%, var(--crust));
 }

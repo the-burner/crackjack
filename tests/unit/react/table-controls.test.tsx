@@ -88,7 +88,7 @@ describe('the betting overlay', () => {
   it('shows the heading, a bet per tile and the side buttons; Foul only when it can be claimed', async () => {
     const user = userEvent.setup();
     const on = handlers();
-    const { rerender } = render(<BetOverlay view={view} layout={null} {...on} />);
+    const { rerender } = render(<BetOverlay view={view} {...on} />);
     const panel = screen.getByRole('region', { name: 'Bets' });
     expect(within(panel).getByRole('heading')).toHaveTextContent('Place your bets.');
     await user.click(within(panel).getByRole('button', { name: 'Bet 2x10' }));
@@ -96,13 +96,19 @@ describe('the betting overlay', () => {
     expect(within(panel).queryByRole('button', { name: 'Foul' })).not.toBeInTheDocument();
     await user.click(within(panel).getByRole('button', { name: 'Shuffle' }));
     expect(on.onShuffle).toHaveBeenCalled();
-    rerender(<BetOverlay view={{ ...view, foul: true }} layout={null} {...on} />);
+    rerender(<BetOverlay view={{ ...view, foul: true }} {...on} />);
     await user.click(within(panel).getByRole('button', { name: 'Foul' }));
     expect(on.onFoul).toHaveBeenCalled();
   });
 
+  it('marks the last bet', () => {
+    render(<BetOverlay view={{ ...view, previous: '2x10' }} {...handlers()} />);
+    expect(screen.getByRole('button', { name: 'Bet 2x10' })).toHaveAttribute('data-on');
+    expect(screen.getByRole('button', { name: 'Bet 5' })).not.toHaveAttribute('data-on');
+  });
+
   it('is hidden between bets', () => {
-    render(<BetOverlay view={{ ...view, visible: false }} layout={null} {...handlers()} />);
+    render(<BetOverlay view={{ ...view, visible: false }} {...handlers()} />);
     expect(screen.queryByRole('region', { name: 'Bets' })).not.toBeInTheDocument();
   });
 });

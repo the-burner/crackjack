@@ -194,18 +194,14 @@ function below(floor: number, pairs: Pair[]) {
 }
 
 describe('text over the felt', () => {
-  it("writes the drills' and the game's felt accent legibly on both felts", () => {
-    // Display text (.drill__count at 600 20px, .bet-overlay__title at bold
-    // 17px), held to the large-text floor: Latte has no accent that reaches
-    // 4.5 on its own light felt, its darkest managing about 4.2.
-    const pairs = THEMES.flatMap((theme): Pair[] => {
-      const accent = value('--felt-accent', theme);
-      const panel = over(value('--bet-overlay-bg', theme), value('--table-bg', theme));
-      return [
-        [`${theme} --felt-accent on --felt`, accent, value('--felt', theme)],
-        [`${theme} --felt-accent on --bet-overlay-bg`, accent, panel],
-      ];
-    });
+  it("writes the drills' felt accent legibly on the felt", () => {
+    // Display text (.drill__count at 600 20px), held to the large-text floor:
+    // Latte has no accent that reaches 4.5 on its own light felt.
+    const pairs = THEMES.map((theme): Pair => [
+      `${theme} --felt-accent on --felt`,
+      value('--felt-accent', theme),
+      value('--felt', theme),
+    ]);
     expect(below(LARGE, pairs)).toEqual([]);
   });
 
@@ -225,22 +221,6 @@ describe('text over the felt', () => {
     expect([...below(AA, onFelt), ...below(LARGE, onAlt)]).toEqual([]);
   });
 
-  it('keeps the bar over the felt light, in every theme', () => {
-    // In landscape the game's bar is transparent over the felt photograph,
-    // which is dark in every theme by design: --felt-fallback stands in for it.
-    // The photograph has lighter passages than its fallback, so the ink has to
-    // be a light one and not merely clear the fallback.
-    const pairs = THEMES.map((theme): Pair => [
-      `${theme} --bar-text on --felt-fallback`,
-      value('--bar-text', theme),
-      value('--felt-fallback', theme),
-    ]);
-    const dark = THEMES.map(theme => [theme, luminance(value('--bar-text', theme))] as const)
-      .filter(([, light]) => light < 0.5)
-      .map(([theme, light]) => `${theme} --bar-text luminance: ${show(light)}`);
-    expect([...below(AA, pairs), ...dark]).toEqual([]);
-  });
-
   it('keeps the two Full Table felts plainly different colours', () => {
     // The second table's colour is the only cue for which table is being counted.
     const same = THEMES.map(theme => [theme, difference(value('--felt', theme), value('--felt-alt', theme))] as const)
@@ -255,12 +235,14 @@ describe('text on a coloured tile', () => {
     const pairs = THEMES.flatMap((theme): Pair[] => {
       const mark = value('--tile-mark-text', theme);
       return [
-        ...['--tile-good', '--tile-close', '--tile-bad', '--tile-previous'].map((name): Pair => [
+        ...['--tile-good', '--tile-close', '--tile-bad'].map((name): Pair => [
           `${theme} --tile-mark-text on ${name}`,
           mark,
           value(name, theme),
         ]),
-        [`${theme} --tile-text on --tile-bg`, value('--tile-text', theme), value('--tile-bg', theme)],
+        // An unmarked tile is a button; the last bet is marked in the accent.
+        [`${theme} --btn-text on --btn-bg`, value('--btn-text', theme), value('--btn-bg', theme)],
+        [`${theme} --check-on-text on --check-on`, value('--check-on-text', theme), value('--check-on', theme)],
       ];
     });
     expect(below(CHIP, pairs)).toEqual([]);

@@ -57,6 +57,8 @@ const INSTANT = new Set<TableEvent['type']>([
   'turn',
   'action',
   'dealerTurn',
+  // Only sets the bankroll label; the next round's timer is the dealer's pause before clearing.
+  'roundEnd',
   'clear',
   'conceal',
 ]);

@@ -31,6 +31,11 @@ describe('pause for a speed', () => {
 });
 
 describe('planning a timeline', () => {
+  it('ends a round with no pause of its own, so the dealer clears in step with the hands', () => {
+    // The next round's timer is the one pause between the last sweep and the clear.
+    expect(plan([{ type: 'roundEnd', bankroll: 1000, needsShuffle: false }])[0].pause).toBe(0);
+  });
+
   it('deals the whole round at the dealer speed, every seat alike', () => {
     const steps = plan(
       [

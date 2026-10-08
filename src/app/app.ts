@@ -9,7 +9,6 @@ import type { AppSettings } from '@/settings/schema';
 import { StrategyLibrary } from '@/settings/strategies';
 import { ErrorTallies } from '@/services/error-tallies';
 import { ScreenWakeLock } from '@/services/wake-lock';
-import { INSTALL_HINT_KEY } from '@/lib/install-hint';
 import { persistedStore } from '@/services/persisted-store';
 import type { PersistedStore } from '@/services/persisted-store';
 import { readBankroll, readStats } from '@/game/record';
@@ -27,8 +26,6 @@ export interface Services {
   /** The table's bankroll between visits; null before the first round. */
   bankroll: PersistedStore<number | null>;
   gameStats: PersistedStore<GameStats>;
-  /** The iOS install hint was dismissed. */
-  installHintDismissed: PersistedStore<boolean>;
 }
 
 /** What every screen reads through useApp(): the services. Navigation is React Router's. */
@@ -50,6 +47,5 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     wakeLock: new ScreenWakeLock(),
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),
-    installHintDismissed: persistedStore(storage, INSTALL_HINT_KEY, saved => saved === true),
   };
 }

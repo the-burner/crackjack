@@ -18,6 +18,7 @@ function drillHooks() {
     onStop: vi.fn((shell: DrillShell) => shell.clock?.stop()),
     onPause: vi.fn((shell: DrillShell) => shell.clock?.pause()),
     onResume: vi.fn((shell: DrillShell) => shell.clock?.resume()),
+    onRestart: vi.fn(),
   } satisfies Partial<DrillShellOptions>;
 }
 
@@ -125,6 +126,19 @@ describe('DrillScreen', () => {
     await wait(2000);
     expect(hooks.onStart).toHaveBeenCalledTimes(2);
     expect(pauseButton()).toBeEnabled();
+  });
+
+  it("Restart clears the last round's closing message at once, before the countdown", async () => {
+    const { show, hooks, wait } = setup();
+    show();
+    await wait(2000);
+    const shell = hooks.onStart.mock.calls[0][0];
+    act(() => shell.finish('Accuracy: 90%'));
+    expect(screen.getByRole('status')).toHaveTextContent('Accuracy: 90%');
+    fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+    expect(hooks.onRestart).toHaveBeenCalledTimes(1);
+    expect(countdown()).toHaveTextContent('2');
+    expect(screen.queryByText('Accuracy: 90%')).not.toBeInTheDocument();
   });
 
   it('stops while another screen covers it, and counts down on return', async () => {

@@ -125,12 +125,12 @@ export function DrillScreen({
     <div ref={rootRef} className="relative flex min-h-0 flex-1 flex-col bg-(--felt) text-(--felt-text)">
       {/* Same height and button positions as the standard title bar, so Back and Help stay put on launch. */}
       <header className="relative z-6 flex min-h-12 shrink-0 items-center justify-between gap-1.5 px-2 py-0.5">
-        <BarButton back className="text-(--felt-text)" onClick={goBack} data-action="back">
+        <BarButton back onClick={goBack} data-action="back">
           Back
         </BarButton>
         {/* The felt has no visible title; this names the screen for screen readers. */}
         <h1 className="sr-only">{title}</h1>
-        <BarButton className="text-(--felt-text)" onClick={() => openHelp(help, title)} data-action="help">
+        <BarButton onClick={() => openHelp(help, title)} data-action="help">
           Help
         </BarButton>
       </header>
