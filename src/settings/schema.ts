@@ -228,6 +228,9 @@ export const SETTINGS_SCHEMA = {
   /** The count-down and count-up timer modes: seconds for the whole drill. */
   'drills.flash.drillSeconds': int(180, 10, 1799),
   'drills.flash.progressiveSpeed': bool(false),
+  /** Infinite: pause by itself every `autoPauseSeconds` of drill time, after the hand on screen. */
+  'drills.flash.autoPause': bool(false),
+  'drills.flash.autoPauseSeconds': int(180, 1, 3600),
 
   // Depth (discard tray) drills.
   'drills.depth.drill': oneOf(

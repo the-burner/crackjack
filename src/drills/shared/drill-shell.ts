@@ -21,12 +21,16 @@ export interface DrillShellOptions {
   onRestart?: (shell: DrillShell) => void;
   onPause?: (shell: DrillShell) => void;
   onResume?: (shell: DrillShell) => void;
+  /** Called as Continue is tapped, before the countdown that ends in onResume. */
+  onContinue?: (shell: DrillShell) => void;
   /** Called on every show: before the first run begins, and after a suspended run resumes. */
   onShow?: (shell: DrillShell) => void;
   /** Text of the accuracy cell (the Flash drill hides the accuracy until the end in some test modes). */
   accuracyText?: (score: DrillScore) => string;
   /** Text of the count cell. */
   countText?: (score: DrillScore) => string;
+  /** What the Time cell shows, in place of the clock's own reading (the time left in an interval, say). */
+  timeShown?: (clock: DrillClock) => { seconds: number; overdue: boolean };
 }
 
 export interface DrillStats {
@@ -134,7 +138,7 @@ export class DrillShell {
   updateStats(clock: DrillClock | null): void {
     const stats = { ...this.stats, count: this.countText(this.score), accuracy: this.accuracyText(this.score) };
     if (clock) {
-      const { seconds, overdue } = clock.display();
+      const { seconds, overdue } = this.options.timeShown?.(clock) ?? clock.display();
       stats.time = `Time: ${clockTime(seconds)}`;
       stats.overdue = overdue;
       stats.rate = `${this.options.countLabel}/Min: ${clock.rate(this.score.tests)}`;
@@ -211,6 +215,8 @@ export class DrillShell {
   togglePause(): void {
     if (this.paused) {
       this.pauseDisabled = true;
+      this.options.onContinue?.(this);
+      this.updateStats(this.clock);
       this.countdown(() => {
         this.paused = false;
         this.setPause('Pause', false);

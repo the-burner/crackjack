@@ -196,6 +196,11 @@ export function FlashOptions() {
           {/* Progressive Speed shortens the time per hand, so it goes with it. */}
           {handsTimed && <OptionSwitch label="Progressive Speed" setting="drills.flash.progressiveSpeed" />}
           {mode === 'countDownHalt' && <OptionDuration label="Drill time" setting="drills.flash.drillSeconds" />}
+          {/* Infinite never ends, so it can pause by itself every so often. */}
+          {mode === 'infinite' && <OptionSwitch label="Pause every interval" setting="drills.flash.autoPause" />}
+          {mode === 'infinite' && settings.get('drills.flash.autoPause') && (
+            <OptionDuration label="Interval" setting="drills.flash.autoPauseSeconds" />
+          )}
         </OptionGroup>
       </Section>
       <Section title="Error History">

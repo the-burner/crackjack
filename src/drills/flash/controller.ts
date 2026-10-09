@@ -35,6 +35,8 @@ import {
   SITUATION_LABELS,
 } from './logic';
 import type { Entry, FlashHand } from './logic';
+import { autoPauseDue, intervalLeft, startAutoPause, takeAutoPause } from '@/drills/shared/auto-pause';
+import type { AutoPause } from '@/drills/shared/auto-pause';
 import type { TablesParams } from '@/screens/strategy/tables';
 
 /** A hand a pause interrupted, with what the player had already done. */
@@ -97,6 +99,8 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     seconds: s.get('drills.flash.seconds'),
     drillSeconds: s.get('drills.flash.drillSeconds'),
     progressive: s.get('drills.flash.progressiveSpeed'),
+    autoPause: s.get('drills.flash.autoPause'),
+    autoPauseSeconds: s.get('drills.flash.autoPauseSeconds'),
     doubleAnyCards: s.get('rules.doubleAnyNumberOfCards'),
   };
   const { strategy } = drillStrategy(app, options.decks);
@@ -132,9 +136,24 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
   const advanceTimer = new AnswerPause();
   /** A pause called off that wait: move on when play resumes. */
   let advanceOnResume = false;
+  /** Infinite with "Pause every": the interval in progress. */
+  let autoPause: AutoPause | null = null;
+  /** Paused at the end of an interval: the one that begins on Continue. */
+  let nextInterval: AutoPause | null = null;
+  /** Paused between hands at the end of an interval: deal the next one on resume. */
+  let dealOnResume = false;
 
   const shell = new DrillShell(app, {
     countLabel: 'Hands',
+    // The next interval starts as Continue is tapped, so Time shows it during the countdown.
+    onContinue: () => {
+      if (!nextInterval) return;
+      autoPause = nextInterval;
+      nextInterval = null;
+      shell.clearMessage();
+    },
+    // With Pause every interval, Time counts down each interval.
+    timeShown: clock => (autoPause ? intervalLeft(autoPause, clock.elapsed) : clock.display()),
     pausable: true,
     accuracyText: score => (warn ? `Accuracy: ${score.accuracy}%` : silent ? 'No Tests' : 'Displayed at end'),
     countText: score =>
@@ -160,6 +179,10 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     rounds = 0;
     held = null;
     finished = false;
+    nextInterval = null;
+    dealOnResume = false;
+    autoPause =
+      options.timerMode === TIMER_MODE.infinite && options.autoPause ? startAutoPause(options.autoPauseSeconds) : null;
     gridWindow = INITIAL_WINDOW;
     const built = buildHandList({
       hands: options.hands,
@@ -344,7 +367,21 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
       toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });
     }
     if (options.timerMode === TIMER_MODE.auto && shell.score.tests >= options.handsPerDrill) finish();
+    else if (autoPause && shell.clock && autoPauseDue(autoPause, shell.clock.elapsed)) pauseForInterval();
     else nextHand();
+  }
+
+  /** The interval is up (and its last hand answered): pause, saying how the interval went. */
+  function pauseForInterval() {
+    if (!autoPause || !shell.clock) return;
+    const { message, next } = takeAutoPause(autoPause, shell.clock.elapsed, shell.score);
+    // Time stays at 0 (overdue) until Continue starts the next interval.
+    nextInterval = next;
+    dealOnResume = true;
+    hand = null;
+    shell.togglePause();
+    shell.setMessage(message);
+    app.sound.play('alarm');
   }
 
   function finish() {
@@ -396,7 +433,10 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
   function resume() {
     if (finished) return;
     shell.clock?.resume();
-    if (advanceOnResume) {
+    if (dealOnResume) {
+      dealOnResume = false;
+      nextHand();
+    } else if (advanceOnResume) {
       advanceOnResume = false;
       advance();
     } else nextHand(held);

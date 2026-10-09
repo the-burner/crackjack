@@ -243,6 +243,53 @@ test.describe('flash drill', () => {
     await expect.poll(() => statsText(screen)).toMatch(/Time: 00:00:0[2-9]/);
   });
 
+  test('Infinite with Pause every interval pauses after each interval of drill time, once the hand is answered', async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await open(page, {
+      ...FIXED_16_V_TEN(),
+      'drills.flash.testMode': 'errorsAtEnd',
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+      'drills.flash.autoPause': true,
+      'drills.flash.autoPauseSeconds': 10,
+    });
+    const screen = await launch(page, DRILLS.flash);
+    const hit = screen.getByRole('button', { name: 'Hit', exact: true });
+    const pause = screen.getByRole('button', { name: 'Pause' });
+    const resume = screen.getByRole('button', { name: 'Continue' });
+    // Time counts the interval down.
+    expect(await statsText(screen)).toMatch(/Time: 00:00:(09|10)/);
+    await hit.click();
+    await hit.click();
+    await page.clock.runFor(12000);
+    // The interval is up, but the hand on screen still waits for its answer.
+    await expect(pause).toBeVisible();
+    await hit.click();
+    await expect(resume).toBeVisible();
+    await expect(screen.getByRole('status')).toHaveText(/^0:10 done: 3 hands, \d+%$/);
+    // Time stays at 0 until play resumes and the next interval begins.
+    expect(await statsText(screen)).toMatch(/Time: 00:00:00/);
+
+    // Time spent paused does not count towards the next interval.
+    await page.clock.runFor(60000);
+    await resume.click();
+    // The next interval shows as soon as Continue is tapped, through the countdown.
+    expect(await statsText(screen)).toMatch(/Time: 00:00:10/);
+    await page.clock.runFor(2500);
+    await expect(pause).toBeEnabled();
+    await expect(screen.getByRole('status')).toHaveText('');
+    expect(await statsText(screen)).toMatch(/Hands: 4/);
+    expect(await statsText(screen)).toMatch(/Time: 00:00:(09|10)/);
+
+    await hit.click();
+    await page.clock.runFor(11000);
+    await hit.click();
+    await expect(resume).toBeVisible();
+    await expect(screen.getByRole('status')).toHaveText(/^0:10 done: 2 hands, \d+%$/);
+  });
+
   test('Round Robin deals hands from the selected situations', async ({ page }) => {
     await open(page, {
       'drills.flash.hands': 'roundRobin',
