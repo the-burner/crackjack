@@ -335,6 +335,42 @@ test.describe('the table', () => {
     await expect(overlay(page)).toBeVisible();
   });
 
+  test('hands-off mode bets by gestures: swipes move the selection round the bets, a double tap places it', async ({
+    page,
+  }) => {
+    await openTable(page, { settings: { 'display.handsOff': true } });
+    await expect(overlay(page)).toBeVisible();
+    const tiles = grid(page).getByRole('button');
+    const selected = () => grid(page).locator('[data-selected]');
+    const box = (await felt(page).boundingBox())!;
+    const centre = { x: box.x + box.width / 2, y: box.y + box.height * 0.3 };
+    const swipe = async (dx: number) => {
+      await page.mouse.move(centre.x, centre.y);
+      await page.mouse.down();
+      await page.mouse.move(centre.x + dx, centre.y, { steps: 4 });
+      await page.mouse.up();
+    };
+    // The lowest bet to begin with; left from it wraps round to the highest.
+    await expect(selected()).toHaveText((await tiles.first().textContent())!);
+    await swipe(-120);
+    await expect(selected()).toHaveText((await tiles.last().textContent())!);
+    for (let i = 0; i < 3; i++) await swipe(120);
+    const third = (await tiles.nth(2).textContent())!;
+    await expect(selected()).toHaveText(third);
+
+    await page.mouse.dblclick(centre.x, centre.y);
+    await expect(overlay(page)).toBeHidden();
+    // The round plays by gestures as usual: stand until the bets are asked for again.
+    await expect(async () => {
+      if (await overlay(page).isVisible()) return;
+      await swipe(-120);
+      expect(await overlay(page).isVisible()).toBe(true);
+    }).toPass({ timeout: 15000 });
+    // The next round's selection starts on the bet just placed.
+    await expect(selected()).toHaveText(third);
+    await expect(grid(page).locator('[data-on]')).toHaveText(third);
+  });
+
   test('places a side bet and pays it when it wins', async ({ page }) => {
     // Lucky Ladies pays when the player's first two cards total 20.
     await openTable(page, { settings: { 'bonuses.game': 8 } });

@@ -83,7 +83,7 @@ describe('the betting overlay', () => {
     { chips: 1, hands: 1, amount: 5, label: '5' },
     { chips: 2, hands: 2, amount: 10, label: '2x10' },
   ];
-  const view = { visible: true, title: 'Place your bets.', cells, previous: null, foul: false };
+  const view = { visible: true, title: 'Place your bets.', cells, previous: null, selected: null, foul: false };
 
   it('shows the heading, a bet per tile and the side buttons; Foul only when it can be claimed', async () => {
     const user = userEvent.setup();
@@ -105,6 +105,13 @@ describe('the betting overlay', () => {
     render(<BetOverlay view={{ ...view, previous: '2x10' }} {...handlers()} />);
     expect(screen.getByRole('button', { name: 'Bet 2x10' })).toHaveAttribute('data-on');
     expect(screen.getByRole('button', { name: 'Bet 5' })).not.toHaveAttribute('data-on');
+  });
+
+  it('rings the bet the gestures point at, and takes no taps, in hands-off mode', () => {
+    render(<BetOverlay view={{ ...view, selected: 1 }} {...handlers()} />);
+    expect(screen.getByRole('button', { name: 'Bet 2x10' })).toHaveAttribute('data-selected');
+    expect(screen.getByRole('button', { name: 'Bet 5' })).not.toHaveAttribute('data-selected');
+    expect(screen.getByRole('region', { name: 'Bets' })).toHaveClass('pointer-events-none');
   });
 
   it('is hidden between bets', () => {

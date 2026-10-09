@@ -75,6 +75,8 @@ export interface BetOverlayView {
   cells: BetCell[];
   /** Label of the last bet, highlighted. */
   previous: string | null;
+  /** Hands-off mode: the bet the gestures point at (swipe left or right to move, double tap to bet); else null. */
+  selected: number | null;
   /** Whether a Foul claim is possible. */
   foul: boolean;
 }
@@ -205,6 +207,8 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     source: { ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') } as BetSource,
     cells: [] as BetCell[],
     previous: null as string | null,
+    /** The bet a hands-off player's gestures point at. */
+    selected: 0,
     heading: 'Place your bets.',
     foul: false,
     /** Label of the side bet chosen for the next round, if any. */
@@ -212,6 +216,9 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     /** A one-off message shown instead of the heading. */
     message: '',
   };
+
+  /** Hands-off mode: the whole game by gestures. */
+  const handsOff = () => settings.get('display.handsOff');
 
   const listeners = new Set<() => void>();
   let snapshot = buildSnapshot();
@@ -228,6 +235,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
         title: overlayTitle(),
         cells: overlay.cells,
         previous: overlay.previous,
+        selected: handsOff() ? overlay.selected : null,
         foul: overlay.foul,
       },
     };
@@ -463,7 +471,11 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   }
 
   function onSwipe(action: SwipeAction) {
-    if (overlay.visible || animator.busy) return;
+    if (animator.busy) return;
+    if (overlay.visible) {
+      if (handsOff()) betBySwipe(action);
+      return;
+    }
     if (session.state === STATE.insurance) {
       if (action === 'insure') answerInsurance(true);
       if (action === 'pass') answerInsurance(false);
@@ -499,6 +511,17 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   function setBetSource(source: BetSource) {
     overlay.source = source;
     overlay.cells = betCells(source);
+    overlay.selected = Math.min(overlay.selected, Math.max(0, overlay.cells.length - 1));
+  }
+
+  /** Betting by gestures: left and right move the selection round the bets, a double tap places it. */
+  function betBySwipe(action: SwipeAction) {
+    const count = overlay.cells.length;
+    if (count === 0) return;
+    if (action === 'stand' || action === 'split') {
+      overlay.selected = (overlay.selected + (action === 'split' ? 1 : -1) + count) % count;
+      emit();
+    } else if (action === 'surrender') placeBet(overlay.cells[overlay.selected]);
   }
 
   function beginBetting() {
@@ -506,6 +529,11 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     setBetSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
     const change = session.bankroll - bankBeforeBet;
     overlay.previous = previousBetLabel;
+    // The last bet, or the lowest before there is one.
+    overlay.selected = Math.max(
+      0,
+      overlay.cells.findIndex(cell => cell.label === previousBetLabel),
+    );
     overlay.foul = dealerErrorsOn(settings);
     overlay.heading = 'Place your bets.';
     if (change > 0) overlay.heading += ` You won ${money(change)}`;

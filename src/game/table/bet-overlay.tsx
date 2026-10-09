@@ -4,6 +4,7 @@
 // One gap separates every button, row and column.
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { IconName } from '@/components/ui/icon';
 import type { BetCell } from './bet-grid';
 import type { BetOverlayView } from './controller';
@@ -46,7 +47,7 @@ function OverlayButton({
 }
 
 export function BetOverlay({
-  view: { visible, title, cells, previous, foul },
+  view: { visible, title, cells, previous, selected, foul },
   ...handlers
 }: { view: BetOverlayView } & BetOverlayHandlers) {
   return (
@@ -54,7 +55,11 @@ export function BetOverlay({
       hidden={!visible}
       aria-label="Bets"
       data-slot="bet-overlay"
-      className="@container absolute bottom-1.5 left-1/2 z-10 flex w-[min(598px,calc(100%-8px))] -translate-x-1/2 flex-col gap-1 rounded-(--radius) bg-(--page-bg) p-1.5"
+      className={cn(
+        '@container absolute bottom-1.5 left-1/2 z-10 flex w-[min(598px,calc(100%-8px))] -translate-x-1/2 flex-col gap-1 rounded-(--radius) bg-(--page-bg) p-1.5',
+        // Hands-off, the panel takes no taps: a tap on it is part of a gesture on the felt.
+        selected !== null && 'pointer-events-none',
+      )}
     >
       <h2 className="m-0 pt-0.5 text-center text-title font-semibold text-(--text)">{title}</h2>
       <div role="group" aria-label="Bet amounts" data-testid="bet-grid" className="grid grid-cols-6 gap-1">
@@ -64,7 +69,9 @@ export function BetOverlay({
             aria-label={`Bet ${cell.label}`}
             // The last bet is marked in the accent.
             data-on={(previous !== null && cell.label === previous) || undefined}
-            className="h-[clamp(38px,14cqw,62px)] min-h-0 px-0 py-0 text-body tabular-nums min-[460px]:text-[20px] data-on:bg-(--check-on) data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90"
+            // Hands-off: the bet a double tap places, ringed.
+            data-selected={i === selected || undefined}
+            className="h-[clamp(38px,14cqw,62px)] min-h-0 px-0 py-0 text-body tabular-nums min-[460px]:text-[20px] data-on:bg-(--check-on) data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90 data-selected:outline-3 data-selected:outline-offset-[-3px] data-selected:outline-(--text)"
             onClick={() => handlers.onBet(cell)}
           >
             {cell.label}
