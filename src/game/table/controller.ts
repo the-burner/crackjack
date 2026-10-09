@@ -73,10 +73,8 @@ export interface BetOverlayView {
   visible: boolean;
   title: string;
   cells: BetCell[];
-  /** Label of the last bet, highlighted. */
-  previous: string | null;
-  /** Hands-off mode: the bet the gestures point at (swipe left or right to move, double tap to bet); else null. */
-  selected: number | null;
+  /** The highlighted bet: the last one placed at first; swipes left and right move it, a double tap places it. */
+  selected: number;
   /** Whether a Foul claim is possible. */
   foul: boolean;
 }
@@ -206,8 +204,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     visible: false,
     source: { ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') } as BetSource,
     cells: [] as BetCell[],
-    previous: null as string | null,
-    /** The bet a hands-off player's gestures point at. */
+    /** The highlighted bet, which the gestures move and place. */
     selected: 0,
     heading: 'Place your bets.',
     foul: false,
@@ -216,9 +213,6 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     /** A one-off message shown instead of the heading. */
     message: '',
   };
-
-  /** Hands-off mode: the whole game by gestures. */
-  const handsOff = () => settings.get('display.handsOff');
 
   const listeners = new Set<() => void>();
   let snapshot = buildSnapshot();
@@ -234,8 +228,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
         visible: overlay.visible,
         title: overlayTitle(),
         cells: overlay.cells,
-        previous: overlay.previous,
-        selected: handsOff() ? overlay.selected : null,
+        selected: overlay.selected,
         foul: overlay.foul,
       },
     };
@@ -473,7 +466,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   function onSwipe(action: SwipeAction) {
     if (animator.busy) return;
     if (overlay.visible) {
-      if (handsOff()) betBySwipe(action);
+      betBySwipe(action);
       return;
     }
     if (session.state === STATE.insurance) {
@@ -528,7 +521,6 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     stopInsuranceTimer();
     setBetSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
     const change = session.bankroll - bankBeforeBet;
-    overlay.previous = previousBetLabel;
     // The last bet, or the lowest before there is one.
     overlay.selected = Math.max(
       0,

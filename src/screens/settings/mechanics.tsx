@@ -9,7 +9,6 @@ const NOTE = 'Operational controls are found here. Move speed controls to the ri
 const CHECKS: readonly SettingCheck[] = [
   { label: 'Refresh bankroll at startup', key: 'table.refreshBankrollOnStart' },
   { label: 'Hide Buttons', key: 'display.hideActionButtons' },
-  { label: 'Hands-off mode', key: 'display.handsOff' },
   { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
   { label: 'Hide shoe', key: 'display.hideShoe' },
   { label: 'Players come and go', key: 'table.playersComeAndGo' },

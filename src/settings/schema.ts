@@ -190,8 +190,6 @@ export const SETTINGS_SCHEMA = {
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
   'display.hideActionButtons': bool(true),
-  /** The whole game by gestures: bets are chosen with swipes and a double tap, and the bet panel takes no taps. */
-  'display.handsOff': bool(false),
   'display.hideDiscardTray': bool(false),
   'display.hideShoe': bool(false),
   'display.showBetAccuracy': bool(false),
