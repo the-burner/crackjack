@@ -438,8 +438,12 @@ export class BlackjackGame {
     for (let i = this.activeIndex + 1; i < this.hands.length; i++) {
       const hand = this.hands[i];
       this.activeIndex = i;
-      // A split hand still needs its second card.
-      if (hand.cardCount === 1) this.dealTo(hand, { faceUp: this.dealtFaceUp(hand) });
+      // A split hand still needs its second card; the pointer gets there first.
+      const pointed = hand.cardCount === 1;
+      if (pointed) {
+        this.emit({ type: 'turn', hand: hand.key });
+        this.dealTo(hand, { faceUp: this.dealtFaceUp(hand) });
+      }
       if (hand.owner === PLAYER.human) this.revealHand(hand);
 
       if (hand.isNatural()) {
@@ -453,7 +457,7 @@ export class BlackjackGame {
         continue;
       }
       if (hand.owner === PLAYER.computer) {
-        this.emit({ type: 'turn', hand: hand.key });
+        if (!pointed) this.emit({ type: 'turn', hand: hand.key });
         this.playComputerHand(hand);
         continue;
       }
@@ -462,7 +466,7 @@ export class BlackjackGame {
         hand.stood = true;
         continue;
       }
-      this.emit({ type: 'turn', hand: hand.key });
+      if (!pointed) this.emit({ type: 'turn', hand: hand.key });
       return;
     }
     this.playDealer();

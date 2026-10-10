@@ -817,7 +817,8 @@ test.describe('14. speed mapping', () => {
       // The double step draws nothing, so it is the wait before its card.
       double: before(doubled),
       doubleCard: after(doubled),
-      secondHand: after(secondHand),
+      // The pointer reaches the second hand a dealer's beat before its card.
+      secondHand: before(secondHand),
       computerDraw: after(computerDraw),
       dealerDraw: after(dealerDraw),
     };
@@ -829,14 +830,16 @@ test.describe('14. speed mapping', () => {
   test('a slow Other Player Speed slows play but not the deal or the dealer', async ({ page }) => {
     const ms = await measure(page, { dealer: FAST, other: SLOW });
     ms.deal.forEach(step => fast(step));
-    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) slow(ms[step], step);
+    for (const step of ['split', 'double', 'doubleCard', 'computerDraw'] as const) slow(ms[step], step);
+    fast(ms.secondHand, 'secondHand');
     fast(ms.dealerDraw);
   });
 
   test('a slow Dealer Speed slows the deal and the dealer but not play', async ({ page }) => {
     const ms = await measure(page, { dealer: SLOW, other: FAST });
     ms.deal.forEach(step => slow(step));
-    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) fast(ms[step], step);
+    for (const step of ['split', 'double', 'doubleCard', 'computerDraw'] as const) fast(ms[step], step);
+    slow(ms.secondHand, 'secondHand');
     slow(ms.dealerDraw);
   });
 });

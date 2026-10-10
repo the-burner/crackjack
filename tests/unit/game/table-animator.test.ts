@@ -109,9 +109,9 @@ describe('planning a timeline', () => {
 
   it('sweeps a blackjack at once only once the dealer has checked for one', () => {
     const blackjack = [{ type: 'message', text: 'Blackjack', hand: '1-0' }];
-    expect(plan(blackjack).map(s => s.event.type)).toEqual(['result', 'sweep']);
-    expect(plan(blackjack)[0].event.result).toBe('21');
-    expect(plan(blackjack, { sweepNaturals: false }).map(s => s.event.type)).toEqual(['message']);
+    expect(plan(blackjack).map(s => s.event.type)).toEqual(['turn', 'result', 'sweep']);
+    expect(plan(blackjack)[1].event.result).toBe('21');
+    expect(plan(blackjack, { sweepNaturals: false }).map(s => s.event.type)).toEqual(['turn', 'message']);
   });
 
   it('leaves table-wide messages alone', () => {
@@ -297,6 +297,25 @@ describe('the turn pointer', () => {
   it('rests on a computer hand for one beat at the other-player speed', () => {
     const [step] = plan([{ type: 'turn', hand: '3-0' }], { isComputer });
     expect(step.pause).toBe(PAUSES.player);
+  });
+
+  it('rests on a blackjack before it is announced, whoever holds it', () => {
+    for (const hand of ['1-0', '3-0']) {
+      const [step] = plan([{ type: 'message', text: 'Blackjack', hand }], { isComputer });
+      expect(step).toEqual({ event: { type: 'turn', hand }, pause: PAUSES.player, sound: null });
+    }
+  });
+
+  it('rests on a split hand at the dealer speed before its second card', () => {
+    const [turn, dealt] = plan(
+      [
+        { type: 'turn', hand: '1-1' },
+        { type: 'card', hand: '1-1', cardIndex: 1, card: 5, faceUp: true },
+      ],
+      { isComputer },
+    );
+    expect(turn.pause).toBe(PAUSES.dealer);
+    expect(dealt.pause).toBe(PAUSES.player);
   });
 
   it('does not pause on the player’s own turn, which waits for the player', () => {

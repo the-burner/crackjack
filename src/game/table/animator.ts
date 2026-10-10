@@ -100,11 +100,17 @@ export function planSteps(
     }
     const dealing = dealEnds >= 0 && index <= dealEnds;
     if (event.type === 'message' && event.hand) {
+      // As in the original, the pointer rests on a blackjack before it is announced.
+      const pointer: Step[] =
+        event.text === 'Blackjack'
+          ? [{ event: { type: 'turn', hand: event.hand }, pause: pauses.player, sound: null }]
+          : [];
       const inPlay = SWEPT_IN_PLAY[event.text];
       if (inPlay && (inPlay !== '21' || sweepNaturals)) {
         swept.add(event.hand);
-        return payoff({ type: 'result', hand: event.hand, result: inPlay }, null, pauses);
+        return [...pointer, ...payoff({ type: 'result', hand: event.hand, result: inPlay }, null, pauses)];
       }
+      if (pointer.length) return [...pointer, { event, pause: pauseFor(event, pauses, dealing), sound: null }];
     }
     if (event.type === 'settled') {
       // Paid already: only the bankroll changes.
@@ -113,6 +119,10 @@ export function planSteps(
       return payoff(event, isComputer(event.hand) ? null : event.payout, pauses);
     }
     // The pointer rests on a computer hand long enough to be seen, even when it stands.
+    // As in the original, the pointer reaches a split hand a dealer's beat before its second card.
+    const next = expanded[index + 1];
+    if (event.type === 'turn' && next?.type === 'card' && next.hand === event.hand)
+      return [{ event, pause: pauses.dealer, sound: null }];
     if (event.type === 'turn' && isComputer(event.hand)) return [{ event, pause: pauses.player, sound: null }];
     return [{ event, pause: pauseFor(event, pauses, dealing), sound: soundFor(event) }];
   });

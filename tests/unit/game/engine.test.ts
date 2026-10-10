@@ -107,6 +107,19 @@ describe('round flow', () => {
     expect(game.state).toBe(STATE.settled);
   });
 
+  it('points at the next split hand before dealing its second card', () => {
+    const game = riggedGame(deal(card(8), card(5), card(8), card(6), [card(3), card(2), card(10)]));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.split);
+    const events = game.act(ACTION.stand);
+    const turn = events.findIndex(e => e.type === 'turn' && e.hand === '1-1');
+    const dealt = events.findIndex(e => e.type === 'card' && e.hand === '1-1');
+    expect(turn).toBeGreaterThanOrEqual(0);
+    expect(turn).toBeLessThan(dealt);
+    // Once pointed at, the hand is not pointed at again for its decision.
+    expect(events.filter(e => e.type === 'turn')).toHaveLength(1);
+  });
+
   it('stops splitting at the table limit', () => {
     const rules = makeRules({ 'rules.maxSplitHands': 2 });
     const game = riggedGame(deal(card(8), card(5), card(8), card(6), [card(8), card(8)]), { rules });
@@ -408,6 +421,15 @@ describe('split aces', () => {
     expect(game.hands.map(hand => hand.total)).toEqual([20, 19]);
     expect(game.hands.every(hand => hand.stood)).toBe(true);
     expect(game.bankroll).toBe(980);
+  });
+
+  it('points at the second ace though it may not draw', () => {
+    const game = riggedGame(deal(card(1), card(5), card(1), card(6), [card(9), card(8), card(10)]));
+    game.startRound([{ seat: 1, bet: 10 }]);
+    const events = game.act(ACTION.split);
+    const turn = events.findIndex(e => e.type === 'turn' && e.hand === '1-1');
+    expect(turn).toBeGreaterThanOrEqual(0);
+    expect(turn).toBeLessThan(events.findIndex(e => e.type === 'card' && e.hand === '1-1'));
   });
 });
 
