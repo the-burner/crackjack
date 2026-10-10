@@ -35,6 +35,12 @@ describe('pausing every interval', () => {
     expect(intervalLeft(next, 185)).toEqual({ seconds: 180, overdue: false });
   });
 
+  it('reads the full interval as it starts again, whatever float error the drill time carries', () => {
+    const elapsed = 12.512999773025513;
+    const { next } = takeAutoPause(startAutoPause(10), elapsed, { tests: 3, errors: 0 });
+    expect(intervalLeft(next, elapsed)).toEqual({ seconds: 10, overdue: false });
+  });
+
   it('writes the interval as m:ss, or h:mm:ss from an hour', () => {
     expect(intervalTime(45)).toBe('0:45');
     expect(intervalTime(180)).toBe('3:00');

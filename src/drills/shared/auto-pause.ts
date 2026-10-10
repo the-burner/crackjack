@@ -22,7 +22,8 @@ export const autoPauseDue = (pause: AutoPause, elapsed: number): boolean => elap
  * so it reads the full interval as it starts, and 0 (overdue) from when it is up.
  */
 export function intervalLeft(pause: AutoPause, elapsed: number): { seconds: number; overdue: boolean } {
-  const left = pause.dueAt - elapsed;
+  // To the millisecond first, so float error (10.0000002) does not round up a whole second.
+  const left = Math.round((pause.dueAt - elapsed) * 1000) / 1000;
   return { seconds: Math.max(0, Math.ceil(left)), overdue: left <= 0 };
 }
 
