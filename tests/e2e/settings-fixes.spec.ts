@@ -141,6 +141,8 @@ test('a focused select shows the pressed shade, not a ring its group would clip 
   const el = await openFromHub(page, 'Appearance & Sound', 'settings.appearance');
   const select = el.getByRole('combobox', { name: 'Theme' });
   const before = await select.evaluate(e => getComputedStyle(e).backgroundColor);
+  // Reached from the keyboard (Safari's Tab skips selects, so Tab, then focus).
+  await page.keyboard.press('Tab');
   await select.focus();
   const focused = await select.evaluate(e => ({
     outline: getComputedStyle(e).outlineStyle,
@@ -148,4 +150,51 @@ test('a focused select shows the pressed shade, not a ring its group would clip 
   }));
   expect(focused.outline).toBe('none');
   expect(focused.bg).not.toBe(before);
+});
+
+test('a labelled select fills its row: a tap anywhere on it, the label too, opens it', async ({ page }) => {
+  for (const path of ['/settings/gestures', '/settings/true-count', '/game/peeking', '/game/betting']) {
+    await page.goto(`/index.html#${path}`);
+    const selects = page.locator('[data-slot="select"]:has(> span)');
+    await expect(selects.first()).toBeVisible();
+    // Checked again until the screen has settled (it fades in as it opens).
+    await expect(async () => {
+      const bad = await selects.evaluateAll(wrappers =>
+        wrappers.flatMap(wrapper => {
+          const select = wrapper.querySelector('select')!;
+          // In view, so the point is on screen.
+          wrapper.scrollIntoView({ block: 'center' });
+          const label = wrapper.querySelector(':scope > span')!.getBoundingClientRect();
+          const fills = select.getBoundingClientRect().width === wrapper.getBoundingClientRect().width;
+          const hit = document.elementFromPoint(label.left + 5, label.top + label.height / 2) === select;
+          return fills && hit ? [] : [select.getAttribute('aria-label')];
+        }),
+      );
+      expect(bad, path).toEqual([]);
+    }).toPass({ timeout: 5000 });
+  }
+});
+
+test('a clicked select stays unshaded when its picker hands focus back; keyboard focus still shades it', async ({
+  page,
+}) => {
+  await page.goto('/index.html#/settings/gestures');
+  const select = page.getByRole('combobox', { name: 'Portrait Swipe up' });
+  const shade = () => select.evaluate(el => getComputedStyle(el).backgroundColor);
+  await page.mouse.move(1, 1);
+  const rest = await shade();
+  await select.click();
+  // The picker closing: focus leaves the select and comes back with no tap of its own.
+  await page.evaluate(() => {
+    const el = document.querySelector<HTMLSelectElement>('select[aria-label="Portrait Swipe up"]')!;
+    el.blur();
+    el.focus();
+  });
+  await page.mouse.move(1, 1);
+  await expect.poll(shade).toBe(rest);
+  // Reached from the keyboard (Safari's Tab skips selects, so Tab, then focus), it shows.
+  await select.evaluate(el => el.blur());
+  await page.keyboard.press('Tab');
+  await select.focus();
+  await expect.poll(shade).not.toBe(rest);
 });

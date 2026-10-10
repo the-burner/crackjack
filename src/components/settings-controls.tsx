@@ -100,17 +100,16 @@ export function SettingSelect<K extends SettingKey>({
   const settings = useSettings();
   const write = useWriteSetting();
   if (hidden) return null;
-  const select = (
+  return (
     <Select
       name={setting}
       aria-label={label}
-      align={labelled ? 'end' : 'start'}
+      label={labelled ? label : undefined}
       options={options}
       value={settings.get(setting)}
       onChange={onChange ?? (value => write(setting, value))}
     />
   );
-  return labelled ? <SettingsRow label={label}>{select}</SettingsRow> : select;
 }
 
 type NumberKey = { [K in SettingKey]: SettingValues[K] extends number ? K : never }[SettingKey];

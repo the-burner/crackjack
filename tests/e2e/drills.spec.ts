@@ -204,6 +204,28 @@ test.describe('flash drill', () => {
     await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
   });
 
+  test('plays the gestures as Settings → Gestures maps them', async ({ page }) => {
+    // Swipe down and the double tap swapped, held either way.
+    const swapped = { down: 'surrender', left: 'stand', up: 'double', right: 'split', doubleTap: 'hit' };
+    await open(page, {
+      ...FIXED_16_V_TEN(),
+      'drills.flash.testMode': 'warn',
+      'gestures.portrait': swapped,
+      'gestures.landscape': swapped,
+    });
+    const screen = await launch(page, DRILLS.flash);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+    const box = (await cards.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 80, { steps: 5 });
+    await page.mouse.up();
+    // Swipe down is Surrender now, which these situations refuse.
+    await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
+  });
+
   test('shows the timing options each timer mode uses', async ({ page }) => {
     await open(page);
     await page.getByRole('button', { name: 'Flash Drills' }).click();

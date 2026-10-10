@@ -13,6 +13,8 @@ import { persistedStore } from '@/services/persisted-store';
 import type { PersistedStore } from '@/services/persisted-store';
 import { readBankroll, readStats } from '@/game/record';
 import type { GameStats } from '@/game/record';
+import { readGestureConfigs } from '@/settings/gesture-configs';
+import type { GestureConfig } from '@/core/gestures';
 
 /** The services that do not need a DOM. */
 export interface Services {
@@ -26,6 +28,8 @@ export interface Services {
   /** The table's bankroll between visits; null before the first round. */
   bankroll: PersistedStore<number | null>;
   gameStats: PersistedStore<GameStats>;
+  /** Gesture configurations the player saved (kept by Reset Defaults). */
+  gestureConfigs: PersistedStore<GestureConfig[]>;
 }
 
 /** What every screen reads through useApp(): the services. Navigation is React Router's. */
@@ -47,5 +51,6 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     wakeLock: new ScreenWakeLock(),
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),
+    gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
   };
 }

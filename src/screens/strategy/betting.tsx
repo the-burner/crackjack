@@ -66,15 +66,12 @@ export function Betting() {
               },
             ]}
           />
-          <SettingsRow label="Chip Value">
-            <Select
-              align="end"
-              aria-label="Chip Value"
-              options={CHIP_OPTIONS}
-              value={settings.get('betting.chipValue')}
-              onChange={value => settings.set('betting.chipValue', value)}
-            />
-          </SettingsRow>
+          <Select
+            label="Chip Value"
+            options={CHIP_OPTIONS}
+            value={settings.get('betting.chipValue')}
+            onChange={value => settings.set('betting.chipValue', value)}
+          />
           <SettingsRow label="Number of bets">
             <ValueButton
               label="Number of bets"

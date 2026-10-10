@@ -62,6 +62,7 @@ const SCREENS = [
   { name: 'settings.appearance', title: 'Appearance & Sound', control: 'role=combobox[name="Theme"]' },
   { name: 'settings.strategy', title: 'Strategies', control: 'role=combobox[name="Strategy"]' },
   { name: 'settings.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
+  { name: 'settings.gestures', title: 'Gestures', control: 'role=combobox[name="Configuration"]' },
   { name: 'game.betting', title: 'Allowed Bets', control: 'role=table[name="Bets"]' },
   { name: 'game.betting.select', title: 'Allowed Bets', control: 'role=group[name="Chips"]' },
   { name: 'strategy.tables', title: 'Tables', control: 'role=table[name="Hard Hit/Stand"]' },

@@ -372,6 +372,22 @@ test.describe('the table', () => {
     await expect(selected()).toHaveText(third);
   });
 
+  test('bets by the gestures as Settings → Gestures maps them', async ({ page }) => {
+    // Stand's and Split's gestures swapped: swipe right moves the highlight left.
+    const swapped = { down: 'hit', left: 'split', up: 'double', right: 'stand', doubleTap: 'surrender' };
+    await openTable(page, { settings: { 'gestures.portrait': swapped, 'gestures.landscape': swapped } });
+    await expect(overlay(page)).toBeVisible();
+    const tiles = grid(page).getByRole('button');
+    const box = (await felt(page).boundingBox())!;
+    const centre = { x: box.x + box.width / 2, y: box.y + box.height * 0.3 };
+    await page.mouse.move(centre.x, centre.y);
+    await page.mouse.down();
+    await page.mouse.move(centre.x + 120, centre.y, { steps: 4 });
+    await page.mouse.up();
+    // From the lowest bet, left wraps round to the highest.
+    await expect(grid(page).locator('[data-on]')).toHaveText((await tiles.last().textContent())!);
+  });
+
   test('places a side bet and pays it when it wins', async ({ page }) => {
     // Lucky Ladies pays when the player's first two cards total 20.
     await openTable(page, { settings: { 'bonuses.game': 8 } });

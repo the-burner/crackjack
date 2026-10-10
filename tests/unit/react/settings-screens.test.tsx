@@ -8,6 +8,8 @@ import { PlayVariations } from '@/screens/settings/play-variations';
 import { Bonuses } from '@/screens/settings/bonuses';
 import { UnusualGames } from '@/screens/settings/unusual-games';
 import { SettingsHub } from '@/screens/settings/hub';
+import { Gestures } from '@/screens/settings/gestures';
+import { STANDARD, rotated } from '@/core/gestures';
 import { GameOptions } from '@/game/screens/options';
 import { Home } from '@/screens/home';
 import { HelpSheet } from '@/screens/help';
@@ -113,6 +115,42 @@ describe('rule interactions', () => {
   });
 });
 
+describe('Gestures', () => {
+  it('swaps plays between gestures, and picks a configuration for both orientations at once', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Gestures />);
+    await choose(user, 'Portrait Swipe up', 'Hit');
+    expect(app.settings.get('gestures.portrait')).toMatchObject({ up: 'hit', down: 'double' });
+    expect(select('Configuration')).toHaveDisplayValue('Custom');
+    await choose(user, 'Configuration', 'Landscape left');
+    expect(app.settings.get('gestures.portrait')).toEqual(STANDARD);
+    expect(app.settings.get('gestures.landscape')).toEqual(rotated(STANDARD, 3));
+  });
+
+  it('saves both orientations under one name, offers it, and deletes it', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Gestures />);
+    await choose(user, 'Portrait Swipe up', 'Hit');
+    await choose(user, 'Landscape Swipe left', 'Split');
+    await user.click(screen.getByRole('button', { name: 'Save as…' }));
+    await user.type(await screen.findByRole('textbox'), 'Ring');
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(app.gestureConfigs.getState().value.map(c => c.name)).toEqual(['Ring']));
+    const [ring] = app.gestureConfigs.getState().value;
+    expect(ring.portrait).toMatchObject({ up: 'hit' });
+    expect(ring.landscape).toMatchObject({ left: 'split' });
+    expect(select('Configuration')).toHaveDisplayValue('Ring');
+    await user.click(screen.getByRole('button', { name: 'Delete “Ring”' }));
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    await waitFor(() => expect(app.gestureConfigs.getState().value).toEqual([]));
+    // Reset Defaults keeps saved sets: they are not settings.
+    app.gestureConfigs.setState({ value: [{ id: 'x', name: 'Kept', portrait: STANDARD, landscape: STANDARD }] });
+    app.settings.reset();
+    expect(app.gestureConfigs.getState().value).toHaveLength(1);
+    expect(app.settings.get('gestures.landscape')).toEqual(STANDARD);
+  });
+});
+
 describe('navigation screens', () => {
   it('Settings holds only what the whole app shares', async () => {
     const user = userEvent.setup();
@@ -123,6 +161,7 @@ describe('navigation screens', () => {
       'Playing Strategies',
       'True Count Calcs',
       'Appearance & Sound',
+      'Gestures',
       'Reset Defaults',
     ]);
     await user.click(screen.getByRole('button', { name: 'True Count Calcs' }));

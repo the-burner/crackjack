@@ -5,6 +5,8 @@ import { toast } from '@/components/ui/toast';
 import { confirm } from '@/components/dialogs';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/lib/card-sprites';
 import { doubleTapDetector } from '@/lib/double-tap';
+import { swipeOf } from '@/core/gestures';
+import { gestureMapFor } from '@/settings/gesture-configs';
 import { cssVar } from '@/lib/theme';
 import { valueName } from '@/core/cards';
 import { ACTION } from '@/core/strategy/advisor';
@@ -512,17 +514,20 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     swipeFrom = { x: event.clientX, y: event.clientY };
   }
 
-  /** A swipe is an answer (see `swipeAction`); a double tap is Surrender. */
+  /** A swipe or a double tap is an answer: the play the player's mapping (Settings → Gestures) gives it. */
   function pointerUp(event: CardsPointer) {
     if (!swipeFrom || indexTest || silent) return;
     const dx = event.clientX - swipeFrom.x;
     const dy = event.clientY - swipeFrom.y;
     swipeFrom = null;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < MIN_SWIPE_PIXELS) {
-      if (doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })) answer(ACTION.surrender);
-      return;
-    }
-    answer(swipeAction(dx, dy));
+    const tap = Math.max(Math.abs(dx), Math.abs(dy)) < MIN_SWIPE_PIXELS;
+    const gesture = tap
+      ? doubleTap({ x: event.clientX, y: event.clientY, t: event.timeStamp })
+        ? 'doubleTap'
+        : null
+      : swipeOf({ dx, dy, minDistance: MIN_SWIPE_PIXELS });
+    if (!gesture) return;
+    answer(ACTION[gestureMapFor(k => s.get(k), window.innerHeight > window.innerWidth)[gesture]]);
   }
 
   loadCardImages().then(changed);
@@ -554,16 +559,3 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
 }
 
 export type FlashDrill = ReturnType<typeof createFlashDrill>;
-
-/**
- * The action a swipe stands for: down = hit, left = stand, up = double,
- * right = split. Diagonals and taps are ignored (a double tap is Surrender).
- */
-export function swipeAction(dx: number, dy: number): Action | null {
-  const ax = Math.abs(dx);
-  const ay = Math.abs(dy);
-  if (Math.max(ax, ay) < MIN_SWIPE_PIXELS) return null;
-  if (ax < 1.5 * ay && ay < 1.5 * ax) return null;
-  if (ax > ay) return dx < 0 ? ACTION.stand : ACTION.split;
-  return dy < 0 ? ACTION.double : ACTION.hit;
-}

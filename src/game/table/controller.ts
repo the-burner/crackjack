@@ -29,8 +29,9 @@ import { createAnimator, planSteps, pauseForSpeed, RESULT_TONES } from './animat
 import type { Step } from './animator';
 import { betCells } from './bet-grid';
 import type { BetCell } from './bet-grid';
-import { attachSwipes } from './gestures';
-import type { SwipeAction } from './gestures';
+import { attachGestures } from './gestures';
+import { gestureMapFor } from '@/settings/gesture-configs';
+import type { Gesture, GestureAction } from '@/core/gestures';
 import { obviouslyBad, areYouSure } from './bad-plays';
 import { dealerErrorsOn, enabledErrors, missedMessage } from '@/game/dealer-errors';
 import { betError } from '@/game/bet-validation';
@@ -463,18 +464,20 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     insuranceTimer = undefined;
   }
 
-  function onSwipe(action: SwipeAction) {
+  /** A gesture, as the player's mapping for how the screen is held plays it. */
+  function onGesture(gesture: Gesture) {
     if (animator.busy) return;
+    const action = gestureMapFor(k => settings.get(k), window.innerHeight > window.innerWidth)[gesture];
     if (overlay.visible) {
       betBySwipe(action);
       return;
     }
+    // Hit's and Double's gestures take insurance, Stand's and Split's decline it.
     if (session.state === STATE.insurance) {
-      if (action === 'insure') answerInsurance(true);
-      if (action === 'pass') answerInsurance(false);
+      if (action === 'hit' || action === 'double') answerInsurance(true);
+      if (action === 'stand' || action === 'split') answerInsurance(false);
       return;
     }
-    if (action === 'insure' || action === 'pass') return;
     if (!session.availableActions()[action]) {
       showError(`Cannot ${action}`);
       return;
@@ -507,8 +510,8 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     overlay.selected = Math.min(overlay.selected, Math.max(0, overlay.cells.length - 1));
   }
 
-  /** Betting by gestures: left and right move the selection round the bets, a double tap places it. */
-  function betBySwipe(action: SwipeAction) {
+  /** Betting: Stand's and Split's gestures move the highlight left and right, Surrender's places the bet. */
+  function betBySwipe(action: GestureAction) {
     const count = overlay.cells.length;
     if (count === 0) return;
     if (action === 'stand' || action === 'split') {
@@ -703,7 +706,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
         renderer = createTableRenderer(canvas);
         rendererCanvas = canvas;
       }
-      detachSwipes = attachSwipes(feltEl, onSwipe, { insurance: () => session.state === STATE.insurance });
+      detachSwipes = attachGestures(feltEl, onGesture);
     },
 
     play,

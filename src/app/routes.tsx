@@ -94,6 +94,7 @@ export const routes: RouteObject[] = [
       ),
       settings('true-count', 'trueCount', () => import('@/screens/strategy/true-count').then(m => m.TrueCount)),
       settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
+      settings('gestures', 'gestures', () => import('@/screens/settings/gestures').then(m => m.Gestures)),
       { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
       game('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
       game('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),

@@ -20,6 +20,7 @@ const SCREENS: readonly (readonly [string, ScreenName])[] = [
   ['Playing Strategies', 'settings.strategy'],
   ['True Count Calcs', 'settings.trueCount'],
   ['Appearance & Sound', 'settings.appearance'],
+  ['Gestures', 'settings.gestures'],
 ];
 
 export function SettingsHub() {

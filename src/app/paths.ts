@@ -18,6 +18,7 @@ export const PATHS = {
   'settings.appearance': '/settings/appearance',
   'settings.strategy': '/settings/strategy',
   'settings.trueCount': '/settings/true-count',
+  'settings.gestures': '/settings/gestures',
   'game.betting': '/game/betting',
   'strategy.tables': '/strategy/tables',
   'drills.flash.options': '/drills/flash',

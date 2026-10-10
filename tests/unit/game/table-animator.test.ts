@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { planSteps, pauseForSpeed, createAnimator } from '@/game/table/animator';
-import { swipeAction, MIN_SWIPE } from '@/game/table/gestures';
 import type { Step } from '@/game/table/animator';
 import type { GameEvent } from '@/game/engine/events';
 import type { HandKey } from '@/game/engine/hand';
@@ -289,38 +288,6 @@ describe('running a timeline', () => {
     animator.finish();
     expect(steps).toEqual(['roundStart']);
     expect(animator.busy).toBe(false);
-  });
-});
-
-describe('swipe gestures', () => {
-  it('reads the four straight swipes', () => {
-    expect(swipeAction({ dx: 0, dy: 60 })).toBe('hit');
-    expect(swipeAction({ dx: -60, dy: 0 })).toBe('stand');
-    expect(swipeAction({ dx: 0, dy: -60 })).toBe('double');
-    expect(swipeAction({ dx: 60, dy: 0 })).toBe('split');
-  });
-
-  it('ignores diagonal swipes (Surrender is a double tap)', () => {
-    expect(swipeAction({ dx: 50, dy: 50 })).toBe(null);
-    expect(swipeAction({ dx: -50, dy: 60 })).toBe(null);
-  });
-
-  it('answers the insurance offer instead', () => {
-    expect(swipeAction({ dx: 0, dy: 60, insurance: true })).toBe('insure');
-    expect(swipeAction({ dx: 0, dy: -60, insurance: true })).toBe('insure');
-    expect(swipeAction({ dx: 60, dy: 0, insurance: true })).toBe('pass');
-    expect(swipeAction({ dx: -60, dy: 0, insurance: true })).toBe('pass');
-  });
-
-  it('ignores a tap', () => {
-    expect(swipeAction({ dx: 0, dy: 0 })).toBe(null);
-    expect(swipeAction({ dx: 4, dy: 4 })).toBe(null);
-  });
-
-  it('measures the real distance, not x against y', () => {
-    // The original compared |x - y| with 30, so these two were judged wrongly.
-    expect(swipeAction({ dx: 0, dy: MIN_SWIPE + 1 })).toBe('hit');
-    expect(swipeAction({ dx: 25, dy: 0 })).toBe(null);
   });
 });
 

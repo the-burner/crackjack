@@ -61,15 +61,12 @@ const SIDE_COUNTS = [
 function SelectRow<K extends keyof SettingValues>({ row }: { row: Row<K> }) {
   const settings = useSettings();
   return (
-    <SettingsRow label={row.label}>
-      <Select
-        align="end"
-        aria-label={row.label}
-        options={row.options.map(([value, label]) => ({ value, label }))}
-        value={settings.get(row.key)}
-        onChange={value => settings.set(row.key, value)}
-      />
-    </SettingsRow>
+    <Select
+      label={row.label}
+      options={row.options.map(([value, label]) => ({ value, label }))}
+      value={settings.get(row.key)}
+      onChange={value => settings.set(row.key, value)}
+    />
   );
 }
 

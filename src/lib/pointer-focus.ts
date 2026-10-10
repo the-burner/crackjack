@@ -1,22 +1,32 @@
 // Marks a control focused by a tap or click, so the `engaged:` variant
-// (index.css) shows keyboard focus only: Safari keeps a clicked select focused.
+// (index.css) shows keyboard focus only. What decides is the last input: a
+// select whose picker closes is focused again with no tap of its own, and must
+// still count as clicked, while Tab onto a control once clicked must show.
 
 const FOCUSABLE = 'button, select, input, textarea, [tabindex]';
 
 export function trackPointerFocus(root: Document): void {
+  let pointer = false;
+  const mark = (el: EventTarget | null) => {
+    const target = el instanceof Element ? el.closest(FOCUSABLE) : null;
+    if (!(target instanceof HTMLElement)) return;
+    if (pointer) target.dataset.pointerFocus = '';
+    else delete target.dataset.pointerFocus;
+  };
   root.addEventListener(
     'pointerdown',
     event => {
-      const target = event.target instanceof Element ? event.target.closest(FOCUSABLE) : null;
-      if (target instanceof HTMLElement) target.dataset.pointerFocus = '';
+      pointer = true;
+      mark(event.target);
     },
     { capture: true },
   );
   root.addEventListener(
-    'focusout',
-    event => {
-      if (event.target instanceof HTMLElement) delete event.target.dataset.pointerFocus;
+    'keydown',
+    () => {
+      pointer = false;
     },
     { capture: true },
   );
+  root.addEventListener('focusin', event => mark(event.target), { capture: true });
 }

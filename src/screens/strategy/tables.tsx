@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { CheckList } from '@/components/ui/check-list';
 import { Grid, GRID_LABEL } from '@/components/ui/grid';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { SettingsGroup } from '@/components/ui/settings-group';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
 import {
@@ -165,19 +165,13 @@ export function StrategyTables({ params }: { params: TablesParams }) {
     <ScreenLayout title={title} help="strategy.tables">
       <Column wide>
         <SettingsGroup>
-          <SettingsRow
-            label={<span className="block truncate">{strategy.name}</span>}
-            className="[&>[data-slot=label]]:min-w-0 [&>[data-slot=label]]:shrink"
-          >
-            <Select
-              align="end"
-              aria-label="Table"
-              className="flex-[0_0_50%]"
-              options={views}
-              value={view.key}
-              onChange={key => setView(viewByKey(key))}
-            />
-          </SettingsRow>
+          <Select
+            label={strategy.name}
+            aria-label="Table"
+            options={views}
+            value={view.key}
+            onChange={key => setView(viewByKey(key))}
+          />
         </SettingsGroup>
         {content}
         <CheckList
