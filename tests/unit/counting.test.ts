@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
 import {
   Counter,
@@ -197,5 +198,31 @@ describe('roundTrueCount', () => {
     expect([-2.5, -2, -1.5, 1.5, 2.5].map(v => roundTrueCount(v, TC_ROUNDING.round))).toEqual([-2, -2, -1, 2, 3]);
     expect([-2.5, -2, -0.5, 1.9].map(v => roundTrueCount(v, TC_ROUNDING.truncate))).toEqual([-2, -2, 0, 1]);
     expect([-2.5, -2, -0.5, 1.9].map(v => roundTrueCount(v, TC_ROUNDING.floor))).toEqual([-3, -2, -1, 1]);
+  });
+});
+
+describe('the true count at another depth', () => {
+  const hiLo = buildStrategy(STRATEGY_FILES[SETTINGS_SCHEMA['strategy.system'].default], {
+    decks: 6,
+    hitSoft17: false,
+    doubleAfterSplit: true,
+    noHoleCard: false,
+    indexSet: 'all',
+  });
+  const settings = {
+    division: TC_DIVISION.exact,
+    lastDeck: TC_LAST_DECK.exact,
+    rounding: TC_ROUNDING.round,
+    aceSideCount: false,
+  };
+
+  it('is the running count over the decks left then, and leaves the counter as it was', () => {
+    const counter = new Counter(hiLo, settings);
+    counter.reset(6);
+    // Twelve fives: a running count of +12 with 12 cards gone.
+    for (let i = 1; i <= 12; i++) counter.addCard(5, i);
+    const now = counter.trueCount;
+    expect(counter.trueCountAt(12 + 52 * 2)).toBe(Math.round(12 / ((312 - 116) / 52)));
+    expect(counter.trueCount).toBe(now);
   });
 });

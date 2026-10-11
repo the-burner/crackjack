@@ -475,6 +475,18 @@ describe('the correct play', () => {
     });
   };
 
+  it('plays a deck-dependent cell for the drill’s own shoe', () => {
+    // Advanced Omega II has one soft cell that hits below +2 in a shoe of more than two decks, else below 0.
+    const omega = buildStrategy(STRATEGY_FILES[7], options());
+    const row = omega.tables.softStand.findIndex(cells => cells.includes(1008));
+    const column = omega.tables.softStand[row].indexOf(1008);
+    const soft = hand([1, 9 - row], column === 9 ? 1 : column + 2);
+    const play = (decks: number) =>
+      correctPlay(omega, soft, { count: 0, situations: ALL_SITUATIONS, doubleAnyCards: false, decks }).action;
+    expect(play(6)).toBe(ACTION.hit);
+    expect(play(2)).toBe(ACTION.stand);
+  });
+
   it('says split 8,8 against a five, and stand when splits are off', () => {
     const on = correctPlay(highLow, hand([8, 8], 5), { count: 0, situations: ALL_SITUATIONS, doubleAnyCards: false });
     expect(on.action).toBe(ACTION.split);

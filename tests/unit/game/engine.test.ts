@@ -120,6 +120,25 @@ describe('round flow', () => {
     expect(events.filter(e => e.type === 'turn')).toHaveLength(1);
   });
 
+  it('deals a double after a split face up, though doubles are dealt face down', () => {
+    const game = riggedGame(deal(card(8), card(5), card(8), card(6), [card(3), card(2), card(10)]), {
+      table: { doubleDownCardFaceUp: false },
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    game.act(ACTION.split);
+    const dealt = game.act(ACTION.double).find(e => e.type === 'card' && e.hand === '1-0');
+    expect(dealt).toMatchObject({ faceUp: true });
+  });
+
+  it('deals an ordinary double face down when the table says so', () => {
+    const game = riggedGame(deal(card(6), card(5), card(5), card(6), [card(9)]), {
+      table: { doubleDownCardFaceUp: false },
+    });
+    game.startRound([{ seat: 1, bet: 10 }]);
+    const dealt = game.act(ACTION.double).find(e => e.type === 'card' && e.hand === '1-0');
+    expect(dealt).toMatchObject({ faceUp: false });
+  });
+
   it('stops splitting at the table limit', () => {
     const rules = makeRules({ 'rules.maxSplitHands': 2 });
     const game = riggedGame(deal(card(8), card(5), card(8), card(6), [card(8), card(8)]), { rules });

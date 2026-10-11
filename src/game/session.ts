@@ -16,7 +16,7 @@ import type { Services } from '@/app/app';
 import type { AppSettings } from '@/settings/schema';
 import type { SideBetGame } from '@/settings/side-bet-games';
 import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check';
-import type { ExpectedBet, PlayCheck, PlayCounts } from './play-check';
+import type { ExpectedBet, PlayCheck, PlayCounts, PlayQuestion } from './play-check';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
 import { decodeSideBetGame } from '@/settings/side-bet-games';
 import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
@@ -156,6 +156,7 @@ export class GameSession {
       },
       limits: get('table.limits'),
       maxCardsPerHand: MAX_CARDS_PER_HAND,
+      remainingCards: get('trueCount.remainingCards'),
     };
   }
 
@@ -179,7 +180,7 @@ export class GameSession {
       betCount: this.counter.betCount,
       aces: this.counter.aces,
       tens: this.counter.tens,
-      decksRemaining: this.counter.decksRemaining(this.game.shoe.dealt),
+      decksRemaining: this.counter.decksRemaining(this.game.cardsGone()),
     };
   }
 
@@ -280,17 +281,49 @@ export class GameSession {
       rules: this.rules,
       hand,
       upcard: this.game.dealer.cards[0],
+      dealer: this.game.dealer,
       counts: this.counts,
       shoe: this.game.shoe,
       handsInSeat: this.game.handsInSeat(hand.seat),
       action,
+      nearby: this.nearbyCounts(),
     });
     this.stats.playDecisions += 1;
     if (check.correct) return;
     this.stats.playErrors += 1;
-    if (check.table && check.row >= 0) this.app.errorTallies.record(check.table, check.row, check.column);
+    // As in the original, an extended strategy's errors are not tallied: its columns are not the upcard's.
+    if (check.table && check.row >= 0 && !this.strategy.extended)
+      this.app.errorTallies.record(check.table, check.row, check.column);
     this.lastError = { ...check, hand: hand.key, cards: [...hand.cards], upcard: this.game.dealer.cards[0], action };
     this.warn(check.message);
+  }
+
+  /** The cards left in the shoe under each Remaining Cards choice, and the exact decks and true count for the one in use. */
+  advancedCounts() {
+    const inUse = this.settings.get('trueCount.remainingCards');
+    const total = this.game.shoe.decks * 52;
+    const cardsLeft = {
+      dealt: total - this.game.cardsGone('dealt'),
+      shown: total - this.game.cardsGone('shown'),
+      inTray: total - this.game.cardsGone('inTray'),
+    };
+    const exactDecks = cardsLeft[inUse] / 52;
+    return { cardsLeft, inUse, exactDecks, exactTrueCount: this.counter.exactTrueCountOver(exactDecks) };
+  }
+
+  /** The counts with the allowed estimation error's cards more and fewer gone, as the original checked a close call. */
+  nearbyCounts(): Pick<PlayQuestion, 'counts' | 'shoe'>[] {
+    const error = this.settings.get('trueCount.allowedErrorCards');
+    if (!error) return [];
+    const gone = this.game.cardsGone();
+    const { decks } = this.game.shoe;
+    return [gone - error, gone + error].map(shifted => {
+      const at = Math.min(Math.max(shifted, 1), decks * 52 - 1);
+      return {
+        counts: { ...this.counts, trueCount: this.counter.trueCountAt(at) },
+        shoe: { decks, dealt: this.game.shoe.dealt - gone + at },
+      };
+    });
   }
 
   checkInsuranceDecision(took: boolean): void {
@@ -354,6 +387,7 @@ export class GameSession {
       rules: { ...this.rules, surrender: 'none' },
       hand,
       upcard: dealerUpcard,
+      dealer: this.game.dealer,
       counts: this.counts,
       shoe: this.game.shoe,
       handsInSeat: this.game.handsInSeat(hand.seat),

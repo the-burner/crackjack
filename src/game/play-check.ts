@@ -34,6 +34,8 @@ export interface PlayQuestion {
   rules: Rules;
   hand: Hand;
   upcard: CardId;
+  /** The dealer's cards, hole card included: extended strategies play against its total. */
+  dealer?: Hand;
   counts: PlayCounts;
   shoe: ShoeState;
   handsInSeat: number;
@@ -81,25 +83,31 @@ const ADVICE_TO_ACTION: Record<Advice, GameAction> = {
 };
 
 /** The strategy-correct action for a hand. */
-export function correctPlay({ strategy, rules, hand, upcard, counts, shoe, handsInSeat }: PlayQuestion): {
+export function correctPlay({ strategy, rules, hand, upcard, dealer, counts, shoe, handsInSeat }: PlayQuestion): {
   action: GameAction;
   advice: PlayAdvice;
 } {
   const { total, hardTotal } = hand.totals();
+  const dealerTotals = dealer?.totals() ?? {
+    total: valueOf(upcard) === 1 ? 11 : valueOf(upcard),
+    hardTotal: valueOf(upcard),
+  };
+  // As in the original, a soft hand is played as the ace and the rest.
+  const soft = total !== hardTotal;
   const advice = advisePlay(
     strategy,
     {
       total,
       hardTotal,
-      card1: valueOf(hand.cards[0]),
-      card2: valueOf(hand.cards[1] ?? hand.cards[0]),
+      card1: soft ? 1 : valueOf(hand.cards[0]),
+      card2: soft ? total - 11 : valueOf(hand.cards[1] ?? hand.cards[0]),
       cardCount: hand.cardCount,
       cardIds: hand.cards.slice(0, 2),
     },
     {
       upcard: valueOf(upcard),
-      dealerTotal: valueOf(upcard) === 1 ? 11 : valueOf(upcard),
-      dealerHardTotal: valueOf(upcard),
+      dealerTotal: dealerTotals.total,
+      dealerHardTotal: dealerTotals.hardTotal,
       trueCount: counts.trueCount,
       runningCount: counts.runningCount,
       decks: shoe.decks,
@@ -137,16 +145,16 @@ export function correctInsurance({
 
 /** Compares what the player did with what the strategy says. */
 export function checkPlay({
-  strategy,
-  rules,
-  hand,
-  upcard,
-  counts,
-  shoe,
-  handsInSeat,
   action,
-}: PlayQuestion & { action: GameAction }): PlayCheck {
-  const { action: expected, advice } = correctPlay({ strategy, rules, hand, upcard, counts, shoe, handsInSeat });
+  nearby = [],
+  ...question
+}: PlayQuestion & {
+  action: GameAction;
+  /** The counts a few cards either way (the allowed estimation error): a play one of them calls for is a close call. */
+  nearby?: readonly Pick<PlayQuestion, 'counts' | 'shoe'>[];
+}): PlayCheck {
+  const { upcard } = question;
+  const { action: expected, advice } = correctPlay(question);
   const correct = action === expected;
   const table = SECTION_TABLES[advice.section] ?? null;
   const column = valueOf(upcard) === 1 ? 9 : valueOf(upcard) - 2;
@@ -157,7 +165,11 @@ export function checkPlay({
     table,
     row: advice.row,
     column,
-    message: correct ? '' : `That should have been a ${ACTION_NAMES[expected]}`,
+    message: correct
+      ? ''
+      : nearby.some(counted => correctPlay({ ...question, ...counted }).action === action)
+        ? `Close call. But it should have been a ${ACTION_NAMES[expected]}`
+        : `That should have been a ${ACTION_NAMES[expected]}`,
   };
 }
 

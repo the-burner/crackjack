@@ -466,11 +466,12 @@ const advisorContext = (
   trueCount: number,
   allowed: PlayContext['allowed'],
   probe: Probe,
+  decks = 1,
 ): PlayContext => ({
   upcard: hand.upcard,
   trueCount,
   runningCount: trueCount,
-  decks: 1,
+  decks,
   cardsDealt: 0,
   allowed,
   probe,
@@ -579,11 +580,19 @@ export function correctPlay(
     situations,
     doubleAnyCards,
     splitAlwaysAllowed = false,
-  }: { count: number; situations: Situations; doubleAnyCards: boolean; splitAlwaysAllowed?: boolean },
+    decks = 1,
+  }: {
+    count: number;
+    situations: Situations;
+    doubleAnyCards: boolean;
+    splitAlwaysAllowed?: boolean;
+    /** The drill's shoe, for cells that depend on it. Default 1. */
+    decks?: number;
+  },
 ): PlayAdvice {
   const allowed = { ...allowedFrom(situations), split: situations.split || splitAlwaysAllowed };
   if (hand.cardCount === 2) {
-    return advisePlay(strategy, advisorHand(hand), advisorContext(hand, count, allowed, PROBE.none));
+    return advisePlay(strategy, advisorHand(hand), advisorContext(hand, count, allowed, PROBE.none, decks));
   }
   // With more than two cards a soft hand is reduced to "ace plus the rest", and
   // splits and surrender are no longer possible.
@@ -594,7 +603,7 @@ export function correctPlay(
     split: false,
     surrender: false,
   };
-  return advisePlay(strategy, multi, advisorContext(hand, count, multiAllowed, PROBE.none));
+  return advisePlay(strategy, multi, advisorContext(hand, count, multiAllowed, PROBE.none, decks));
 }
 
 /** Section (strategy table) an action belongs to, so an error can be filed. */

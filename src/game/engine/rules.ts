@@ -4,6 +4,7 @@
 import { valueOf, rankOf } from '@/core/cards';
 import type { CardId } from '@/core/cards';
 import type { AppSettings } from '@/settings/schema';
+import { gameVariant } from '@/settings/rules-logic';
 import type { Hand } from './hand';
 
 export const SURRENDER = {
@@ -58,6 +59,8 @@ export function rulesFrom(settings: Pick<AppSettings, 'get'>) {
     blackjackPayout: get('rules.blackjackPayout'),
     blackjackRoundUp: get('rules.blackjackRoundUp'),
     playerBlackjackAlwaysWins: get('rules.playerBlackjackAlwaysWins'),
+    /** Blackjack Switch: a dealer 22 pushes every hand but a blackjack. */
+    dealer22Pushes: gameVariant(get('bonuses.game')) === 'blackjackSwitch',
     bonuses: {
       sevens777: get('bonuses.sevens777'),
       suitedAceJack: get('bonuses.suitedAceJack'),

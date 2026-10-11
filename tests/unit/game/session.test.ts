@@ -420,3 +420,63 @@ describe('burn cards and the count', () => {
     expect(reset).toHaveBeenCalled();
   });
 });
+
+describe('the cards the true count treats as gone', () => {
+  /** Decks remaining after the deal: 10 and 6 against a 9 up, its hole card face down. */
+  const decksAfterDeal = (remainingCards: 'dealt' | 'shown' | 'inTray') => {
+    const app = makeApp({
+      'table.decks': 6,
+      'table.burnCards': 0,
+      'trueCount.resolution': 'exact',
+      'trueCount.remainingCards': remainingCards,
+    });
+    const session = riggedSession(deal(card(10), card(9), card(6), card(5)), app);
+    session.startRound({ betPerHand: 25 });
+    return session.counts.decksRemaining * 52;
+  };
+
+  it('are every card dealt', () => {
+    expect(decksAfterDeal('dealt')).toBeCloseTo(312 - 4);
+  });
+
+  it('leave out the cards still face down', () => {
+    expect(decksAfterDeal('shown')).toBeCloseTo(312 - 3);
+  });
+
+  it('leave out the cards still on the table, by default', () => {
+    expect(decksAfterDeal('inTray')).toBeCloseTo(312);
+  });
+});
+
+describe('the error tallies', () => {
+  const wrongDouble = (settings: SettingsPatch = {}) => {
+    const app = makeApp(settings);
+    const session = riggedSession(deal(card(10), card(9), card(6), card(5)), app);
+    session.startRound({ betPerHand: 25 });
+    session.act('double');
+    expect(session.lastError).toMatchObject({ action: 'double' });
+    return app.errorTallies.cells();
+  };
+
+  it('record a wrong play in its cell', () => {
+    expect(wrongDouble()).toHaveLength(1);
+  });
+
+  it('leave out an extended strategy, whose columns are not the upcard', () => {
+    expect(wrongDouble({ 'strategy.system': 92 })).toEqual([]);
+  });
+});
+
+describe('the advanced count', () => {
+  it('gives the cards left under each choice, the exact decks left and the exact true count', () => {
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.remainingCards': 'shown' });
+    // 10 and 6 against a 5 up: a running count of +1 with the hole card face down.
+    const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
+    session.startRound({ betPerHand: 25 });
+    const advanced = session.advancedCounts();
+    expect(advanced.cardsLeft).toEqual({ dealt: 308, shown: 309, inTray: 312 });
+    expect(advanced.inUse).toBe('shown');
+    expect(advanced.exactDecks).toBeCloseTo(309 / 52);
+    expect(advanced.exactTrueCount).toBeCloseTo(session.counts.runningCount / (309 / 52));
+  });
+});

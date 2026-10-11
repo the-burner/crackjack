@@ -97,6 +97,13 @@ export interface CounterSettings {
  * Card ids are 1..52 (13 per suit). For red/black systems ids above 25 use
  * the strategy's main values and the rest the "black" values.
  */
+/** How many true-count units a deck holds, by the strategy's count unit; none for a running count. */
+const COUNTS_PER_DECK: Partial<Record<number, number>> = {
+  [COUNT_UNIT.halfDeck]: 2,
+  [COUNT_UNIT.quarterDeck]: 4,
+  [COUNT_UNIT.deck]: 1,
+};
+
 export class Counter {
   strategy: Strategy;
   settings: CounterSettings;
@@ -167,12 +174,7 @@ export class Counter {
     const unit = this.strategy.trueCountType;
     const { rounding } = this.settings;
     const cardsLeft = this.decks * this.cardsPerDeck > cardsGone;
-    const perDeck: Partial<Record<number, number>> = {
-      [COUNT_UNIT.halfDeck]: 2,
-      [COUNT_UNIT.quarterDeck]: 4,
-      [COUNT_UNIT.deck]: 1,
-    };
-    const per = perDeck[unit];
+    const per = COUNTS_PER_DECK[unit];
     if (cardsLeft && per) {
       const divisor = this.decksRemaining(cardsGone) * per;
       this.exactTrueCount = this.running / divisor;
@@ -189,6 +191,21 @@ export class Counter {
       if (cardsLeft && per) this.betCount = roundTrueCount(adjusted / (dl * per), rounding);
       if (unit === COUNT_UNIT.runningOnly) this.betCount = adjusted;
     }
+  }
+
+  /** The true count with `cardsGone` cards gone, leaving this counter's own counts alone. */
+  trueCountAt(cardsGone: number): number {
+    const { trueCount, exactTrueCount, betCount } = this;
+    this.update(cardsGone);
+    const at = this.trueCount;
+    Object.assign(this, { trueCount, exactTrueCount, betCount });
+    return at;
+  }
+
+  /** The true count over the exact decks left, with no resolution or rounding. */
+  exactTrueCountOver(exactDecks: number): number {
+    const per = COUNTS_PER_DECK[this.strategy.trueCountType];
+    return per && exactDecks > 0 ? this.running / (exactDecks * per) : this.running;
   }
 
   /** The count used for playing and insurance decisions. */

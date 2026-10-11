@@ -111,6 +111,8 @@ export interface TableConfig {
   peeking?: PeekingOptions;
   limits?: SettingValues['table.limits'];
   maxCardsPerHand?: number;
+  /** Which cards the true count treats as gone. Default every card dealt. */
+  remainingCards?: SettingValues['trueCount.remainingCards'];
 }
 
 /** What a computer seat's decision function is told. */
@@ -253,7 +255,7 @@ export class BlackjackGame {
       // A fresh shoe always has cards to burn.
       const card = this.shoe.draw()!;
       this.emit({ type: 'burn', card, faceUp });
-      if (faceUp) this.onCardSeen?.(card, true, this.shoe.dealt);
+      if (faceUp) this.onCardSeen?.(card, true, this.cardsGone());
     }
   }
 
@@ -280,7 +282,16 @@ export class BlackjackGame {
   count(hand: Hand, index: number): void {
     if (hand.counted[index]) return;
     hand.counted[index] = true;
-    this.onCardSeen?.(hand.cards[index], true, this.shoe.dealt);
+    this.onCardSeen?.(hand.cards[index], true, this.cardsGone());
+  }
+
+  /** Cards the true count treats as gone: as in the original, those dealt less those still on the table or face down. */
+  cardsGone(remainingCards = this.table.remainingCards ?? 'dealt'): number {
+    if (remainingCards === 'dealt') return this.shoe.dealt;
+    const onTable = [this.dealer, ...this.hands].flatMap(hand =>
+      remainingCards === 'inTray' ? hand.cards : hand.cards.filter((_, i) => !hand.faceUp[i]),
+    );
+    return Math.max(0, this.shoe.dealt - onTable.length);
   }
 
   // --- round ----------------------------------------------------------------
@@ -591,8 +602,8 @@ export class BlackjackGame {
     if (!this.table.dealerMakesObviousPlays || this.table.cardsFaceDown) return false;
     const { total, hardTotal } = hand.totals();
     if (hardTotal > 19) return true;
-    // A hard 17 or better, but a pair of nines is left alone.
-    const nines = hand.cardCount === 2 && hand.values.every(v => v === 9);
+    // A hard 17 or better, but a hand dealt a pair of nines is left alone, as the original judged it on its first two cards.
+    const nines = hand.values[0] === 9 && hand.values[1] === 9;
     return total === hardTotal && hardTotal > 16 && !nines;
   }
 
@@ -628,7 +639,8 @@ export class BlackjackGame {
     hand.doubled = true;
     this.emit({ type: 'double', hand: hand.key, amount: extra });
     // A doubled hand takes exactly one card, unless the table lets it draw on.
-    this.dealTo(hand, { faceUp: this.table.doubleDownCardFaceUp });
+    // As in the original, only an unsplit hand's double card may be dealt face down.
+    this.dealTo(hand, { faceUp: this.table.doubleDownCardFaceUp || hand.isSplit });
     if (hand.busted()) {
       this.advance();
       return;

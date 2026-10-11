@@ -678,6 +678,8 @@ test.describe('extra findings', () => {
     test.setTimeout(180000);
     await openTable(page, {
       settings: {
+        // Enough cards that the shoe is not reshuffled, which starts the count again, before four splits.
+        'table.decks': 8,
         'table.shuffleMode': 'rounds',
         'table.roundsPerShoe': 80,
         'table.burnCards': 1,

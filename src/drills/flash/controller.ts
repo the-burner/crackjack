@@ -242,7 +242,12 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
       : indexTest
         ? 0
         : countForHand({ ...options, index, centre: countCentre(strategy) }, Math.random);
-    play = correctPlay(strategy, hand, { count, situations, doubleAnyCards: options.doubleAnyCards });
+    play = correctPlay(strategy, hand, {
+      count,
+      situations,
+      doubleAnyCards: options.doubleAnyCards,
+      decks: options.decks,
+    });
     // A resumed hand is the same test, so it keeps its place in the count.
     answered = again ? again.answered : false;
     pending = !answered;

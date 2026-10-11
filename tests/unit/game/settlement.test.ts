@@ -228,3 +228,56 @@ describe('a 21 made of many cards', () => {
     expect(handBonus(makeRules(), hand([card(10), card(9, HEARTS)]))).toBe(null);
   });
 });
+
+describe('Blackjack Switch', () => {
+  const rules = () => makeRules({ 'bonuses.game': 2001 });
+  const dealer22 = () => dealer(card(10, CLUBS), card(6, DIAMONDS), card(6, CLUBS));
+
+  it('pushes a dealer 22 against every hand still standing', () => {
+    expect(settle(rules(), hand([card(10), card(9, HEARTS)]), dealer22())).toMatchObject({
+      payout: 10,
+      result: RESULT.push,
+    });
+  });
+
+  it('still pays a blackjack against a dealer 22, and a dealer 23 still busts', () => {
+    expect(settle(rules(), hand([card(1), card(13, HEARTS)]), dealer22())).toMatchObject({ result: RESULT.blackjack });
+    const dealer23 = dealer(card(10, CLUBS), card(6, DIAMONDS), card(7, CLUBS));
+    expect(settle(rules(), hand([card(10), card(9, HEARTS)]), dealer23)).toMatchObject({ result: RESULT.win });
+  });
+
+  it('pays a dealer 22 as a bust in other games', () => {
+    expect(settle(makeRules(), hand([card(10), card(9, HEARTS)]), dealer22())).toMatchObject({ result: RESULT.win });
+  });
+});
+
+describe('a bonus on a doubled hand', () => {
+  // Doubled 11 on four cards, then a 10: a five-card 21.
+  const doubled21 = () =>
+    hand([card(2), card(3, HEARTS), card(4, DIAMONDS), card(2, CLUBS), card(10, HEARTS)], { doubleBet: 10 });
+  const dealer20 = () => dealer(card(10, CLUBS), card(10, DIAMONDS));
+
+  it('pays the bonus on the bet and returns the double, as the original did', () => {
+    const rules = makeRules({ 'bonuses.fiveCard21': true });
+    expect(settle(rules, doubled21(), dealer20())).toMatchObject({ payout: 10 * 3 + 10, result: RESULT.bonus });
+  });
+
+  it('pays a charlie win on the double too, as an ordinary win', () => {
+    const rules = makeRules({ 'rules.autoWinFiveCards': true });
+    expect(settle(rules, doubled21(), dealer20())).toMatchObject({ payout: 40, result: RESULT.bonus });
+  });
+});
+
+describe('a bonus against a dealer blackjack found late (no hole card)', () => {
+  const charlie = (index = 0) =>
+    Object.assign(hand([card(2), card(3, HEARTS), card(4, DIAMONDS), card(2, CLUBS), card(5, HEARTS)]), { index });
+  const rules = () => makeRules({ 'rules.noHoleCard': true, 'rules.autoWinFiveCards': true });
+
+  it("is still paid on the seat's first hand", () => {
+    expect(settle(rules(), charlie(), dealerBlackjackHand(), true)).toMatchObject({ payout: 20, result: RESULT.bonus });
+  });
+
+  it('is not paid on a hand split from it, which the dealer returns', () => {
+    expect(settle(rules(), charlie(1), dealerBlackjackHand(), true)).toMatchObject({ result: RESULT.push });
+  });
+});

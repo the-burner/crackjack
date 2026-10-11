@@ -34,6 +34,22 @@ describe('statistics screen', () => {
     expect(stat('Bet Count')).not.toBeNull();
   });
 
+  it('shows the advanced count, the cards left the true count uses in bold', () => {
+    const app = createTestApp();
+    app.settings.set('trueCount.remainingCards', 'inTray');
+    const session = new GameSession(app);
+    renderScreen(<GameStats params={{ session }} />, { app });
+    expect(screen.getAllByRole('columnheader', { name: 'Advanced Count' })).toHaveLength(2);
+    const left = session.advancedCounts().cardsLeft;
+    expect(stat('Cards Remaining \\(Dealt\\)')).toBe(String(left.dealt));
+    expect(stat('Cards Remaining \\(In Tray\\)')).toBe(String(left.inTray));
+    // The row sets its cells in bold.
+    expect(screen.getByRole('row', { name: /^Cards Remaining \(In Tray\) / })).toHaveClass('*:font-semibold');
+    expect(screen.getByRole('row', { name: /^Cards Remaining \(Dealt\) / })).not.toHaveClass('*:font-semibold');
+    expect(stat('Exact Decks Remaining')).toMatch(/^\d+\.\d\d$/);
+    expect(stat('Exact True Count')).toMatch(/^-?\d+\.\d\d$/);
+  });
+
   it('the display switches write their settings', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<GameStats params={{}} />);

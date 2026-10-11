@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { correctPlay, checkPlay, correctInsurance, checkInsurance, checkBet, expectedBet } from '@/game/play-check';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { SECTION } from '@/core/strategy/advisor';
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { rulesFrom } from '@/game/engine/rules';
 import { ACTION } from '@/game/engine/game';
@@ -68,9 +69,65 @@ describe('the strategy-correct play', () => {
     const { action } = correctPlay({ ...base(), hand: hand([card(10)]), upcard: card(10) });
     expect(action).toBe(ACTION.hit);
   });
+
+  it('plays a soft hand of three cards as the ace and the rest, in any order', () => {
+    // A,4,4 is a soft 19, played as A,8, not as A,4.
+    for (const cards of [
+      [1, 4, 4],
+      [4, 1, 4],
+      [4, 4, 1],
+    ]) {
+      const { action, advice } = correctPlay({ ...base(), hand: hand(cards.map(r => card(r))), upcard: card(10) });
+      expect(action, cards.join(',')).toBe(ACTION.stand);
+      expect(advice.section, cards.join(',')).toBe(SECTION.softStand);
+    }
+    // A,2,4 is a soft 17, which hits.
+    expect(correctPlay({ ...base(), hand: hand([card(1), card(2), card(4)]), upcard: card(10) }).action).toBe(
+      ACTION.hit,
+    );
+  });
+});
+
+describe('an extended strategy', () => {
+  // Double Exposure plays against the dealer's total, not the upcard alone.
+  const DOUBLE_EXPOSURE_SYSTEM = 92;
+  const question = () => ({
+    ...base(),
+    strategy: strategyFor(DOUBLE_EXPOSURE_SYSTEM),
+    hand: hand([card(10), card(2)]),
+  });
+
+  it('reads the dealer column from the dealer total, hole card included', () => {
+    const dealer = hand([card(10, HEARTS), card(6, HEARTS)]);
+    expect(correctPlay({ ...question(), upcard: card(10, HEARTS), dealer }).action).toBe(ACTION.stand);
+    // A 12 against a dealer 10 alone hits.
+    expect(correctPlay({ ...question(), upcard: card(10, HEARTS) }).action).toBe(ACTION.hit);
+  });
 });
 
 describe('checking a play', () => {
+  describe('a close call', () => {
+    // 16 against a ten, no surrender: stand from a true count of 0, hit below.
+    const sixteen = () => ({
+      ...base(),
+      rules: makeRules({ 'rules.surrender': 'none' }),
+      hand: hand([card(10), card(6)]),
+      upcard: card(10, HEARTS),
+    });
+    const counted = (trueCount: number) => ({ counts: { trueCount, runningCount: 0 }, shoe: { decks: 6, dealt: 100 } });
+
+    it('is a play that a count a few cards either way would call for', () => {
+      expect(correctPlay({ ...sixteen(), ...counted(-1) }).action).toBe(ACTION.hit);
+      const check = checkPlay({ ...sixteen(), action: ACTION.hit, nearby: [counted(-1), counted(0)] });
+      expect(check).toMatchObject({ correct: false, message: 'Close call. But it should have been a Stand' });
+    });
+
+    it('is not a play no nearby count calls for', () => {
+      const check = checkPlay({ ...sixteen(), action: ACTION.double, nearby: [counted(-1), counted(0)] });
+      expect(check.message).toBe('That should have been a Stand');
+    });
+  });
+
   it('names the table and cell of a correct split, with no message', () => {
     const check = checkPlay({
       ...base(),

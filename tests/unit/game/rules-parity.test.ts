@@ -289,6 +289,13 @@ describe('the dealer making obvious plays', () => {
     expect(obvious(deal(card(9), card(9), card(9), card(5))).state).toBe(STATE.playerAction);
   });
 
+  it('leaves a hit pair of nines alone too, as the original judged it on its first two cards', () => {
+    const game = obvious(deal(card(9), card(9), card(9), card(5), [card(1)]));
+    game.act(ACTION.hit);
+    expect(game.hands[0].total).toBe(19);
+    expect(game.state).toBe(STATE.playerAction);
+  });
+
   it('stands a hard 20', () => {
     expect(obvious(deal(card(10), card(9), card(13), card(5))).state).not.toBe(STATE.playerAction);
   });

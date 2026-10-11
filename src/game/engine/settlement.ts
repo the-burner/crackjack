@@ -64,6 +64,16 @@ export function settleHand({
     hand.isNatural() || (rules.bonuses.splitTenAceIsBlackjack && hand.cardCount === 2 && hand.total === 21);
   const wager = hand.bet + hand.doubleBet;
 
+  // Bonuses that win regardless of the dealer's hand; against a dealer blackjack
+  // (found late, with no hole card) only on a seat's first hand, as in the original.
+  // A charlie is an ordinary win, double and all; other bonuses pay on the bet and return the double.
+  const bonus =
+    !dealerBlackjack || hand.index === 0 || rules.dealerBlackjackWinsAll
+      ? handBonus(rules, hand, { dealerTotal: dealer.total })
+      : null;
+  if (bonus?.multiplier === 1) return finish(wager * 2, RESULT.bonus);
+  if (bonus) return finish(hand.bet * (1 + bonus.multiplier) + hand.doubleBet, RESULT.bonus);
+
   if (dealerBlackjack) {
     // "Player BJ always wins" pays 3:2 instead of pushing (the original's own flat 0.5).
     if (playerBlackjack && rules.playerBlackjackAlwaysWins) return finish(hand.bet * 2.5, RESULT.win);
@@ -81,13 +91,10 @@ export function settleHand({
     return finish(hand.bet * 2 + premium, RESULT.blackjack);
   }
 
-  // Bonuses that win regardless of the dealer's hand.
-  const bonus = handBonus(rules, hand, { dealerTotal: dealer.total });
-  if (bonus) return finish(wager * (1 + bonus.multiplier), RESULT.bonus);
-
   if (hand.busted()) return finish(0, RESULT.bust);
 
   const dealerTotal = dealer.total;
+  if (rules.dealer22Pushes && dealerTotal === 22) return finish(wager, RESULT.push);
   const dealerBusted = dealer.busted();
   if (dealerBusted || hand.total > dealerTotal) return finish(wager * 2, RESULT.win);
   if (hand.total < dealerTotal) return finish(0, RESULT.lose);

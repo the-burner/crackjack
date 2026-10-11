@@ -76,8 +76,6 @@ const NOT_THE_ENGINES: Partial<Record<SettingKey, string>> = {
  * sat unnoticed. Implement one and take it off this list.
  */
 const NOT_IMPLEMENTED_YET: Partial<Record<SettingKey, string>> = {
-  'trueCount.remainingCards': 'how the remaining cards are estimated; nothing uses the choice yet',
-  'trueCount.allowedErrorCards': 'the close-call warning this allows for does not exist yet',
   'dealerErrors.dealingBias': 'kept deliberately: it never had any effect in the original either',
   'peeking.strategyHigh': 'needs the original hole-card strategy tables, which are not bundled',
   'peeking.strategyLow': 'needs the original hole-card strategy tables, which are not bundled',
