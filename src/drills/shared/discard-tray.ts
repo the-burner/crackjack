@@ -80,6 +80,17 @@ export function loadTrayImage(src: string): HTMLImageElement {
   return img;
 }
 
+/** Loads and decodes, ahead of time, every photo a shoe of `decks` can show, so a test has its tray at once. */
+export function preloadTrayImages(decks: number, style: string): void {
+  for (let quarter = 0; quarter <= decks * 4; quarter++) {
+    const photo = trayImage(quarter / 4, style);
+    if (!photo || cache.has(photo.src)) continue;
+    loadTrayImage(photo.src)
+      .decode?.()
+      .catch(() => {});
+  }
+}
+
 /**
  * Draws a tray photo centred in the given box, scaled to fit.
  * `thicknessPercent` (100-110) stretches the cards vertically, as thicker cards

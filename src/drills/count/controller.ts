@@ -17,7 +17,7 @@ import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
 import type { GridTap } from '@/drills/shared/grid-answers';
 import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '@/drills/shared/end-warning';
-import { loadTrayImage, drawTray, trayImage } from '@/drills/shared/discard-tray';
+import { loadTrayImage, drawTray, trayImage, preloadTrayImages } from '@/drills/shared/discard-tray';
 import type { TrayPhoto } from '@/drills/shared/discard-tray';
 import {
   flashSize,
@@ -138,6 +138,7 @@ export function createCountDrill(app: App) {
       strategy: options.strategy,
       trueCountSettings: options.trueCountSettings,
     });
+    preloadTrayImages(options.decks, options.trayStyle);
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextShown = !auto;
     const clock = drillClockFor(shell, {
