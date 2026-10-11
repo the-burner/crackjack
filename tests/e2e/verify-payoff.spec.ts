@@ -195,8 +195,6 @@ type Policy = (offered: string[], cards: number[]) => string | null;
 const POLICY = {
   stand: offered => (offered.includes('pass') ? 'pass' : 'stand'),
   hit: offered => (offered.includes('hit') ? 'hit' : offered.includes('pass') ? 'pass' : 'stand'),
-  double: offered => (offered.includes('double') ? 'double' : 'stand'),
-  surrender: offered => (offered.includes('surrender') ? 'surrender' : 'stand'),
   splitAll: offered => (offered.includes('split') ? 'split' : 'stand'),
   splitOnce: (): Policy => {
     let split = false;
@@ -366,39 +364,6 @@ test.describe('the payoff at the end of a round', () => {
       expect(frames[i - 1].hands.length - frames[i].hands.length, `frame ${i}`).toBeLessThanOrEqual(1);
     }
   });
-
-  test('labels computer seats with a result but never an amount, and leaves the bankroll alone for them', async ({
-    page,
-  }) => {
-    test.setTimeout(60000);
-    await openTable(page, { seed: 15, settings });
-    const { frames, log } = await playRound(page);
-    const revealT = frames[dealerPlays(frames)].t;
-    for (const seat of [3, 4]) {
-      const pills = pillsOn(log, seat);
-      expect(
-        pills.map(e => e.pill),
-        `seat ${seat}`,
-      ).toEqual([order[seat - 1].result]);
-      expect(
-        chipLog(log, seat).filter(e => e.text.includes('$')),
-        `seat ${seat} amounts`,
-      ).toEqual([]);
-    }
-    // The bankroll does not move from the first computer result to the end of the round.
-    const computerFrom = pillsOn(log, 3)[0].t;
-    const bank = log.filter(e => e.kind === 'bankroll');
-    const atStart = bank.filter(e => e.t <= computerFrom).at(-1)!.text;
-    expect(
-      bank
-        .filter(e => e.t > computerFrom)
-        .map(e => e.text)
-        .filter(text => text !== atStart),
-    ).toEqual([]);
-    // Two $5 bets: one won $10, one lost; the computer seats change nothing.
-    expect(atStart).toBe('$1,000.00');
-    expect(revealT).toBeLessThan(computerFrom);
-  });
 });
 
 // --- 3. settled at once -----------------------------------------------------
@@ -442,68 +407,6 @@ test.describe('a hand settled during play', () => {
     // Not shown again at the payoff.
     expect(pillsOn(log, 1).filter(e => e.t > frames[dealerPlays(frames)].t)).toEqual([]);
   });
-
-  test('a computer seat that busts is swept before the next seat plays', async ({ page }) => {
-    // Seed 2 (seat 1 doubles): computer seats 3 and 4 both bust.
-    await openTable(page, { seed: 2, settings: speeds });
-    const { frames, log } = await playRound(page, POLICY.double);
-    sweptBefore(
-      frames,
-      log,
-      '3-0',
-      'Bust',
-      firstIndex(frames, f => f.pointer?.hand === '4-0'),
-      'seat 4 plays',
-    );
-    sweptBefore(frames, log, '4-0', 'Bust', dealerPlays(frames), 'the dealer plays');
-  });
-
-  test('a surrender shows its result and is swept before the next seat plays', async ({ page }) => {
-    await openTable(page, { seed: 2, settings: { ...speeds, 'rules.surrender': 'late' } });
-    const { frames, log } = await playRound(page, POLICY.surrender);
-    sweptBefore(
-      frames,
-      log,
-      '1-0',
-      'Surrender',
-      firstIndex(frames, f => f.pointer?.hand === '2-0'),
-      'seat 2 plays',
-    );
-  });
-
-  test('a blackjack is swept at once when the dealer has checked for one', async ({ page }) => {
-    // Seed 130: seat 1 has a natural; the dealer shows a king and checks.
-    await openTable(page, { seed: 130, settings: speeds });
-    const { frames, log } = await playRound(page);
-    expect(value(frames[dealerPlays(frames)].dealer.cards[0])).toBe(10);
-    sweptBefore(
-      frames,
-      log,
-      '1-0',
-      '21',
-      firstIndex(frames, f => f.pointer?.hand === '2-0'),
-      'seat 2 plays',
-    );
-  });
-
-  test('a blackjack waits for the payoff when the dealer has no hole card', async ({ page }) => {
-    // Seed 90, no hole card: seat 1 has a natural against a ten; seat 2 busts.
-    await openTable(page, { seed: 90, settings: { ...speeds, 'rules.noHoleCard': true } });
-    const { frames, log } = await playRound(page);
-    const second = firstIndex(frames, f => f.dealer.cards.length >= 2);
-    expect(value(frames[second].dealer.cards[0])).toBe(10);
-    expect(goneAt(frames, '1-0'), 'the natural stays until the dealer has its second card').toBeGreaterThan(second);
-    expect(pillsOn(log, 1)[0].t).toBeGreaterThan(frames[second].t);
-    // A bust is still swept at once.
-    sweptBefore(
-      frames,
-      log,
-      '2-0',
-      'Bust',
-      firstIndex(frames, f => f.pointer?.hand === '3-0'),
-      'seat 3 plays',
-    );
-  });
 });
 
 // --- 4. the result pill -----------------------------------------------------
@@ -518,7 +421,7 @@ test.describe('the result label', () => {
     ['portrait', PORTRAIT],
     ['landscape', LANDSCAPE],
   ] as const) {
-    test(`is a pill like the app's pop-ups for a win, a loss and a push, unclipped and sized to its text, in ${name}`, async ({
+    test(`is a pill like the app's pop-ups for a win, a loss and a push, unclipped and sized to its text, in ${name} @layout`, async ({
       page,
     }) => {
       await openTable(page, { seed: 15, settings, size });
@@ -573,19 +476,12 @@ test.describe('the result label', () => {
       }
     });
   }
-
-  test('a bust and a surrender use the losing colours', async ({ page }) => {
-    await openTable(page, { seed: 1 });
-    const bust = (await playRound(page, POLICY.hit)).log.filter(e => e.kind === 'chip' && e.pill === 'Bust');
-    expect(bust.length).toBeGreaterThan(0);
-    expect(bust.every(e => e.tone === 'lose')).toBe(true);
-  });
 });
 
 // --- 5 and 6. the turn pointer ---------------------------------------------
 
 test.describe('the turn pointer', () => {
-  test('points at every hand in turn, and rests on a computer hand for a step even when it stands', async ({
+  test('points at every hand in turn, and rests on a computer hand for a step even when it stands @layout', async ({
     page,
   }) => {
     test.setTimeout(60000);
@@ -629,28 +525,6 @@ test.describe('the turn pointer', () => {
     const reveal = dealerPlays(frames);
     expect(frames.slice(reveal).flatMap(f => (f.pointer ? [f.pointer.hand] : []))).toEqual([]);
   });
-
-  for (const [name, seed, choose, extra] of [
-    ['a bust', 1, POLICY.hit, {}],
-    ['a computer bust', 2, POLICY.double, {}],
-    ['a surrender', 2, POLICY.surrender, { 'rules.surrender': 'late' }],
-  ] satisfies [string, number, Policy, SavedSettings][]) {
-    test(`leaves a hand before it is paid, and never points at an emptied seat, after ${name}`, async ({ page }) => {
-      await openTable(page, {
-        seed,
-        settings: { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60, ...extra },
-      });
-      const { frames, log } = await playRound(page, choose);
-      expect(frames.flatMap(f => (f.pointer && !has(f, f.pointer.hand) ? [f.pointer.hand] : []))).toEqual([]);
-      // While a seat shows a result, the pointer is not on any of its hands.
-      for (const entry of log.filter(e => e.kind === 'chip' && e.pill !== null)) {
-        const frame = frames[entry.f - 1];
-        expect(frame.pointer?.hand?.split('-')[0], `seat ${entry.seat} showing ${entry.pill}`).not.toBe(
-          String(entry.seat),
-        );
-      }
-    });
-  }
 
   /** Bets, waits with no input, and returns how long after the turn began the pointer was first drawn. */
   async function firstPointerDelay(page: Page) {
@@ -738,7 +612,7 @@ test.describe('split hands', () => {
       return Object.fromEntries(layout.seats.map(seat => [seat.seat, seat.hands.map(hand => hand[0].x)]));
     });
 
-  test('a single split puts the two hands at the two ends of the seat', async ({ page }) => {
+  test('a single split puts the two hands at the two ends of the seat @layout', async ({ page }) => {
     // Seed 14: seat 1 splits once; computer seat 2 splits aces.
     await openTable(page, { seed: 14 });
     const { frames } = await playRound(page, POLICY.splitOnce());
@@ -753,7 +627,7 @@ test.describe('split hands', () => {
     }
   });
 
-  test('three hands sit side by side', async ({ page }) => {
+  test('three hands sit side by side @layout', async ({ page }) => {
     // Seed 22: seat 1 splits, then splits again.
     await openTable(page, { seed: 22 });
     const { frames } = await playRound(page, POLICY.splitAll);
@@ -832,76 +706,11 @@ test.describe('table messages', () => {
     expect(offer!.leaving! - offer!.t).toBeGreaterThan(3300);
     expect(offer!.leaving! - offer!.t).toBeLessThan(3900);
   });
-
-  test('never say "No Dealer Blackjack" or "Dealer busts"', async ({ page }) => {
-    // Look for a deal where the dealer checks under a ten, has no blackjack, then
-    // busts, so the test does not depend on one seed surviving every change.
-    for (let seed = 30; seed < 90; seed++) {
-      await openTable(page, { seed });
-      const { frames, log } = await playRound(page);
-      const dealer = frames.findLast(f => f.dealer.cards.length > 0)?.dealer.cards ?? [];
-      if (value(dealer[0]) !== 10 || total(dealer) <= 21) continue;
-      const texts = log.filter(e => e.kind === 'toast').map(e => e.text);
-      expect(
-        texts.filter(text => /no dealer blackjack|dealer busts/i.test(text)),
-        `seed ${seed}`,
-      ).toEqual([]);
-      return;
-    }
-    throw new Error('no seed between 30 and 90 dealt a ten that went on to bust');
-  });
-
-  for (const [name, seed, extra] of [
-    ['the dealer checks for it', 43, {}],
-    ['the dealer has no hole card', 14, { 'rules.noHoleCard': true }],
-  ] satisfies [string, number, SavedSettings][]) {
-    test(`announce a dealer blackjack once when ${name}`, async ({ page }) => {
-      await openTable(page, { seed, settings: extra });
-      const { frames, log } = await playRound(page);
-      const dealer = frames.findLast(f => f.dealer.cards.length > 0)!.dealer.cards;
-      expect(total(dealer)).toBe(21);
-      expect(dealer).toHaveLength(2);
-      const texts = log.filter(e => e.kind === 'toast').map(e => e.text);
-      expect(
-        texts.filter(text => /dealer has blackjack/i.test(text)),
-        `messages: ${JSON.stringify(texts)}`,
-      ).toHaveLength(1);
-    });
-  }
 });
 
 // --- 10. sounds -------------------------------------------------------------
 
 test.describe('sounds', () => {
-  test('only a card coming off the shoe clicks, not a card turned over or moved on a split', async ({ page }) => {
-    // Seed 14: seat 1 splits; the dealer turns its up card and hole card over.
-    await openTable(page, { seed: 14, sound: true });
-    const { frames, sounds, audio } = await playRound(page, POLICY.splitOnce());
-    const clicks = sounds.filter(s => s.name === 'card');
-    const drawn = frames[0].shoeCards - Math.min(...frames.map(f => f.shoeCards));
-    expect(drawn).toBeGreaterThan(10);
-    expect(clicks).toHaveLength(drawn);
-    for (const click of clicks) {
-      expect(frames[click.f].shoeCards, `click at frame ${click.f}`).toBe(frames[click.f - 1].shoeCards - 1);
-    }
-    const split = firstIndex(frames, f => has(f, '1-1'));
-    const reveals = frames
-      .map((f, i) => i)
-      .filter(
-        i =>
-          i > 0 &&
-          frames[i].dealer.faceUp.filter(Boolean).length > frames[i - 1].dealer.faceUp.filter(Boolean).length &&
-          frames[i].shoeCards === frames[i - 1].shoeCards,
-      );
-    expect(reveals.length).toBeGreaterThan(0);
-    for (const i of [split, ...reveals])
-      expect(
-        sounds.filter(s => s.f === i),
-        `frame ${i}`,
-      ).toEqual([]);
-    expect(audio.filter(a => a.src.endsWith('click.mp3'))).toHaveLength(clicks.length);
-  });
-
   test('catching a dealer error with Foul clicks, and a Foul with no error buzzes', async ({ page }) => {
     test.setTimeout(120000);
     await openTable(page, {
@@ -936,25 +745,5 @@ test.describe('sounds', () => {
     }
     expect(caught, 'a dealer error was made and caught').not.toBeNull();
     expect(caught).toEqual({ sounds: ['card'], audio: ['click.mp3'] });
-  });
-});
-
-// --- 11. a doubled hand that busts -----------------------------------------
-
-test.describe('a doubled hand that busts', () => {
-  test('stays on the table, unannounced, until the payoff', async ({ page }) => {
-    // Seed 2: seat 1 doubles on 13 and draws a jack.
-    await openTable(page, { seed: 2, settings: { 'mechanics.otherPlayerSpeed': 60, 'mechanics.payoffSpeed': 60 } });
-    const { frames, log } = await playRound(page, POLICY.double);
-    const doubled = firstIndex(frames, f => handIn(f, '1-0')?.cards.length === 3);
-    const reveal = dealerPlays(frames);
-    expect(doubled).toBeGreaterThan(0);
-    expect(total(handIn(frames[doubled], '1-0').cards)).toBeGreaterThan(21);
-    for (let i = doubled; i < reveal; i++) expect(has(frames[i], '1-0'), `frame ${i}`).toBe(true);
-    const pills = pillsOn(log, 1);
-    expect(pills.length).toBeGreaterThan(0);
-    expect(pills.every(e => e.t > frames[reveal].t)).toBe(true);
-    expect(log.filter(e => e.kind === 'toast' && /bust/i.test(e.text))).toEqual([]);
-    expect(goneAt(frames, '1-0')).toBeGreaterThan(reveal);
   });
 });

@@ -16,6 +16,8 @@ import {
   felt,
   overlayButton,
   playButton as action,
+  results,
+  SELECTOR,
   tableCanvas,
   tableScreen,
   tableToast,
@@ -159,7 +161,7 @@ test.describe('the table', () => {
     await expect(bankroll(page)).toHaveText('$995.00');
   });
 
-  test('renders the table in portrait and in landscape', async ({ page }) => {
+  test('renders the table in portrait and in landscape @layout', async ({ page }) => {
     await openTable(page, { size: PORTRAIT });
     const canvas = tableCanvas(page);
     const portrait = (await canvas.boundingBox())!;
@@ -292,7 +294,126 @@ test.describe('the table', () => {
     await expect(page.locator('.table__status')).toHaveCount(0);
   });
 
-  test('shows a betting mistake as soon as the cards start coming', async ({ page }) => {
+  for (const [name, size] of [
+    ['portrait', PORTRAIT],
+    ['landscape', LANDSCAPE],
+  ] as const)
+    test(`shows the result on a seat like the app’s other pop-ups in ${name} @layout`, async ({ page }) => {
+      await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 }, size });
+      await grid(page).click({ position: { x: 25, y: 25 } });
+      const stand = action(page, 'stand');
+      const pass = action(page, 'pass');
+      for (let i = 0; i < 25; i++) {
+        await expect(visibleOneOf(stand, pass, results(page))).toBeVisible({ timeout: 30000 });
+        if (await stand.isVisible()) {
+          await stand.click();
+          continue;
+        }
+        if (await pass.isVisible()) {
+          await pass.click();
+          continue;
+        }
+        if (await results(page).count()) break;
+      }
+      const result = results(page).first();
+      await expect(result).toBeVisible({ timeout: 30000 });
+
+      const compare = await page.evaluate(async sel => {
+        const el = document.querySelector<HTMLElement>(sel.result)!;
+        const tone = el.dataset.tone;
+        const url = '/src/components/game/table-toast.tsx';
+        const { tableToast }: typeof import('@/components/game/table-toast') = await import(url);
+        tableToast('x', { tone: tone === 'win' ? 'good' : tone === 'lose' ? 'error' : 'plain', ms: 60000 });
+        let pop: HTMLElement | undefined;
+        for (let i = 0; i < 100 && !pop; i++) {
+          await new Promise(requestAnimationFrame);
+          pop = [...document.querySelectorAll<HTMLElement>(`${sel.toast}:not([data-leaving])`)].find(
+            li => li.textContent === 'x',
+          );
+        }
+        // The box from the pop-up, the type from its text.
+        const pick = (box: Element, text: Element) => {
+          const c = getComputedStyle(box);
+          const t = getComputedStyle(text);
+          return {
+            radius: c.borderTopLeftRadius,
+            shadow: c.boxShadow !== 'none',
+            weight: t.fontWeight,
+            size: t.fontSize,
+            background: c.backgroundColor,
+            color: t.color,
+          };
+        };
+        const box = el.getBoundingClientRect();
+        const holder = el.parentElement!;
+        const clipped =
+          getComputedStyle(holder).overflow !== 'visible' &&
+          (box.height > holder.clientHeight + 0.5 || box.width > holder.clientWidth + 0.5);
+        return {
+          tone,
+          result: pick(el, el),
+          popUp: pick(pop!, pop!),
+          chipWidth: holder.getBoundingClientRect().width,
+          width: box.width,
+          clipped,
+        };
+      }, SELECTOR);
+      // A pill sized to its text, like the pop-ups, not a slab filling the seat.
+      expect(compare.result).toEqual(compare.popUp);
+      expect(compare.width).toBeLessThan(compare.chipWidth);
+      // Nothing of the pill may be cut off by the seat's label box.
+      expect(compare.clipped).toBe(false);
+    });
+
+  // Known issue: the bet labels occupy the lowest band of the felt, so no
+  // placement inside it clears them. Fixing this needs either the seat row
+  // raised or the buttons moved off the felt, which is a design decision.
+  for (const seats of [4, 6]) {
+    test.fixme(`keeps the action buttons clear of every seat's bet at ${seats} seats @layout`, async ({ page }) => {
+      await openTable(page, { settings: { 'strategy.warnOnError': false, 'table.seatCount': seats } });
+      await grid(page).click({ position: { x: 25, y: 25 } });
+      await expect(action(page, 'stand')).toBeVisible({ timeout: 30000 });
+      const covered = await page.evaluate(sel => {
+        const hits = (a: DOMRect, b: DOMRect) =>
+          !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+        const buttons = [...document.querySelectorAll<HTMLElement>(sel.actions)]
+          .filter(el => !el.hidden)
+          .map(el => el.getBoundingClientRect());
+        return [...document.querySelectorAll<HTMLElement>(sel.chip)]
+          .filter(chip => buttons.some(box => hits(chip.getBoundingClientRect(), box)))
+          .map(chip => chip.dataset.seat);
+      }, SELECTOR);
+      expect(covered).toEqual([]);
+    });
+  }
+
+  test('burns the first card into the tray before betting opens', async ({ page }) => {
+    await page.clock.install();
+    await page.setViewportSize(PORTRAIT);
+    await page.addInitScript(() => {
+      localStorage.clear();
+      localStorage.setItem(
+        'cj.settings',
+        JSON.stringify({
+          // Slow enough to watch: each step of the shuffle takes most of a second.
+          'mechanics.dealerSpeed': 1,
+          'table.burnCards': 1,
+          'table.showBurnCards': true,
+          'display.hideActionButtons': false,
+        }),
+      );
+    });
+    await page.goto('/index.html');
+    await startGame(page);
+    await expect(tableScreen(page)).toBeVisible();
+    // The burn is still being shown, so the betting menu must not be up yet.
+    await page.clock.runFor(400);
+    await expect(overlay(page)).toBeHidden();
+    // Then it goes into the tray and betting opens.
+    await expect(overlay(page)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('shows a betting mistake as soon as the cards start coming @layout', async ({ page }) => {
     await page.clock.install();
     await openTable(page, {
       settings: {

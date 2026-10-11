@@ -26,9 +26,10 @@ export default defineConfig({
   use: { baseURL: DEV },
   projects: [
     { name: 'iphone', grepInvert: /@build/, use: { ...iPhone, browserName: 'webkit' } },
-    { name: 'iphone-landscape', grepInvert: /@build/, use: { ...iPhoneLandscape, browserName: 'webkit' } },
-    { name: 'ipad', grepInvert: /@build/, use: { ...iPad, browserName: 'webkit' } },
-    { name: 'ipad-landscape', grepInvert: /@build/, use: { ...iPadLandscape, browserName: 'webkit' } },
+    // The other devices run only the tests whose outcome depends on the screen (tagged @layout).
+    { name: 'iphone-landscape', grep: /@layout/, use: { ...iPhoneLandscape, browserName: 'webkit' } },
+    { name: 'ipad', grep: /@layout/, use: { ...iPad, browserName: 'webkit' } },
+    { name: 'ipad-landscape', grep: /@layout/, use: { ...iPadLandscape, browserName: 'webkit' } },
     // Chromium: Playwright's WebKit build crashes when offline. The service worker is engine-independent.
     { name: 'build', grep: /@build/, use: { ...iPhone, browserName: 'chromium', baseURL: BUILD } },
   ],

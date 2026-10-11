@@ -245,7 +245,7 @@ test('Escape closes an open dialog and leaves the screen working', async ({ page
   await expect(page.getByRole('alertdialog')).toBeVisible();
 });
 
-test('a slider value can be typed into its number box', async ({ page }) => {
+test('a slider value can be typed into its number box @layout', async ({ page }) => {
   await openHub(page, 'game.mechanics', { fresh: true });
   const el = await openFromHub(page, 'Speed/Mechanics', 'game.mechanics');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
@@ -280,4 +280,101 @@ test('a slider value can be typed into its number box', async ({ page }) => {
   });
   expect(metrics.height).toBe(32);
   expect(metrics.paddingTop).toBe(metrics.paddingBottom);
+});
+
+test('the Peeking rows fill their group and keep their labels inside it @layout', async ({ page }) => {
+  await openHub(page, 'game.peeking', { fresh: true });
+  const el = await openFromHub(page, 'Peeking', 'game.peeking');
+
+  // The peek modes are list rows, so their separators cross the whole card.
+  const modes = el.locator('[data-slot="settings-group"]').first();
+  const card = await modes.boundingBox();
+  const list = await modes.locator('[data-slot="check-list"]').boundingBox();
+  expect(Math.round(list!.width)).toBe(Math.round(card!.width));
+
+  // The trailing label is inset, so the rounded corner cannot clip it.
+  const strategies = el.locator('[data-slot="settings-group"]').nth(1);
+  const label = strategies.getByText('HC High', { exact: true });
+  const group = await strategies.boundingBox();
+  const text = await label.boundingBox();
+  expect(group!.x + group!.width - (text!.x + text!.width)).toBeGreaterThanOrEqual(10);
+  await expect(el.getByRole('combobox', { name: 'HC High' })).toBeVisible();
+  await expect(el.getByRole('combobox', { name: 'HC Low' })).toBeVisible();
+});
+
+test('Game Options keeps its sections and Play button in one centred column in landscape @layout', async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await openHub(page, 'game.options', { fresh: true });
+  const options = page.locator('[data-screen="game.options"]');
+  const sections = options.getByRole('heading', { level: 2 });
+  await expect(sections).toHaveCount(3);
+  const play = (await options.locator('[data-action="play"]').boundingBox())!;
+  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(2).boundingBox()]) {
+    expect(box!.x).toBeGreaterThanOrEqual(play.x);
+    expect(box!.x).toBeLessThan(play.x + 40);
+  }
+  expect(Math.abs(play.x + play.width / 2 - 844 / 2)).toBeLessThan(40);
+});
+
+test('a focused select shows the pressed shade, not a ring its group would clip to two bars', async ({ page }) => {
+  await openHub(page, 'settings.appearance', { fresh: true });
+  const el = await openFromHub(page, 'Appearance & Sound', 'settings.appearance');
+  const theme = select(el, 'Theme');
+  const before = await theme.evaluate(e => getComputedStyle(e).backgroundColor);
+  // Reached from the keyboard (Safari's Tab skips selects, so Tab, then focus).
+  await page.keyboard.press('Tab');
+  await theme.focus();
+  const focused = await theme.evaluate(e => ({
+    outline: getComputedStyle(e).outlineStyle,
+    bg: getComputedStyle(e).backgroundColor,
+  }));
+  expect(focused.outline).toBe('none');
+  expect(focused.bg).not.toBe(before);
+});
+
+test('a labelled select fills its row: a tap anywhere on it, the label too, opens it @layout', async ({ page }) => {
+  for (const path of ['/settings/gestures', '/settings/true-count', '/game/peeking', '/game/betting']) {
+    await page.goto(`/index.html#${path}`);
+    const selects = page.locator('[data-slot="select"]:has(> span)');
+    await expect(selects.first()).toBeVisible();
+    // Checked again until the screen has settled (it fades in as it opens).
+    await expect(async () => {
+      const bad = await selects.evaluateAll(wrappers =>
+        wrappers.flatMap(wrapper => {
+          const select = wrapper.querySelector('select')!;
+          // In view, so the point is on screen.
+          wrapper.scrollIntoView({ block: 'center' });
+          const label = wrapper.querySelector(':scope > span')!.getBoundingClientRect();
+          const fills = select.getBoundingClientRect().width === wrapper.getBoundingClientRect().width;
+          const hit = document.elementFromPoint(label.left + 5, label.top + label.height / 2) === select;
+          return fills && hit ? [] : [select.getAttribute('aria-label')];
+        }),
+      );
+      expect(bad, path).toEqual([]);
+    }).toPass({ timeout: 5000 });
+  }
+});
+
+test('a clicked select stays unshaded when its picker hands focus back; keyboard focus still shades it', async ({
+  page,
+}) => {
+  await page.goto('/index.html#/settings/gestures');
+  const swipe = page.getByRole('combobox', { name: 'Portrait Swipe up' });
+  const shade = () => swipe.evaluate(el => getComputedStyle(el).backgroundColor);
+  await page.mouse.move(1, 1);
+  const rest = await shade();
+  await swipe.click();
+  // The picker closing: focus leaves the select and comes back with no tap of its own.
+  await page.evaluate(() => {
+    const el = document.querySelector<HTMLSelectElement>('select[aria-label="Portrait Swipe up"]')!;
+    el.blur();
+    el.focus();
+  });
+  await page.mouse.move(1, 1);
+  await expect.poll(shade).toBe(rest);
+  // Reached from the keyboard (Safari's Tab skips selects, so Tab, then focus), it shows.
+  await swipe.evaluate(el => el.blur());
+  await page.keyboard.press('Tab');
+  await swipe.focus();
+  await expect.poll(shade).not.toBe(rest);
 });

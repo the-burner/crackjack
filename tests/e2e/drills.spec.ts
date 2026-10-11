@@ -1,8 +1,9 @@
 // The four drills, driven through the running app: launch, answer right and
-// wrong, watch the stats, pause, restart and go back.
+// wrong, watch the stats, pause, restart and go back, and what the canvases,
+// covers and real timers show.
 import { test, expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { openWithSettings as open } from './support/app';
+import { openWithSettings as open, seedRandom } from './support/app';
 import {
   DRILLS,
   countdownOf,
@@ -48,6 +49,45 @@ async function tapEveryCell(page: Page, screen: Locator, grid: Locator) {
     }
   }
 }
+
+/** The number of tests in the stats panel. */
+const testsCount = async (screen: Locator) => Number(/Tests: (\d+)/.exec(await statsText(screen))?.[1]);
+
+/** How many pixels of a canvas are not the felt it was filled with. */
+const nonFeltPixels = (canvas: Locator) =>
+  canvas.evaluate((el: HTMLCanvasElement) => {
+    const { data } = el.getContext('2d')!.getImageData(0, 0, el.width, el.height);
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (Math.abs(data[i] - data[0]) > 8 || Math.abs(data[i + 1] - data[1]) > 8 || Math.abs(data[i + 2] - data[2]) > 8)
+        count += 1;
+    }
+    return count;
+  });
+
+/**
+ * The percentage of a small box at the middle of a canvas that is felt (the
+ * corner is felt). The box is a fixed size, smaller than the warning's plate on
+ * any screen.
+ */
+const feltAtCentre = (canvas: Locator) =>
+  canvas.evaluate((el: HTMLCanvasElement) => {
+    const ctx = el.getContext('2d')!;
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    const scale = el.width / el.clientWidth;
+    const box = { width: Math.round(60 * scale), height: Math.round(16 * scale) };
+    const { data } = ctx.getImageData(
+      Math.round((el.width - box.width) / 2),
+      Math.round((el.height - box.height) / 2),
+      box.width,
+      box.height,
+    );
+    let felt = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (Math.abs(data[i] - r) <= 8 && Math.abs(data[i + 1] - g) <= 8 && Math.abs(data[i + 2] - b) <= 8) felt += 1;
+    }
+    return Math.round((100 * felt) / (data.length / 4));
+  });
 
 /** Picks `option` in an options screen's (native) select labelled `label`. */
 async function choose(screen: Locator, label: string, option: string) {
@@ -138,7 +178,7 @@ test.describe('flash drill', () => {
     expect(await statsText(screen)).toContain('Accuracy: 66%');
   });
 
-  test('non-blocking pop-ups say what was wrong and let play continue', async ({ page }) => {
+  test('non-blocking pop-ups say what was wrong and let play continue @layout', async ({ page }) => {
     await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'drills.flash.nonBlockingErrors': true });
     const screen = await launch(page, DRILLS.flash);
 
@@ -437,6 +477,70 @@ test.describe('flash drill', () => {
     await expect(screen.getByRole('button', { name: 'Stand', exact: true })).toBeHidden();
     await expect(screen.locator('[data-slot="count-panel"]')).not.toBeEmpty();
   });
+
+  test('the clock stops while the strategy table covers the drill', async ({ page }) => {
+    await page.clock.install();
+    await open(page, {
+      ...FIXED_16_V_TEN(),
+      'drills.flash.testMode': 'warn',
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+    });
+    const screen = await launch(page, DRILLS.flash);
+    await screen.getByRole('button', { name: 'Hit', exact: true }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Table' }).click();
+    await expect(page.locator('[data-screen="strategy.tables"]')).toBeVisible();
+    await page.clock.runFor(4000);
+    await page.locator('[data-screen="strategy.tables"] [data-action="back"]').click();
+    await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
+    expect(await statsText(screen)).toMatch(/Time: 00:00:0[0-2]/);
+  });
+
+  test('the index test grid leaves the cards on screen in landscape @layout', async ({ page }) => {
+    await open(page, {
+      'drills.flash.hands': 'illustrious18',
+      'drills.flash.countMode': 'indexTest',
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+    });
+    for (const size of [
+      { width: 844, height: 390 },
+      { width: 568, height: 320 },
+      { width: 926, height: 428 },
+    ]) {
+      await page.setViewportSize(size);
+      const screen = page.locator('[data-screen="drills.flash"]');
+      if (!(await screen.count())) await launch(page, DRILLS.flash);
+      const display = (await screen.locator('[data-slot="drill-display"]').boundingBox())!;
+      // Half a pixel for rounding at the iPad's devicePixelRatio of 2.5.
+      expect(display.y + display.height, `${size.width}x${size.height}`).toBeLessThanOrEqual(size.height + 0.5);
+    }
+  });
+
+  test('the closing text is set in the app font', async ({ page }) => {
+    await page.addInitScript(() => {
+      const { get, set } = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font')!;
+      window.canvasFonts = [];
+      Object.defineProperty(CanvasRenderingContext2D.prototype, 'font', {
+        get(this: CanvasRenderingContext2D) {
+          return get!.call(this);
+        },
+        set(this: CanvasRenderingContext2D, value: string) {
+          window.canvasFonts.push(value);
+          set!.call(this, value);
+        },
+      });
+    });
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'errorsAtEnd', 'drills.flash.handsPerDrill': 10 });
+    const screen = await launch(page, DRILLS.flash);
+    for (let hand = 0; hand < 10; hand++) await screen.getByRole('button', { name: 'Stand', exact: true }).click();
+
+    const font = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--font').trim(),
+    );
+    const used = await page.evaluate(() => window.canvasFonts.filter(f => f.startsWith('40px')));
+    expect(used).toContain(`40px ${font}`);
+  });
 });
 
 test.describe('depth drill', () => {
@@ -621,7 +725,7 @@ test.describe('count drill', () => {
     await expect(options.getByRole('combobox', { name: 'Positions' })).toBeHidden();
   });
 
-  test('pauses with the cards covered, and counts down before continuing', async ({ page }) => {
+  test('pauses with the cards covered, and counts down before continuing @layout', async ({ page }) => {
     await open(page, { 'drills.count.testEvery': 'never' });
     const screen = await launch(page, DRILLS.count);
     const cards = screen.getByRole('img', { name: 'Cards' });
@@ -682,10 +786,157 @@ test.describe('count drill', () => {
     await next.click();
     expect(await whitePixels(cards)).toBeGreaterThan(0);
   });
+
+  test('covers the cards for a test too deep for a tray photo', async ({ page }) => {
+    // A shoe whose last test comes in its last quarter deck, past the last photo
+    // (unseeded, one shoe in five or so tests last at a depth that has a photo).
+    await seedRandom(page, 7);
+    await open(page, {
+      'drills.count.decks': 8,
+      'drills.count.trayStyle': 'eightDeckFront',
+      'drills.count.cardsPerFlash': '4',
+      'drills.count.testEvery': 'about16',
+      'drills.count.dealByHand': true,
+      'drills.count.accuracy': 0,
+      'drills.count.alarmSeconds': 1799,
+      'strategy.system': 30,
+    });
+    const screen = await launch(page, DRILLS.count);
+
+    // The deepest test of the shoe is past the last tray photo, so nothing can
+    // be shown with it - least of all the cards it is about.
+    const run = await screen.evaluate(async el => {
+      const next = [...el.querySelectorAll('button')].find(b => b.textContent?.trim() === 'Next')!;
+      const answers = el.querySelector('canvas[aria-label="Answer grid"]')!;
+      const wrap = el.querySelector<HTMLElement>('[data-slot="answer-grid"]')!;
+      const cards = el.querySelector<HTMLCanvasElement>('canvas[aria-label="Cards"]')!;
+      const sleep = (ms: number) =>
+        new Promise(resolve => {
+          setTimeout(resolve, ms);
+        });
+      const nonFelt = () => {
+        const { data } = cards.getContext('2d')!.getImageData(0, 0, cards.width, cards.height);
+        let count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (
+            Math.abs(data[i] - data[0]) > 8 ||
+            Math.abs(data[i + 1] - data[1]) > 8 ||
+            Math.abs(data[i + 2] - data[2]) > 8
+          )
+            count += 1;
+        }
+        return count;
+      };
+      let tests = 0;
+      let last: number | null = null;
+      for (let step = 0; step < 2000; step++) {
+        if (wrap.hidden) {
+          if (next.hidden) break;
+          next.click();
+          // The screen shows the deal once React has rendered it.
+          await sleep(0);
+          continue;
+        }
+        tests += 1;
+        last = nonFelt();
+        // Every cell of the grid, so the right answer is certainly among them.
+        const box = answers.getBoundingClientRect();
+        for (let row = 0; row < 3; row++) {
+          for (let column = 0; column < 6; column++) {
+            answers.dispatchEvent(
+              new MouseEvent('click', {
+                bubbles: true,
+                clientX: box.left + (box.width / 6) * (column + 0.5),
+                clientY: box.top + (box.height / 3) * (row + 0.5),
+              }),
+            );
+          }
+        }
+        for (let wait = 0; wait < 50 && !wrap.hidden; wait++) await sleep(20);
+      }
+      return { tests, last };
+    });
+
+    expect(run.tests).toBeGreaterThan(5);
+    expect(run.last).toBe(0);
+  });
+
+  test('shows the last cards of a shoe before it is done', async ({ page }) => {
+    await open(page, {
+      'drills.count.decks': 1,
+      'drills.count.trayStyle': 'sixDeckFront',
+      'drills.count.cardsPerFlash': '3',
+      'drills.count.testEvery': 'never',
+      'drills.count.dealByHand': true,
+      'drills.count.alarmSeconds': 1799,
+    });
+    const screen = await launch(page, DRILLS.count);
+    const next = screen.getByRole('button', { name: 'Next' });
+    const cards = screen.getByRole('img', { name: 'Cards' });
+
+    // Seventeen flashes of three leave one card of the deck to come.
+    for (let flash = 0; flash < 17; flash++) await next.click();
+    const three = await nonFeltPixels(cards);
+    expect(three).toBeGreaterThan(0);
+
+    await next.click();
+    await expect(next).toBeVisible();
+    expect(await nonFeltPixels(cards)).toBeGreaterThan(three / 4);
+
+    // The shoe is only done once that card has been seen.
+    await next.click();
+    await expect(next).toBeHidden();
+  });
+
+  test('keeps the end warning readable over the cards @layout', async ({ page }) => {
+    await open(page, {
+      'drills.count.decks': 1,
+      'drills.count.trayStyle': 'sixDeckFront',
+      'drills.count.cardsPerFlash': '2',
+      'drills.count.testEvery': 'never',
+      'drills.count.endWarning': 'twoCardsLeft',
+      'drills.count.positions': 'vertical',
+      'drills.count.dealTenths': 1,
+      'drills.count.alarmSeconds': 1799,
+    });
+    const screen = await launch(page, DRILLS.count);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+
+    // The flashed cards cover the middle of the felt, where the warning goes.
+    await expect.poll(() => feltAtCentre(cards)).toBeLessThan(10);
+    // So the warning needs felt of its own to be read on.
+    await expect.poll(() => feltAtCentre(cards), { timeout: 7000 }).toBeGreaterThan(50);
+  });
+
+  test("Restart takes the last round's Done off the screen at once", async ({ page }) => {
+    await page.clock.install();
+    // Count Down & Halt over ten seconds, a card every three, and no tests of its own.
+    await open(page, {
+      'drills.count.decks': 1,
+      'drills.count.cardsPerFlash': '1',
+      'drills.count.testEvery': 'never',
+      'drills.count.accuracy': 0,
+      'drills.count.dealTenths': 30,
+      'drills.count.timerMode': 'countDownHalt',
+      'drills.count.alarmSeconds': 10,
+    });
+    const screen = await launch(page, DRILLS.count);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+    const grid = screen.getByRole('img', { name: 'Answer grid' });
+    // The last test, asked once the time is up.
+    await page.clock.runFor(12000);
+    await tapEveryCell(page, screen, grid);
+    await page.clock.runFor(2000);
+    await expect(screen.getByRole('button', { name: 'Pause' })).toBeDisabled();
+    expect(await feltAtCentre(cards)).toBeLessThan(100);
+    await screen.getByRole('button', { name: 'Restart' }).click();
+    await expect(countdownOf(screen)).toBeVisible();
+    await expect.poll(() => feltAtCentre(cards)).toBe(100);
+  });
 });
 
 test.describe('full table drill', () => {
-  test('asks for a wide screen while the device is upright', async ({ page }) => {
+  test('asks for a wide screen while the device is upright @layout', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     const screen = await launch(page, DRILLS.full);
@@ -739,6 +990,66 @@ test.describe('full table drill', () => {
     await page.setViewportSize({ width: 844, height: 390 });
     const screen = await launch(page, DRILLS.full);
     await expect(screen.getByRole('img', { name: 'Answer grid' })).toBeVisible();
+  });
+
+  test('resuming after a pause gives back only the time that was left', async ({ page }) => {
+    await page.clock.install();
+    await open(page, { 'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 40, 'drills.full.flashSpeed': 8 });
+    await page.setViewportSize({ width: 844, height: 390 });
+    const screen = await launch(page, DRILLS.full);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+    expect(await whitePixels(cards)).toBeGreaterThan(0);
+
+    // Pause with about two seconds of the flash left.
+    await page.clock.runFor(6000);
+    await screen.getByRole('button', { name: 'Pause' }).click();
+    expect(await whitePixels(cards)).toBe(0);
+    await screen.getByRole('button', { name: 'Continue' }).click();
+    await expect(countdownOf(screen)).toBeHidden({ timeout: 5000 });
+    expect(await whitePixels(cards)).toBeGreaterThan(0);
+    await page.clock.runFor(3500);
+    expect(await whitePixels(cards)).toBe(0);
+  });
+
+  test('nothing is dealt or timed while the turn-sideways cover is up @layout', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.clock.install();
+    await open(page, { 'drills.full.timerMode': 'auto', 'drills.full.testSeconds': 1, 'drills.full.flashSpeed': 1 });
+    const screen = await launch(page, DRILLS.full);
+    await expect(screen.getByRole('alert')).toBeVisible();
+    await page.clock.runFor(4000);
+    expect(await testsCount(screen)).toBe(0);
+
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(screen.getByRole('alert')).toBeHidden();
+    await expect(statsOf(screen)).toContainText('Tests: 1');
+  });
+
+  test('Two Counts asks two answers for one test, flashed once', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.clock.install();
+    await open(page, {
+      'drills.full.twoCounts': true,
+      'drills.full.drill': 'acesDealt',
+      'drills.full.timerMode': 'auto',
+      'drills.full.testSeconds': 40,
+      'drills.full.flashSpeed': 3,
+      'drills.full.accuracy': 0,
+    });
+    await page.setViewportSize({ width: 844, height: 390 });
+    const screen = await launch(page, DRILLS.full);
+    const cards = screen.getByRole('img', { name: 'Cards' });
+    const grid = screen.getByRole('img', { name: 'Answer grid' });
+    // Once the flash is over, a second test can only mean a second table.
+    await expect.poll(() => whitePixels(cards), { timeout: 8000 }).toBe(0);
+    // Both answers, so the right one of each is among the taps.
+    for (let i = 0; i < 72 && (await testsCount(screen)) === 1 && (await grid.isVisible()); i++) {
+      await tapCell(screen, { row: i % 3, column: Math.floor(i / 3) % 6, rows: 3, columns: 6 });
+      // Past the pause after a right answer, so the test has moved on if it was.
+      await page.clock.runFor(120);
+    }
+    expect(await testsCount(screen)).toBe(2);
+    expect(await whitePixels(cards)).toBeGreaterThan(0);
   });
 });
 

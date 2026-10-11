@@ -19,7 +19,7 @@ npm run serve            # build, then serve dist/ over HTTPS for phones (needs 
 npm run build            # production build into dist/ (bundles, hashed files, sw.js with the precache list)
 npm test                 # Vitest: unit tests (node) and component tests (jsdom, Testing Library)
 npm run test:coverage    # the same with V8 coverage and its thresholds (CI runs this)
-npm run test:e2e         # Playwright on iPhone 15 Pro and iPad (A16), portrait and landscape, WebKit
+npm run test:e2e         # Playwright, WebKit: every test on iPhone 15 Pro; @layout tests also on iPhone landscape and iPad (A16) both ways
 npm run lint             # ESLint
 npm run typecheck        # tsc for the app, service worker, tools and tests
 npm run format           # Prettier (CI runs format:check)
@@ -31,6 +31,7 @@ npm run logo             # redraw the CJ icon (SVG + PNGs) and the in-app wordma
 Run a single test: `npx vitest run tests/unit/game/engine.test.ts` or
 `npx playwright test tests/e2e/drills.spec.ts -g "name" --project=iphone`
 (projects: `iphone`, `iphone-landscape`, `ipad`, `ipad-landscape`, and `build` for the offline tests).
+Tag a test `@layout` (in its title) when its outcome depends on the screen's size or orientation; only those run on the other devices.
 
 ## Layout
 

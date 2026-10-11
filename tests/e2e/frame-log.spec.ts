@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 import { seedRandom } from './support/app';
 import { betGrid, betOverlay, playButton, startGame } from './support/table';
 
-test('records each frame the table draws, when a test asks it to', async ({ page }) => {
+test('records each frame the table draws, when a test asks it to @layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   // The same cards every run, so the round always reaches the player's turn.
   await seedRandom(page, 7);

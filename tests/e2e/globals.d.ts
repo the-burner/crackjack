@@ -15,9 +15,7 @@ declare global {
     __cjPlays: SoundPlayed[];
     __cjAudio: AudioStarted[];
     __cjLog: TableLogEntry[];
-    __cjDeals: number[];
     __cjOverlay: { t: number; visible: boolean }[];
-    __cjChip: { t: number; text: string | null; bank: string | null }[];
     __cjStack: number[];
     __cjRolls: Record<string, number>;
     __cjResults: { text: string | null; t: number }[];
