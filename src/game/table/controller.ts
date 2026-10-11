@@ -27,7 +27,8 @@ import { chipText } from './labels';
 import { createSideBetPicker, sideBetLabel } from './side-bet-picker';
 import { createAnimator, planSteps, pauseForSpeed, RESULT_TONES } from './animator';
 import type { Step } from './animator';
-import { betCells } from './bet-grid';
+import { betCells, moveHighlight, overlayButtons, overlaySlots } from './bet-grid';
+import type { OverlayButtonName } from './bet-grid';
 import type { BetCell } from './bet-grid';
 import { attachGestures } from './gestures';
 import { gestureMapFor } from '@/settings/gesture-configs';
@@ -142,6 +143,7 @@ export function createTableController(app: App, options: TableOptions) {
     answerInsurance: (...args: Parameters<TableSession['answerInsurance']>) => live().answerInsurance(...args),
     placeBet: (...args: Parameters<TableSession['placeBet']>) => live().placeBet(...args),
     chooseSideBet: () => live().chooseSideBet(),
+    wong: () => live().wongRound(),
     shuffleNow: () => live().shuffleNow(),
     resetBank: () => live().resetBank(),
     claimDealerError: () => live().claimDealerError(),
@@ -203,7 +205,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   };
   const overlay = {
     visible: false,
-    source: { ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') } as BetSource,
+    source: betSource(),
     cells: [] as BetCell[],
     /** The highlighted bet, which the gestures move and place. */
     selected: 0,
@@ -378,7 +380,8 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
 
   /** Queues the events an engine call produced. */
   function queue(events: GameEvent[]) {
-    if (session.state === STATE.settled) events = injectDealerError(events);
+    // A round sat out has none of the player's money for the dealer to get wrong.
+    if (session.state === STATE.settled && !session.satOut) events = injectDealerError(events);
     animator.play(planSteps(events, { pauses: pauses(), isComputer, swept, sweepNaturals: !upcardUnchecked() }));
     // A betting mistake shows while the cards are being dealt.
     showWarnings();
@@ -504,25 +507,54 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     emit();
   }
 
+  /** The bets the overlay offers, from the settings as they are now. */
+  function betSource(): BetSource {
+    return {
+      ramp: settings.get('betting.ramp'),
+      chipValue: settings.get('betting.chipValue'),
+    };
+  }
+
   function setBetSource(source: BetSource) {
     overlay.source = source;
     overlay.cells = betCells(source);
-    overlay.selected = Math.min(overlay.selected, Math.max(0, overlay.cells.length - 1));
+    const options = overlay.cells.length + overlayButtons(overlay.foul).length;
+    overlay.selected = Math.min(overlay.selected, Math.max(0, options - 1));
   }
 
-  /** Betting: Stand's and Split's gestures move the highlight left and right, Surrender's places the bet. */
+  /** Betting: the plays' gestures move the highlight over the bets and buttons (BET_DIRECTIONS); Surrender's picks it. */
   function betBySwipe(action: GestureAction) {
-    const count = overlay.cells.length;
+    const buttons = overlayButtons(overlay.foul);
+    const count = overlay.cells.length + buttons.length;
     if (count === 0) return;
-    if (action === 'stand' || action === 'split') {
-      overlay.selected = (overlay.selected + (action === 'split' ? 1 : -1) + count) % count;
-      emit();
-    } else if (action === 'surrender') placeBet(overlay.cells[overlay.selected]);
+    if (action === 'surrender') {
+      const { selected } = overlay;
+      if (selected < overlay.cells.length) placeBet(overlay.cells[selected]);
+      else void pressButton(buttons[selected - overlay.cells.length]);
+      return;
+    }
+    const direction = BET_DIRECTIONS[action];
+    if (!direction) return;
+    overlay.selected = moveHighlight(overlay.selected, overlaySlots(overlay.cells.length, buttons.length), direction);
+    emit();
+  }
+
+  /** What a betting panel button does when a gesture presses it. */
+  function pressButton(name: OverlayButtonName) {
+    const press: Record<OverlayButtonName, () => unknown> = {
+      wong: wongRound,
+      resetBank,
+      shuffle: shuffleNow,
+      sideBet: chooseSideBet,
+      customize: nav.customize,
+      foul: claimDealerError,
+    };
+    return press[name]();
   }
 
   function beginBetting() {
     stopInsuranceTimer();
-    setBetSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
+    setBetSource(betSource());
     const change = session.bankroll - bankBeforeBet;
     // The last bet, or the lowest before there is one.
     overlay.selected = Math.max(
@@ -566,6 +598,21 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     state.setBankroll(bankBeforeBet - (amount + sideBetTotal) * seats.length);
     setSideBet('');
     queue(session.startRound({ betPerHand: amount, hands, sideBets }));
+  }
+
+  /** Sits the round out, unless the player would be alone at the table. */
+  function wongRound() {
+    if (!overlay.visible) return;
+    if (session.soloNextRound()) {
+      showError('In solo play you must play every hand.');
+      return;
+    }
+    reportMissedError();
+    bankBeforeBet = session.bankroll;
+    overlay.visible = false;
+    swept.clear();
+    state.setBets([]);
+    queue(session.wong());
   }
 
   function chooseSideBet() {
@@ -712,6 +759,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     play,
     answerInsurance,
     placeBet,
+    wongRound,
     chooseSideBet,
     shuffleNow,
     resetBank,
@@ -733,7 +781,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
       relayout();
       // Customize may have changed the ramp or the chip value behind the overlay.
       if (overlay.visible) {
-        setBetSource({ ramp: settings.get('betting.ramp'), chipValue: settings.get('betting.chipValue') });
+        setBetSource(betSource());
         emit();
       } else if (!animator.busy) armTimers();
     },
@@ -785,6 +833,14 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     },
   };
 }
+
+/** The way each play's gesture moves the bet highlight. */
+const BET_DIRECTIONS: Partial<Record<GestureAction, Parameters<typeof moveHighlight>[2]>> = {
+  stand: 'left',
+  split: 'right',
+  double: 'up',
+  hit: 'down',
+};
 
 /** Where the tiles come from: a betting.ramp value and the chip value. */
 interface BetSource {

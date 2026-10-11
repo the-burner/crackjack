@@ -1,11 +1,13 @@
 // The betting overlay shown between rounds: a panel over the felt with one
-// button per bet the player's ramp allows, and the buttons for side bets, the
-// bet editor, shuffling, the bankroll, a Foul claim and the last strategy error.
+// button per bet the player's ramp allows, and the buttons for sitting out (Wong),
+// the bankroll, shuffling, side bets, the bet editor and a Foul claim.
 // One gap separates every button, row and column.
 
 import { Button } from '@/components/ui/button';
 import type { IconName } from '@/components/ui/icon';
-import type { BetCell } from './bet-grid';
+import { cn } from '@/lib/utils';
+import { overlayButtons } from './bet-grid';
+import type { BetCell, OverlayButtonName } from './bet-grid';
 import type { BetOverlayView } from './controller';
 
 export interface BetOverlayHandlers {
@@ -15,35 +17,25 @@ export interface BetOverlayHandlers {
   onShuffle: () => void;
   onResetBank: () => void;
   onFoul: () => void;
-  onLastError: () => void;
+  onWong: () => void;
 }
 
-function OverlayButton({
-  label,
-  icon,
-  action,
-  onClick,
-  hidden,
-}: {
-  label: string;
-  icon: IconName;
-  action: string;
-  onClick: () => void;
-  hidden?: boolean;
-}) {
-  return (
-    <Button
-      icon={icon}
-      // Three a row; a shorter last row is centred.
-      className="min-h-10 flex-[0_0_calc((100%-8px)/3)] py-1 pr-[26px] pl-1.5 text-caption [&>[data-slot=icon]]:right-2 [&>[data-slot=icon]]:size-3.5"
-      onClick={onClick}
-      hidden={hidden}
-      data-action={action}
-    >
-      {label}
-    </Button>
-  );
-}
+/** Each button's label, icon and handler. */
+const BUTTONS: Record<
+  OverlayButtonName,
+  { label: string; icon: IconName; handler: Exclude<keyof BetOverlayHandlers, 'onBet'> }
+> = {
+  wong: { label: 'Wong', icon: 'forward', handler: 'onWong' },
+  resetBank: { label: 'Reset Bank', icon: 'refresh', handler: 'onResetBank' },
+  shuffle: { label: 'Shuffle', icon: 'arrow-r', handler: 'onShuffle' },
+  sideBet: { label: 'Side Bet', icon: 'plus', handler: 'onSideBet' },
+  customize: { label: 'Customize', icon: 'grid', handler: 'onCustomize' },
+  foul: { label: 'Foul', icon: 'minus', handler: 'onFoul' },
+};
+
+/** The highlight a gesture moves, on a bet or a button. */
+const HIGHLIGHT =
+  'data-on:bg-(--check-on) data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90';
 
 export function BetOverlay({
   view: { visible, title, cells, selected, foul },
@@ -62,9 +54,12 @@ export function BetOverlay({
           <Button
             key={i}
             aria-label={`Bet ${cell.label}`}
-            // The highlighted bet: the last one placed, until a swipe moves it.
+            // The highlight: on the last bet placed, until a swipe moves it.
             data-on={i === selected || undefined}
-            className="h-[clamp(38px,14cqw,62px)] min-h-0 px-0 py-0 text-body tabular-nums min-[460px]:text-[20px] data-on:bg-(--check-on) data-on:text-(--check-on-text) data-on:engaged:bg-(--check-on) data-on:engaged:brightness-90"
+            className={cn(
+              'h-[clamp(38px,14cqw,62px)] min-h-0 px-0 py-0 text-body tabular-nums min-[460px]:text-[20px]',
+              HIGHLIGHT,
+            )}
             onClick={() => handlers.onBet(cell)}
           >
             {cell.label}
@@ -72,12 +67,25 @@ export function BetOverlay({
         ))}
       </div>
       <div className="flex flex-wrap justify-center gap-1">
-        <OverlayButton label="Side Bet" icon="plus" action="side-bet" onClick={handlers.onSideBet} />
-        <OverlayButton label="Reset Bank" icon="refresh" action="reset-bank" onClick={handlers.onResetBank} />
-        <OverlayButton label="Shuffle" icon="arrow-r" action="shuffle" onClick={handlers.onShuffle} />
-        <OverlayButton label="Customize" icon="grid" action="customize" onClick={handlers.onCustomize} />
-        <OverlayButton label="Last Error" icon="info" action="last-error" onClick={handlers.onLastError} />
-        <OverlayButton label="Foul" icon="minus" action="foul" onClick={handlers.onFoul} hidden={!foul} />
+        {overlayButtons(foul).map((name, i) => {
+          const { label, icon, handler } = BUTTONS[name];
+          return (
+            <Button
+              key={name}
+              icon={icon}
+              data-on={cells.length + i === selected || undefined}
+              // Three a row; a shorter last row is centred.
+              className={cn(
+                'min-h-10 flex-[0_0_calc((100%-8px)/3)] py-1 pr-[26px] pl-1.5 text-caption [&>[data-slot=icon]]:right-2 [&>[data-slot=icon]]:size-3.5',
+                HIGHLIGHT,
+              )}
+              onClick={() => handlers[handler]()}
+              data-action={name}
+            >
+              {label}
+            </Button>
+          );
+        })}
       </div>
     </section>
   );

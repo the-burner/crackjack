@@ -102,12 +102,15 @@ test('the TC Calcs rows sit in one inset group', async ({ page }) => {
 test('the Allowed Bets rows sit in one inset group', async ({ page }) => {
   await openHub(page);
   const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
+  // The bet rows, then Wonging's own group below the table.
   const groups = el.locator('[data-slot="settings-group"]');
-  await expect(groups).toHaveCount(1);
-  await expect(groups.getByRole('switch', { name: 'Warning on Betting Error' })).toBeVisible();
-  await expect(groups.getByRole('combobox', { name: 'Chip Value' })).toBeVisible();
-  await expect(groups.getByRole('button', { name: /^Number of bets: / })).toBeVisible();
-  await expect(groups.getByRole('button', { name: /^Minimum bet count: / })).toBeVisible();
+  await expect(groups).toHaveCount(2);
+  const rows = groups.first();
+  await expect(rows.getByRole('switch', { name: 'Warning on Betting Error' })).toBeVisible();
+  await expect(rows.getByRole('combobox', { name: 'Chip Value' })).toBeVisible();
+  await expect(rows.getByRole('button', { name: /^Number of bets: / })).toBeVisible();
+  await expect(rows.getByRole('button', { name: /^Minimum bet count: / })).toBeVisible();
+  await expect(groups.last().getByRole('switch', { name: 'Wonging' })).toBeVisible();
 });
 
 test('Allowed Bets saves the bet ramp it brought back into range', async ({ page }) => {

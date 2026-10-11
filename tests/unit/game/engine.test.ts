@@ -384,11 +384,11 @@ describe('surrender before the insurance answer', () => {
     expect(game.availableActions()).toEqual({ surrender: false });
   });
 
-  it('offers no surrender when only computer seats are in play', () => {
+  it('offers no surrender, nor insurance, when only computer seats are in play', () => {
     const game = riggedGame([card(10), card(1), card(7), card(10)], { table: { seatCount: 2, computerSeats: [2] } });
     game.startRound([]);
-    expect(game.state).toBe(STATE.insurance);
-    expect(game.availableActions()).toEqual({ surrender: false });
+    // No one to ask: the round plays itself out.
+    expect(game.state).toBe(STATE.settled);
   });
 });
 
@@ -614,5 +614,31 @@ describe('GameSession', () => {
     expect(session.counts.runningCount).not.toBeNaN();
     expect(app.bankroll.getState().value).toBe(session.bankroll);
     expect(session.stats.rounds).toBe(1);
+  });
+});
+
+describe('a round the player sits out', () => {
+  const computersOnly = (cards: CardId[], table: Partial<TableConfig> = {}) =>
+    riggedGame(cards, { table: { seatCount: 2, computerSeats: [2], ...table } });
+
+  it('plays the computer seats out to the payoff with no human hand', () => {
+    const game = computersOnly([card(10), card(5), card(9), card(6), card(10), card(10)]);
+    game.startRound([]);
+    expect(game.state).toBe(STATE.settled);
+    expect(game.humanHands()).toEqual([]);
+  });
+
+  it('offers no insurance, which no one at the table could take', () => {
+    // Computer 10, 9 against an ace up.
+    const game = computersOnly([card(10), card(1), card(9), card(6), card(10)]);
+    game.startRound([]);
+    expect(game.state).toBe(STATE.settled);
+  });
+
+  it('tells, before the bet, which computer seats the next round has', () => {
+    const game = computersOnly([], { seatCount: 4, computerSeats: [2, 3, 4], playersComeAndGo: true });
+    const upcoming = game.upcomingComputerSeats();
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(game.hands.filter(hand => hand.seat !== 1).map(hand => hand.seat)).toEqual(upcoming);
   });
 });

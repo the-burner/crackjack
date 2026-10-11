@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Grid } from '@/components/ui/grid';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
 import { Note } from '@/components/ui/text';
 import { Tile } from '@/components/ui/tile';
 import { ValueButton } from '@/components/ui/value-button';
@@ -126,8 +126,59 @@ export function Betting() {
             </tbody>
           </Grid>
         </div>
+        <Wonging />
       </Column>
     </ScreenLayout>
+  );
+}
+
+/** Sitting out the rounds between the Wong Out and Wong In counts. */
+function Wonging() {
+  const settings = useSettings();
+  const on = settings.get('betting.wonging');
+  const wongIn = settings.get('betting.wongIn');
+  const wongOut = settings.get('betting.wongOut');
+  return (
+    <Section title="Wonging">
+      <SettingsGroup>
+        <CheckList
+          items={[{ label: 'Wonging', checked: on, onChange: value => settings.set('betting.wonging', value) }]}
+        />
+        {on && (
+          <>
+            <SettingsRow label="Wong in">
+              <ValueButton
+                label="Wong in"
+                value={wongIn}
+                onChange={value => settings.set('betting.wongIn', value)}
+                prompt="Count to start playing at"
+                min={wongOut + 1}
+                max={99}
+              />
+            </SettingsRow>
+            <SettingsRow label="Wong out">
+              <ValueButton
+                label="Wong out"
+                value={wongOut}
+                onChange={value => settings.set('betting.wongOut', value)}
+                prompt="Count to sit out at"
+                min={-99}
+                max={wongIn - 1}
+              />
+            </SettingsRow>
+            <CheckList
+              items={[
+                {
+                  label: 'Begin shoe wonged out',
+                  checked: settings.get('betting.wongStartOut'),
+                  onChange: value => settings.set('betting.wongStartOut', value),
+                },
+              ]}
+            />
+          </>
+        )}
+      </SettingsGroup>
+    </Section>
   );
 }
 

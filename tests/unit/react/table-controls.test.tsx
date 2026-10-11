@@ -77,7 +77,7 @@ describe('the betting overlay', () => {
     onShuffle: vi.fn(),
     onResetBank: vi.fn(),
     onFoul: vi.fn(),
-    onLastError: vi.fn(),
+    onWong: vi.fn(),
   });
   const cells = [
     { chips: 1, hands: 1, amount: 5, label: '5' },
@@ -101,6 +101,23 @@ describe('the betting overlay', () => {
     expect(on.onFoul).toHaveBeenCalled();
   });
 
+  it('puts Wong, Reset Bank and Shuffle on the first row, then Side Bet and Customize; no Last Error', async () => {
+    const user = userEvent.setup();
+    const on = handlers();
+    render(<BetOverlay view={view} {...on} />);
+    const bets = within(screen.getByRole('group', { name: 'Bet amounts' })).getAllByRole('button');
+    const others = screen.getAllByRole('button').filter(button => !bets.includes(button));
+    expect(others.map(button => button.textContent)).toEqual([
+      'Wong',
+      'Reset Bank',
+      'Shuffle',
+      'Side Bet',
+      'Customize',
+    ]);
+    await user.click(screen.getByRole('button', { name: 'Wong' }));
+    expect(on.onWong).toHaveBeenCalled();
+  });
+
   it('highlights the selected bet, and still takes taps on any bet', async () => {
     const user = userEvent.setup();
     const on = handlers();
@@ -109,6 +126,12 @@ describe('the betting overlay', () => {
     expect(screen.getByRole('button', { name: 'Bet 5' })).not.toHaveAttribute('data-on');
     await user.click(screen.getByRole('button', { name: 'Bet 5' }));
     expect(on.onBet).toHaveBeenCalledWith(cells[0]);
+  });
+
+  it('highlights a button when a gesture has moved there', () => {
+    render(<BetOverlay view={{ ...view, selected: cells.length }} {...handlers()} />);
+    expect(screen.getByRole('button', { name: 'Wong' })).toHaveAttribute('data-on');
+    expect(screen.getByRole('button', { name: 'Bet 5' })).not.toHaveAttribute('data-on');
   });
 
   it('is hidden between bets', () => {

@@ -480,3 +480,67 @@ describe('the advanced count', () => {
     expect(advanced.exactTrueCount).toBeCloseTo(session.counts.runningCount / (309 / 52));
   });
 });
+
+describe('wonging', () => {
+  const WITH_COMPUTER: SettingsPatch = {
+    'table.seatCount': 2,
+    'table.computerSeats': [false, true, false, false, false, false],
+    'betting.wonging': true,
+  };
+  /** A session at true count `count`, before its first bet. */
+  const at = (count: number, settings: SettingsPatch = WITH_COMPUTER) => {
+    const session = new GameSession(makeApp(settings));
+    session.counter.trueCount = count;
+    return session;
+  };
+  const minimumBet = (session: GameSession) => session.suggestedBet().betPerHand;
+
+  it('sits out a round: graded as a bet, but not played', () => {
+    const session = at(-3);
+    session.wong();
+    expect(session.takeWarnings()).toEqual([]);
+    expect(session.stats).toMatchObject({ rounds: 0, totalBet: 0, betDecisions: 1, betErrors: 0, bankrollSum: 0 });
+    expect(session.game.humanHands()).toEqual([]);
+  });
+
+  it('faults a Wong while the count says play', () => {
+    const session = at(0);
+    session.wong();
+    expect(session.takeWarnings()).toEqual(['That should have been a bet, not a Wong']);
+    expect(session.stats).toMatchObject({ betDecisions: 1, betErrors: 1 });
+  });
+
+  it('faults a bet once the count has fallen to Wong Out, until it is back at Wong In', () => {
+    const session = at(-2);
+    session.startRound({ betPerHand: minimumBet(session) });
+    expect(session.takeWarnings()).toEqual(['That should have been a Wong']);
+    expect(session.stats).toMatchObject({ rounds: 1, betDecisions: 1, betErrors: 1 });
+  });
+
+  it('stays out between the two counts, and comes back in at Wong In', () => {
+    const session = at(-2);
+    session.wong();
+    session.counter.trueCount = 0;
+    expect(session.shouldWong()).toBe(true);
+    session.counter.trueCount = 1;
+    expect(session.shouldWong()).toBe(false);
+  });
+
+  it('begins a shoe wonged out when told to, while Wong In is above 0', () => {
+    const session = at(0, { ...WITH_COMPUTER, 'betting.wongStartOut': true });
+    expect(session.shouldWong()).toBe(true);
+  });
+
+  it('asks nothing of a solo player, who must play every hand', () => {
+    const session = at(-3, { 'betting.wonging': true });
+    expect(session.soloNextRound()).toBe(true);
+    session.startRound({ betPerHand: minimumBet(session) });
+    expect(session.takeWarnings()).toEqual([]);
+  });
+
+  it('asks nothing when wonging is off', () => {
+    const session = at(-3, { ...WITH_COMPUTER, 'betting.wonging': false });
+    session.startRound({ betPerHand: minimumBet(session) });
+    expect(session.takeWarnings()).toEqual([]);
+  });
+});

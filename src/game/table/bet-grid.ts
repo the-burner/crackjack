@@ -37,3 +37,63 @@ export function betLabel(amount: number, hands = 1): string {
   const text = amount > 999 ? `${amount / 1000}K` : String(amount);
   return hands > 1 ? `${hands}x${text}` : text;
 }
+
+/** Where an option of the betting panel sits: its row, and the grid columns it spans. */
+export interface Slot {
+  row: number;
+  start: number;
+  width: number;
+}
+
+/** The buttons under the bets, in the panel's order; Foul only when a dealer error can be claimed. */
+export const OVERLAY_BUTTONS = ['wong', 'resetBank', 'shuffle', 'sideBet', 'customize', 'foul'] as const;
+export type OverlayButtonName = (typeof OVERLAY_BUTTONS)[number];
+export const overlayButtons = (foul: boolean): OverlayButtonName[] =>
+  OVERLAY_BUTTONS.filter(name => name !== 'foul' || foul);
+
+/** Buttons a row below the bets, each two bet columns wide. */
+const BUTTONS_PER_ROW = 3;
+
+/** The panel's options in order, bets then buttons, laid out as the panel shows them. */
+export function overlaySlots(bets: number, buttons: number): Slot[] {
+  const slots: Slot[] = Array.from({ length: bets }, (_, i) => ({
+    row: Math.floor(i / COLUMNS),
+    start: i % COLUMNS,
+    width: 1,
+  }));
+  const firstRow = Math.ceil(bets / COLUMNS);
+  const width = COLUMNS / BUTTONS_PER_ROW;
+  for (let i = 0; i < buttons; i++) {
+    const inRow = Math.min(BUTTONS_PER_ROW, buttons - (i - (i % BUTTONS_PER_ROW)));
+    // A short row is centred.
+    const offset = (COLUMNS - inRow * width) / 2;
+    slots.push({
+      row: firstRow + Math.floor(i / BUTTONS_PER_ROW),
+      start: offset + (i % BUTTONS_PER_ROW) * width,
+      width,
+    });
+  }
+  return slots;
+}
+
+/** The option the highlight moves to from `selected`: along the order, or to the nearest one a row up or down. */
+export function moveHighlight(
+  selected: number,
+  slots: readonly Slot[],
+  direction: 'left' | 'right' | 'up' | 'down',
+): number {
+  const count = slots.length;
+  if (direction === 'left' || direction === 'right')
+    return (selected + (direction === 'right' ? 1 : -1) + count) % count;
+  const rows = slots[count - 1].row + 1;
+  const from = slots[selected];
+  const row = (from.row + (direction === 'down' ? 1 : -1) + rows) % rows;
+  const centre = (slot: Slot) => slot.start + slot.width / 2;
+  let best = selected;
+  slots.forEach((slot, i) => {
+    if (slot.row !== row || row === from.row) return;
+    if (best === selected || Math.abs(centre(slot) - centre(from)) < Math.abs(centre(slots[best]) - centre(from)))
+      best = i;
+  });
+  return best;
+}

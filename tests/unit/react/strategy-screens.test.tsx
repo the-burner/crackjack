@@ -40,6 +40,21 @@ describe('Allowed Bets', () => {
     expect(screen.getByRole('button', { name: 'Minimum bet count: 0', hidden: true })).not.toBeVisible();
   });
 
+  it('shows the wonging settings below the bets once wonging is switched on', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Betting />);
+    expect(screen.queryByRole('button', { name: 'Wong in: 1' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('switch', { name: 'Wonging' }));
+    expect(app.settings.get('betting.wonging')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Wong in: 1' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Wong out: -2' })).toBeVisible();
+    await user.click(screen.getByRole('switch', { name: 'Begin shoe wonged out' }));
+    expect(app.settings.get('betting.wongStartOut')).toBe(true);
+    await user.click(screen.getByRole('button', { name: 'Wong out: -2' }));
+    await answer(user, '-4');
+    expect(app.settings.get('betting.wongOut')).toBe(-4);
+  });
+
   it('follows ramp changes and opens the picker for a row', async () => {
     const user = userEvent.setup();
     const { app, location } = renderScreen(<Betting />, { path: '/settings/betting' });

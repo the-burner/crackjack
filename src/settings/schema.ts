@@ -137,6 +137,12 @@ export const SETTINGS_SCHEMA = {
   'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
   'betting.ramp': json<Ramp>({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }, isRamp),
+  /** Wonging: sit out from the Wong Out count until the count is back to Wong In. */
+  'betting.wonging': bool(false),
+  'betting.wongIn': int(1, -99, 99),
+  'betting.wongOut': int(-2, -99, 99),
+  /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
+  'betting.wongStartOut': bool(false),
 
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': oneOf(

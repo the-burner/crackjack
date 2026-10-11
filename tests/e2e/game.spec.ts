@@ -208,7 +208,7 @@ test.describe('the table', () => {
 
   test('offers the betting overlay buttons, and Foul only when the dealer makes mistakes', async ({ page }) => {
     await openTable(page);
-    for (const name of ['Side Bet', 'Reset Bank', 'Shuffle', 'Customize', 'Last Error']) {
+    for (const name of ['Wong', 'Reset Bank', 'Shuffle', 'Side Bet', 'Customize']) {
       await expect(overlayButton(page, name)).toBeVisible();
     }
     await expect(overlayButton(page, 'Foul')).toBeHidden();
@@ -348,14 +348,15 @@ test.describe('the table', () => {
       await page.mouse.move(centre.x + dx, centre.y, { steps: 4 });
       await page.mouse.up();
     };
-    // The lowest bet to begin with; left from it wraps round to the highest.
+    // The lowest bet to begin with; left from it wraps round to the last button.
     await expect(selected()).toHaveText((await tiles.first().textContent())!);
     // Highlighted in the accent.
     expect(await selected().evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(
       await tiles.nth(1).evaluate(el => getComputedStyle(el).backgroundColor),
     );
     await swipe(-120);
-    await expect(selected()).toHaveText((await tiles.last().textContent())!);
+    await expect(selected()).toHaveCount(0);
+    await expect(overlayButton(page, 'Customize')).toHaveAttribute('data-on');
     for (let i = 0; i < 3; i++) await swipe(120);
     const third = (await tiles.nth(2).textContent())!;
     await expect(selected()).toHaveText(third);
@@ -377,15 +378,15 @@ test.describe('the table', () => {
     const swapped = { down: 'hit', left: 'split', up: 'double', right: 'stand', doubleTap: 'surrender' };
     await openTable(page, { settings: { 'gestures.portrait': swapped, 'gestures.landscape': swapped } });
     await expect(overlay(page)).toBeVisible();
-    const tiles = grid(page).getByRole('button');
     const box = (await felt(page).boundingBox())!;
     const centre = { x: box.x + box.width / 2, y: box.y + box.height * 0.3 };
     await page.mouse.move(centre.x, centre.y);
     await page.mouse.down();
     await page.mouse.move(centre.x + 120, centre.y, { steps: 4 });
     await page.mouse.up();
-    // From the lowest bet, left wraps round to the highest.
-    await expect(grid(page).locator('[data-on]')).toHaveText((await tiles.last().textContent())!);
+    // From the lowest bet, left wraps round to the last button.
+    await expect(grid(page).locator('[data-on]')).toHaveCount(0);
+    await expect(overlayButton(page, 'Customize')).toHaveAttribute('data-on');
   });
 
   test('places a side bet and pays it when it wins', async ({ page }) => {
@@ -414,5 +415,31 @@ test.describe('the table', () => {
     await grid(page).click({ position: { x: 25, y: 25 } });
     await expect(overlay(page)).toBeVisible();
     await expect(betTitle(page)).toContainText('cannot be greater than 1 times the main bet');
+  });
+});
+
+test.describe('wonging', () => {
+  const wongButton = (page: Page) => overlayButton(page, 'Wong');
+
+  test('sits a round out: the computer seats play it and the bankroll is untouched', async ({ page }) => {
+    await openTable(page, { settings: { 'betting.wonging': true } });
+    const before = await bankroll(page).textContent();
+    await wongButton(page).click();
+    await expect(overlay(page)).toBeHidden();
+    await expect(overlay(page)).toBeVisible({ timeout: 20000 });
+    await expect(bankroll(page)).toHaveText(before ?? '');
+  });
+
+  test('is refused with an error at a table with no one else', async ({ page }) => {
+    await openTable(page, {
+      settings: {
+        'betting.wonging': true,
+        'table.seatCount': 1,
+        'table.computerSeats': [false, false, false, false, false, false],
+      },
+    });
+    await wongButton(page).click();
+    await expect(tableToast(page, 'error')).toHaveText('In solo play you must play every hand.');
+    await expect(overlay(page)).toBeVisible();
   });
 });

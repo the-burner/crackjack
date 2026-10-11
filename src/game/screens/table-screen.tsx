@@ -89,7 +89,7 @@ export function TableScreen() {
               onShuffle={table.shuffleNow}
               onResetBank={table.resetBank}
               onFoul={table.claimDealerError}
-              onLastError={table.openLastError}
+              onWong={table.wong}
             />
           </>
         )}

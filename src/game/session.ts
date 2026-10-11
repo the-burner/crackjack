@@ -16,6 +16,7 @@ import type { Services } from '@/app/app';
 import type { AppSettings } from '@/settings/schema';
 import type { SideBetGame } from '@/settings/side-bet-games';
 import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check';
+import { shoeStartsIn, wongedIn } from './wonging';
 import type { ExpectedBet, PlayCheck, PlayCounts, PlayQuestion } from './play-check';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
 import { decodeSideBetGame } from '@/settings/side-bet-games';
@@ -64,6 +65,10 @@ export class GameSession {
   strategy: Strategy;
   sideBetGame: SideBetGame | null;
   counter: Counter;
+  /** Whether the wong counts have the player in this shoe; null until its first bet. */
+  wongPlaying: boolean | null = null;
+  /** The round in play is one the player sat out. */
+  satOut = false;
   stats: GameStats;
   warnings: string[];
   lastError: PlayError | null;
@@ -106,7 +111,11 @@ export class GameSession {
       trueCount: () => this.counter.trueCount,
       beforeDealerDraw: dealer => this.beforeDealerDraw?.(dealer) ?? true,
       onGoodHandBusted: hand => this.onGoodHandBusted?.(hand) ?? false,
-      onShuffle: () => this.counter.reset(this.table.decks),
+      onShuffle: () => {
+        this.counter.reset(this.table.decks);
+        // A new shoe begins wonged in or out afresh.
+        this.wongPlaying = null;
+      },
     });
   }
 
@@ -191,7 +200,7 @@ export class GameSession {
     return expectedBet({
       ramp: this.settings.get('betting.ramp'),
       chipValue: this.settings.get('betting.chipValue'),
-      count: this.settings.get('trueCount.aceSideCount') ? this.counter.betCount : this.counter.trueCount,
+      count: this.betCount(),
     });
   }
 
@@ -207,7 +216,12 @@ export class GameSession {
   }): GameEvent[] {
     this.warnings = [];
     const humanSeats = this.humanSeats().slice(0, hands);
-    if (this.settings.get('betting.warnOnError')) this.checkBetting(betPerHand, humanSeats.length);
+    const verdict = this.wongVerdict(false);
+    if (this.settings.get('betting.warnOnError')) {
+      if (verdict === null) this.checkBetting(betPerHand, humanSeats.length);
+      else this.recordBetDecision(verdict);
+    }
+    this.satOut = false;
 
     // Bet stats are round totals, not per hand.
     const roundBet = betPerHand * humanSeats.length;
@@ -222,6 +236,63 @@ export class GameSession {
     return events;
   }
 
+  /** Sits out a round: the computer seats play it while the player counts. */
+  wong(): GameEvent[] {
+    this.warnings = [];
+    const verdict = this.wongVerdict(true);
+    if (this.settings.get('betting.warnOnError') && verdict !== null) this.recordBetDecision(verdict);
+    // Graded as a bet, but not a round played.
+    this.satOut = true;
+    this.settledRound = null;
+    const events = this.game.startRound([]);
+    this.afterEngineStep();
+    return events;
+  }
+
+  /** Whether the wong counts say to sit out the next round. */
+  shouldWong(): boolean {
+    return !this.nextWongPlaying();
+  }
+
+  /** Whether the player would be alone at the table next round, and so must play it. */
+  soloNextRound(): boolean {
+    return this.game.upcomingComputerSeats().every(seat => seat > this.table.seatCount);
+  }
+
+  /** The wong state the count now moves the shoe to. */
+  nextWongPlaying(): boolean {
+    const rule = { wongIn: this.settings.get('betting.wongIn'), wongOut: this.settings.get('betting.wongOut') };
+    const was = this.wongPlaying ?? shoeStartsIn(rule, this.settings.get('betting.wongStartOut'));
+    return wongedIn(was, this.betCount(), rule);
+  }
+
+  /**
+   * Moves the shoe's wong state on and judges sitting out, or not, against it:
+   * a message when wrong, '' when right, null when the bet itself is to be judged.
+   */
+  wongVerdict(wonged: boolean): string | null {
+    if (!this.settings.get('betting.wonging')) return null;
+    const playing = this.nextWongPlaying();
+    this.wongPlaying = playing;
+    if (wonged) return playing ? 'That should have been a bet, not a Wong' : '';
+    // Alone at the table every hand is played, so only the bet is judged.
+    if (!playing && !this.soloNextRound()) return 'That should have been a Wong';
+    return null;
+  }
+
+  /** Counts a bet decision, warning when it was wrong. */
+  recordBetDecision(message: string): void {
+    this.stats.betDecisions += 1;
+    if (!message) return;
+    this.stats.betErrors += 1;
+    this.warn(message);
+  }
+
+  /** The count bets are judged by. */
+  betCount(): number {
+    return this.settings.get('trueCount.aceSideCount') ? this.counter.betCount : this.counter.trueCount;
+  }
+
   humanSeats(): number[] {
     const seats: number[] = [];
     for (let seat = 1; seat <= this.table.seatCount; seat++)
@@ -233,7 +304,7 @@ export class GameSession {
     const check = checkBet({
       ramp: this.settings.get('betting.ramp'),
       chipValue: this.settings.get('betting.chipValue'),
-      count: this.settings.get('trueCount.aceSideCount') ? this.counter.betCount : this.counter.trueCount,
+      count: this.betCount(),
       betPerHand,
       hands,
     });
@@ -397,6 +468,11 @@ export class GameSession {
 
   afterEngineStep(): void {
     if (this.game.state !== STATE.settled) return;
+    // A round sat out moves no money and is not one played.
+    if (this.satOut) {
+      this.save();
+      return;
+    }
     // Kept so a later change to this round's bankroll (a dealer error, a Foul
     // refund) replaces what the round recorded rather than going unrecorded.
     this.settledRound = {

@@ -173,6 +173,8 @@ export class BlackjackGame {
   dealerBlackjack = false;
   insuranceDecided = false;
   activeIndex = -1;
+  /** The next round's computer seats, once asked for before it starts. */
+  nextComputerSeats: number[] | null = null;
   /** Which neighbours' hands are glimpsed this round, when peeking picks by hand. */
   peekedSides: { next: boolean; previous: boolean } | null = null;
 
@@ -226,6 +228,12 @@ export class BlackjackGame {
    * Which computer seats are taken this round. With "players come and go" the
    * table empties and refills now and then, as the original did.
    */
+  /** The computer seats the next round will have, chosen now and kept for it. */
+  upcomingComputerSeats(): number[] {
+    this.nextComputerSeats ??= this.computerSeatsThisRound();
+    return this.nextComputerSeats;
+  }
+
   computerSeatsThisRound(): number[] {
     const seats = this.table.computerSeats ?? [];
     if (!this.table.playersComeAndGo || seats.length === 0) return seats;
@@ -313,7 +321,9 @@ export class BlackjackGame {
       this.hands.push(hand);
       this.bankroll -= hand.wagered;
     }
-    for (const seat of this.computerSeatsThisRound()) {
+    const computerSeats = this.upcomingComputerSeats();
+    this.nextComputerSeats = null;
+    for (const seat of computerSeats) {
       if (seat > (this.table.seatCount ?? 0)) continue;
       const hand = new Hand({ seat, owner: PLAYER.computer, bet: this.table.computerBet ?? DEFAULT_COMPUTER_BET });
       hand.bustCeiling = bustValue(this.rules);
@@ -340,7 +350,8 @@ export class BlackjackGame {
     this.maybePeekHoleCard();
 
     const playerHasTwentyOne = this.humanHands().some(h => h.total === 21);
-    if (insuranceOffered(this.rules, this.dealer.cards[0], playerHasTwentyOne)) {
+    // A round the player sits out has no one to offer insurance to.
+    if (this.humanHands().length > 0 && insuranceOffered(this.rules, this.dealer.cards[0], playerHasTwentyOne)) {
       this.state = STATE.insurance;
       this.emit({ type: 'offerInsurance' });
       return;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { betCells, betLabel, COLUMNS, ROWS } from '@/game/table/bet-grid';
+import { betCells, betLabel, moveHighlight, overlaySlots, COLUMNS, ROWS } from '@/game/table/bet-grid';
 import { trayPhoto, shoePhoto } from '@/game/table/photos';
 
 const ramp = (...rows: (number | [chips: number, hands: number])[]) => ({
@@ -65,5 +65,46 @@ describe('tray and shoe photos', () => {
     expect(shoePhoto(5).number).toBe(179);
     expect(shoePhoto(99999).number).toBe(145);
     expect(shoePhoto(208).src).toBe('assets/shoe/164.jpg');
+  });
+});
+
+describe('moving the highlight', () => {
+  // Eight bets (a full row and two more), then the buttons: Wong, Reset Bank, Shuffle; Side Bet, Customize.
+  const slots = overlaySlots(8, 5);
+  const WONG = 8,
+    SHUFFLE = 10,
+    SIDE_BET = 11,
+    CUSTOMIZE = 12;
+  const move = (from: number, direction: Parameters<typeof moveHighlight>[2]) => moveHighlight(from, slots, direction);
+
+  it('lays the buttons out three to a row below the bets, a short row centred', () => {
+    expect(slots[WONG]).toEqual({ row: 2, start: 0, width: 2 });
+    expect(slots[SHUFFLE]).toEqual({ row: 2, start: 4, width: 2 });
+    expect(slots[SIDE_BET]).toEqual({ row: 3, start: 1, width: 2 });
+    expect(slots[CUSTOMIZE]).toEqual({ row: 3, start: 3, width: 2 });
+  });
+
+  it('steps left and right through every option, wrapping from one end to the other', () => {
+    expect(move(7, 'right')).toBe(WONG);
+    expect(move(CUSTOMIZE, 'right')).toBe(0);
+    expect(move(0, 'left')).toBe(CUSTOMIZE);
+  });
+
+  it('goes down from the bets to the buttons, and up from the top back to the bottom', () => {
+    expect(move(0, 'down')).toBe(6);
+    expect(move(6, 'down')).toBe(WONG);
+    // Under the last bets' column, the nearest button.
+    expect(move(7, 'down')).toBe(WONG);
+    expect(move(WONG, 'down')).toBe(SIDE_BET);
+    // Back to the top: of two bets equally near, the left one.
+    expect(move(SIDE_BET, 'down')).toBe(1);
+    expect(move(5, 'up')).toBe(CUSTOMIZE);
+    expect(move(SHUFFLE, 'up')).toBe(7);
+  });
+
+  it('stays put going up or down with a single row', () => {
+    const one = overlaySlots(3, 0);
+    expect(moveHighlight(2, one, 'up')).toBe(2);
+    expect(moveHighlight(2, one, 'down')).toBe(2);
   });
 });
