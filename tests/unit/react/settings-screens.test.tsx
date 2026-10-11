@@ -218,6 +218,14 @@ describe('navigation screens', () => {
     expect(screen.queryByRole('button', { name: 'Reset Defaults' })).not.toBeInTheDocument();
   });
 
+  it('the home screen shows the build: the last commit’s date and hash', () => {
+    renderScreen(<Home />);
+    const version = screen.getByText(/^Crackjack \d{4}\.\d{2}\.\d{2} · [0-9a-f]{7,}$/);
+    // The copyright is on the line above.
+    const copyright = screen.getByText('Copyright 2025 Crackjack, all rights reserved');
+    expect(copyright.compareDocumentPosition(version) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('help opens its links outside the app, and says when there is none', () => {
     const { router } = renderScreen(<HelpSheet />);
     act(() => void router.navigate(router.state.location, { state: helpState('test.links', 'Links') }));

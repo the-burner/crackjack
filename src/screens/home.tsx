@@ -10,7 +10,9 @@ import { WORDMARK_SVG } from '@/lib/wordmark';
 import { useNavigate } from 'react-router';
 import { PATHS } from '@/app/paths';
 
-export const APP_VERSION = '3.0.0';
+declare const __APP_VERSION__: string;
+/** The last commit's date and short hash, stamped in at build time. */
+export const APP_VERSION = __APP_VERSION__;
 
 const DRILLS = [
   ['Flash Drills', 'Strategy and index plays', 'drills.flash.options'],
@@ -54,7 +56,10 @@ export function Home() {
           </ListRow>
         </SettingsGroup>
       </Column>
-      <FooterNote>{`Crackjack ${APP_VERSION} · Copyright 2025 Crackjack, all rights reserved`}</FooterNote>
+      <FooterNote className="flex flex-col gap-1">
+        <span>Copyright 2025 Crackjack, all rights reserved</span>
+        <span>{`Crackjack ${APP_VERSION}`}</span>
+      </FooterNote>
     </ScreenLayout>
   );
 }

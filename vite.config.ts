@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type PreviewOptions } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -14,10 +15,14 @@ function previewFor(mode: string): PreviewOptions {
   return { host: '0.0.0.0', port: 8443, https: certificateFor(hostName) };
 }
 
+/** The last commit's date and short hash, e.g. `2026.10.10 · 528fc73`. */
+const appVersion = () => execSync('git log -1 --date=format:%Y.%m.%d --format="%cd · %h"').toString().trim();
+
 export default defineConfig(({ mode }) => ({
   // Relative URLs, so the build works under any path and inside Capacitor.
   base: './',
   preview: previewFor(mode),
+  define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   // The e2e server serves edits without reloading pages under a running test.
   server: process.env.E2E ? { hmr: false } : undefined,
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
