@@ -197,7 +197,7 @@ interface DrawnHand {
 /** A hand's cards, drawn left to right so each one overlaps the one before. */
 function drawHand(ctx: CanvasRenderingContext2D, layout: TableLayout, hand: ShownHand, handsInSeat = 0): Point[] {
   const placed: { slot: Point; card: number; faceUp: boolean }[] = [];
-  const dealerHand = { count: hand.cards.length, holeHidden: hand.faceUp[1] === false };
+  const dealerHand = { count: hand.cards.length, holeHidden: hand.faceUp[1] === false, squeezed: hand.squeezed };
   hand.cards.forEach((card, index) => {
     const slot = cardSlot(layout, hand.key, index, dealerHand, { handsInSeat });
     if (slot) placed.push({ slot, card, faceUp: hand.faceUp[index] });

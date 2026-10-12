@@ -35,6 +35,14 @@ export function toast(
   return id;
 }
 
+/** Takes toast `id` down now, if it is still the one up. */
+export function dismissToast(id: number): void {
+  const { current } = useToast.getState();
+  if (current?.id !== id) return;
+  useToast.setState({ current: null });
+  current.onGone?.();
+}
+
 const LEAVE_MS = 200;
 
 /** Where toasts show; mounted once above every screen. */

@@ -340,6 +340,18 @@ test.describe('7. early surrender', () => {
   });
 });
 
+test.describe('insurance', () => {
+  test('takes its "Insurance?" pop-up down as soon as it is answered', async ({ page }) => {
+    // A ten-six against an ace and a nine: no dealer blackjack, so the round goes on.
+    await openTable(page, { stack: [...deal(['Ts', '6s'], ['Ah', '9h']), '5s'] });
+    await bet(page);
+    expect(await settle(page)).toBe('insurance');
+    await expect(tableToast(page).filter({ hasText: 'Insurance?' })).toBeVisible();
+    await pass(page).click();
+    await expect(tableToast(page).filter({ hasText: 'Insurance?' })).toHaveCount(0, { timeout: 500 });
+  });
+});
+
 test.describe('8. redouble and hit after double', () => {
   const tenDollars = { 'betting.chipValue': 10, 'betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] } };
 

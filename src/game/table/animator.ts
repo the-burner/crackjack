@@ -6,6 +6,7 @@
 // in the middle of an animation and corrupt the queue.
 
 import { DEALER_KEY } from './table-state';
+import { DEALER_SPREAD_CARDS } from './layout';
 import type { TableEvent } from './table-state';
 import type { HandKey } from '@/game/engine/hand';
 import type { GameEvent, MessageText } from '@/game/engine/events';
@@ -119,6 +120,12 @@ export function planSteps(
       return payoff(event, isComputer(event.hand) ? null : event.payout, pauses);
     }
     // The pointer rests on a computer hand long enough to be seen, even when it stands.
+    // As in the original, the dealer's cards close up a beat before its fifth card, so the card is seen to come.
+    if (event.type === 'card' && event.hand === DEALER_KEY && event.cardIndex === DEALER_SPREAD_CARDS)
+      return [
+        { event: { type: 'squeeze', hand: DEALER_KEY }, pause: pauses.dealer, sound: null },
+        { event, pause: pauseFor(event, pauses, dealing), sound: soundFor(event) },
+      ];
     // As in the original, the pointer reaches a split hand a dealer's beat before its second card.
     const next = expanded[index + 1];
     if (event.type === 'turn' && next?.type === 'card' && next.hand === event.hand)

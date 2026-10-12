@@ -30,6 +30,18 @@ const dealt = () => {
   return state;
 };
 
+describe("the dealer's hand", () => {
+  it('is squeezed together before its fifth card, and spread again next round', () => {
+    const state = dealt();
+    expect(state.dealer.squeezed).toBeFalsy();
+    state.apply({ type: 'squeeze', hand: '0-0' });
+    expect(state.dealer.squeezed).toBe(true);
+    state.apply({ type: 'clear' });
+    state.apply({ type: 'roundStart', round: 2 });
+    expect(state.dealer.squeezed).toBeFalsy();
+  });
+});
+
 describe('what the player can see', () => {
   it('builds hands from the cards as they arrive', () => {
     const state = dealt();

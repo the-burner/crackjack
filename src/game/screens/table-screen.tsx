@@ -11,6 +11,7 @@ import { useGoBack } from '@/app/navigation';
 import { tablesSearch } from '@/app/paths';
 import { confirm } from '@/components/dialogs';
 import { tableToast } from '@/components/game/table-toast';
+import { dismissToast } from '@/components/ui/toast';
 import { useApp } from '@/react/app-context';
 import { useOnHide, useOnShow } from '@/react/screen';
 import { createTableController } from '@/game/table/controller';
@@ -34,6 +35,7 @@ export function TableScreen() {
   const [table] = useState(() =>
     createTableController(app, {
       notify: tableToast,
+      dismiss: dismissToast,
       confirm: message => confirm(message),
       // Child routes, so the table stays as it is underneath them.
       nav: {

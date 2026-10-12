@@ -123,6 +123,8 @@ export interface TableLayout {
 export interface DealerHandShape {
   count: number;
   holeHidden: boolean;
+  /** Closed up to overlap ahead of a fifth card. */
+  squeezed?: boolean;
 }
 
 /** The seats that fit the orientation, keeping the human seats. */
@@ -367,12 +369,12 @@ function dealerRow({
  * With no hole card, the up card moves right when the second card comes.
  * @param dealer  `layout.dealer`
  */
-export function dealerSlot(dealer: DealerRow, index: number, { count, holeHidden }: DealerHandShape): Point {
+export function dealerSlot(dealer: DealerRow, index: number, { count, holeHidden, squeezed }: DealerHandShape): Point {
   const { right, y, spread, overlap, peek } = dealer;
   if (holeHidden || count === 1) return { x: right - spread - (index === 1 ? peek : 0), y };
   // Places from the right: the turned hole card first, or the up card when there is none.
   const place = !dealer.noHoleCard && index < 2 ? 1 - index : index;
-  return { x: right - place * (count > DEALER_SPREAD_CARDS ? overlap : spread), y };
+  return { x: right - place * (count > DEALER_SPREAD_CARDS || squeezed ? overlap : spread), y };
 }
 
 /** Burn cards are dealt in a row just right of the discard tray. */

@@ -290,6 +290,14 @@ describe('the dealer hand', () => {
         expect(up - draws[0]).toBe(hole - up);
       });
 
+      it('squeezes four cards to the overlap before the fifth comes, where they stay when it does', () => {
+        const squeezed = Array.from(
+          { length: DEALER_SPREAD_CARDS },
+          (_, i) => dealerSlot(layout.dealer, i, { count: DEALER_SPREAD_CARDS, holeHidden: false, squeezed: true }).x,
+        );
+        expect(squeezed).toEqual(xs(DEALER_SPREAD_CARDS + 1).slice(0, DEALER_SPREAD_CARDS));
+      });
+
       it('with no hole card, moves the up card right when the second card comes', () => {
         const dealer = layoutFor(size, { noHoleCard: true }).dealer;
         const [alone] = xs(1, false, dealer);

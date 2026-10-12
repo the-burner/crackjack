@@ -22,7 +22,9 @@ export type TableEvent =
   /** What a hand paid shows on its seat's chips. */
   | { type: 'payout'; hand: HandKey; amount: number }
   /** A paid hand's cards and chips leave the table. */
-  | { type: 'sweep'; hand: HandKey };
+  | { type: 'sweep'; hand: HandKey }
+  /** The dealer's cards close up to make room for a fifth. */
+  | { type: 'squeeze'; hand: HandKey };
 
 /** A hand as the player has seen it. */
 export interface ShownHand {
@@ -31,6 +33,8 @@ export interface ShownHand {
   index: number;
   cards: CardId[];
   faceUp: boolean[];
+  /** The dealer's hand only: closed up to overlap, ahead of its fifth card. */
+  squeezed?: boolean;
 }
 
 export interface BurnCard {
@@ -276,6 +280,9 @@ export function createTableState({ decks }: { decks: number }) {
         }
         case 'roundEnd':
           state.bankroll = event.bankroll;
+          break;
+        case 'squeeze':
+          state.dealer.squeezed = true;
           break;
         case 'clear':
           state.clear();

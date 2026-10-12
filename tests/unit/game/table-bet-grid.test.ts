@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { betCells, betLabel, moveHighlight, overlaySlots, COLUMNS, ROWS } from '@/game/table/bet-grid';
+import {
+  betCells,
+  betLabel,
+  moveHighlight,
+  overlayButtons,
+  overlaySlots,
+  startingHighlight,
+  COLUMNS,
+  ROWS,
+} from '@/game/table/bet-grid';
 import { trayPhoto, shoePhoto } from '@/game/table/photos';
 
 const ramp = (...rows: (number | [chips: number, hands: number])[]) => ({
@@ -106,5 +115,20 @@ describe('moving the highlight', () => {
     const one = overlaySlots(3, 0);
     expect(moveHighlight(2, one, 'up')).toBe(2);
     expect(moveHighlight(2, one, 'down')).toBe(2);
+  });
+});
+
+describe('the highlight a round of betting starts on', () => {
+  const cells = betCells({ ramp: ramp(1, 2, 5), chipValue: 5 });
+
+  it('is the last bet placed, or the lowest before there is one', () => {
+    expect(startingHighlight(cells, false, { bet: '10' })).toBe(1);
+    expect(startingHighlight(cells, false, null)).toBe(0);
+    // A bet the ramp no longer offers falls back to the lowest.
+    expect(startingHighlight(cells, false, { bet: '500' })).toBe(0);
+  });
+
+  it('is Wong after a round sat out', () => {
+    expect(startingHighlight(cells, false, 'wong')).toBe(cells.length + overlayButtons(false).indexOf('wong'));
   });
 });

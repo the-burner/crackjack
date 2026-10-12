@@ -551,6 +551,15 @@ test.describe('wonging', () => {
     await expect(bankroll(page)).toHaveText(before ?? '');
   });
 
+  test('stays highlighted for the next round, like any bet placed', async ({ page }) => {
+    await openTable(page, { settings: { 'betting.wonging': true } });
+    await wongButton(page).click();
+    await expect(overlay(page)).toBeHidden();
+    await expect(overlay(page)).toBeVisible({ timeout: 20000 });
+    await expect(wongButton(page)).toHaveAttribute('data-on');
+    await expect(grid(page).locator('[data-on]')).toHaveCount(0);
+  });
+
   test('is refused with an error at a table with no one else', async ({ page }) => {
     await openTable(page, {
       settings: {

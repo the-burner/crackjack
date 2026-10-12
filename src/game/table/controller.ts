@@ -27,8 +27,8 @@ import { chipText } from './labels';
 import { createSideBetPicker, sideBetLabel } from './side-bet-picker';
 import { createAnimator, planSteps, pauseForSpeed, RESULT_TONES } from './animator';
 import type { Step } from './animator';
-import { betCells, moveHighlight, overlayButtons, overlaySlots } from './bet-grid';
-import type { OverlayButtonName } from './bet-grid';
+import { betCells, moveHighlight, overlayButtons, overlaySlots, startingHighlight } from './bet-grid';
+import type { LastPick, OverlayButtonName } from './bet-grid';
 import type { BetCell } from './bet-grid';
 import { attachGestures } from './gestures';
 import { gestureMapFor } from '@/settings/gesture-configs';
@@ -48,8 +48,8 @@ const ERROR_MS = 1800;
 
 export type ToastTone = 'plain' | 'good' | 'error';
 
-/** Shows a pop-up; `onGone` runs once it has gone or been replaced. */
-export type Notify = (text: string, options: { tone: ToastTone; ms: number; onGone: () => void }) => void;
+/** Shows a pop-up, returning its id; `onGone` runs once it has gone or been replaced. */
+export type Notify = (text: string, options: { tone: ToastTone; ms: number; onGone: () => void }) => number;
 
 /** What one seat's chip label shows. */
 export interface SeatLabel {
@@ -104,7 +104,13 @@ export type TableNav = {
   help(): void;
 };
 
-type TableOptions = { notify: Notify; confirm: (message: string) => Promise<boolean>; nav: TableNav };
+type TableOptions = {
+  notify: Notify;
+  /** Takes a pop-up down before its time. */
+  dismiss: (id: number) => void;
+  confirm: (message: string) => Promise<boolean>;
+  nav: TableNav;
+};
 
 /**
  * The table, built the first time it takes over its felt rather than when the
@@ -160,7 +166,7 @@ export function createTableController(app: App, options: TableOptions) {
   };
 }
 
-function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
+function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOptions) {
   const { settings } = app;
   const session = new GameSession(app);
   const state = createTableState({ decks: session.table.decks });
@@ -172,7 +178,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   let layout: TableLayout | null = null;
   /** The bankroll before the last bet was placed, for the "you won" line. */
   let bankBeforeBet = session.bankroll;
-  let previousBetLabel: string | null = null;
+  let lastPick: LastPick = null;
   /** The dealer's mistakes: the one the player has not called yet. */
   const dealerErrors = createDealerErrorRound({ enabled: () => enabledErrors(settings) });
   /** True once the dealer has queried a bad play, which lets the next one through. */
@@ -182,6 +188,8 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   /** Counts pop-ups, so a replaced one's going does not clear the next one's state. */
   let toastCount = 0;
   let insuranceTimer: number | undefined;
+  /** The "Insurance?" pop-up, while the question is open. */
+  let insuranceToast: number | null = null;
   let nextRoundTimer: number | null = null;
   /** Set while the next round's shuffle plays, so betting opens after it. */
   let openBettingWhenIdle = false;
@@ -336,10 +344,10 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   }
 
   /** Shows a pop-up in place of the one up, if any. */
-  function popUp(text: string, tone: ToastTone, ms: number, error: boolean) {
+  function popUp(text: string, tone: ToastTone, ms: number, error: boolean): number {
     const count = ++toastCount;
     errorShowing = error;
-    notify(text.trim(), {
+    return notify(text.trim(), {
       tone,
       ms,
       onGone: () => {
@@ -349,9 +357,9 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   }
 
   /** A passing message from the table. It does not cover an error pop-up that is still up. */
-  function showMessage(text: string) {
-    if (errorShowing) return;
-    popUp(text, 'plain', MESSAGE_MS, false);
+  function showMessage(text: string): number | null {
+    if (errorShowing) return null;
+    return popUp(text, 'plain', MESSAGE_MS, false);
   }
 
   /** An error, in the same drop-down pop-up as the drills. */
@@ -374,7 +382,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     countsText = readout();
     if (sound) app.sound.play(sound);
     if (event.type === 'message') showMessage(event.text);
-    if (event.type === 'offerInsurance') showMessage('Insurance?');
+    if (event.type === 'offerInsurance') insuranceToast = showMessage('Insurance?');
     render();
   }
 
@@ -454,6 +462,9 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
   function answerInsurance(take: boolean) {
     if (animator.busy || session.state !== STATE.insurance) return;
     stopInsuranceTimer();
+    // The question is answered: its pop-up goes.
+    if (insuranceToast !== null) dismiss(insuranceToast);
+    insuranceToast = null;
     queue(take ? session.takeInsurance() : session.declineInsurance());
   }
 
@@ -556,12 +567,8 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
     stopInsuranceTimer();
     setBetSource(betSource());
     const change = session.bankroll - bankBeforeBet;
-    // The last bet, or the lowest before there is one.
-    overlay.selected = Math.max(
-      0,
-      overlay.cells.findIndex(cell => cell.label === previousBetLabel),
-    );
     overlay.foul = dealerErrorsOn(settings);
+    overlay.selected = startingHighlight(overlay.cells, overlay.foul, lastPick);
     overlay.heading = 'Place your bets.';
     if (change > 0) overlay.heading += ` You won ${money(change)}`;
     if (change < 0) overlay.heading += ` You lost ${money(-change)}`;
@@ -588,7 +595,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
       return;
     }
     reportMissedError();
-    previousBetLabel = label;
+    lastPick = { bet: label };
     bankBeforeBet = session.bankroll;
     overlay.visible = false;
     swept.clear();
@@ -608,6 +615,7 @@ function createTableSession(app: App, { notify, confirm, nav }: TableOptions) {
       return;
     }
     reportMissedError();
+    lastPick = 'wong';
     bankBeforeBet = session.bankroll;
     overlay.visible = false;
     swept.clear();

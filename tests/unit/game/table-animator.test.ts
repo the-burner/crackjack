@@ -324,6 +324,21 @@ describe('the turn pointer', () => {
   });
 });
 
+describe("the dealer's fifth card", () => {
+  const dealerCard = (cardIndex: number) => ({ type: 'card', hand: '0-0', card: 5, faceUp: true, cardIndex });
+
+  it('is dealt a dealer beat after the hand is squeezed to make room, as in the original', () => {
+    const steps = plan([dealerCard(3), dealerCard(4)]);
+    expect(steps.map(s => s.event.type)).toEqual(['card', 'squeeze', 'card']);
+    expect(steps[1]).toEqual({ event: { type: 'squeeze', hand: '0-0' }, pause: PAUSES.dealer, sound: null });
+  });
+
+  it('is the only one that squeezes', () => {
+    expect(plan([dealerCard(5)]).map(s => s.event.type)).toEqual(['card']);
+    expect(plan([{ ...dealerCard(4), hand: '1-0' }]).map(s => s.event.type)).toEqual(['card']);
+  });
+});
+
 describe('the burn cards', () => {
   it('are shown, then gathered into the tray, as a step of their own', () => {
     const steps = plan([

@@ -97,3 +97,12 @@ export function moveHighlight(
   });
   return best;
 }
+
+/** What the player picked last round: a bet, by its label, or Wong; null before the first. */
+export type LastPick = { bet: string } | 'wong' | null;
+
+/** Where the highlight starts a round of betting: on the last pick, or the lowest bet before there is one. */
+export function startingHighlight(cells: readonly BetCell[], foul: boolean, last: LastPick): number {
+  if (last === 'wong') return cells.length + overlayButtons(foul).indexOf('wong');
+  return Math.max(0, last ? cells.findIndex(cell => cell.label === last.bet) : 0);
+}
