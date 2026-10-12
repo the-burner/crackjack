@@ -1,5 +1,6 @@
 // Allowed Bets: the table of bets the player
-// may make, optionally tied to the count so betting errors can be flagged.
+// may make, optionally tied to the count so betting errors can be flagged,
+// and saved with the chip value and wonging as a named betting strategy.
 
 import { useState } from 'react';
 import { useOnShow } from '@/react/screen';
@@ -29,6 +30,8 @@ import {
   setRow,
   setRowCount,
 } from '@/settings/bet-ramp';
+import { BETTING_PRESETS } from '@/settings/betting-strategies';
+import { PresetPicker } from '@/components/settings/preset-picker';
 
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
 
@@ -36,6 +39,7 @@ const chunk = <T,>(items: readonly T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));
 
 export function Betting() {
+  const app = useApp();
   const navigate = useNavigate();
   const settings = useSettings();
   // A ramp saved out of range is shown tidied, so keep the tidied one.
@@ -53,6 +57,7 @@ export function Betting() {
   return (
     <ScreenLayout title="Allowed Bets" help="game.betting">
       <Column>
+        <PresetPicker kind={BETTING_PRESETS} store={app.bettingStrategies} />
         <SettingsNote>
           Enter the number of different bets in the table and then click on a table cell to enter a new bet.
         </SettingsNote>

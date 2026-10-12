@@ -1,0 +1,78 @@
+// Betting strategies: the bet ramp, chip value and wonging settings saved under a name, beside Crackjack's built-in ones.
+
+import { SETTINGS_SCHEMA } from './schema';
+import type { SettingReader, SettingValues } from './schema';
+import { isRamp } from './bet-ramp';
+import type { Named, PresetKind } from './named-configs';
+
+/** The settings a betting strategy holds. */
+export const BETTING_KEYS = [
+  'betting.ramp',
+  'betting.chipValue',
+  'betting.wonging',
+  'betting.wongIn',
+  'betting.wongOut',
+  'betting.wongStartOut',
+] as const;
+
+export type BettingValues = Pick<SettingValues, (typeof BETTING_KEYS)[number]>;
+
+export interface BettingStrategy extends Named {
+  values: BettingValues;
+  builtIn?: boolean;
+}
+
+export const bettingValues = (get: SettingReader): BettingValues =>
+  Object.fromEntries(BETTING_KEYS.map(key => [key, get(key)])) as BettingValues;
+
+/** One hand, flat until the count rises: the shipped settings, so a fresh install begins on it unedited. */
+const SINGLE_HAND = bettingValues((key => SETTINGS_SCHEMA[key].default) as SettingReader);
+
+/** Two hands at the higher counts, sitting out (wonging) between -2 and +1. */
+const MULTI_HAND: BettingValues = {
+  'betting.ramp': {
+    minCount: 0,
+    rows: [
+      { chips: 1, hands: 1 },
+      { chips: 2, hands: 1 },
+      { chips: 2, hands: 2 },
+      { chips: 3, hands: 2 },
+      { chips: 6, hands: 2 },
+      { chips: 5, hands: 2 },
+    ],
+  },
+  'betting.chipValue': 25,
+  'betting.wonging': true,
+  'betting.wongIn': 1,
+  'betting.wongOut': -2,
+  'betting.wongStartOut': false,
+};
+
+export const BUILT_IN_BETTING: readonly BettingStrategy[] = [
+  { id: 'single-hand', name: "Crackjack's Single-Hand Strategy", values: SINGLE_HAND, builtIn: true },
+  { id: 'multi-hand', name: "Crackjack's Multi-Hand Strategy", values: MULTI_HAND, builtIn: true },
+];
+
+/** The saved strategies in `saved`, dropping any that are malformed (the settings store tidies the rest). */
+export function readBettingStrategies(saved: unknown): BettingStrategy[] {
+  if (!Array.isArray(saved)) return [];
+  return saved.flatMap((entry: unknown): BettingStrategy[] => {
+    if (typeof entry !== 'object' || entry === null) return [];
+    const { id, name, values } = entry as Record<string, unknown>;
+    if (typeof id !== 'string' || typeof name !== 'string' || typeof values !== 'object' || values === null) return [];
+    const read = values as Record<string, unknown>;
+    if (!isRamp(read['betting.ramp']) || BETTING_KEYS.some(key => !(key in read))) return [];
+    return [{ id, name, values: values as BettingValues }];
+  });
+}
+
+/** Betting strategies, for the preset picker. */
+export const BETTING_PRESETS: PresetKind<BettingStrategy, BettingValues> = {
+  label: 'Betting strategy',
+  builtIns: BUILT_IN_BETTING,
+  selectedKey: 'betting.strategy',
+  current: bettingValues,
+  valuesOf: strategy => strategy.values,
+  patch: values => ({ ...values }),
+  make: (id, name, values) => ({ id, name, values }),
+};

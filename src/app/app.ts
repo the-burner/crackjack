@@ -15,6 +15,8 @@ import { readBankroll, readStats } from '@/game/record';
 import type { GameStats } from '@/game/record';
 import { readGestureConfigs } from '@/settings/gesture-configs';
 import type { GestureConfig } from '@/core/gestures';
+import { readBettingStrategies } from '@/settings/betting-strategies';
+import type { BettingStrategy } from '@/settings/betting-strategies';
 
 /** The services that do not need a DOM. */
 export interface Services {
@@ -30,6 +32,8 @@ export interface Services {
   gameStats: PersistedStore<GameStats>;
   /** Gesture configurations the player saved (kept by Reset Defaults). */
   gestureConfigs: PersistedStore<GestureConfig[]>;
+  /** Betting strategies the player saved (kept by Reset Defaults). */
+  bettingStrategies: PersistedStore<BettingStrategy[]>;
 }
 
 /** What every screen reads through useApp(): the services. Navigation is React Router's. */
@@ -52,5 +56,6 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
+    bettingStrategies: persistedStore(storage, 'bettingStrategies', readBettingStrategies),
   };
 }

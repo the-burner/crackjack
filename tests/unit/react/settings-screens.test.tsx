@@ -121,9 +121,11 @@ describe('Gestures', () => {
     const { app } = renderScreen(<Gestures />);
     await choose(user, 'Portrait Swipe up', 'Hit');
     expect(app.settings.get('gestures.portrait')).toMatchObject({ up: 'hit', down: 'double' });
-    expect(select('Configuration')).toHaveDisplayValue('Custom');
+    expect(select('Configuration')).toHaveDisplayValue('Standard (edited)');
     await choose(user, 'Configuration', 'Landscape left');
-    expect(app.settings.get('gestures.portrait')).toEqual(STANDARD);
+    // The edit is unsaved, so it is only dropped once agreed to.
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    await waitFor(() => expect(app.settings.get('gestures.portrait')).toEqual(STANDARD));
     expect(app.settings.get('gestures.landscape')).toEqual(rotated(STANDARD, 3));
   });
 
@@ -132,7 +134,7 @@ describe('Gestures', () => {
     const { app } = renderScreen(<Gestures />);
     await choose(user, 'Portrait Swipe up', 'Hit');
     await choose(user, 'Landscape Swipe left', 'Split');
-    await user.click(screen.getByRole('button', { name: 'Save as…' }));
+    await user.click(screen.getByRole('button', { name: 'Save as New…' }));
     await user.type(await screen.findByRole('textbox'), 'Ring');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(app.gestureConfigs.getState().value.map(c => c.name)).toEqual(['Ring']));
@@ -148,6 +150,7 @@ describe('Gestures', () => {
     app.settings.reset();
     expect(app.gestureConfigs.getState().value).toHaveLength(1);
     expect(app.settings.get('gestures.landscape')).toEqual(STANDARD);
+    await waitFor(() => expect(select('Configuration')).toHaveDisplayValue('Standard'));
   });
 });
 

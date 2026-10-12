@@ -91,8 +91,6 @@ export function withAction(map: GestureMap, gesture: Gesture, action: GestureAct
   return next;
 }
 
-export const sameMap = (a: GestureMap, b: GestureMap): boolean => GESTURES.every(g => a[g] === b[g]);
-
 /** Whether `value` is a complete mapping: every gesture, each with a different play. */
 export function isGestureMap(value: unknown): value is GestureMap {
   if (typeof value !== 'object' || value === null) return false;
@@ -101,14 +99,6 @@ export function isGestureMap(value: unknown): value is GestureMap {
     plays.every(play => (GESTURE_ACTIONS as readonly unknown[]).includes(play)) && new Set(plays).size === plays.length
   );
 }
-
-/** The configuration a pair of mappings is (a built-in one first), or null when it is none of them. */
-export const configFor = (
-  portrait: GestureMap,
-  landscape: GestureMap,
-  configs: readonly GestureConfig[],
-): GestureConfig | null =>
-  configs.find(config => sameMap(config.portrait, portrait) && sameMap(config.landscape, landscape)) ?? null;
 
 /** A swipe shorter than this is a tap, not a gesture. */
 export const MIN_SWIPE = 30;

@@ -7,9 +7,10 @@ import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { isRamp } from './bet-ramp';
 import { STANDARD, isGestureMap } from '@/core/gestures';
 import type { Ramp } from './bet-ramp';
-import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues } from './store';
+import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues, StringDef } from './store';
 
 const bool = (value: boolean): BoolDef => ({ type: 'bool', default: value });
+const text = (value: string): StringDef => ({ type: 'string', default: value });
 const int = (value: number, min?: number, max?: number): NumberDef => ({ type: 'int', default: value, min, max });
 const oneOf = <const T extends string | number>(values: readonly T[], value: NoInfer<T>): EnumDef<T> => ({
   type: 'enum',
@@ -143,6 +144,8 @@ export const SETTINGS_SCHEMA = {
   'betting.wongOut': int(-2, -99, 99),
   /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
   'betting.wongStartOut': bool(false),
+  /** The betting strategy selected (see betting-strategies.ts); '' for none. */
+  'betting.strategy': text('single-hand'),
 
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': oneOf(
@@ -197,6 +200,8 @@ export const SETTINGS_SCHEMA = {
   /** The play each gesture makes, for the game and the drills; one mapping per orientation. */
   'gestures.portrait': json(STANDARD, isGestureMap),
   'gestures.landscape': json(STANDARD, isGestureMap),
+  /** The gesture configuration selected (see gesture-configs.ts); '' for none. */
+  'gestures.config': text('standard'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
   'display.hideActionButtons': bool(true),

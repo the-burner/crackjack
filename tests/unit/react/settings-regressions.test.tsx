@@ -82,15 +82,16 @@ describe('grouping', () => {
 
   it('the Allowed Bets rows sit in one inset group', () => {
     const { container } = renderScreen(<Betting />);
-    // The bet rows, then Wonging's own group below the table.
+    // The saved strategies, the bet rows, then Wonging's own group below the table.
     const all = groups(container);
-    expect(all).toHaveLength(2);
-    const rows = within(all[0]);
+    expect(all).toHaveLength(3);
+    expect(within(all[0]).getByRole('combobox', { name: 'Betting strategy' })).toBeInTheDocument();
+    const rows = within(all[1]);
     expect(rows.getByRole('switch', { name: 'Warning on Betting Error' })).toBeInTheDocument();
     expect(rows.getByRole('combobox', { name: 'Chip Value' })).toBeInTheDocument();
     expect(rows.getByRole('button', { name: /^Number of bets: / })).toBeInTheDocument();
     expect(rows.getByRole('button', { name: /^Minimum bet count: / })).toBeInTheDocument();
-    expect(within(all[1]).getByRole('switch', { name: 'Wonging' })).toBeInTheDocument();
+    expect(within(all[2]).getByRole('switch', { name: 'Wonging' })).toBeInTheDocument();
   });
 });
 

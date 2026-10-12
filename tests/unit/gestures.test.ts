@@ -5,13 +5,12 @@ import {
   GESTURES,
   MIN_SWIPE,
   STANDARD,
-  configFor,
   isGestureMap,
   rotated,
   swipeOf,
   withAction,
 } from '@/core/gestures';
-import { allConfigs, deleteConfig, gestureMapFor, readGestureConfigs, saveConfig } from '@/settings/gesture-configs';
+import { GESTURE_PRESETS, gestureMapFor, readGestureConfigs } from '@/settings/gesture-configs';
 
 describe('reading a swipe', () => {
   it('reads the four straight swipes', () => {
@@ -72,11 +71,6 @@ describe('a gesture mapping', () => {
     expect(GESTURES.length).toBe(GESTURE_ACTIONS.length);
   });
 
-  it('names the configuration a pair of mappings is, or none', () => {
-    expect(configFor(STANDARD, rotated(STANDARD, 1), BUILT_IN_CONFIGS)?.name).toBe('Landscape right');
-    expect(configFor(rotated(STANDARD, 1), STANDARD, BUILT_IN_CONFIGS)).toBe(null);
-  });
-
   it('uses the portrait or the landscape mapping by how the screen is held', () => {
     const side = rotated(STANDARD, 1);
     const get = ((key: string) => (key === 'gestures.portrait' ? STANDARD : side)) as Parameters<
@@ -91,24 +85,12 @@ describe('saved configurations', () => {
   const map = withAction(STANDARD, 'up', 'hit');
   const both = { portrait: map, landscape: rotated(STANDARD, 1) };
 
-  it('saves both orientations as a new one, and replaces one of the same name', () => {
-    const first = saveConfig([], 'Ring', both);
-    expect(first.configs).toHaveLength(1);
-    expect(first.configs?.[0]).toMatchObject({ name: 'Ring', ...both });
-    const again = saveConfig(first.configs ?? [], ' ring ', { portrait: STANDARD, landscape: STANDARD });
-    expect(again.configs).toHaveLength(1);
-    expect(again.configs?.[0].landscape).toEqual(STANDARD);
-    expect(allConfigs(again.configs ?? [])).toHaveLength(4);
-  });
-
-  it('refuses no name and a built-in name', () => {
-    expect(saveConfig([], '  ', both).configs).toBe(null);
-    expect(saveConfig([], 'standard', both).configs).toBe(null);
-  });
-
-  it('deletes one', () => {
-    const { configs } = saveConfig([], 'Ring', both);
-    expect(deleteConfig(configs ?? [], configs?.[0].id ?? '')).toEqual([]);
+  it('read and write both orientations as one preset', () => {
+    const preset = GESTURE_PRESETS.make('a', 'Ring', both);
+    expect(preset).toEqual({ id: 'a', name: 'Ring', ...both });
+    expect(GESTURE_PRESETS.valuesOf(preset)).toEqual(both);
+    expect(GESTURE_PRESETS.patch(both)).toEqual({ 'gestures.portrait': map, 'gestures.landscape': both.landscape });
+    expect(GESTURE_PRESETS.builtIns).toBe(BUILT_IN_CONFIGS);
   });
 
   it('reads back only well-formed configurations', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { UserEvent } from '@testing-library/user-event';
 import { Betting, BetSelect } from '@/screens/strategy/betting';
@@ -53,6 +53,27 @@ describe('Allowed Bets', () => {
     await user.click(screen.getByRole('button', { name: 'Wong out: -2' }));
     await answer(user, '-4');
     expect(app.settings.get('betting.wongOut')).toBe(-4);
+  });
+
+  it('saves the betting strategy under a name and loads it back', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Betting />);
+    const picker = () => screen.getByRole('combobox', { name: 'Betting strategy' });
+    const single = "Crackjack's Single-Hand Strategy";
+    expect(picker()).toHaveDisplayValue(single);
+    act(() => app.settings.update({ 'betting.chipValue': 5, 'betting.wonging': true }));
+    expect(picker()).toHaveDisplayValue(`${single} (edited)`);
+    await user.click(screen.getByRole('button', { name: 'Save as New…' }));
+    await user.type(await screen.findByRole('textbox'), 'Spread');
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(picker()).toHaveDisplayValue('Spread'));
+    await choose(user, 'Betting strategy', single);
+    expect(app.settings.get('betting.chipValue')).toBe(25);
+    await choose(user, 'Betting strategy', "Crackjack's Multi-Hand Strategy");
+    expect(app.settings.get('betting.ramp').rows[2]).toEqual({ chips: 2, hands: 2 });
+    await choose(user, 'Betting strategy', 'Spread');
+    expect(app.settings.get('betting.chipValue')).toBe(5);
+    expect(app.settings.get('betting.wonging')).toBe(true);
   });
 
   it('follows ramp changes and opens the picker for a row', async () => {
