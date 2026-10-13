@@ -575,6 +575,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   }
 
   function beginBetting() {
+    session.startBetting();
     setBetSource(betSource());
     const change = session.bankroll - bankBeforeBet;
     overlay.foul = dealerErrorsOn(settings);

@@ -32,6 +32,15 @@ const row = (label: string, value: string | number, strong = false): StatRow => 
 
 const REMAINING_LABELS = { dealt: 'Dealt', shown: 'Shown', inTray: 'In Tray' } as const;
 
+/** The counts as betting opened for the round, as the Counts rows show them ('-' before the first round). */
+function roundStartRows(start: GameSession['roundStartCounts']): StatRow[] {
+  return [
+    row('Running Count (Round Start)', start ? round1(start.runningCount) : '-'),
+    row('Remaining Decks (Round Start)', start ? round2(start.decksRemaining) : '-'),
+    row('True Count (Round Start)', start ? round1(start.trueCount) : '-'),
+  ];
+}
+
 /** The table's rows for `session`, or a placeholder without one. */
 function statRows(session: GameSession | undefined, get: SettingReader): StatRow[] {
   if (!session) return [section('Counts'), row('No session', '-')];
@@ -55,6 +64,7 @@ function statRows(session: GameSession | undefined, get: SettingReader): StatRow
     ),
     row('Exact Decks Remaining', advanced.exactDecks.toFixed(2)),
     row('Exact True Count', advanced.exactTrueCount.toFixed(2)),
+    ...roundStartRows(session.roundStartCounts),
   );
   out.push(
     section('Bankroll'),

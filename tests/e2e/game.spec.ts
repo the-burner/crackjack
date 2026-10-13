@@ -10,6 +10,9 @@ import {
   bankroll,
   barButton,
   betGrid as grid,
+  closeStats,
+  openStats,
+  statValue,
   betOverlay as overlay,
   betTitle,
   dialog,
@@ -195,6 +198,27 @@ test.describe('the table', () => {
 
     await page.locator('[data-screen="game.stats"]').getByRole('button', { name: 'Back' }).click();
     await expect(overlay(page)).toBeVisible();
+  });
+
+  test('notes the counts a round starts at as its betting opens, and keeps them through the round', async ({
+    page,
+  }) => {
+    await openTable(page);
+    await openStats(page);
+    // While betting, the round's start is the table as it is now.
+    const sameAsNow = async () => {
+      for (const label of ['Running Count', 'Remaining Decks', 'True Count'])
+        await expect(statValue(page, `${label} (Round Start)`)).toHaveText(
+          (await statValue(page, label).textContent())!,
+        );
+    };
+    await sameAsNow();
+    await closeStats(page);
+    await tapBetTile(page);
+    await playRound(page);
+    // Betting has opened again: the next round's start.
+    await openStats(page);
+    await sameAsNow();
   });
 
   test('turns the in-table readouts on from the statistics screen', async ({ page }) => {

@@ -481,6 +481,35 @@ describe('the advanced count', () => {
   });
 });
 
+describe('the counts at the start of the round', () => {
+  it('are taken as betting opens, and kept through the round', () => {
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.remainingCards': 'shown' });
+    const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
+    expect(session.roundStartCounts).toBeNull();
+    const { runningCount, decksRemaining, trueCount } = session.counts;
+    session.startBetting();
+    session.startRound({ betPerHand: 25 });
+    expect(session.counts.runningCount).not.toBe(runningCount);
+    expect(session.roundStartCounts).toEqual({ runningCount, decksRemaining, trueCount });
+  });
+});
+
+describe('a shuffle while betting', () => {
+  it('starts the round over on the new shoe', () => {
+    // Exact decks, so the round's cards show in the decks left.
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.resolution': 'exact' });
+    const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
+    session.startBetting();
+    session.startRound({ betPerHand: 25 });
+    while (session.state === 'playerAction') session.act('stand');
+    session.nextRound();
+    session.startBetting();
+    expect(session.roundStartCounts!.decksRemaining).toBeLessThan(6);
+    session.shuffleNow();
+    expect(session.roundStartCounts).toEqual({ runningCount: 0, decksRemaining: 6, trueCount: 0 });
+  });
+});
+
 describe('wonging', () => {
   const WITH_COMPUTER: SettingsPatch = {
     'table.seatCount': 2,

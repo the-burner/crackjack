@@ -74,6 +74,8 @@ export class GameSession {
   lastError: PlayError | null;
   /** The last settled round's bankroll figures, until the next round starts. */
   settledRound: SettledRound | null;
+  /** The counts as betting opened for the round in play (or the last one); null before the first. */
+  roundStartCounts: Pick<SessionCounts, 'runningCount' | 'decksRemaining' | 'trueCount'> | null = null;
   game: BlackjackGame;
   /**
    * Set by the table screen: asked before each dealer draw; false makes the
@@ -382,6 +384,12 @@ export class GameSession {
     return { cardsLeft, inUse, exactDecks, exactTrueCount: this.counter.exactTrueCountOver(exactDecks) };
   }
 
+  /** A round starts as its betting opens: notes the counts it starts at. */
+  startBetting(): void {
+    const { runningCount, decksRemaining, trueCount } = this.counts;
+    this.roundStartCounts = { runningCount, decksRemaining, trueCount };
+  }
+
   /** The counts with the allowed estimation error's cards more and fewer gone, as the original checked a close call. */
   nearbyCounts(): Pick<PlayQuestion, 'counts' | 'shoe'>[] {
     const error = this.settings.get('trueCount.allowedErrorCards');
@@ -514,6 +522,8 @@ export class GameSession {
    */
   shuffleNow(): GameEvent[] {
     this.game.shuffleAndBurn();
+    // The round being bet starts over on the new shoe.
+    this.startBetting();
     return this.game.takeEvents();
   }
 
