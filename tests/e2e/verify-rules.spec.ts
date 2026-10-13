@@ -350,6 +350,16 @@ test.describe('insurance', () => {
     await pass(page).click();
     await expect(tableToast(page).filter({ hasText: 'Insurance?' })).toHaveCount(0, { timeout: 500 });
   });
+
+  test('waits for the answer, however long it takes', async ({ page }) => {
+    await page.clock.install();
+    await openTable(page, { stack: [...deal(['Ts', '6s'], ['Ah', '9h']), '5s'] });
+    await bet(page);
+    expect(await settle(page)).toBe('insurance');
+    await page.clock.runFor(60000);
+    await expect(pass(page)).toBeVisible();
+    await expect(tableToast(page).filter({ hasText: 'Insurance?' })).toBeVisible();
+  });
 });
 
 test.describe('8. redouble and hit after double', () => {
@@ -576,7 +586,7 @@ test.describe('14. speed mapping', () => {
       // The double step draws nothing, so it is the wait before its card.
       double: before(doubled),
       doubleCard: after(doubled),
-      // The pointer reaches the second hand a dealer's beat before its card.
+      // The pointer reaches the second hand a player's beat before its card.
       secondHand: before(secondHand),
       computerDraw: after(computerDraw),
       dealerDraw: after(dealerDraw),
@@ -589,16 +599,14 @@ test.describe('14. speed mapping', () => {
   test('a slow Other Player Speed slows play but not the deal or the dealer', async ({ page }) => {
     const ms = await measure(page, { dealer: FAST, other: SLOW });
     ms.deal.forEach(step => fast(step));
-    for (const step of ['split', 'double', 'doubleCard', 'computerDraw'] as const) slow(ms[step], step);
-    fast(ms.secondHand, 'secondHand');
+    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) slow(ms[step], step);
     fast(ms.dealerDraw);
   });
 
   test('a slow Dealer Speed slows the deal and the dealer but not play', async ({ page }) => {
     const ms = await measure(page, { dealer: SLOW, other: FAST });
     ms.deal.forEach(step => slow(step));
-    for (const step of ['split', 'double', 'doubleCard', 'computerDraw'] as const) fast(ms[step], step);
-    slow(ms.secondHand, 'secondHand');
+    for (const step of ['split', 'double', 'doubleCard', 'secondHand', 'computerDraw'] as const) fast(ms[step], step);
     slow(ms.dealerDraw);
   });
 });

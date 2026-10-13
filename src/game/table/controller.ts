@@ -25,7 +25,8 @@ import { createTableState } from './table-state';
 import { createShownCount } from './shown-count';
 import { chipText } from './labels';
 import { createSideBetPicker, sideBetLabel } from './side-bet-picker';
-import { createAnimator, planSteps, pauseForSpeed, RESULT_TONES } from './animator';
+import { createAnimator, pauseForSpeed, RESULT_TONES } from './animator';
+import { planSteps } from './choreography';
 import type { Step } from './animator';
 import { betCells, moveHighlight, overlayButtons, overlaySlots, startingHighlight } from './bet-grid';
 import type { LastPick, OverlayButtonName } from './bet-grid';
@@ -39,8 +40,6 @@ import { betError } from '@/game/bet-validation';
 import { blackjackUnknown, withDealerError, createDealerErrorRound } from '@/game/dealer-error-round';
 import type { TablesParams } from '@/screens/strategy/tables';
 
-/** The insurance offer passes itself after this long. */
-const INSURANCE_MS = 5000;
 /** How long a table message stays up, as the original's bar did. */
 const MESSAGE_MS = 3500;
 /** How long an error stays up. */
@@ -49,7 +48,7 @@ const ERROR_MS = 1800;
 export type ToastTone = 'plain' | 'good' | 'error';
 
 /** Shows a pop-up, returning its id; `onGone` runs once it has gone or been replaced. */
-export type Notify = (text: string, options: { tone: ToastTone; ms: number; onGone: () => void }) => number;
+export type Notify = (text: string, options: { tone: ToastTone; ms: number | null; onGone: () => void }) => number;
 
 /** What one seat's chip label shows. */
 export interface SeatLabel {
@@ -187,9 +186,10 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   let errorShowing = false;
   /** Counts pop-ups, so a replaced one's going does not clear the next one's state. */
   let toastCount = 0;
-  let insuranceTimer: number | undefined;
   /** The "Insurance?" pop-up, while the question is open. */
   let insuranceToast: number | null = null;
+  /** True while the table is on screen. */
+  let showing = false;
   let nextRoundTimer: number | null = null;
   /** Set while the next round's shuffle plays, so betting opens after it. */
   let openBettingWhenIdle = false;
@@ -308,6 +308,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       hands: state.hands.filter(hand => seatSlot(shownLayout, hand.seat)),
       dealer: state.dealer,
       pointerHand: state.pointerHand,
+      seatOrder: state.seatOrder,
       burns: state.burns,
       trayCards: state.trayCards,
       shoeCards: state.shoeCards,
@@ -343,15 +344,20 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     emit();
   }
 
-  /** Shows a pop-up in place of the one up, if any. */
-  function popUp(text: string, tone: ToastTone, ms: number, error: boolean): number {
+  /** Shows a pop-up in place of the one up, if any; `ms` null keeps it up until dismissed. */
+  function popUp(text: string, tone: ToastTone, ms: number | null, error: boolean, gone?: () => void): number {
     const count = ++toastCount;
     errorShowing = error;
     return notify(text.trim(), {
       tone,
       ms,
       onGone: () => {
-        if (count === toastCount) errorShowing = false;
+        if (count === toastCount) {
+          errorShowing = false;
+          // A pop-up that replaced the open question has gone: ask it again.
+          if (insuranceToast === null && asking()) askInsurance();
+        }
+        gone?.();
       },
     });
   }
@@ -382,7 +388,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     countsText = readout();
     if (sound) app.sound.play(sound);
     if (event.type === 'message') showMessage(event.text);
-    if (event.type === 'offerInsurance') insuranceToast = showMessage('Insurance?');
+    if (event.type === 'offerInsurance' && showing) askInsurance();
     render();
   }
 
@@ -406,19 +412,20 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       beginBetting();
       return;
     }
-    armTimers();
+    armNextRound();
   }
 
-  /** The insurance offer and the next round wait on timers, which run only while the table shows. */
-  function armTimers() {
-    if (session.state === STATE.insurance) startInsuranceTimer();
+  /** The next round waits on a timer, which runs only while the table shows. */
+  function armNextRound() {
     if (session.state === STATE.settled && !nextRoundTimer) {
       nextRoundTimer = window.setTimeout(() => {
         nextRoundTimer = null;
         // The shoe is shuffled here, so the player sees it before betting.
         openBettingWhenIdle = true;
         queue(session.nextRound());
-      }, pauses().payoff);
+        // No wait of its own: the last hand's sweep already held a payoff beat, so the dealer's cards
+        // go as long after it as each hand went after the one before.
+      }, 0);
     }
   }
 
@@ -459,23 +466,26 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     return true;
   }
 
-  function answerInsurance(take: boolean) {
-    if (animator.busy || session.state !== STATE.insurance) return;
-    stopInsuranceTimer();
-    // The question is answered: its pop-up goes.
+  /** True while the insurance question waits on the player at the table on screen. */
+  const asking = () => showing && session.state === STATE.insurance && !animator.busy;
+
+  /** "Insurance?" stays up until it is answered. */
+  function askInsurance() {
+    const id = popUp('Insurance?', 'plain', null, false, () => {
+      if (insuranceToast === id) insuranceToast = null;
+    });
+    insuranceToast = id;
+  }
+
+  function dismissInsurance() {
     if (insuranceToast !== null) dismiss(insuranceToast);
     insuranceToast = null;
+  }
+
+  function answerInsurance(take: boolean) {
+    if (animator.busy || session.state !== STATE.insurance) return;
+    dismissInsurance();
     queue(take ? session.takeInsurance() : session.declineInsurance());
-  }
-
-  function startInsuranceTimer() {
-    stopInsuranceTimer();
-    insuranceTimer = window.setTimeout(() => answerInsurance(false), INSURANCE_MS);
-  }
-
-  function stopInsuranceTimer() {
-    clearTimeout(insuranceTimer);
-    insuranceTimer = undefined;
   }
 
   /** A gesture, as the player's mapping for how the screen is held plays it. */
@@ -564,7 +574,6 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   }
 
   function beginBetting() {
-    stopInsuranceTimer();
     setBetSource(betSource());
     const change = session.bankroll - bankBeforeBet;
     overlay.foul = dealerErrorsOn(settings);
@@ -791,7 +800,9 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       if (overlay.visible) {
         setBetSource(betSource());
         emit();
-      } else if (!animator.busy) armTimers();
+      } else if (!animator.busy) armNextRound();
+      showing = true;
+      if (insuranceToast === null && asking()) askInsurance();
     },
 
     /**
@@ -817,17 +828,20 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     },
 
     onHide() {
+      showing = false;
       releaseWakeLock?.();
       releaseWakeLock = null;
       observer.disconnect();
-      stopInsuranceTimer();
       clearTimeout(nextRoundTimer ?? undefined);
       nextRoundTimer = null;
+      // Not over the screen shown instead; asked again on return.
+      dismissInsurance();
     },
 
     destroy() {
       cancelOpening();
       alive = false;
+      showing = false;
       releaseWakeLock?.();
       releaseWakeLock = null;
       observer.disconnect();
@@ -835,7 +849,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       animator.cancel();
       clearTimeout(nextRoundTimer ?? undefined);
       nextRoundTimer = null;
-      stopInsuranceTimer();
+      dismissInsurance();
       refundOpenBets();
       listeners.clear();
     },

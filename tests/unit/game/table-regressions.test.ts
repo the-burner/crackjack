@@ -6,7 +6,7 @@ import { createServices } from '@/app/app';
 import { MemoryBackend } from '@/services/storage';
 import type { SettingsPatch } from '@/settings/schema';
 import { seededRandom } from '@/core/random';
-import { planSteps } from '@/game/table/animator';
+import { planSteps } from '@/game/table/choreography';
 import { createTableState } from '@/game/table/table-state';
 import { createShownCount } from '@/game/table/shown-count';
 import { createSideBetPicker, sideBetLabel } from '@/game/table/side-bet-picker';

@@ -12,7 +12,7 @@ import { PLAYER } from '@/game/engine/hand';
 import { GameSession } from '@/game/session';
 import { createTableState } from '@/game/table/table-state';
 import { createShownCount } from '@/game/table/shown-count';
-import { planSteps } from '@/game/table/animator';
+import { planSteps } from '@/game/table/choreography';
 import { createServices } from '@/app/app';
 import { Settings } from '@/settings/store';
 import { SETTINGS_SCHEMA } from '@/settings/schema';

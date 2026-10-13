@@ -271,8 +271,16 @@ function holeCardFlash(log: Frame[]) {
 }
 
 test.describe('peeking at the hole card', () => {
-  test('flashes the hole card for about half a second during the deal, and counts it once', async ({ page }) => {
-    await openTable(page, { settings: { 'peeking.mode': 'holeCard', 'peeking.percent': 100, 'table.burnCards': 1 } });
+  test('flashes the hole card for a dealer beat during the deal, and counts it once', async ({ page }) => {
+    // Dealer speed 40: a beat of (101 - 40) / 120 s, about half a second.
+    await openTable(page, {
+      settings: {
+        'peeking.mode': 'holeCard',
+        'peeking.percent': 100,
+        'table.burnCards': 1,
+        'mechanics.dealerSpeed': 40,
+      },
+    });
     for (let round = 0; round < 4; round++) {
       const log = await playRound(page);
       const flash = holeCardFlash(log);

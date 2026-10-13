@@ -208,8 +208,6 @@ const POLICY = {
   },
   hitTo17: (offered, cards) =>
     offered.includes('pass') ? 'pass' : offered.includes('hit') && total(cards) < 17 ? 'hit' : 'stand',
-  // Lets the insurance offer run out by itself.
-  waitOutInsurance: offered => (offered.includes('pass') ? null : 'stand'),
 } satisfies Record<string, Policy | (() => Policy)>;
 
 /** Makes sure the pointer image has arrived, as it has once a player has taken a moment over the bet. */
@@ -691,20 +689,6 @@ test.describe('the count readout', () => {
       const shown = rc(await readout(page).textContent());
       expect(shown, `round ${round}`).toBe(await statsRunningCount(page));
     }
-  });
-});
-
-// --- 9. table messages ------------------------------------------------------
-
-test.describe('table messages', () => {
-  test('stay up about three and a half seconds', async ({ page }) => {
-    // Seed 4: the dealer shows an ace and offers insurance, which is left to pass by itself.
-    await openTable(page, { seed: 4 });
-    const { log } = await playRound(page, POLICY.waitOutInsurance);
-    const offer = log.find(e => e.kind === 'toast' && e.text.includes('Insurance'));
-    expect(offer).toBeTruthy();
-    expect(offer!.leaving! - offer!.t).toBeGreaterThan(3300);
-    expect(offer!.leaving! - offer!.t).toBeLessThan(3900);
   });
 });
 

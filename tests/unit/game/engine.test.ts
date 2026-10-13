@@ -642,3 +642,41 @@ describe('a round the player sits out', () => {
     expect(game.hands.filter(hand => hand.seat !== 1).map(hand => hand.seat)).toEqual(upcoming);
   });
 });
+
+describe("a computer seat's decisions", () => {
+  // Seat order: player, computer, dealer up; player, computer, hole.
+  const withComputer = (cards: CardId[], computerPlay: GameOptions['computerPlay'], rules = makeRules()) =>
+    riggedGame(cards, { table: { seatCount: 2, computerSeats: [2] }, rules, computerPlay });
+  const actions = (events: readonly { type: string }[]) =>
+    events.flatMap(e => (e.type === 'action' && 'hand' in e && e.hand === '2-0' && 'action' in e ? [e.action] : []));
+
+  it('are reported as the player’s are: a hit, then a stand', () => {
+    const game = withComputer([card(10), card(10, 1), card(10, 2), card(9), card(2), card(7), card(5)], hand =>
+      hand.total < 17 ? ACTION.hit : ACTION.stand,
+    );
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(actions(game.act(ACTION.stand))).toEqual([ACTION.hit, ACTION.stand]);
+  });
+
+  it('report a double with its stake, which is not the player’s money', () => {
+    const game = withComputer(
+      [card(10), card(10, 1), card(6), card(9), card(5), card(7), card(10, 2)],
+      () => ACTION.double,
+    );
+    game.startRound([{ seat: 1, bet: 10 }]);
+    const events = game.act(ACTION.stand);
+    expect(actions(events)).toEqual([ACTION.double]);
+    expect(events).toContainEqual({ type: 'double', hand: '2-0', amount: 5 });
+    expect(game.bankroll).toBeGreaterThanOrEqual(990);
+  });
+
+  it('leave out a stand the table makes for the seat', () => {
+    // 10-2 hits a 9: an automatic stand on 21, not a decision.
+    const game = withComputer(
+      [card(10), card(10, 1), card(10, 2), card(9), card(2), card(7), card(9, 1)],
+      () => ACTION.hit,
+    );
+    game.startRound([{ seat: 1, bet: 10 }]);
+    expect(actions(game.act(ACTION.stand))).toEqual([ACTION.hit]);
+  });
+});

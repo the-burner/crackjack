@@ -32,6 +32,8 @@ export type GameEvent =
   | { type: 'insuranceTaken' }
   | { type: 'insuranceDeclined' }
   | { type: 'insuranceLost' }
+  /** The dealer looked under its up card and found no blackjack. */
+  | { type: 'dealerChecked' }
   /** `hand` is absent for the dealer's own announcements. */
   | { type: 'message'; text: MessageText; hand?: HandKey }
   | { type: 'turn'; hand: HandKey }

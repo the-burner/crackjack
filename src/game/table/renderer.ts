@@ -5,12 +5,13 @@
 // are built once into a background buffer and copied in front of every frame.
 
 import { setupCanvas, drawCard, loadCardImages } from '@/lib/card-sprites';
-import { cardSlot, RAIL_SIZE } from './layout';
+import { cardSlot, handSlot, RAIL_SIZE } from './layout';
 import type { Point, TableLayout } from './layout';
 import { trayPhoto, shoePhoto, trayMaskSrc, SHOE_MASK_SRC, drawMasked, loadImage, preloadTablePhotos } from './photos';
 import { cssVar } from '@/lib/theme';
 import { DEALER_KEY } from './table-state';
 import type { BurnCard, ShownHand } from './table-state';
+import { parseHandKey } from '@/game/engine/hand';
 import type { HandKey } from '@/game/engine/hand';
 
 const FELT_SRC = 'assets/table/felt.jpg';
@@ -35,6 +36,8 @@ export interface TableView {
   shoeCards?: number;
   /** Burn cards showing. */
   burns?: BurnCard[];
+  /** Each seat's hands in play order, right to left (see the table state's seatOrder). */
+  seatOrder?: ReadonlyMap<number, readonly HandKey[]>;
 }
 
 interface PointerFrame {
@@ -136,7 +139,7 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
       drawBurns(ctx, layout, state.burns ?? []);
       const drawn: DrawnHand[] = [];
       for (const hand of [state.dealer, ...state.hands]) {
-        if (hand) drawn.push({ hand, slots: drawHand(ctx, layout, hand, handsInSeat(state.hands, hand.seat)) });
+        if (hand) drawn.push({ hand, slots: drawHand(ctx, layout, hand, state.seatOrder?.get(hand.seat)) });
       }
       const pointer = drawPointer(ctx, layout, state, onPointerLoad);
       ctx.restore();
@@ -195,11 +198,19 @@ interface DrawnHand {
 }
 
 /** A hand's cards, drawn left to right so each one overlaps the one before. */
-function drawHand(ctx: CanvasRenderingContext2D, layout: TableLayout, hand: ShownHand, handsInSeat = 0): Point[] {
+function drawHand(
+  ctx: CanvasRenderingContext2D,
+  layout: TableLayout,
+  hand: ShownHand,
+  order: readonly HandKey[] | undefined,
+): Point[] {
   const placed: { slot: Point; card: number; faceUp: boolean }[] = [];
   const dealerHand = { count: hand.cards.length, holeHidden: hand.faceUp[1] === false, squeezed: hand.squeezed };
   hand.cards.forEach((card, index) => {
-    const slot = cardSlot(layout, hand.key, index, dealerHand, { handsInSeat });
+    const slot =
+      hand.key === DEALER_KEY
+        ? cardSlot(layout, hand.key, index, dealerHand)
+        : handSlot(layout, hand.key, index, order);
     if (slot) placed.push({ slot, card, faceUp: hand.faceUp[index] });
   });
   placed.sort((a, b) => a.slot.x - b.slot.x);
@@ -208,13 +219,6 @@ function drawHand(ctx: CanvasRenderingContext2D, layout: TableLayout, hand: Show
   }
   return placed.map(({ slot }) => slot);
 }
-
-/**
- * How many hands the seat was split into, so a hand keeps its column while
- * the others are paid and swept around it.
- */
-const handsInSeat = (hands: readonly ShownHand[], seat: number) =>
-  Math.max(0, ...hands.filter(hand => hand.seat === seat).map(hand => hand.index + 1));
 
 /** The burn cards, in a row right of the tray. */
 function drawBurns(ctx: CanvasRenderingContext2D, layout: TableLayout, burns: readonly BurnCard[]) {
@@ -241,14 +245,17 @@ function drawShoe(ctx: CanvasRenderingContext2D, layout: TableLayout, cards: num
 function drawPointer(
   ctx: CanvasRenderingContext2D,
   layout: TableLayout,
-  { pointerHand, hands }: TableView,
+  { pointerHand, hands, seatOrder }: TableView,
   onLoad: () => void,
 ): PointerFrame | null {
   if (!pointerHand) return null;
   const hand = hands.find(h => h.key === pointerHand);
-  const slot = cardSlot(layout, pointerHand, Math.max(0, (hand?.cards.length ?? 1) - 1), undefined, {
-    handsInSeat: handsInSeat(hands, hand?.seat ?? 0),
-  });
+  const slot = handSlot(
+    layout,
+    pointerHand,
+    Math.max(0, (hand?.cards.length ?? 1) - 1),
+    seatOrder?.get(hand?.seat ?? parseHandKey(pointerHand).seat),
+  );
   const pointer = loadImage(POINTER_SRC);
   if (!slot) return null;
   // Not loaded yet: draw it as soon as it is, rather than at the next redraw.

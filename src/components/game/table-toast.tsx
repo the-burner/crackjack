@@ -8,7 +8,7 @@ export type TableToastTone = ToastTone;
 /** Shows `text` in place of any pop-up already up; `onGone` runs once it has gone or been replaced. */
 export function tableToast(
   text: string,
-  { tone = 'plain', ms = 1800, onGone }: { tone?: TableToastTone; ms?: number; onGone?: () => void } = {},
+  { tone = 'plain', ms = 1800, onGone }: { tone?: TableToastTone; ms?: number | null; onGone?: () => void } = {},
 ): number {
   return toast(text, { position: 'top', tone, ms, onGone });
 }

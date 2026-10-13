@@ -12,7 +12,8 @@ type Shown = {
   message: string;
   position: 'bottom' | 'top';
   tone: ToastTone;
-  ms: number;
+  /** Null: up until dismissToast. */
+  ms: number | null;
   onGone?: () => void;
 };
 
@@ -27,7 +28,7 @@ export function toast(
     tone = 'plain',
     ms = 1800,
     onGone,
-  }: { position?: 'bottom' | 'top'; tone?: ToastTone; ms?: number; onGone?: () => void } = {},
+  }: { position?: 'bottom' | 'top'; tone?: ToastTone; ms?: number | null; onGone?: () => void } = {},
 ): number {
   useToast.getState().current?.onGone?.();
   const id = nextId++;
@@ -54,12 +55,14 @@ export function Toaster() {
 function ToastView({ toast: shown }: { toast: Shown }) {
   const [leaving, setLeaving] = useState(false);
   useEffect(() => {
-    const leave = setTimeout(() => setLeaving(true), shown.ms);
+    if (shown.ms === null) return;
+    const { ms } = shown;
+    const leave = setTimeout(() => setLeaving(true), ms);
     const gone = setTimeout(() => {
       if (useToast.getState().current?.id !== shown.id) return;
       useToast.setState({ current: null });
       shown.onGone?.();
-    }, shown.ms + LEAVE_MS);
+    }, ms + LEAVE_MS);
     return () => {
       clearTimeout(leave);
       clearTimeout(gone);

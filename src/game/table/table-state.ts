@@ -91,6 +91,12 @@ export function createTableState({ decks }: { decks: number }) {
      * hand by hand.
      */
     bankroll: 0,
+    /**
+     * Each seat's hands in the order they are played, right to left as the player sees them: a
+     * split hand goes just left of the hand it came from. It only grows during a round, so no
+     * hand moves as the others are swept.
+     */
+    seatOrder: new Map<number, HandKey[]>(),
 
     /** Cards sitting in the discard tray: dealt, less what is still on the table. */
     get trayCards(): number {
@@ -113,6 +119,8 @@ export function createTableState({ decks }: { decks: number }) {
         found = emptyHand(key);
         state.hands.push(found);
         state.hands.sort((a, b) => a.seat - b.seat || a.index - b.index);
+        const order = state.seatOrder.get(found.seat) ?? [];
+        if (!order.includes(key)) state.seatOrder.set(found.seat, [...order, key]);
       }
       return found;
     },
@@ -141,6 +149,7 @@ export function createTableState({ decks }: { decks: number }) {
       state.chips = new Map();
       state.stakes = new Map();
       state.swept = new Set();
+      state.seatOrder = new Map();
     },
 
     /** A seat's chip label; computer seats get one only to show their results. */
@@ -197,8 +206,11 @@ export function createTableState({ decks }: { decks: number }) {
           break;
         }
         case 'split': {
-          // The engine moved the second card to a new hand of its own.
+          // The engine moved the second card to a new hand of its own, played next: it goes just left of this one.
           const from = state.hand(event.hand);
+          const order = (state.seatOrder.get(from.seat) ?? []).filter(key => key !== event.newHand);
+          order.splice(order.indexOf(event.hand) + 1, 0, event.newHand);
+          state.seatOrder.set(from.seat, order);
           from.cards.pop();
           const faceUp = from.faceUp.pop();
           const to = state.hand(event.newHand);
@@ -215,7 +227,8 @@ export function createTableState({ decks }: { decks: number }) {
         }
         case 'double': {
           const bet = state.chips.get(state.hand(event.hand).seat);
-          if (bet) {
+          // A computer seat's chips are not the player's money.
+          if (bet && !bet.computer) {
             bet.amount += event.amount;
             state.bankroll -= event.amount;
             state.stake(event.hand, event.amount);

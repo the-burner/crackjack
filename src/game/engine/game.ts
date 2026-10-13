@@ -438,6 +438,7 @@ export class BlackjackGame {
         return;
       }
       if (this.humanHands().some(hand => hand.insuranceBet > 0)) this.emit({ type: 'insuranceLost' });
+      this.emit({ type: 'dealerChecked' });
     }
     this.state = STATE.playerAction;
     this.advance();
@@ -721,17 +722,29 @@ export class BlackjackGame {
       const action =
         this.computerPlay?.(hand, { dealerUpcard: this.dealer.cards[0], game: this }) ??
         defaultComputerAction(this.rules, hand, this.dealer.cards[0]);
-      if (action === ACTION.double && doubleAllowed(this.rules, hand)) {
+      const doubling = action === ACTION.double && doubleAllowed(this.rules, hand);
+      const splitting = action === ACTION.split && splitAllowed(this.rules, hand, this.handsInSeat(hand.seat));
+      // What the seat did, reported as the player's own decisions are; anything it may not do is a stand.
+      const taken = doubling
+        ? ACTION.double
+        : splitting
+          ? ACTION.split
+          : action === ACTION.hit
+            ? ACTION.hit
+            : ACTION.stand;
+      this.emit({ type: 'action', hand: hand.key, action: taken });
+      if (doubling) {
         hand.doubleBet += hand.bet;
         hand.doubled = true;
+        this.emit({ type: 'double', hand: hand.key, amount: hand.bet });
         this.dealTo(hand, { faceUp: this.table.doubleDownCardFaceUp });
         break;
       }
-      if (action === ACTION.split && splitAllowed(this.rules, hand, this.handsInSeat(hand.seat))) {
+      if (splitting) {
         if (!this.split(hand)) break;
         continue;
       }
-      if (action === ACTION.hit) {
+      if (taken === ACTION.hit) {
         this.dealTo(hand);
         if (!hand.busted() && this.autoStands(hand)) {
           hand.stood = true;

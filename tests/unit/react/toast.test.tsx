@@ -18,3 +18,17 @@ describe('a toast', () => {
     expect(screen.getByText('Next')).toBeInTheDocument();
   });
 });
+
+describe('a toast with no time', () => {
+  it('stays up until it is taken down', () => {
+    vi.useFakeTimers();
+    render(<Toaster />);
+    let id = 0;
+    act(() => void (id = toast('Insurance?', { ms: null })));
+    act(() => void vi.advanceTimersByTime(60000));
+    expect(screen.getByText('Insurance?')).toBeInTheDocument();
+    act(() => dismissToast(id));
+    expect(screen.queryByText('Insurance?')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+});

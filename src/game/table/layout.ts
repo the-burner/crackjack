@@ -533,14 +533,29 @@ export function cardSlot(
   key: HandKey,
   cardIndex: number,
   dealerHand: DealerHandShape = { count: cardIndex + 1, holeHidden: false },
-  { handsInSeat = 0 }: { handsInSeat?: number } = {},
+  { handsInSeat = 0, place }: { handsInSeat?: number; place?: number } = {},
 ): Point | null {
   const { seat, index } = parseHandKey(key);
   if (seat === 0) return dealerSlot(layout.dealer, cardIndex, dealerHand);
   const seatLayout = layout.seats.find(s => s.seat === seat);
   if (!seatLayout) return null;
-  const column = seatLayout.hands[splitColumn(index, handsInSeat)];
+  const column = seatLayout.hands[splitColumn(place ?? index, handsInSeat)];
   return column[Math.min(cardIndex, CARDS_PER_HAND - 1)] ?? null;
+}
+
+/**
+ * Where a player's card sits, its hand placed by the seat's play order (see the table state's
+ * seatOrder): right to left, as the hands are played.
+ */
+export function handSlot(
+  layout: TableLayout,
+  key: HandKey,
+  cardIndex: number,
+  order: readonly HandKey[] | undefined,
+): Point | null {
+  const place = order?.indexOf(key) ?? -1;
+  if (place < 0) return cardSlot(layout, key, cardIndex);
+  return cardSlot(layout, key, cardIndex, undefined, { place, handsInSeat: order!.length });
 }
 
 /**
