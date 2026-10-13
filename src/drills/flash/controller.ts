@@ -6,6 +6,8 @@ import { confirm } from '@/components/dialogs';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/lib/card-sprites';
 import { doubleTapDetector } from '@/lib/double-tap';
 import { swipeOf } from '@/core/gestures';
+import type { Gesture } from '@/core/gestures';
+import { attachGestureKeys } from '@/lib/gesture-keys';
 import { gestureMapFor } from '@/settings/gesture-configs';
 import { cssVar } from '@/lib/theme';
 import { valueName } from '@/core/cards';
@@ -519,7 +521,13 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     swipeFrom = { x: event.clientX, y: event.clientY };
   }
 
-  /** A swipe or a double tap is an answer: the play the player's mapping (Settings → Gestures) gives it. */
+  /** A gesture is an answer: the play the player's mapping (Settings → Gestures) gives it. */
+  function gestured(gesture: Gesture) {
+    if (indexTest || silent) return;
+    answer(ACTION[gestureMapFor(k => s.get(k), window.innerHeight > window.innerWidth)[gesture]]);
+  }
+
+  /** A swipe or a double tap on the cards. */
   function pointerUp(event: CardsPointer) {
     if (!swipeFrom || indexTest || silent) return;
     const dx = event.clientX - swipeFrom.x;
@@ -531,8 +539,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
         ? 'doubleTap'
         : null
       : swipeOf({ dx, dy, minDistance: MIN_SWIPE_PIXELS });
-    if (!gesture) return;
-    answer(ACTION[gestureMapFor(k => s.get(k), window.innerHeight > window.innerWidth)[gesture]]);
+    if (gesture) gestured(gesture);
   }
 
   loadCardImages().then(changed);
@@ -551,8 +558,11 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     /** The elements to draw in, from the screen; returns the detach. */
     attach(elements: FlashElements) {
       els = elements;
+      // A covered drill is paused, with no hand to answer.
+      const detachKeys = attachGestureKeys(() => s.get('gestures.keys'), gestured);
       return () => {
         els = null;
+        detachKeys();
       };
     },
     draw,

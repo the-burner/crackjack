@@ -5,7 +5,7 @@
 import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategies';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { isRamp } from './bet-ramp';
-import { STANDARD, isGestureMap } from '@/core/gestures';
+import { STANDARD, STANDARD_KEYS, isGestureMap, isKeyMap } from '@/core/gestures';
 import type { Ramp } from './bet-ramp';
 import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues, StringDef } from './store';
 
@@ -200,6 +200,8 @@ export const SETTINGS_SCHEMA = {
   /** The play each gesture makes, for the game and the drills; one mapping per orientation. */
   'gestures.portrait': json(STANDARD, isGestureMap),
   'gestures.landscape': json(STANDARD, isGestureMap),
+  /** The key that makes each gesture, either way up. */
+  'gestures.keys': json(STANDARD_KEYS, isKeyMap),
   /** The gesture configuration selected (see gesture-configs.ts); '' for none. */
   'gestures.config': text('standard'),
   'display.sound': bool(false),

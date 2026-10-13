@@ -456,6 +456,31 @@ test.describe('the table', () => {
     await expect(overlay(page)).toBeVisible();
   });
 
+  test('plays by keyboard: / places the bet, the left arrow stands', async ({ page }) => {
+    await openTable(page, { settings: { 'display.hideActionButtons': undefined } });
+    await expect(overlay(page)).toBeVisible();
+    await page.keyboard.press('/');
+    await expect(overlay(page)).toBeHidden();
+    // A key while the cards are moving is dropped, so it is tried again until the bets are asked for.
+    await expect(async () => {
+      if (await dialog(page).isVisible()) await dialog(page).getByRole('button').first().click();
+      await page.keyboard.press('ArrowLeft');
+      expect(await overlay(page).isVisible()).toBe(true);
+    }).toPass({ timeout: 15000 });
+  });
+
+  test('hears no keys while Stats covers the table', async ({ page }) => {
+    await openTable(page);
+    await expect(overlay(page)).toBeVisible();
+    await barButton(page, 'Stats').click();
+    const stats = page.locator('[data-screen="game.stats"]');
+    await expect(stats).toBeVisible();
+    // The double tap would place the highlighted bet.
+    await page.keyboard.press('/');
+    await stats.getByRole('button', { name: 'Back' }).click();
+    await expect(overlay(page)).toBeVisible();
+  });
+
   test('bets by gestures: swipes move the highlight round the bets, a double tap places it', async ({ page }) => {
     await openTable(page);
     await expect(overlay(page)).toBeVisible();

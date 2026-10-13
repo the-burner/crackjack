@@ -1,8 +1,10 @@
-// The five gestures (four swipes and a double tap) and the play each one makes.
+// The five gestures (four swipes and a double tap, each also a key) and the play each one makes.
 // A mapping gives every gesture exactly one play, so it is always complete; the
 // game's other gesture uses follow from it: the plays Hit and Double answer
 // insurance yes and Stand and Split no, and while betting Stand's and Split's
 // gestures move the highlight left and right and Surrender's places the bet.
+
+import { normalKey } from './keys';
 
 export const GESTURES = ['up', 'down', 'left', 'right', 'doubleTap'] as const;
 export type Gesture = (typeof GESTURES)[number];
@@ -19,6 +21,42 @@ export const GESTURE_LABELS: Record<Gesture, string> = {
   right: 'Swipe right',
   doubleTap: 'Double tap',
 };
+
+/** The key that makes each gesture, as KeyboardEvent.key names (see core/keys). */
+export type KeyMap = Record<Gesture, string>;
+
+/** The arrows swipe, / double taps. */
+export const STANDARD_KEYS: KeyMap = {
+  up: 'ArrowUp',
+  down: 'ArrowDown',
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
+  doubleTap: '/',
+};
+
+/** The gesture a key press makes, or null; with Ctrl, Alt or ⌘ held it is a shortcut, not a gesture. */
+export function gestureOfKey(
+  { key, ctrlKey, altKey, metaKey }: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey'>,
+  keys: KeyMap,
+): Gesture | null {
+  if (ctrlKey || altKey || metaKey) return null;
+  return GESTURES.find(gesture => keys[gesture] === normalKey(key)) ?? null;
+}
+
+/** `keys` with `key` making `gesture`; the gesture it made before takes this one's old key. */
+export function withKey(keys: KeyMap, gesture: Gesture, key: string): KeyMap {
+  const holder = GESTURES.find(g => keys[g] === key);
+  const next = { ...keys, [gesture]: key };
+  if (holder && holder !== gesture) next[holder] = keys[gesture];
+  return next;
+}
+
+/** Whether `value` gives every gesture a different key. */
+export function isKeyMap(value: unknown): value is KeyMap {
+  if (typeof value !== 'object' || value === null) return false;
+  const keys = GESTURES.map(g => (value as Record<string, unknown>)[g]);
+  return keys.every(key => typeof key === 'string' && key !== '') && new Set(keys).size === keys.length;
+}
 
 export const ACTION_LABELS: Record<GestureAction, string> = {
   hit: 'Hit',

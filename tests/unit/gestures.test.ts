@@ -5,10 +5,14 @@ import {
   GESTURES,
   MIN_SWIPE,
   STANDARD,
+  STANDARD_KEYS,
+  gestureOfKey,
   isGestureMap,
+  isKeyMap,
   rotated,
   swipeOf,
   withAction,
+  withKey,
 } from '@/core/gestures';
 import { GESTURE_PRESETS, gestureMapFor, readGestureConfigs } from '@/settings/gesture-configs';
 
@@ -103,5 +107,48 @@ describe('saved configurations', () => {
       ]),
     ).toEqual([{ id: 'a', name: 'A', ...both }]);
     expect(readGestureConfigs(undefined)).toEqual([]);
+  });
+});
+
+describe('the keys', () => {
+  const press = (
+    key: string,
+    held: Partial<Record<'ctrlKey' | 'altKey' | 'metaKey', boolean>> = {},
+    keys = STANDARD_KEYS,
+  ) => gestureOfKey({ key, ctrlKey: false, altKey: false, metaKey: false, ...held }, keys);
+
+  it('make the swipes with the arrows and the double tap with /, to begin with', () => {
+    expect(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '/'].map(key => press(key))).toEqual([
+      'up',
+      'down',
+      'left',
+      'right',
+      'doubleTap',
+    ]);
+  });
+
+  it('make nothing else, nor with Ctrl, Alt or ⌘ held', () => {
+    expect(press('Enter')).toBeNull();
+    expect(press('x')).toBeNull();
+    expect(press('/', { metaKey: true })).toBeNull();
+    expect(press('ArrowLeft', { ctrlKey: true })).toBeNull();
+    expect(press('ArrowLeft', { altKey: true })).toBeNull();
+  });
+
+  it('follow the keys chosen; a key another gesture had swaps the two', () => {
+    const keys = withKey(STANDARD_KEYS, 'doubleTap', 'ArrowUp');
+    expect(keys).toEqual({ ...STANDARD_KEYS, doubleTap: 'ArrowUp', up: '/' });
+    expect(press('ArrowUp', {}, keys)).toBe('doubleTap');
+    expect(press('/', {}, keys)).toBe('up');
+    // A letter whichever case.
+    expect(press('K', {}, withKey(STANDARD_KEYS, 'doubleTap', 'k'))).toBe('doubleTap');
+    expect(press('PageDown', {}, withKey(STANDARD_KEYS, 'down', 'PageDown'))).toBe('down');
+  });
+
+  it('are a key map only with a different key for every gesture', () => {
+    expect(isKeyMap(STANDARD_KEYS)).toBe(true);
+    expect(isKeyMap({ ...STANDARD_KEYS, up: '/' })).toBe(false);
+    expect(isKeyMap({ ...STANDARD_KEYS, up: '' })).toBe(false);
+    expect(isKeyMap({ ...STANDARD_KEYS, up: 3 })).toBe(false);
   });
 });

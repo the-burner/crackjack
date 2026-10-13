@@ -32,6 +32,7 @@ import { betCells, moveHighlight, overlayButtons, overlaySlots, startingHighligh
 import type { LastPick, OverlayButtonName } from './bet-grid';
 import type { BetCell } from './bet-grid';
 import { attachGestures } from './gestures';
+import { attachGestureKeys } from '@/lib/gesture-keys';
 import { gestureMapFor } from '@/settings/gesture-configs';
 import type { Gesture, GestureAction } from '@/core/gestures';
 import { obviouslyBad, areYouSure } from './bad-plays';
@@ -770,7 +771,18 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
         renderer = createTableRenderer(canvas);
         rendererCanvas = canvas;
       }
-      detachSwipes = attachGestures(feltEl, onGesture);
+      const detachPointer = attachGestures(feltEl, onGesture);
+      // Keys reach the window: only the table on screen hears them.
+      const detachKeys = attachGestureKeys(
+        () => settings.get('gestures.keys'),
+        gesture => {
+          if (showing) onGesture(gesture);
+        },
+      );
+      detachSwipes = () => {
+        detachPointer();
+        detachKeys();
+      };
     },
 
     play,

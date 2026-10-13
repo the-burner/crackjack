@@ -116,6 +116,23 @@ describe('rule interactions', () => {
 });
 
 describe('Gestures', () => {
+  it('sets a gesture’s key from the next key pressed, swapping with the gesture that had it, and Escape keeps it', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Gestures />);
+    await user.click(screen.getByRole('button', { name: 'Portrait Double tap key: /' }));
+    expect(screen.getByRole('button', { name: 'Portrait Double tap key: Press a key' })).toBeInTheDocument();
+    await user.keyboard('{ArrowUp}');
+    expect(app.settings.get('gestures.keys')).toMatchObject({ doubleTap: 'ArrowUp', up: '/' });
+    expect(screen.getByRole('button', { name: 'Portrait Swipe up key: /' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Portrait Swipe down key: ↓' }));
+    await user.keyboard('{Shift>}K{/Shift}');
+    expect(app.settings.get('gestures.keys')).toMatchObject({ down: 'k' });
+    await user.click(screen.getByRole('button', { name: 'Portrait Swipe down key: K' }));
+    await user.keyboard('{Escape}');
+    expect(app.settings.get('gestures.keys')).toMatchObject({ down: 'k' });
+    expect(screen.getByRole('button', { name: 'Portrait Swipe down key: K' })).toBeInTheDocument();
+  });
+
   it('swaps plays between gestures, and picks a configuration for both orientations at once', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Gestures />);

@@ -266,6 +266,38 @@ test.describe('flash drill', () => {
     await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
   });
 
+  test('plays the arrow keys and / as the swipes and the double tap they stand for', async ({ page }) => {
+    const swapped = { down: 'surrender', left: 'stand', up: 'double', right: 'split', doubleTap: 'hit' };
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn', 'gestures.portrait': swapped });
+    const screen = await launch(page, DRILLS.flash);
+    await expect(screen.getByRole('img', { name: 'Cards' })).toBeVisible();
+    // Down is Surrender in this mapping, which these situations refuse.
+    await page.keyboard.press('ArrowDown');
+    await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
+  });
+
+  test('plays the keys chosen in Settings → Gestures', async ({ page }) => {
+    await open(page, {
+      ...FIXED_16_V_TEN(),
+      'drills.flash.testMode': 'warn',
+      'gestures.keys': { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', doubleTap: 'k' },
+    });
+    const screen = await launch(page, DRILLS.flash);
+    await expect(screen.getByRole('img', { name: 'Cards' })).toBeVisible();
+    await page.keyboard.press('/');
+    await expect(screen.getByRole('status')).toHaveText('');
+    await page.keyboard.press('k');
+    await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
+  });
+
+  test('/ is the double tap: Surrender in the standard mapping', async ({ page }) => {
+    await open(page, { ...FIXED_16_V_TEN(), 'drills.flash.testMode': 'warn' });
+    const screen = await launch(page, DRILLS.flash);
+    await expect(screen.getByRole('img', { name: 'Cards' })).toBeVisible();
+    await page.keyboard.press('/');
+    await expect(screen.getByRole('status')).toContainText('Surrender situations were not selected');
+  });
+
   test('shows the timing options each timer mode uses', async ({ page }) => {
     await open(page);
     await page.getByRole('button', { name: 'Flash Drills' }).click();
