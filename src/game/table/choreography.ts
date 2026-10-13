@@ -303,10 +303,14 @@ export const SCRIPTS: { [K in Unit['kind']]: Script<K> } = {
         : [step(event, event.type === 'reveal' ? turnOver(events, index, stage.pauses.player) : 0)],
     ),
 
-  /** The hole card turns and each draw lands a dealer beat apart; the cards close up a beat before a fifth. */
+  /**
+   * The pointer leaves the last hand a dealer beat before the hole card turns; each draw lands a
+   * dealer beat apart; the cards close up a beat before a fifth.
+   */
   dealer: ({ events }, stage) => {
     const { dealer } = stage.pauses;
     return events.flatMap((event): Step[] => {
+      if (event.type === 'dealerTurn') return [step(event, dealer)];
       if (event.type === 'card' && event.cardIndex === DEALER_SPREAD_CARDS)
         return [step({ type: 'squeeze', hand: DEALER_KEY }, dealer), step(event, dealer, 'card')];
       if (event.type === 'card' || event.type === 'reveal') return [step(event, dealer, cardSound(event))];

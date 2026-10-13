@@ -214,13 +214,13 @@ describe('a blackjack', () => {
 });
 
 describe("the dealer's turn", () => {
-  it('turns the hole card, then draws a dealer beat apart', () => {
+  it('rests a dealer beat after the last play, turns the hole card, then draws a dealer beat apart', () => {
     const game = riggedGame([card(10), card(10, 1), card(9), card(6), card(2)]);
     game.startRound([{ seat: 1, bet: 10 }]);
     const steps = plan(game.act(ACTION.stand));
     const turn = steps.findIndex(s => s.event.type === 'dealerTurn');
     expect(shape(steps.slice(turn, turn + 3))).toEqual([
-      ['dealerTurn', 0],
+      ['dealerTurn', D],
       ['reveal', D],
       ['card', D],
     ]);
