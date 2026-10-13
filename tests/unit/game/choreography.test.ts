@@ -73,11 +73,11 @@ const forHand = (steps: Step[], hand: string) => {
 };
 
 describe('the deal', () => {
-  it('deals each card a dealer beat apart, the up card face down until every card is out', () => {
+  it('rests a dealer beat once the bets are down, deals each card a dealer beat apart, the up card face down until every card is out', () => {
     const game = riggedGame([card(10), card(9), card(7), card(6)]);
     const steps = plan(game.startRound([{ seat: 1, bet: 10 }]));
     expect(shape(steps)).toEqual([
-      ['roundStart', 0],
+      ['roundStart', D],
       ['card', D],
       ['card', D],
       ['card', D],

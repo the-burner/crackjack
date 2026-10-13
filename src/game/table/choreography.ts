@@ -218,13 +218,14 @@ export const SCRIPTS: { [K in Unit['kind']]: Script<K> } = {
   ],
 
   /**
-   * A dealer beat after each card. As in the original, the up card is dealt face down and turned
+   * A dealer beat once the bets are down, then one after each card. As in the original, the up card is dealt face down and turned
    * once every card is out, a dealer beat before any glimpse of the hole card.
    */
   deal: ({ events }, stage) => {
     const { dealer } = stage.pauses;
     const up = events.find(e => e.type === 'card' && e.hand === DEALER_KEY && e.cardIndex === 0);
     return events.flatMap((event): Step[] => {
+      if (event.type === 'roundStart') return [step(event, dealer)];
       if (event.type === 'card') return [step(event === up ? { ...event, faceUp: false } : event, dealer, 'card')];
       if (event.type === 'dealt' && up?.type === 'card')
         return [step({ type: 'reveal', hand: DEALER_KEY, cardIndex: 0, card: up.card }, dealer), step(event, 0)];

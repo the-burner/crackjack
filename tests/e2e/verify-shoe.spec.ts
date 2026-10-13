@@ -272,6 +272,8 @@ function holeCardFlash(log: Frame[]) {
 
 test.describe('peeking at the hole card', () => {
   test('flashes the hole card for a dealer beat during the deal, and counts it once', async ({ page }) => {
+    // Four rounds at this dealer speed take longer than the default.
+    test.setTimeout(90000);
     // Dealer speed 40: a beat of (101 - 40) / 120 s, about half a second.
     await openTable(page, {
       settings: {
