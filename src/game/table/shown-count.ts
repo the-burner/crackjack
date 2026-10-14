@@ -27,12 +27,14 @@ export function createShownCount({
       return counter.running;
     },
 
-    get trueCount(): number {
-      return counter.trueCount;
+    /** The true count with `cardsGone` cards gone, by `settings` as they are now. */
+    trueCountAt(cardsGone: number, settings: CounterSettings): number {
+      counter.settings = settings;
+      return counter.trueCountAt(cardsGone);
     },
 
-    /** Counts what an event shows; `dealt` is the cards drawn from the shoe so far. */
-    see(event: TableEvent, dealt: number) {
+    /** Counts what an event shows; `cardsGone` is the cards the true count treats as gone. */
+    see(event: TableEvent, cardsGone: number) {
       if (event.type === 'shuffle' || event.type === 'clear') {
         if (event.type === 'shuffle') counter.reset(decks);
         counted.clear();
@@ -52,7 +54,7 @@ export function createShownCount({
         if (counted.has(seen)) return;
         counted.add(seen);
       }
-      counter.addCard(event.card, dealt);
+      counter.addCard(event.card, cardsGone);
     },
   };
 }

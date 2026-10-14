@@ -293,3 +293,15 @@ describe('burn cards going into the tray', () => {
     expect(state.trayCards).toBe(1);
   });
 });
+
+describe('the cards the true count treats as gone', () => {
+  it('follow Remaining Cards: every card dealt, those shown face up, or those in the tray', () => {
+    // A burn, then four cards dealt, the hole card face down.
+    const state = dealt();
+    expect(state.cardsGone('dealt')).toBe(5);
+    expect(state.cardsGone('shown')).toBe(4);
+    expect(state.cardsGone('inTray')).toBe(1);
+    state.apply({ type: 'clear' });
+    expect(['dealt', 'shown', 'inTray'].map(r => state.cardsGone(r as 'dealt'))).toEqual([5, 5, 5]);
+  });
+});

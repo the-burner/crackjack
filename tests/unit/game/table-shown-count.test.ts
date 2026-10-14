@@ -93,3 +93,16 @@ describe('the side-bet label', () => {
     expect(sideBetLabel({})).toBe('');
   });
 });
+
+describe('the true count as the player has seen it', () => {
+  it('is worked out with the cards gone as they are when it is read', () => {
+    const { shown } = counts();
+    const settings = { division: 3, lastDeck: 3, rounding: 0 } as const;
+    // Two low cards: a running count of +2.
+    shown.see({ type: 'card', hand: '1-0', card: card(2), faceUp: true, cardIndex: 0 }, 0);
+    shown.see({ type: 'card', hand: '1-0', card: card(3), faceUp: true, cardIndex: 1 }, 0);
+    expect(shown.trueCountAt(0, settings)).toBe(Math.round(2 / 6));
+    // The same count with five decks' worth of cards gone.
+    expect(shown.trueCountAt(260, settings)).toBe(2);
+  });
+});

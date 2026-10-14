@@ -110,7 +110,7 @@ export class GameSession {
       computerPlay: (hand, context) => this.computerAction(hand, context),
       onCardSeen: (card, faceUp, cardsGone) => this.counter.addCard(card, cardsGone),
       sideBetGame: this.sideBetGame,
-      trueCount: () => this.counter.trueCount,
+      trueCount: () => this.currentCount().trueCount,
       beforeDealerDraw: dealer => this.beforeDealerDraw?.(dealer) ?? true,
       onGoodHandBusted: hand => this.onGoodHandBusted?.(hand) ?? false,
       onShuffle: () => {
@@ -183,15 +183,31 @@ export class GameSession {
 
   // --- counting -------------------------------------------------------------
 
+  /** Cards the true count treats as gone, by the Remaining Cards setting as it is now. */
+  cardsGone(): number {
+    return this.game.cardsGone(this.settings.get('trueCount.remainingCards'));
+  }
+
+  /**
+   * The counter with its true count worked out now, from the cards gone and the settings as they
+   * are: either may have changed since the last card was seen (a round's cards going into the tray).
+   */
+  currentCount(): Counter {
+    this.counter.settings = this.trueCountSettings();
+    this.counter.update(this.cardsGone());
+    return this.counter;
+  }
+
   get counts(): SessionCounts {
+    const count = this.currentCount();
     return {
-      runningCount: this.counter.running,
-      trueCount: this.counter.trueCount,
-      exactTrueCount: this.counter.exactTrueCount,
-      betCount: this.counter.betCount,
-      aces: this.counter.aces,
-      tens: this.counter.tens,
-      decksRemaining: this.counter.decksRemaining(this.game.cardsGone()),
+      runningCount: count.running,
+      trueCount: count.trueCount,
+      exactTrueCount: count.exactTrueCount,
+      betCount: count.betCount,
+      aces: count.aces,
+      tens: count.tens,
+      decksRemaining: count.decksRemaining(this.cardsGone()),
     };
   }
 
@@ -292,7 +308,8 @@ export class GameSession {
 
   /** The count bets are judged by. */
   betCount(): number {
-    return this.settings.get('trueCount.aceSideCount') ? this.counter.betCount : this.counter.trueCount;
+    const count = this.currentCount();
+    return this.settings.get('trueCount.aceSideCount') ? count.betCount : count.trueCount;
   }
 
   humanSeats(): number[] {
@@ -394,7 +411,7 @@ export class GameSession {
   nearbyCounts(): Pick<PlayQuestion, 'counts' | 'shoe'>[] {
     const error = this.settings.get('trueCount.allowedErrorCards');
     if (!error) return [];
-    const gone = this.game.cardsGone();
+    const gone = this.cardsGone();
     const { decks } = this.game.shoe;
     return [gone - error, gone + error].map(shifted => {
       const at = Math.min(Math.max(shifted, 1), decks * 52 - 1);

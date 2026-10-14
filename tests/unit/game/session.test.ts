@@ -494,6 +494,48 @@ describe('the counts at the start of the round', () => {
   });
 });
 
+describe('the true count between rounds', () => {
+  it('counts the round’s cards as gone once they are in the tray', () => {
+    // One deck, exact decks, rounded: the six cards going into the tray move the true count.
+    const app = makeApp({
+      'table.decks': 1,
+      'table.burnCards': 0,
+      'trueCount.remainingCards': 'inTray',
+      'trueCount.resolution': 'exact',
+      'trueCount.lastDeckResolution': 'exact',
+      'trueCount.rounding': 'round',
+    });
+    // 2 and 3 against 4 up and 5 in the hole; the dealer draws 6 and 2 to stand on 17. A running count of +6.
+    const session = riggedSession(deal(card(2), card(4), card(3), card(5), [card(6), card(2)]), app);
+    playRound(session);
+    session.nextRound();
+    expect(session.counts.runningCount).toBe(6);
+    // 6 over the 46 cards left: 6.78, rounded to 7.
+    expect(session.counts.trueCount).toBe(7);
+  });
+});
+
+describe('the true count', () => {
+  it('follows the true count settings the moment they change, with no card seen', () => {
+    const app = makeApp({
+      'table.decks': 1,
+      'table.burnCards': 0,
+      'trueCount.resolution': 'exact',
+      'trueCount.lastDeckResolution': 'exact',
+      'trueCount.rounding': 'truncate',
+    });
+    const session = riggedSession(deal(card(2), card(4), card(3), card(5), [card(6), card(2)]), app);
+    playRound(session);
+    session.nextRound();
+    // 6 over the 46 cards left: 6.78.
+    expect(session.counts.trueCount).toBe(6);
+    app.settings.set('trueCount.rounding', 'round');
+    expect(session.counts.trueCount).toBe(7);
+    app.settings.set('trueCount.remainingCards', 'dealt');
+    expect(session.counts.decksRemaining).toBeCloseTo(46 / 52);
+  });
+});
+
 describe('a shuffle while betting', () => {
   it('starts the round over on the new shoe', () => {
     // Exact decks, so the round's cards show in the decks left.
@@ -516,10 +558,14 @@ describe('wonging', () => {
     'table.computerSeats': [false, true, false, false, false, false],
     'betting.wonging': true,
   };
+  /** Sets the running count that makes the true count `count` over the decks left now. */
+  const setTrueCount = (session: GameSession, count: number) => {
+    session.counter.running = count * session.counter.decksRemaining(session.cardsGone());
+  };
   /** A session at true count `count`, before its first bet. */
   const at = (count: number, settings: SettingsPatch = WITH_COMPUTER) => {
     const session = new GameSession(makeApp(settings));
-    session.counter.trueCount = count;
+    setTrueCount(session, count);
     return session;
   };
   const minimumBet = (session: GameSession) => session.suggestedBet().betPerHand;
@@ -549,9 +595,9 @@ describe('wonging', () => {
   it('stays out between the two counts, and comes back in at Wong In', () => {
     const session = at(-2);
     session.wong();
-    session.counter.trueCount = 0;
+    setTrueCount(session, 0);
     expect(session.shouldWong()).toBe(true);
-    session.counter.trueCount = 1;
+    setTrueCount(session, 1);
     expect(session.shouldWong()).toBe(false);
   });
 

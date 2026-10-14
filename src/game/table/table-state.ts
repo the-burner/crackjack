@@ -112,6 +112,17 @@ export function createTableState({ decks }: { decks: number }) {
       return state.hands.reduce((sum, hand) => sum + hand.cards.length, 0) + state.dealer.cards.length;
     },
 
+    /** Cards the true count treats as gone, by Remaining Cards, as the engine's cardsGone does for what is shown. */
+    cardsGone(remaining: 'dealt' | 'shown' | 'inTray'): number {
+      if (remaining === 'dealt') return state.dealt;
+      const hands = [state.dealer, ...state.hands];
+      const onTable =
+        remaining === 'inTray'
+          ? state.cardsOnTable
+          : hands.reduce((sum, hand) => sum + hand.faceUp.filter(up => !up).length, 0);
+      return Math.max(0, state.dealt - onTable);
+    },
+
     hand(key: HandKey): ShownHand {
       if (key === DEALER_KEY) return state.dealer;
       let found = state.hands.find(h => h.key === key);

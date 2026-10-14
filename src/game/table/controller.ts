@@ -266,6 +266,9 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     decks: session.table.decks,
   });
 
+  /** The cards gone as the player has seen them, by Remaining Cards. */
+  const shownCardsGone = () => state.cardsGone(settings.get('trueCount.remainingCards'));
+
   function pauses() {
     return {
       dealer: pauseForSpeed(settings.get('mechanics.dealerSpeed')),
@@ -336,7 +339,8 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     if (settings.get('display.showPlayAccuracy') && session.stats.playDecisions > 0)
       parts.push(`Plays: ${accuracy.play}%`);
     if (settings.get('display.showRunningCount')) parts.push(`RC: ${round1(shown.running)}`);
-    if (settings.get('display.showTrueCount')) parts.push(`TC: ${round1(shown.trueCount)}`);
+    if (settings.get('display.showTrueCount'))
+      parts.push(`TC: ${round1(shown.trueCountAt(shownCardsGone(), session.trueCountSettings()))}`);
     return parts.join(', ');
   }
 
@@ -385,7 +389,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   /** Applies an engine event and redraws. */
   function applyStep({ event, sound }: Step) {
     state.apply(event);
-    shown.see(event, state.dealt);
+    shown.see(event, shownCardsGone());
     countsText = readout();
     if (sound) app.sound.play(sound);
     if (event.type === 'message') showMessage(event.text);
