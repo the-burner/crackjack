@@ -35,6 +35,8 @@ const CIRCLE_GAP = 0.12;
 const SHOE_ASPECT = 276 / 140;
 /** How far the face-down hole card peeks out from under the up card. */
 const HOLE_PEEK = 0.45;
+/** The gap between two cards laid side by side: the dealer's turned hole card, a split pair. */
+const sideBySideGap = (portrait: boolean) => (portrait ? 3 : 1);
 /** Smallest card height, in pixels. */
 const MIN_CARD_HEIGHT = 34;
 /** A bet circle's height over its width. */
@@ -71,6 +73,8 @@ export interface Box {
 export interface SeatLayout {
   seat: number;
   hands: Point[][];
+  /** A seat split once: its two hands side by side, a card's width and a gap apart, as the dealer's are. */
+  pair: [Point[], Point[]];
   circle: { x: number; y: number; rx: number; ry: number };
   chip: Box;
 }
@@ -227,7 +231,19 @@ export function tableLayout({
     // Seat 1 sits at the right.
     const column = shown - 1 - i;
     const x = Math.floor((column * (width - 2)) / (shown - 1 + boxExpand) + boxWidth * (1 - sepRatio)) + 2;
-    return buildSeat({ seat, x, cardWidth, cardHeight, stepUp, stepRight, splitStep, seatWidth, width, edge });
+    return buildSeat({
+      seat,
+      x,
+      cardWidth,
+      cardHeight,
+      stepUp,
+      stepRight,
+      splitStep,
+      seatWidth,
+      width,
+      edge,
+      pairSpread: cardWidth + sideBySideGap(portrait),
+    });
   });
 
   const topOfSeats = Math.min(...seatLayouts.map(s => s.hands[0][FAN_CARDS - 1].y));
@@ -283,6 +299,7 @@ function buildSeat({
   seatWidth,
   width,
   edge,
+  pairSpread,
 }: {
   seat: number;
   x: number;
@@ -294,6 +311,8 @@ function buildSeat({
   seatWidth: number;
   width: number;
   edge: (x: number) => number;
+  /** How far apart a split pair's hands sit. */
+  pairSpread: number;
 }): SeatLayout {
   const circleWidth = Math.min(seatWidth, width / 5, cardWidth * 2);
   const rx = Math.round((circleWidth - 8) / 2);
@@ -303,20 +322,20 @@ function buildSeat({
   const edgeY = Math.min(edge(centerX - rx), edge(centerX), edge(centerX + rx));
   const centerY = Math.round(edgeY - cardHeight * CIRCLE_GAP - ry);
   const y = centerY - cardHeight;
-  const hands: Point[][] = [];
-  for (let hand = 0; hand < HANDS_PER_SEAT; hand++) {
-    const slots: Point[] = [];
-    for (let card = 0; card < CARDS_PER_HAND; card++) {
-      slots.push({
-        x: Math.round(x - splitStep * hand + stepRight * card),
-        y: Math.round(y - stepUp * card),
-      });
-    }
-    hands.push(slots);
-  }
+  /** A hand's cards from `left`; a long hand stops at the felt's right edge and goes on up. */
+  const fan = (left: number): Point[] =>
+    Array.from({ length: CARDS_PER_HAND }, (_, card) => ({
+      x: Math.round(Math.min(left + stepRight * card, width - cardWidth - 2)),
+      y: Math.round(y - stepUp * card),
+    }));
+  const hands = Array.from({ length: HANDS_PER_SEAT }, (_, hand) => fan(x - splitStep * hand));
+  // At least as far apart as the seat's ends, and kept on the felt at its left.
+  const spread = Math.max(splitStep * (HANDS_PER_SEAT - 1), pairSpread);
+  const shift = Math.max(0, 2 - (x - spread));
   return {
     seat,
     hands,
+    pair: [fan(x + shift), fan(x - spread + shift)],
     circle: { x: centerX, y: centerY, rx, ry },
     chip: {
       x: Math.round(centerX - seatWidth / 2),
@@ -356,7 +375,7 @@ function dealerRow({
   return {
     right,
     y,
-    spread: cardWidth + (portrait ? 3 : 1),
+    spread: cardWidth + sideBySideGap(portrait),
     overlap: Math.round(portrait ? (cardWidth * 3 + 4) / 9 : cardWidth / 2),
     peek: Math.max(10, Math.round(cardWidth * HOLE_PEEK)),
     noHoleCard,
@@ -539,7 +558,8 @@ export function cardSlot(
   if (seat === 0) return dealerSlot(layout.dealer, cardIndex, dealerHand);
   const seatLayout = layout.seats.find(s => s.seat === seat);
   if (!seatLayout) return null;
-  const column = seatLayout.hands[splitColumn(place ?? index, handsInSeat)];
+  const at = place ?? index;
+  const column = handsInSeat === 2 && at < 2 ? seatLayout.pair[at] : seatLayout.hands[splitColumn(at)];
   return column[Math.min(cardIndex, CARDS_PER_HAND - 1)] ?? null;
 }
 
@@ -558,12 +578,8 @@ export function handSlot(
   return cardSlot(layout, key, cardIndex, undefined, { place, handsInSeat: order!.length });
 }
 
-/**
- * Which column a hand sits in. A single split puts its two hands at the two
- * ends of the seat's box, as the original did; three or four sit side by side.
- */
-export function splitColumn(index: number, handsInSeat = 0): number {
-  if (handsInSeat === 2 && index === 1) return HANDS_PER_SEAT - 1;
+/** Which column a hand sits in, when the seat has one hand or three or four (a pair sits apart: see SeatLayout.pair). */
+export function splitColumn(index: number): number {
   return Math.min(index, HANDS_PER_SEAT - 1);
 }
 

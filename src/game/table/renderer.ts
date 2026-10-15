@@ -22,6 +22,10 @@ const POINTER_SRC = 'assets/table/pointer.png';
 const POINTER_SIZE = { width: 24, height: 50 };
 const CIRCLE_COLOR = ['--bet-circle', 'rgb(230, 205, 127)'] as const;
 const FELT_FALLBACK = ['--felt-fallback', '#044f36'] as const;
+/** The felt photo's size, the cash drop slot in it, and where plain felt of the same light lies beside it. */
+const FELT_SIZE = { width: 1600, height: 1131 };
+const DROP_SLOT = { x: 322, y: 0, width: 208, height: 92 };
+const PLAIN_FELT_X = 640;
 
 /** What one frame shows. */
 export interface TableView {
@@ -111,7 +115,7 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
     const bg = background.getContext('2d');
     if (!bg) throw new Error('No 2D canvas context');
     bg.setTransform(ratio, 0, 0, ratio, 0, 0);
-    drawFelt(bg, frame);
+    drawFelt(bg, frame, { dropSlot: !layout.portrait });
     drawRail(bg, layout, frame);
     bg.translate(frame.x, frame.y);
     drawBetCircles(bg, layout);
@@ -138,9 +142,17 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
       drawShoe(ctx, layout, state.shoeCards ?? 0, onPhotoLoad);
       drawBurns(ctx, layout, state.burns ?? []);
       const drawn: DrawnHand[] = [];
+      const placed: PlacedCard[][] = [];
       for (const hand of [state.dealer, ...state.hands]) {
-        if (hand) drawn.push({ hand, slots: drawHand(ctx, layout, hand, state.seatOrder?.get(hand.seat)) });
+        if (!hand) continue;
+        const cards = placeHand(layout, hand, state.seatOrder?.get(hand.seat));
+        placed.push(cards);
+        drawn.push({ hand, slots: cards.map(({ slot }) => slot) });
       }
+      // The dealer's own, then the players' together.
+      const [dealerCards = [], ...playerCards] = placed;
+      drawCards(ctx, layout, dealerCards);
+      drawCards(ctx, layout, playerCards.flat());
       const pointer = drawPointer(ctx, layout, state, onPointerLoad);
       ctx.restore();
       if (window.__cjRecordFrames) recordFrame(state, drawn, pointer);
@@ -159,11 +171,19 @@ export function createTableRenderer(canvas: HTMLCanvasElement) {
 }
 
 /** The felt photograph, stretched over the whole window. */
-function drawFelt(ctx: CanvasRenderingContext2D, frame: TableFrame) {
+/** The felt photo across the frame; held upright, as with the shoe, without its cash drop slot. */
+function drawFelt(ctx: CanvasRenderingContext2D, frame: TableFrame, { dropSlot }: { dropSlot: boolean }) {
   ctx.fillStyle = cssVar(...FELT_FALLBACK);
   ctx.fillRect(0, 0, frame.width, frame.height);
   const felt = loadImage(FELT_SRC);
-  if (felt.img.naturalWidth) ctx.drawImage(felt.img, 0, 0, frame.width, frame.height);
+  if (!felt.img.naturalWidth) return;
+  ctx.drawImage(felt.img, 0, 0, frame.width, frame.height);
+  if (dropSlot) return;
+  // Covered with the plain felt beside it, stretched as the photo is.
+  const sx = frame.width / FELT_SIZE.width;
+  const sy = frame.height / FELT_SIZE.height;
+  const { x, y, width, height } = DROP_SLOT;
+  ctx.drawImage(felt.img, PLAIN_FELT_X, y, width, height, x * sx, y * sy, width * sx, height * sy);
 }
 
 /** The padded rail and its shadow along the bottom edge, across the window and down to its foot. */
@@ -198,13 +218,15 @@ interface DrawnHand {
 }
 
 /** A hand's cards, drawn left to right so each one overlaps the one before. */
-function drawHand(
-  ctx: CanvasRenderingContext2D,
-  layout: TableLayout,
-  hand: ShownHand,
-  order: readonly HandKey[] | undefined,
-): Point[] {
-  const placed: { slot: Point; card: number; faceUp: boolean }[] = [];
+interface PlacedCard {
+  slot: Point;
+  card: number;
+  faceUp: boolean;
+}
+
+/** Where each of a hand's cards goes. */
+function placeHand(layout: TableLayout, hand: ShownHand, order: readonly HandKey[] | undefined): PlacedCard[] {
+  const placed: PlacedCard[] = [];
   const dealerHand = { count: hand.cards.length, holeHidden: hand.faceUp[1] === false, squeezed: hand.squeezed };
   hand.cards.forEach((card, index) => {
     const slot =
@@ -213,11 +235,18 @@ function drawHand(
         : handSlot(layout, hand.key, index, order);
     if (slot) placed.push({ slot, card, faceUp: hand.faceUp[index] });
   });
-  placed.sort((a, b) => a.slot.x - b.slot.x);
-  for (const { slot, card, faceUp } of placed) {
+  return placed.sort((a, b) => a.slot.x - b.slot.x);
+}
+
+/**
+ * Draws cards from left to right, whatever hand they are in: a card then only ever covers the
+ * right of the ones before it, never a corner index (cards fan up and to the right). Cards stacked
+ * straight up at the felt's edge go from the top down, each leaving the index of the one above.
+ */
+function drawCards(ctx: CanvasRenderingContext2D, layout: TableLayout, cards: PlacedCard[]) {
+  for (const { slot, card, faceUp } of [...cards].sort((a, b) => a.slot.x - b.slot.x || a.slot.y - b.slot.y)) {
     drawCard(ctx, faceUp ? card : 0, slot.x, slot.y, layout.cardWidth, layout.cardHeight);
   }
-  return placed.map(({ slot }) => slot);
 }
 
 /** The burn cards, in a row right of the tray. */

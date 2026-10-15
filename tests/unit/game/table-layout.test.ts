@@ -76,11 +76,15 @@ describe('table layout', () => {
         }
       });
 
-      it('fans each hand up and to the right', () => {
-        const [slots] = layout.seats[0].hands;
-        for (let i = 1; i < CARDS_PER_HAND; i++) {
-          expect(slots[i].x).toBeGreaterThan(slots[i - 1].x);
-          expect(slots[i].y).toBeLessThan(slots[i - 1].y);
+      it('fans each hand up and to the right, then straight up at the felt’s right edge', () => {
+        const right = layout.width - layout.cardWidth - 2;
+        for (const { hands } of layout.seats) {
+          const [slots] = hands;
+          for (let i = 1; i < CARDS_PER_HAND; i++) {
+            if (slots[i].x < right) expect(slots[i].x).toBeGreaterThan(slots[i - 1].x);
+            else expect(slots[i].x).toBe(right);
+            expect(slots[i].y).toBeLessThan(slots[i - 1].y);
+          }
         }
       });
 
@@ -353,4 +357,31 @@ describe('where split hands sit', () => {
   it('leaves an unsplit hand where it was', () => {
     expect(column('1-0', 1)).toBe(layout.seats[0].hands[0][0].x);
   });
+});
+
+describe('a long hand at the right-hand seat', () => {
+  it('stays on the felt, in portrait with four seats', () => {
+    const layout = tableLayout({ ...PORTRAIT, seatCount: 4, humanSeats: [1] });
+    const seat1 = seatSlot(layout, 1)!;
+    // Ten cards: the original's chain ran off the right of the screen.
+    for (const slot of seat1.hands[0]) expect(slot.x + layout.cardWidth).toBeLessThanOrEqual(layout.width);
+  });
+});
+
+describe('a seat split once', () => {
+  const sizes = { portrait: PORTRAIT, landscape: LANDSCAPE, 'iPad portrait': { width: 820, height: 1180 } };
+  for (const [name, size] of Object.entries(sizes))
+    for (const seatCount of [1, 3, 4, 6]) {
+      it(`puts its two hands a card and a gap apart, on the felt (${name}, ${seatCount} seats)`, () => {
+        const layout = tableLayout({ ...size, seatCount, humanSeats: [1] });
+        for (const seat of layout.seats) {
+          const order = [`${seat.seat}-0`, `${seat.seat}-1`] as HandKey[];
+          const [right, left] = order.map(key =>
+            cardSlot(layout, key, 0, undefined, { place: order.indexOf(key), handsInSeat: 2 })!,
+          );
+          expect(right.x - left.x, `seat ${seat.seat}`).toBeGreaterThan(layout.cardWidth);
+          expect(left.x).toBeGreaterThanOrEqual(0);
+        }
+      });
+    }
 });

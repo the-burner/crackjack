@@ -607,10 +607,18 @@ test.describe('split hands', () => {
         humanSeats: [1],
         decks: window.app.settings.get('table.decks'),
       });
-      return Object.fromEntries(layout.seats.map(seat => [seat.seat, seat.hands.map(hand => hand[0].x)]));
+      return {
+        cardWidth: layout.cardWidth,
+        ...Object.fromEntries(
+          layout.seats.map(seat => [
+            seat.seat,
+            { hands: seat.hands.map(hand => hand[0].x), pair: seat.pair.map(hand => hand[0].x) },
+          ]),
+        ),
+      } as { cardWidth: number } & Record<number, { hands: number[]; pair: number[] }>;
     });
 
-  test('a single split puts the two hands at the two ends of the seat @layout', async ({ page }) => {
+  test('a single split puts the two hands side by side, a card and a gap apart @layout', async ({ page }) => {
     // Seed 14: seat 1 splits once; computer seat 2 splits aces.
     await openTable(page, { seed: 14 });
     const { frames } = await playRound(page, POLICY.splitOnce());
@@ -619,8 +627,9 @@ test.describe('split hands', () => {
       const both = frames.filter(f => has(f, `${seat}-0`) && has(f, `${seat}-1`));
       expect(both.length, `seat ${seat} split`).toBeGreaterThan(0);
       for (const f of both) {
-        expect(handIn(f, `${seat}-0`).slots[0].x, `seat ${seat} first hand`).toBe(cols[seat][0]);
-        expect(handIn(f, `${seat}-1`).slots[0].x, `seat ${seat} second hand`).toBe(cols[seat][3]);
+        const [first, second] = [handIn(f, `${seat}-0`).slots[0].x, handIn(f, `${seat}-1`).slots[0].x];
+        expect([first, second], `seat ${seat}`).toEqual(cols[seat].pair);
+        expect(first - second, `seat ${seat}`).toBeGreaterThan(cols.cardWidth);
       }
     }
   });
@@ -633,14 +642,8 @@ test.describe('split hands', () => {
     const three = frames.filter(f => ['1-0', '1-1', '1-2'].every(key => has(f, key)));
     expect(three.length).toBeGreaterThan(0);
     for (const f of three) {
-      expect(['1-0', '1-1', '1-2'].map(key => handIn(f, key).slots[0].x)).toEqual(cols[1].slice(0, 3));
+      expect(['1-0', '1-1', '1-2'].map(key => handIn(f, key).slots[0].x)).toEqual(cols[1].hands.slice(0, 3));
     }
-    // Two hands span three column steps; three hands step one at a time.
-    const two = frames.find(f => has(f, '1-1') && !has(f, '1-2'))!;
-    const span = handIn(two, '1-0').slots[0].x - handIn(two, '1-1').slots[0].x;
-    const step = handIn(three[0], '1-0').slots[0].x - handIn(three[0], '1-1').slots[0].x;
-    expect(step).toBeGreaterThan(0);
-    expect(Math.abs(span - 3 * step)).toBeLessThanOrEqual(2);
   });
 });
 
