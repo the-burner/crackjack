@@ -38,6 +38,25 @@ test('Escape closes a dialog as its cancelling button would', async ({ page }) =
   await expect(page.locator('[data-screen="settings"]')).toBeVisible();
 });
 
+test('Reset Defaults erases everything the app saved and starts it again at home', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('seeded')) return;
+    sessionStorage.setItem('seeded', '1');
+    localStorage.clear();
+    localStorage.setItem('cj.settings', JSON.stringify({ state: { values: { 'table.decks': 2 } }, version: 2 }));
+    localStorage.setItem('cj.bankroll', JSON.stringify({ state: { value: 50 }, version: 0 }));
+    localStorage.setItem('other.app', 'kept');
+  });
+  await page.goto('/index.html#/settings');
+  await page.getByRole('button', { name: 'Reset Defaults' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Yes' }).click();
+  await expect(page.locator('[data-screen="home"]')).toBeVisible();
+  const saved = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
+  expect(Object.keys(saved).filter(key => key.startsWith('cj.') && key !== 'cj.settings')).toEqual([]);
+  expect(saved['other.app']).toBe('kept');
+  if (saved['cj.settings']) expect(saved['cj.settings']).not.toContain('"table.decks":2');
+});
+
 test('going back with a dialog open closes the dialog with its screen', async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');

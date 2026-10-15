@@ -281,6 +281,15 @@ describe('text on a coloured tile', () => {
 });
 
 describe('the drill screens', () => {
+  it('writes the warning red legibly on a settings row (Reset Defaults)', () => {
+    const pairs = THEMES.map((theme): Pair => [
+      `${theme} --warning on --group-bg`,
+      value('--warning', theme),
+      value('--group-bg', theme),
+    ]);
+    expect(below(AA, pairs)).toEqual([]);
+  });
+
   it('marks the right answer legibly on a secondary button', () => {
     const pairs = THEMES.map((theme): Pair => [
       `${theme} --answer-correct on --btn-bg`,

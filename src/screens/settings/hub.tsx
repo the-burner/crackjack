@@ -3,7 +3,6 @@
 
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { confirm } from '@/components/dialogs';
-import { toast } from '@/components/ui/toast';
 import { useApp } from '@/react/app-context';
 import type { App } from '@/app/app';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
@@ -14,7 +13,7 @@ import type { ScreenName } from '@/app/paths';
 const NOTE = 'These settings apply to the game and to all four drills.';
 
 const RESET_NOTE =
-  'Resets every setting in the app, the game’s and every drill’s, to its default. The bankroll, statistics and error history are kept.';
+  'Puts the app back as it was when first installed: every setting, the game’s and every drill’s, to its default, and the bankroll, statistics, error history and saved strategies and gesture configurations erased.';
 
 const SCREENS: readonly (readonly [string, ScreenName])[] = [
   ['Playing Strategies', 'settings.strategy'],
@@ -40,7 +39,7 @@ export function SettingsHub() {
         </Section>
         <Section footer={RESET_NOTE}>
           <SettingsGroup>
-            <ListRow block chevron={false} onClick={() => resetDefaults(app)}>
+            <ListRow block chevron={false} className="text-(--warning)" onClick={() => resetDefaults(app)}>
               Reset Defaults
             </ListRow>
           </SettingsGroup>
@@ -51,7 +50,7 @@ export function SettingsHub() {
 }
 
 async function resetDefaults(app: App) {
-  if (!(await confirm('Reset every setting in the app to its default?'))) return;
-  app.settings.reset();
-  toast('Settings reset to defaults');
+  if (!(await confirm('Erase everything saved and put every setting back to its default?'))) return;
+  app.storage.clear();
+  app.restart();
 }

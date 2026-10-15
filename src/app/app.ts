@@ -30,10 +30,12 @@ export interface Services {
   /** The table's bankroll between visits; null before the first round. */
   bankroll: PersistedStore<number | null>;
   gameStats: PersistedStore<GameStats>;
-  /** Gesture configurations the player saved (kept by Reset Defaults). */
+  /** Gesture configurations the player saved. */
   gestureConfigs: PersistedStore<GestureConfig[]>;
-  /** Betting strategies the player saved (kept by Reset Defaults). */
+  /** Betting strategies the player saved. */
   bettingStrategies: PersistedStore<BettingStrategy[]>;
+  /** Starts the app over from its home screen, reading everything saved afresh. */
+  restart: () => void;
 }
 
 /** What every screen reads through useApp(): the services. Navigation is React Router's. */
@@ -57,5 +59,7 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     gameStats: persistedStore(storage, 'gameStats', readStats),
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
     bettingStrategies: persistedStore(storage, 'bettingStrategies', readBettingStrategies),
+    // The page without its route: the home screen.
+    restart: () => location.replace(location.pathname),
   };
 }

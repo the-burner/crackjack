@@ -162,10 +162,7 @@ describe('Gestures', () => {
     await user.click(screen.getByRole('button', { name: 'Delete “Ring”' }));
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
     await waitFor(() => expect(app.gestureConfigs.getState().value).toEqual([]));
-    // Reset Defaults keeps saved sets: they are not settings.
-    app.gestureConfigs.setState({ value: [{ id: 'x', name: 'Kept', portrait: STANDARD, landscape: STANDARD }] });
     app.settings.reset();
-    expect(app.gestureConfigs.getState().value).toHaveLength(1);
     expect(app.settings.get('gestures.landscape')).toEqual(STANDARD);
     await waitFor(() => expect(select('Configuration')).toHaveDisplayValue('Standard'));
   });
@@ -218,18 +215,30 @@ describe('navigation screens', () => {
     expect(location().pathname).toBe('/game');
   });
 
-  it('Reset Defaults (in Settings) says what it resets, asks, then resets every setting', async () => {
+  it('Reset Defaults (in Settings) says what it erases, asks, then erases everything saved and starts afresh', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
+    app.restart = vi.fn();
     app.settings.set('table.decks', 2);
-    app.settings.set('drills.flash.decks', 2);
+    app.bankroll.setState({ value: 50 });
+    app.gestureConfigs.setState({ value: [{ id: 'x', name: 'Mine', portrait: STANDARD, landscape: STANDARD }] });
+    app.errorTallies.record('hardStand', 0, 0);
     renderScreen(<SettingsHub />, { app });
-    expect(screen.getByText(/Resets every setting in the app/)).toBeInTheDocument();
+    expect(screen.getByText(/as it was when first installed/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Reset Defaults' }));
-    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Reset every setting');
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Erase everything saved');
     await user.click(screen.getByRole('button', { name: 'Yes' }));
-    await waitFor(() => expect(app.settings.get('table.decks')).toBe(6));
-    expect(app.settings.get('drills.flash.decks')).toBe(app.settings.schema['drills.flash.decks'].default);
+    await waitFor(() => expect(app.restart).toHaveBeenCalled());
+    // Nothing of the app's is left saved; it reads everything afresh as it starts again.
+    const backend = app.storage.backend;
+    expect(Array.from({ length: backend.length }, (_, i) => backend.key(i)).filter(k => k?.startsWith('cj.'))).toEqual(
+      [],
+    );
+  });
+
+  it('shows Reset Defaults in the theme’s red', () => {
+    renderScreen(<SettingsHub />);
+    expect(screen.getByRole('button', { name: 'Reset Defaults' })).toHaveClass('text-(--warning)');
   });
 
   it('the home screen draws the wordmark and has no Reset Defaults', () => {
