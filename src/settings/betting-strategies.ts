@@ -38,7 +38,7 @@ const MULTI_HAND: BettingValues = {
       { chips: 2, hands: 2 },
       { chips: 3, hands: 2 },
       { chips: 6, hands: 2 },
-      { chips: 5, hands: 2 },
+      { chips: 12, hands: 2 },
     ],
   },
   'betting.chipValue': 25,

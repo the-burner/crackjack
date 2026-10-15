@@ -48,7 +48,7 @@ describe('betting strategies', () => {
       '2x2',
       '2x3',
       '2x6',
-      '2x5',
+      '2x12',
     ]);
     expect(multi).toMatchObject({
       'betting.chipValue': 25,
