@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { durationColumns, joinDuration, splitDuration } from '@/drills/shared/duration';
 import type { DurationColumn } from '@/drills/shared/duration';
+import { cn } from '@/lib/utils';
 
 /** Row height; five rows show, the middle one is the value. */
 const ITEM_HEIGHT = 36;
@@ -69,7 +70,7 @@ export function DurationPicker({
                 Done
               </button>
             </div>
-            <div className="relative flex justify-center gap-2 px-4 py-3">
+            <div className="relative flex px-4 py-3">
               {/* The band that marks the value. */}
               <div className="pointer-events-none absolute top-[calc(12px+72px)] right-4 left-4 h-9 rounded-(--radius-s) bg-(--separator)" />
               {columns.map((column, i) => (
@@ -77,6 +78,10 @@ export function DurationPicker({
                   key={column.label}
                   column={column}
                   start={start[i]}
+                  // Side by side in the middle: the outer wheels' numbers sit at their inner edges.
+                  align={
+                    columns.length === 1 ? 'center' : i === 0 ? 'end' : i === columns.length - 1 ? 'start' : 'center'
+                  }
                   wheelRef={el => {
                     wheels.current[i] = el;
                   }}
@@ -106,13 +111,18 @@ function curveWheel(wheel: HTMLDivElement, count: number) {
 }
 
 /** One scrolling wheel. */
+/** Where in its share of the sheet a wheel's numbers and unit sit, 4px clear of a neighbour. */
+const ALIGN = { start: 'justify-start pl-1', center: 'justify-center', end: 'justify-end pr-1' } as const;
+
 function Wheel({
   column: { label, unit, count },
   start,
+  align,
   wheelRef,
 }: {
   column: DurationColumn;
   start: number;
+  align: keyof typeof ALIGN;
   wheelRef: (el: HTMLDivElement | null) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
@@ -136,7 +146,8 @@ function Wheel({
   }, [start, count]);
 
   return (
-    <div className="relative flex items-center">
+    // The wheel turns from anywhere in its share of the sheet, not only on its numbers.
+    <div className="relative flex flex-1 items-center">
       <div
         ref={node => {
           el.current = node;
@@ -148,7 +159,7 @@ function Wheel({
         aria-valuemin={0}
         aria-valuemax={count - 1}
         aria-valuenow={start}
-        className="h-[180px] w-16 snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] outline-none [mask-image:linear-gradient(transparent,#000_30%,#000_70%,transparent)] [perspective:600px] focus-visible:rounded-(--radius-s) focus-visible:shadow-[inset_0_0_0_2px_var(--focus)] [&::-webkit-scrollbar]:hidden"
+        className="h-[180px] w-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] outline-none [mask-image:linear-gradient(transparent,#000_30%,#000_70%,transparent)] [perspective:600px] focus-visible:rounded-(--radius-s) focus-visible:shadow-[inset_0_0_0_2px_var(--focus)] [&::-webkit-scrollbar]:hidden"
         onScroll={() => {
           cancelAnimationFrame(frame.current);
           frame.current = requestAnimationFrame(curve);
@@ -168,14 +179,23 @@ function Wheel({
               data-item
               // Tapping a row picks it.
               onClick={() => scrollTo(n)}
-              className="h-9 cursor-pointer snap-center pr-1.5 text-right text-[22px] leading-9 text-(--text) tabular-nums select-none"
+              className={cn(
+                'flex h-9 cursor-pointer snap-center text-[22px] leading-9 text-(--text) tabular-nums select-none',
+                ALIGN[align],
+              )}
             >
-              {n}
+              <span className="w-16 pr-1.5 text-right">{n}</span>
+              {/* Room for the unit. */}
+              <span className="w-9" />
             </div>
           ))}
         </div>
       </div>
-      <span className="w-9 text-body font-semibold text-(--text)">{unit}</span>
+      {/* Laid out as a row is, the unit where the row leaves room for it. */}
+      <div className={cn('pointer-events-none absolute inset-x-0 flex', ALIGN[align])}>
+        <span className="w-16" />
+        <span className="w-9 text-body font-semibold text-(--text)">{unit}</span>
+      </div>
     </div>
   );
 }
