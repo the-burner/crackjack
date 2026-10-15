@@ -8,7 +8,7 @@ import type { GameSession } from '@/game/session';
 import type { BetSelectParams } from '@/game/screens/bet-select';
 import { useOpenHelp } from '@/app/help';
 import { useGoBack } from '@/app/navigation';
-import { tablesSearch } from '@/app/paths';
+import { PATHS, tablesSearch } from '@/app/paths';
 import { confirm } from '@/components/dialogs';
 import { tableToast } from '@/components/game/table-toast';
 import { dismissToast } from '@/components/ui/toast';
@@ -44,6 +44,8 @@ export function TableScreen() {
         customize: () => void navigate('customize'),
         sideBet: (index, replace) => void navigate(`side-bet/${index}`, { replace }),
         back: () => goBack(),
+        // Its own screen, not over the table: a strategy chosen there takes a new session.
+        settings: () => void navigate(PATHS.settings),
         help: () => openHelp('game.table', 'Blackjack'),
       },
     }),
@@ -96,7 +98,13 @@ export function TableScreen() {
           </>
         )}
       </div>
-      <TableBar onBack={table.back} onStats={table.openStats} onError={table.openLastError} onHelp={table.help} />
+      <TableBar
+        onBack={table.back}
+        onStats={table.openStats}
+        onError={table.openLastError}
+        onSettings={table.settings}
+        onHelp={table.help}
+      />
       {view && cover && <div className="absolute inset-0 z-20 flex flex-col bg-(--page-bg)">{cover}</div>}
     </div>
   );

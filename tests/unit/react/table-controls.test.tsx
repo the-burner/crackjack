@@ -53,13 +53,15 @@ describe('the play buttons', () => {
     expect(onInsurance).toHaveBeenCalledWith(false);
   });
 
-  it('the bar has Back, Stats, Error and Help', async () => {
+  it('the bar has Back, Stats, Error, Settings and Help', async () => {
     const user = userEvent.setup();
-    const handlers = { onBack: vi.fn(), onStats: vi.fn(), onError: vi.fn(), onHelp: vi.fn() };
+    const handlers = { onBack: vi.fn(), onStats: vi.fn(), onError: vi.fn(), onSettings: vi.fn(), onHelp: vi.fn() };
     render(<TableBar {...handlers} />);
-    expect(shown()).toEqual(['Back', 'Stats', 'Error', 'Help']);
+    expect(shown()).toEqual(['Back', 'Stats', 'Error', 'Settings', 'Help']);
     await user.click(screen.getByRole('button', { name: 'Stats' }));
     expect(handlers.onStats).toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(handlers.onSettings).toHaveBeenCalled();
   });
 });
 

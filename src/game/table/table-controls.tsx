@@ -104,16 +104,18 @@ export function TableActions({
 /** The bar floats over the felt, so only its buttons take taps. */
 const BAR_BUTTON = 'pointer-events-auto';
 
-/** The bar over the top of the felt, inside the safe area: Back, and the Stats, Error and Help buttons. */
+/** The bar over the top of the felt, inside the safe area: Back, and the Stats, Error, Settings and Help buttons. */
 export function TableBar({
   onBack,
   onStats,
   onError,
+  onSettings,
   onHelp,
 }: {
   onBack: () => void;
   onStats: () => void;
   onError: () => void;
+  onSettings: () => void;
   onHelp: () => void;
 }) {
   return (
@@ -127,6 +129,9 @@ export function TableBar({
         </BarButton>
         <BarButton icon="info" className={BAR_BUTTON} onClick={onError} data-action="error">
           Error
+        </BarButton>
+        <BarButton icon="gear" className={BAR_BUTTON} onClick={onSettings} data-action="settings">
+          Settings
         </BarButton>
         <BarButton className={BAR_BUTTON} onClick={onHelp} data-action="help">
           Help

@@ -101,6 +101,8 @@ export type TableNav = {
   /** The side-bet picker for spot `index`, replacing the one showing when `replace`. */
   sideBet(index: number, replace: boolean): void;
   back(): void;
+  /** The app's settings, leaving the table as Back does. */
+  settings(): void;
   help(): void;
 };
 
@@ -157,6 +159,7 @@ export function createTableController(app: App, options: TableOptions) {
     openLastError: () => live().openLastError(),
     customize: options.nav.customize,
     back: options.nav.back,
+    settings: options.nav.settings,
     help: options.nav.help,
     sideBetParams: (index: number) => live().sideBetParams(index),
     open: () => table?.open() ?? (() => {}),
@@ -802,6 +805,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     openLastError,
     customize: nav.customize,
     back: nav.back,
+    settings: nav.settings,
     help: nav.help,
     /** What the side-bet picker for spot `index` shows. */
     sideBetParams: (index: number) => sideBetPicker.paramsFor(index),
