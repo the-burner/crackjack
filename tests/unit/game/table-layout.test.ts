@@ -405,3 +405,25 @@ describe('a hand at a table with few seats', () => {
       });
     }
 });
+
+describe('split hands at a table with few seats', () => {
+  const sizes = { desktop: { width: 1440, height: 900 }, landscape: LANDSCAPE, portrait: PORTRAIT };
+  for (const [name, size] of Object.entries(sizes))
+    for (const seatCount of [1, 2, 6]) {
+      it(`sit no further apart than at four seats (${name}, ${seatCount} seats)`, () => {
+        const apart = (seats: number) => {
+          const layout = tableLayout({ ...size, seatCount: seats, humanSeats: [1] });
+          const { seat } = layout.seats.at(-1)!;
+          const at = (place: number, handsInSeat: number) =>
+            cardSlot(layout, `${seat}-${place}` as HandKey, 0, undefined, { place, handsInSeat })!.x;
+          return { pair: at(0, 2) - at(1, 2), step: at(0, 3) - at(1, 3), cardWidth: layout.cardWidth };
+        };
+        const four = apart(4);
+        const here = apart(seatCount);
+        // A pair is never closer than a card and a gap, however big this table's cards are.
+        expect(here.pair).toBeLessThanOrEqual(Math.max(four.pair, here.cardWidth + 3));
+        expect(here.step).toBeLessThanOrEqual(four.step);
+        if (seatCount < 4) expect(here.step).toBe(four.step);
+      });
+    }
+});

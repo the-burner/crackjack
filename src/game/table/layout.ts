@@ -189,7 +189,7 @@ export interface TableLayoutOptions {
   noHoleCard?: boolean;
 }
 
-/** The seats whose fan every table with fewer keeps to. */
+/** The seats whose fan and split hands every table with fewer keeps to. */
 const FAN_SEATS = 4;
 
 /** The share of a seat's box its first hand's fan takes; the rest is room for split hands. */
@@ -212,6 +212,12 @@ function fanStep({
 }): number {
   const boxWidth = ((portrait ? 1.26 : 1.24) * (width - 2)) / shown;
   return Math.max(Math.round(cardWidth * 0.26), Math.floor((boxWidth * sepRatioFor(shown) - cardWidth) / FAN_CARDS));
+}
+
+/** How far each split hand steps left of the one before with `shown` seats across the felt. */
+function splitStepFor({ width, portrait, shown }: { width: number; portrait: boolean; shown: number }): number {
+  const boxWidth = ((portrait ? 1.26 : 1.24) * (width - 2)) / shown;
+  return Math.max(6, Math.floor((boxWidth * (1 - sepRatioFor(shown))) / (HANDS_PER_SEAT - 1)));
 }
 
 /** Works out the whole table layout. */
@@ -242,8 +248,11 @@ export function tableLayout({
     fanStep({ width, portrait, shown, cardWidth }),
     fanStep({ width, portrait, shown: FAN_SEATS, cardWidth }),
   );
-  // Split hands step left from the base hand.
-  const splitStep = Math.max(6, Math.floor((boxWidth * (1 - sepRatio)) / (HANDS_PER_SEAT - 1)));
+  // Split hands step left from the base hand, no further apart than at four seats.
+  const splitStep = Math.min(
+    splitStepFor({ width, portrait, shown }),
+    splitStepFor({ width, portrait, shown: FAN_SEATS }),
+  );
   /** Horizontal room one seat's hands take up. */
   const seatWidth = cardWidth + splitStep * (HANDS_PER_SEAT - 1);
   const railY = Math.round(height * (portrait ? RAIL_TOP.portrait : RAIL_TOP.landscape));
