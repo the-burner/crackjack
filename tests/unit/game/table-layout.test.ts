@@ -385,3 +385,23 @@ describe('a seat split once', () => {
       });
     }
 });
+
+describe('a hand at a table with few seats', () => {
+  const sizes = {
+    desktop: { width: 1440, height: 900 },
+    iPad: { width: 1180, height: 820 },
+    landscape: LANDSCAPE,
+    portrait: PORTRAIT,
+  };
+  for (const [name, size] of Object.entries(sizes))
+    for (const seatCount of [1, 2, 4, 6]) {
+      it(`fans its cards no wider than four seats do (${name}, ${seatCount} seats)`, () => {
+        const step = (seats: number) => {
+          const [first, second] = tableLayout({ ...size, seatCount: seats, humanSeats: [1] }).seats.at(-1)!.hands[0];
+          return second.x - first.x;
+        };
+        expect(step(seatCount)).toBeLessThanOrEqual(step(4));
+        if (seatCount < 4) expect(step(seatCount)).toBe(step(4));
+      });
+    }
+});

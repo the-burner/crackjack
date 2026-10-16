@@ -189,6 +189,31 @@ export interface TableLayoutOptions {
   noHoleCard?: boolean;
 }
 
+/** The seats whose fan every table with fewer keeps to. */
+const FAN_SEATS = 4;
+
+/** The share of a seat's box its first hand's fan takes; the rest is room for split hands. */
+const sepRatioFor = (shown: number) => (shown > 2 ? 0.75 : 0.6);
+
+/**
+ * How far each card steps right of the one before with `shown` seats across the felt: far enough
+ * to leave each one's rank index showing, which a narrow seat box on its own does not guarantee.
+ */
+function fanStep({
+  width,
+  portrait,
+  shown,
+  cardWidth,
+}: {
+  width: number;
+  portrait: boolean;
+  shown: number;
+  cardWidth: number;
+}): number {
+  const boxWidth = ((portrait ? 1.26 : 1.24) * (width - 2)) / shown;
+  return Math.max(Math.round(cardWidth * 0.26), Math.floor((boxWidth * sepRatioFor(shown) - cardWidth) / FAN_CARDS));
+}
+
 /** Works out the whole table layout. */
 export function tableLayout({
   width,
@@ -207,14 +232,16 @@ export function tableLayout({
   const cardWidth = cardWidthFor(cardHeight);
 
   const boxExpand = portrait ? 1.26 : 1.24;
-  const sepRatio = shown > 2 ? 0.75 : 0.6;
+  const sepRatio = sepRatioFor(shown);
   // Every table uses the row of the fullest one, which keeps the seats on the felt.
   const boxHeight = height * 0.52 * (portrait ? 1.03 : 1);
   const boxWidth = (boxExpand * (width - 2)) / shown;
   const stepUp = (boxHeight - cardHeight) / (FAN_CARDS - 1);
-  // Cards must step far enough right to leave each one's rank index showing,
-  // which a narrow seat box on its own does not guarantee.
-  const stepRight = Math.max(Math.round(cardWidth * 0.26), Math.floor((boxWidth * sepRatio - cardWidth) / FAN_CARDS));
+  // A table of fewer seats has wider boxes, but fans its cards no wider than four seats do.
+  const stepRight = Math.min(
+    fanStep({ width, portrait, shown, cardWidth }),
+    fanStep({ width, portrait, shown: FAN_SEATS, cardWidth }),
+  );
   // Split hands step left from the base hand.
   const splitStep = Math.max(6, Math.floor((boxWidth * (1 - sepRatio)) / (HANDS_PER_SEAT - 1)));
   /** Horizontal room one seat's hands take up. */
