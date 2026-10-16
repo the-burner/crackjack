@@ -45,7 +45,7 @@ export function PlayingStrategy() {
   const systemOptions = app.strategies.list().map(({ id, name }) => ({ value: id, label: name }));
 
   return (
-    <ScreenLayout title="Strategies" help="settings.strategy">
+    <ScreenLayout title="Playing Strategy" help="settings.strategy">
       <Column className="gap-6 pt-1">
         <Section title="Strategy">
           <SettingsGroup>
@@ -74,6 +74,7 @@ export function PlayingStrategy() {
                 onChange={value => settings.set('strategy.indexSet', value)}
               />
               <Button
+                icon="arrow-r"
                 onClick={() =>
                   navigate(
                     PATHS['strategy.tables'] + tablesSearch({ mode: 'editMask', maskKey: 'strategy.customIndexMask' }),

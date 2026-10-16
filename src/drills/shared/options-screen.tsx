@@ -1,5 +1,5 @@
 // The options screen every drill has: groups of controls bound to the drill's
-// settings and the "Launch the Drill" button. The playing strategy and true
+// settings and the Play button. The playing strategy and true
 // count settings the drills use are set from Settings on the home screen.
 //
 // Controls follow settings that other screens write too (the custom-hand
@@ -16,7 +16,10 @@ import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
 import { Slider } from '@/components/ui/slider';
 import { DurationPicker } from '@/components/ui/time-wheel';
 import { Column, ScreenLayout } from '@/components/screen-layout';
-import { useSettings } from '@/react/app-context';
+import { useApp, useSettings } from '@/react/app-context';
+import { PresetPicker } from '@/components/settings/preset-picker';
+import { DRILL_SETS } from '@/settings/setting-sets';
+import type { DrillName } from '@/settings/setting-sets';
 import type { AppSchema, SettingKey, SettingValues } from '@/settings/schema';
 import type { NumberDef } from '@/settings/store';
 import { tenthsColumns } from '@/drills/shared/duration';
@@ -25,32 +28,28 @@ import { clockTime } from './format';
 type BoolKey = { [K in SettingKey]: SettingValues[K] extends boolean ? K : never }[SettingKey];
 type IntKey = { [K in SettingKey]: AppSchema[K] extends NumberDef ? K : never }[SettingKey];
 
-/** The title bar, the groups of controls, then the launch button. */
+/** The title bar, the drill's saved configurations, the groups of controls, then the launch button. */
 export function DrillOptionsScreen({
   title,
   help,
+  drill,
   onLaunch,
   children,
 }: {
   title: string;
   help: string;
+  drill: DrillName;
   onLaunch: () => void;
   children: ReactNode;
 }) {
+  const app = useApp();
   return (
     <ScreenLayout title={title} help={help}>
       <Column>
+        <PresetPicker kind={DRILL_SETS[drill].kind} store={app.drillConfigs[drill]} />
         {children}
-        <Button
-          variant="primary"
-          icon="gear"
-          iconPos="bottom"
-          block
-          className="mt-1"
-          onClick={onLaunch}
-          data-action="launch"
-        >
-          Launch the Drill
+        <Button variant="primary" icon="play" block className="mt-1" onClick={onLaunch} data-action="launch">
+          Play
         </Button>
       </Column>
     </ScreenLayout>

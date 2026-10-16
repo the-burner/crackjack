@@ -75,7 +75,8 @@ export function TopBar({
           </BarButton>
         )}
       </div>
-      <h1 className="m-0 max-w-full min-w-0 justify-self-center truncate text-center text-title font-semibold text-(--text)">
+      {/* A long title goes onto a second line rather than being cut short. */}
+      <h1 className="m-0 line-clamp-2 max-w-full min-w-0 justify-self-center text-center text-title leading-tight font-semibold text-balance text-(--text)">
         {title}
       </h1>
       <div className="flex gap-0.5 justify-self-end">

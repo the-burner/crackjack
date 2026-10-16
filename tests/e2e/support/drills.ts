@@ -10,14 +10,29 @@ export interface Drill {
 }
 
 export const DRILLS = {
-  flash: { button: 'Flash Drills', options: 'drills.flash.options', play: 'drills.flash', title: 'Flash Options' },
-  depth: { button: 'Depth Drills', options: 'drills.depth.options', play: 'drills.depth', title: 'Depth Options' },
-  count: { button: 'Count Drills', options: 'drills.count.options', play: 'drills.count', title: 'Count Options' },
+  flash: {
+    button: 'Playing Strategy Flash Cards',
+    options: 'drills.flash.options',
+    play: 'drills.flash',
+    title: 'Playing Strategy Flash Cards',
+  },
+  depth: {
+    button: 'Deck Estimation and TC Conversion',
+    options: 'drills.depth.options',
+    play: 'drills.depth',
+    title: 'Deck Estimation and TC Conversion',
+  },
+  count: {
+    button: 'Simple Running Count',
+    options: 'drills.count.options',
+    play: 'drills.count',
+    title: 'Simple Running Count',
+  },
   full: {
-    button: 'Full Table Drills',
+    button: 'Compound Running Count',
     options: 'drills.full.options',
     play: 'drills.full',
-    title: 'Full Table Options',
+    title: 'Compound Running Count',
   },
 } satisfies Record<string, Drill>;
 

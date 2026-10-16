@@ -45,9 +45,9 @@ describe('drill options screens', () => {
   it('share the shell: title bar, sections and the launch button last', async () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<FullOptions />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Full Table Options');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Compound Running Count');
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual(['Drill', 'Timer']);
-    const launch = screen.getByRole('button', { name: 'Launch the Drill' });
+    const launch = screen.getByRole('button', { name: 'Play' });
     expect(screen.getAllByRole('button').at(-1)).toBe(launch);
     await user.click(launch);
     expect(location().pathname).toBe('/drills/full/play');
@@ -137,7 +137,7 @@ describe('drill options screens', () => {
         ...Object.fromEntries(SITUATIONS.map(flag => [flag, false])),
       }),
     );
-    await user.click(screen.getByRole('button', { name: 'Launch the Drill' }));
+    await user.click(screen.getByRole('button', { name: 'Play' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('No situations have been selected.');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     expect(location().pathname).toBe('/screen');
@@ -184,7 +184,7 @@ describe('drill options screens', () => {
     const user = userEvent.setup();
     const { app, location } = renderScreen(<DepthOptions />);
     act(() => app.settings.update({ 'drills.depth.decks': 6, 'drills.depth.trayStyle': 'doubleDeckFront' }));
-    await user.click(screen.getByRole('button', { name: 'Launch the Drill' }));
+    await user.click(screen.getByRole('button', { name: 'Play' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('only holds 2 decks');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     expect(select('Tray style')).toHaveDisplayValue('Six-deck tray, front');

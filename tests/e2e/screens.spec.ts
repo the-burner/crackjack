@@ -42,14 +42,15 @@ const showing = (page: Page, name: string) => page.locator(`[data-screen="${name
  */
 /** The router keeps its factories to itself. */
 /** Every screen: those with a URL of their own, and those under another screen's. */
-const ALL_SCREENS = [...Object.keys(PATHS), 'game.betting.select', 'game.betSelect', 'game.stats', 'help'];
+const ALL_SCREENS = [...Object.keys(PATHS), 'settings.betting.select', 'game.betSelect', 'game.stats', 'help'];
 
 /** The URL that opens a screen directly. */
-const urlOf = (name: string) => (name === 'game.betting.select' ? '/game/betting/0' : PATHS[name as ScreenName]);
+const urlOf = (name: string) =>
+  name === 'settings.betting.select' ? '/settings/betting/0' : PATHS[name as ScreenName];
 
 const SCREENS = [
-  { name: 'settings', title: 'Settings', control: 'role=button[name="Playing Strategies"]' },
-  { name: 'game.options', title: 'Game Options', control: '[data-action="play"]' },
+  { name: 'settings', title: 'Settings', control: 'role=button[name="Playing Strategy"]' },
+  { name: 'game.options', title: 'Blackjack', control: '[data-action="play"]' },
   { name: 'game.setup', title: 'Basic Setup', control: 'role=combobox[name="Decks"]' },
   { name: 'game.commonRules', title: 'Common Rules', control: 'role=combobox[name="Surrender"]' },
   { name: 'game.ruleVariations', title: 'Rule Variations', control: 'role=switch[name="Triple Down"]' },
@@ -60,17 +61,19 @@ const SCREENS = [
   { name: 'game.dealerErrors', title: 'Errs/Biases', control: 'role=combobox[name="Dealing bias"]' },
   { name: 'game.peeking', title: 'Peeking', control: 'role=switch[name="Peek when dealer peeks"]' },
   { name: 'settings.appearance', title: 'Appearance & Sound', control: 'role=combobox[name="Theme"]' },
-  { name: 'settings.strategy', title: 'Strategies', control: 'role=combobox[name="Strategy"]' },
+  { name: 'settings.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
   { name: 'settings.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
   { name: 'settings.gestures', title: 'Gestures', control: 'role=combobox[name="Configuration"]' },
-  { name: 'game.betting', title: 'Allowed Bets', control: 'role=table[name="Bets"]' },
-  { name: 'game.betting.select', title: 'Allowed Bets', control: 'role=group[name="Chips"]' },
+  { name: 'settings.betting', title: 'Betting Strategy', control: 'role=table[name="Bets"]' },
+  { name: 'settings.betting.select', title: 'Betting Strategy', control: 'role=group[name="Chips"]' },
   { name: 'strategy.tables', title: 'Tables', control: 'role=table[name="Hard Hit/Stand"]' },
-  { name: 'drills.flash.options', title: 'Flash Options', control: '[data-action="launch"]' },
-  { name: 'drills.depth.options', title: 'Depth Options', control: '[data-action="launch"]' },
-  { name: 'drills.count.options', title: 'Count Options', control: '[data-action="launch"]' },
-  { name: 'drills.full.options', title: 'Full Table Options', control: '[data-action="launch"]' },
+  { name: 'drills.flash.options', title: 'Playing Strategy Flash Cards', control: '[data-action="launch"]' },
+  { name: 'drills.depth.options', title: 'Deck Estimation and TC Conversion', control: '[data-action="launch"]' },
+  { name: 'drills.count.options', title: 'Simple Running Count', control: '[data-action="launch"]' },
+  { name: 'drills.full.options', title: 'Compound Running Count', control: '[data-action="launch"]' },
   { name: 'drills.flash.errors', title: 'Error History', control: 'main p' },
+  { name: 'drills.spread.options', title: 'Bet Spread Flash Cards', control: 'text=Coming soon.' },
+  { name: 'spreadCalculator', title: 'Bet Spread Calculator', control: 'text=Coming soon.' },
 ];
 
 const DRIVEN_ELSEWHERE = [
@@ -250,7 +253,7 @@ test('the True Count screen shows a row for every calculation it sets', async ({
 test('the Betting screen shows the bet ramp as a table', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const el = await openFromHub(page, 'Betting Strategies', 'game.betting');
+  const el = await openFromHub(page, 'Betting Strategy', 'settings.betting');
   // The default ramp: six bets, the first of them one chip at a count of 0 or less.
   const rows = el.getByRole('table', { name: 'Bets' }).locator('tbody tr');
   await expect(rows).toHaveCount(6);

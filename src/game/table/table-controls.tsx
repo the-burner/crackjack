@@ -10,10 +10,10 @@ import type { ControlsView } from './controller';
 
 /** The icons hint at the swipe for each play. */
 const ACTION_BUTTONS: [action: GameAction, label: string, icon: IconName, side: 'left' | 'right'][] = [
-  [ACTION.stand, 'Stand', 'arrow-l', 'left'],
-  [ACTION.hit, 'Hit', 'arrow-d', 'left'],
-  [ACTION.double, 'Double', 'arrow-u', 'right'],
-  [ACTION.split, 'Split', 'arrow-r', 'right'],
+  [ACTION.stand, 'Stand', 'swipe-l', 'left'],
+  [ACTION.hit, 'Hit', 'swipe-d', 'left'],
+  [ACTION.double, 'Double', 'swipe-u', 'right'],
+  [ACTION.split, 'Split', 'swipe-r', 'right'],
   [ACTION.surrender, 'Surrender', 'delete', 'right'],
 ];
 
@@ -80,7 +80,7 @@ export function TableActions({
         {side('left')}
         <PlayButton
           label="Insure"
-          icon="arrow-d"
+          icon="swipe-d"
           action="insure"
           onClick={() => onInsurance(true)}
           hidden={hidden || !offering}
@@ -88,7 +88,7 @@ export function TableActions({
         />
         <PlayButton
           label="Pass"
-          icon="arrow-l"
+          icon="swipe-l"
           action="pass"
           onClick={() => onInsurance(false)}
           hidden={hidden || !offering}

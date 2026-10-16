@@ -90,6 +90,8 @@ export function SettingsRow({
         '*:data-[slot=button]:min-h-0 *:data-[slot=button]:flex-[0_0_96px] *:data-[slot=button]:self-stretch *:data-[slot=button]:rounded-none *:data-[slot=button]:border-l *:data-[slot=button]:border-(--separator)',
         '*:data-[slot=button]:bg-transparent *:data-[slot=button]:px-3.5 *:data-[slot=button]:py-0 *:data-[slot=button]:font-medium *:data-[slot=button]:text-(--accent) *:data-[slot=button]:tabular-nums',
         '*:data-[slot=button]:active:scale-100 *:data-[slot=button]:engaged:bg-(--btn-bg-active)',
+        // A value cell that opens a screen keeps room for its chevron.
+        '*:data-[slot=button]:data-icon:pr-8 *:data-[slot=button]:data-icon:[&>[data-slot=icon]]:right-2.5',
         className,
       )}
       {...props}

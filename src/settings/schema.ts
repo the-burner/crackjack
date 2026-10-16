@@ -204,6 +204,12 @@ export const SETTINGS_SCHEMA = {
   'gestures.keys': json(STANDARD_KEYS, isKeyMap),
   /** The gesture configuration selected (see gesture-configs.ts); '' for none. */
   'gestures.config': text('standard'),
+  /** The game and drill configurations selected (see setting-sets.ts); '' for none. */
+  'game.config': text('default'),
+  'drills.flash.config': text('default'),
+  'drills.depth.config': text('default'),
+  'drills.count.config': text('default'),
+  'drills.full.config': text('default'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
   'display.hideActionButtons': bool(true),

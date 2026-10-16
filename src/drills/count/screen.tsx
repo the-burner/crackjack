@@ -30,7 +30,7 @@ export function CountDrill() {
   return (
     <DrillScreen
       shell={drill.shell}
-      title="Count Drills"
+      title="Simple Running Count"
       help="drills.count"
       layout="grid"
       displayRef={display}

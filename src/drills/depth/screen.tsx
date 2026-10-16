@@ -31,7 +31,7 @@ export function DepthDrill() {
   return (
     <DrillScreen
       shell={drill.shell}
-      title="Depth Drills"
+      title="Deck Estimation and TC Conversion"
       help="drills.depth"
       layout="grid"
       displayRef={display}

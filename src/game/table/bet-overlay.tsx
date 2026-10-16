@@ -27,9 +27,10 @@ const BUTTONS: Record<
 > = {
   wong: { label: 'Wong', icon: 'forward', handler: 'onWong' },
   resetBank: { label: 'Reset Bank', icon: 'refresh', handler: 'onResetBank' },
-  shuffle: { label: 'Shuffle', icon: 'arrow-r', handler: 'onShuffle' },
-  sideBet: { label: 'Side Bet', icon: 'plus', handler: 'onSideBet' },
-  customize: { label: 'Customize', icon: 'grid', handler: 'onCustomize' },
+  shuffle: { label: 'Shuffle', icon: 'shuffle', handler: 'onShuffle' },
+  // These two open screens of their own.
+  sideBet: { label: 'Side Bet', icon: 'arrow-r', handler: 'onSideBet' },
+  customize: { label: 'Customize', icon: 'arrow-r', handler: 'onCustomize' },
   foul: { label: 'Foul', icon: 'minus', handler: 'onFoul' },
 };
 

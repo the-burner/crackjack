@@ -1,4 +1,4 @@
-// Count Drills: Options.
+// Simple Running Count: Options.
 
 import type { App } from '@/app/app';
 import { useApp, useSettings } from '@/react/app-context';
@@ -104,7 +104,8 @@ export function CountOptions() {
 
   return (
     <DrillOptionsScreen
-      title="Count Options"
+      drill="count"
+      title="Simple Running Count"
       help="drills.count.options"
       onLaunch={() => launch(app, () => navigate(PATHS['drills.count']))}
     >

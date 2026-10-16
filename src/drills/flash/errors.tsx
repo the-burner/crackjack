@@ -1,4 +1,4 @@
-// Flash Drills: Error History - which hands and situations the recorded
+// Playing Strategy Flash Cards: Error History - which hands and situations the recorded
 // strategy errors come from, and each one's share of all errors.
 
 import { useStore } from 'zustand';

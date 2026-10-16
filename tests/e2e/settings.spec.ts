@@ -164,17 +164,16 @@ test('Settings holds what the whole app shares; Game Options what only the game 
   await page.goto('/index.html');
   const settings = await openHubFromHome(page, 'settings');
   // The strategy screens are covered by their own tests, so only check that the links are there.
-  for (const button of ['Playing Strategies', 'True Count Calcs', 'Appearance & Sound']) {
+  for (const button of ['Playing Strategy', 'Betting Strategy', 'True Count Calcs', 'Appearance & Sound']) {
     await expect(settings.getByRole('button', { name: button, exact: true })).toBeVisible();
   }
-  await expect(settings.getByRole('button', { name: 'Betting Strategies' })).toHaveCount(0);
   await expect(settings.locator('[data-action="play"]')).toHaveCount(0);
 
   await settings.locator('[data-action="back"]').click();
   const game = await openHubFromHome(page, 'game.options');
-  await expect(game.getByRole('button', { name: 'Betting Strategies', exact: true })).toBeVisible();
+  await expect(game.getByRole('button', { name: 'Betting Strategy' })).toHaveCount(0);
   await expect(game.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeVisible();
-  await expect(game.getByRole('button', { name: 'Playing Strategies' })).toHaveCount(0);
+  await expect(game.getByRole('button', { name: 'Playing Strategy' })).toHaveCount(0);
 });
 
 for (const testCase of CASES) {
@@ -219,7 +218,7 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
   await expect(check(play, 'Dealer wins ties')).toBeChecked();
 });
 
-test('Play Blackjack keeps the saved seat count and opens the table', async ({ page }) => {
+test('Play keeps the saved seat count and opens the table', async ({ page }) => {
   await page.goto('/index.html');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -333,7 +332,7 @@ test('a focused select shows the pressed shade, not a ring its group would clip 
 });
 
 test('a labelled select fills its row: a tap anywhere on it, the label too, opens it @layout', async ({ page }) => {
-  for (const path of ['/settings/gestures', '/settings/true-count', '/game/peeking', '/game/betting']) {
+  for (const path of ['/settings/gestures', '/settings/true-count', '/game/peeking', '/settings/betting']) {
     await page.goto(`/index.html#${path}`);
     const selects = page.locator('[data-slot="select"]:has(> span)');
     await expect(selects.first()).toBeVisible();

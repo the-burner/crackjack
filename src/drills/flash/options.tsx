@@ -1,4 +1,4 @@
-// Flash Drills: Options.
+// Playing Strategy Flash Cards: Options.
 
 import type { App } from '@/app/app';
 import { toast } from '@/components/ui/toast';
@@ -94,7 +94,8 @@ export function FlashOptions() {
 
   return (
     <DrillOptionsScreen
-      title="Flash Options"
+      drill="flash"
+      title="Playing Strategy Flash Cards"
       help="drills.flash.options"
       onLaunch={() => launch(app, () => navigate(PATHS['drills.flash']))}
     >
@@ -128,6 +129,7 @@ export function FlashOptions() {
             {/* Picks the custom hands; only shown when the hand list is Custom. */}
             {hands === 'custom' && (
               <Button
+                icon="arrow-r"
                 onClick={() =>
                   navigate(
                     PATHS['strategy.tables'] +

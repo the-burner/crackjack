@@ -1,6 +1,5 @@
-// Home screen: the four drills, the game and the settings.
+// Home screen: the modules (the game, the drills, the tools) and the settings.
 
-import { Button } from '@/components/ui/button';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
 import { FooterNote } from '@/components/ui/text';
 import { Column, ScreenLayout } from '@/components/screen-layout';
@@ -8,17 +7,27 @@ import { alert } from '@/components/dialogs';
 import { CardButton } from '@/components/ui/card-button';
 import { WORDMARK_SVG } from '@/lib/wordmark';
 import { useNavigate } from 'react-router';
-import { PATHS } from '@/app/paths';
+import { PATHS, tablesSearch } from '@/app/paths';
 
 declare const __APP_VERSION__: string;
 /** The last commit's date and short hash, stamped in at build time. */
 export const APP_VERSION = __APP_VERSION__;
 
-const DRILLS = [
-  ['Flash Drills', 'Strategy and index plays', 'drills.flash.options'],
-  ['Depth Drills', 'Estimate decks played', 'drills.depth.options'],
-  ['Count Drills', 'Running and true count', 'drills.count.options'],
-  ['Full Table Drills', 'Count a whole table', 'drills.full.options'],
+const SLOGAN = 'Get cracked at blackjack';
+
+/** Each module: its name and where it opens. */
+const MODULES = [
+  ['Blackjack', PATHS['game.options']],
+  ['Playing Strategy Flash Cards', PATHS['drills.flash.options']],
+  ['Deck Estimation and TC Conversion', PATHS['drills.depth.options']],
+  ['Simple Running Count', PATHS['drills.count.options']],
+  ['Compound Running Count', PATHS['drills.full.options']],
+  ['Bet Spread Flash Cards', PATHS['drills.spread.options']],
+  ['Bet Spread Calculator', PATHS.spreadCalculator],
+  [
+    'Playing Strategy Charts',
+    PATHS['strategy.tables'] + tablesSearch({ mode: 'view', title: 'Playing Strategy Charts' }),
+  ],
 ] as const;
 
 export function Home() {
@@ -26,24 +35,22 @@ export function Home() {
   return (
     <ScreenLayout title="" help="home" back={false}>
       <Column className="gap-6 pt-2">
-        <h1
-          className="mx-auto mt-2 mb-0 w-[270px] leading-[0] [&_svg]:h-auto [&_svg]:w-full"
-          dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }}
-        />
-        <Button
-          variant="primary"
-          large
-          block
-          icon="arrow-r"
-          onClick={() => navigate(PATHS['game.options'])}
-          data-action="play"
-        >
-          Play Blackjack
-        </Button>
-        <Section title="Drills">
+        <div className="flex flex-col items-center gap-2">
+          <h1
+            className="mx-auto mt-2 mb-0 w-[270px] leading-[0] [&_svg]:h-auto [&_svg]:w-full"
+            dangerouslySetInnerHTML={{ __html: WORDMARK_SVG }}
+          />
+          <p className="m-0 text-body text-(--text-secondary)">{SLOGAN}</p>
+        </div>
+        <Section>
           <div className="grid grid-cols-2 gap-2.5 max-[340px]:grid-cols-1">
-            {DRILLS.map(([name, detail, screen]) => (
-              <CardButton key={screen} title={name} detail={detail} onClick={() => navigate(PATHS[screen])} />
+            {MODULES.map(([name, to]) => (
+              <CardButton
+                key={name}
+                title={name}
+                onClick={() => navigate(to)}
+                data-action={to === PATHS['game.options'] ? 'play' : undefined}
+              />
             ))}
           </div>
         </Section>

@@ -31,7 +31,7 @@ export function FullDrill() {
   return (
     <DrillScreen
       shell={drill.shell}
-      title="Full Table Drills"
+      title="Compound Running Count"
       help="drills.full"
       layout="full"
       rootRef={root}

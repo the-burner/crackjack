@@ -57,7 +57,7 @@ interface Table {
   color: TableColor;
 }
 
-export const ROTATE_MESSAGE = 'The Full Table Drills need a wide screen. Turn the device sideways, or hit Back.';
+export const ROTATE_MESSAGE = 'Compound Running Count needs a wide screen. Turn the device sideways, or hit Back.';
 
 export interface FullElements {
   /** The whole screen: upright, it is covered. */

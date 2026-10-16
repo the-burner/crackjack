@@ -95,6 +95,8 @@ export const routes: RouteObject[] = [
       settings('true-count', 'trueCount', () => import('@/screens/strategy/true-count').then(m => m.TrueCount)),
       settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
       settings('gestures', 'gestures', () => import('@/screens/settings/gestures').then(m => m.Gestures)),
+      settings('betting', 'betting', betting),
+      settings('betting/:row', 'betting.select', betRow),
       { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
       game('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
       game('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),
@@ -107,11 +109,17 @@ export const routes: RouteObject[] = [
       ),
       game('unusual-games', 'unusualGames', () => import('@/screens/settings/unusual-games').then(m => m.UnusualGames)),
       game('dealer-errors', 'dealerErrors', () => import('@/screens/settings/dealer-errors').then(m => m.DealerErrors)),
-      game('betting', 'betting', betting),
-      game('betting/:row', 'betting.select', betRow),
       game('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),
       game('mechanics', 'mechanics', () => import('@/screens/settings/mechanics').then(m => m.Mechanics)),
       { path: 'strategy/tables', ...page('strategy.tables', tables) },
+      {
+        path: 'drills/spread',
+        ...page('drills.spread.options', () => import('@/drills/spread/options').then(m => m.SpreadOptions)),
+      },
+      {
+        path: 'spread-calculator',
+        ...page('spreadCalculator', () => import('@/screens/spread-calculator').then(m => m.SpreadCalculator)),
+      },
       {
         path: 'drills/flash',
         ...page('drills.flash.options', () => import('@/drills/flash/options').then(m => m.FlashOptions)),
@@ -154,8 +162,8 @@ export const routes: RouteObject[] = [
         children: [
           { path: 'stats', ...page('game.stats', () => import('@/game/screens/stats').then(m => m.GameStatsRoute)) },
           { path: 'error', ...page('strategy.tables', tables) },
-          { path: 'customize', ...page('game.betting', betting) },
-          { path: 'customize/:row', ...page('game.betting.select', betRow) },
+          { path: 'customize', ...page('settings.betting', betting) },
+          { path: 'customize/:row', ...page('settings.betting.select', betRow) },
           {
             path: 'side-bet/:spot',
             ...page('game.betSelect', () => import('@/game/screens/bet-select').then(m => m.SideBetRoute)),

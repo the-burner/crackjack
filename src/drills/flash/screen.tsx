@@ -15,13 +15,13 @@ import { tablesSearch } from '@/app/paths';
 /** The answer buttons, in two rows, with their swipe hints. */
 const ANSWER_BUTTONS: readonly (readonly { action: Action; label: string; icon: IconName }[])[] = [
   [
-    { action: ACTION.double, label: 'Double', icon: 'arrow-u' },
-    { action: ACTION.split, label: 'Split', icon: 'arrow-r' },
+    { action: ACTION.double, label: 'Double', icon: 'swipe-u' },
+    { action: ACTION.split, label: 'Split', icon: 'swipe-r' },
     { action: ACTION.surrender, label: 'Surrender', icon: 'delete' },
   ],
   [
-    { action: ACTION.hit, label: 'Hit', icon: 'arrow-d' },
-    { action: ACTION.stand, label: 'Stand', icon: 'arrow-l' },
+    { action: ACTION.hit, label: 'Hit', icon: 'swipe-d' },
+    { action: ACTION.stand, label: 'Stand', icon: 'swipe-l' },
   ],
 ];
 
@@ -55,7 +55,7 @@ export function FlashDrill() {
     <DrillScreen
       shell={drill.shell}
       above={above}
-      title="Flash Drills"
+      title="Playing Strategy Flash Cards"
       help="drills.flash"
       layout="flash"
       displayRef={display}

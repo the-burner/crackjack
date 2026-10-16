@@ -1,5 +1,5 @@
-// Settings: the screens whose settings apply to the whole app (the game and
-// every drill). The game's own settings are on Game Options.
+// Settings: the screens whose settings apply to the whole app (every module).
+// Each module's own settings are on its own screen.
 
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { confirm } from '@/components/dialogs';
@@ -10,13 +10,14 @@ import { useNavigate } from 'react-router';
 import { PATHS } from '@/app/paths';
 import type { ScreenName } from '@/app/paths';
 
-const NOTE = 'These settings apply to the game and to all four drills.';
+const NOTE = 'These settings apply to every module.';
 
 const RESET_NOTE =
   'Puts the app back as it was when first installed: every setting, the game’s and every drill’s, to its default, and the bankroll, statistics, error history and saved strategies and gesture configurations erased.';
 
 const SCREENS: readonly (readonly [string, ScreenName])[] = [
-  ['Playing Strategies', 'settings.strategy'],
+  ['Playing Strategy', 'settings.strategy'],
+  ['Betting Strategy', 'settings.betting'],
   ['True Count Calcs', 'settings.trueCount'],
   ['Appearance & Sound', 'settings.appearance'],
   ['Gestures', 'settings.gestures'],

@@ -17,6 +17,8 @@ import { readGestureConfigs } from '@/settings/gesture-configs';
 import type { GestureConfig } from '@/core/gestures';
 import { readBettingStrategies } from '@/settings/betting-strategies';
 import type { BettingStrategy } from '@/settings/betting-strategies';
+import { DRILL_SETS, GAME_SETS } from '@/settings/setting-sets';
+import type { DrillName, SettingSet } from '@/settings/setting-sets';
 
 /** The services that do not need a DOM. */
 export interface Services {
@@ -34,6 +36,10 @@ export interface Services {
   gestureConfigs: PersistedStore<GestureConfig[]>;
   /** Betting strategies the player saved. */
   bettingStrategies: PersistedStore<BettingStrategy[]>;
+  /** Game configurations the player saved. */
+  gameConfigs: PersistedStore<SettingSet[]>;
+  /** Each drill's configurations the player saved. */
+  drillConfigs: Record<DrillName, PersistedStore<SettingSet[]>>;
   /** Starts the app over from its home screen, reading everything saved afresh. */
   restart: () => void;
 }
@@ -59,6 +65,13 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     gameStats: persistedStore(storage, 'gameStats', readStats),
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
     bettingStrategies: persistedStore(storage, 'bettingStrategies', readBettingStrategies),
+    gameConfigs: persistedStore(storage, 'gameConfigs', GAME_SETS.read),
+    drillConfigs: {
+      flash: persistedStore(storage, 'flashConfigs', DRILL_SETS.flash.read),
+      depth: persistedStore(storage, 'depthConfigs', DRILL_SETS.depth.read),
+      count: persistedStore(storage, 'countConfigs', DRILL_SETS.count.read),
+      full: persistedStore(storage, 'fullConfigs', DRILL_SETS.full.read),
+    },
     // The page without its route: the home screen.
     restart: () => location.replace(location.pathname),
   };

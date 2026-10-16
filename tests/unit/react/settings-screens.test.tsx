@@ -175,7 +175,8 @@ describe('navigation screens', () => {
     expect(screen.getAllByRole('button').map(b => b.textContent)).toEqual([
       'Back',
       'Help',
-      'Playing Strategies',
+      'Playing Strategy',
+      'Betting Strategy',
       'True Count Calcs',
       'Appearance & Sound',
       'Gestures',
@@ -190,7 +191,7 @@ describe('navigation screens', () => {
     const { location } = renderScreen(<GameOptions />, { path: '/game' });
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
       'Table and Rules',
-      'Betting and Peeking',
+      'Peeking and Warnings',
       'Table',
     ]);
     expect(screen.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeInTheDocument();
@@ -203,15 +204,15 @@ describe('navigation screens', () => {
     const app = createTestApp();
     app.settings.set('table.computerSeats', [true, true, true, true, true, true]);
     const { location } = renderScreen(<GameOptions />, { app, path: '/game' });
-    await user.click(screen.getByRole('button', { name: 'Play Blackjack' }));
+    await user.click(screen.getByRole('button', { name: 'Play' }));
     expect(location().pathname).toBe('/game/play');
     expect(app.settings.get('table.computerSeats').some(computer => !computer)).toBe(true);
   });
 
-  it('Play Blackjack on the home screen opens Game Options', async () => {
+  it('Blackjack on the home screen opens Game Options', async () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<Home />);
-    await user.click(screen.getByRole('button', { name: 'Play Blackjack' }));
+    await user.click(screen.getByRole('button', { name: 'Blackjack' }));
     expect(location().pathname).toBe('/game');
   });
 
@@ -239,6 +240,36 @@ describe('navigation screens', () => {
   it('shows Reset Defaults in the theme’s red', () => {
     renderScreen(<SettingsHub />);
     expect(screen.getByRole('button', { name: 'Reset Defaults' })).toHaveClass('text-(--warning)');
+  });
+
+  it('the home screen lists every module alike, under its slogan, each opening its screen', async () => {
+    const user = userEvent.setup();
+    const { location } = renderScreen(<Home />);
+    expect(screen.getByText('Get cracked at blackjack')).toBeInTheDocument();
+    // No heading over them.
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    const NAMES = [
+      'Blackjack',
+      'Playing Strategy Flash Cards',
+      'Deck Estimation and TC Conversion',
+      'Simple Running Count',
+      'Compound Running Count',
+      'Bet Spread Flash Cards',
+      'Bet Spread Calculator',
+      'Playing Strategy Charts',
+    ];
+    const modules = screen.getAllByRole('button', { name: new RegExp(`^(${NAMES.join('|')})`) });
+    expect(modules.map(b => NAMES.find(name => b.textContent?.startsWith(name)))).toEqual(NAMES);
+    await user.click(screen.getByRole('button', { name: /^Bet Spread Calculator/ }));
+    expect(location().pathname).toBe('/spread-calculator');
+  });
+
+  it('Playing Strategy Charts on the home screen opens the strategy tables to look at', async () => {
+    const user = userEvent.setup();
+    const { location } = renderScreen(<Home />);
+    await user.click(screen.getByRole('button', { name: /^Playing Strategy Charts/ }));
+    expect(location().pathname).toBe('/strategy/tables');
+    expect(new URLSearchParams(location().search).get('title')).toBe('Playing Strategy Charts');
   });
 
   it('the home screen draws the wordmark and has no Reset Defaults', () => {
@@ -276,7 +307,7 @@ describe('navigation screens', () => {
       { path: '/game' },
     );
     await user.click(screen.getAllByRole('button', { name: 'Help' })[0]);
-    expect(help()).toEqual({ topic: 'game.options', title: 'Game Options' });
+    expect(help()).toEqual({ topic: 'game.options', title: 'Blackjack' });
     act(() => void router.navigate(-1));
     expect(help()).toBeNull();
     expect(location().pathname).toBe('/game');

@@ -50,6 +50,7 @@ export function Button({
     <button
       type={type}
       data-slot="button"
+      data-icon={icon ? '' : undefined}
       className={cn(buttonVariants({ variant, large, block, iconPos: icon ? iconPos : undefined }), className)}
       {...props}
     >

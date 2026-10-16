@@ -1,4 +1,4 @@
-// Depth Drills: Options.
+// Deck Estimation and TC Conversion: Options.
 
 import type { App } from '@/app/app';
 import { useApp, useSettings } from '@/react/app-context';
@@ -50,7 +50,8 @@ export function DepthOptions() {
 
   return (
     <DrillOptionsScreen
-      title="Depth Options"
+      drill="depth"
+      title="Deck Estimation and TC Conversion"
       help="drills.depth.options"
       onLaunch={() => launch(app, () => navigate(PATHS['drills.depth']))}
     >

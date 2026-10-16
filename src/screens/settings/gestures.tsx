@@ -13,7 +13,7 @@ import { ACTION_LABELS, GESTURE_ACTIONS, GESTURE_LABELS, GESTURES, withAction, w
 import { GESTURE_PRESETS } from '@/settings/gesture-configs';
 
 const NOTE =
-  'Each gesture makes one play, in the game and in the Flash drill. Choosing a play another gesture makes swaps the two. ' +
+  'Each gesture makes one play, in Blackjack and in Playing Strategy Flash Cards. Choosing a play another gesture makes swaps the two. ' +
   'The portrait or the landscape set is used by how the device is held. ' +
   'On a keyboard or a remote, each gesture’s key makes it too.';
 

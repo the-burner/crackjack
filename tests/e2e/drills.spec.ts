@@ -101,7 +101,7 @@ test('the home screen opens every drill options screen', async ({ page }) => {
     const screen = page.locator(`[data-screen="${drill.options}"]`);
     await expect(screen).toBeVisible();
     await expect(screen.getByRole('heading', { level: 1 })).toHaveText(drill.title);
-    await expect(screen.getByRole('button', { name: 'Launch the Drill' })).toBeVisible();
+    await expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
     // Strategy and true count are shared settings, set only from Settings.
     await expect(screen.getByRole('button', { name: 'Playing Strategy' })).toHaveCount(0);
     await expect(screen.getByRole('button', { name: 'True Count Calcs' })).toHaveCount(0);
@@ -202,7 +202,7 @@ test.describe('flash drill', () => {
 
   test('offers non-blocking pop-ups only with Warn on error', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Flash Drills' }).click();
+    await page.getByRole('button', { name: 'Playing Strategy Flash Cards' }).click();
     const options = page.locator('[data-screen="drills.flash.options"]');
     const toggle = options.getByRole('switch', { name: 'Non-blocking error pop-ups' });
     await expect(toggle).toBeVisible();
@@ -300,7 +300,7 @@ test.describe('flash drill', () => {
 
   test('shows the timing options each timer mode uses', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Flash Drills' }).click();
+    await page.getByRole('button', { name: 'Playing Strategy Flash Cards' }).click();
     const options = page.locator('[data-screen="drills.flash.options"]');
     const toggle = options.getByRole('switch', { name: 'Time limit per hand' });
     const perHand = options.getByRole('button', { name: 'Time per hand', exact: true });
@@ -490,8 +490,8 @@ test.describe('flash drill', () => {
         surrender: false,
       },
     });
-    await page.getByRole('button', { name: 'Flash Drills' }).click();
-    await page.getByRole('button', { name: 'Launch the Drill' }).click();
+    await page.getByRole('button', { name: 'Playing Strategy Flash Cards' }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toContainText('No situations have been selected');
     await dialog.getByRole('button', { name: 'OK' }).click();
@@ -578,7 +578,7 @@ test.describe('flash drill', () => {
 test.describe('depth drill', () => {
   test('shows only the options that apply to the timer mode and the drill', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Depth Drills' }).click();
+    await page.getByRole('button', { name: 'Deck Estimation and TC Conversion' }).click();
     const options = page.locator('[data-screen="drills.depth.options"]');
     const button = (name: string) => options.getByRole('button', { name, exact: true });
 
@@ -654,9 +654,9 @@ test.describe('depth drill', () => {
 
   test('moves the tray style up when it cannot hold the decks in play', async ({ page }) => {
     await open(page, { 'drills.depth.decks': 6, 'drills.depth.trayStyle': 'doubleDeckFront' });
-    await page.getByRole('button', { name: 'Depth Drills' }).click();
+    await page.getByRole('button', { name: 'Deck Estimation and TC Conversion' }).click();
     const options = page.locator('[data-screen="drills.depth.options"]');
-    await options.getByRole('button', { name: 'Launch the Drill' }).click();
+    await options.getByRole('button', { name: 'Play', exact: true }).click();
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toContainText('only holds 2 decks');
     await dialog.getByRole('button', { name: 'OK' }).click();
@@ -667,7 +667,7 @@ test.describe('depth drill', () => {
 
 test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: 'Flash Drills' }).click();
+  await page.getByRole('button', { name: 'Playing Strategy Flash Cards' }).click();
   const options = page.locator('[data-screen="drills.flash.options"]');
   const row = options.getByRole('button', { name: 'Drill time' });
   await expect(row).toHaveText('00:03:00');
@@ -727,7 +727,7 @@ test('a drill stops while another screen covers it, and counts down on return', 
 test.describe('count drill', () => {
   test('shows only the options that apply', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Count Drills' }).click();
+    await page.getByRole('button', { name: 'Simple Running Count' }).click();
     const options = page.locator('[data-screen="drills.count.options"]');
     const button = (name: string) => options.getByRole('button', { name, exact: true });
     const check = (name: string) => options.getByRole('switch', { name });
@@ -995,7 +995,7 @@ test.describe('full table drill', () => {
 
   test('shows only the options that apply', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Full Table Drills' }).click();
+    await page.getByRole('button', { name: 'Compound Running Count' }).click();
     const options = page.locator('[data-screen="drills.full.options"]');
     const button = (name: string) => options.getByRole('button', { name, exact: true });
     const select = (label: string) => options.getByRole('combobox', { name: label });

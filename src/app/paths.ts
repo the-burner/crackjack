@@ -19,7 +19,7 @@ export const PATHS = {
   'settings.strategy': '/settings/strategy',
   'settings.trueCount': '/settings/true-count',
   'settings.gestures': '/settings/gestures',
-  'game.betting': '/game/betting',
+  'settings.betting': '/settings/betting',
   'strategy.tables': '/strategy/tables',
   'drills.flash.options': '/drills/flash',
   'drills.flash': '/drills/flash/play',
@@ -30,6 +30,8 @@ export const PATHS = {
   'drills.count': '/drills/count/play',
   'drills.full.options': '/drills/full',
   'drills.full': '/drills/full/play',
+  'drills.spread.options': '/drills/spread',
+  spreadCalculator: '/spread-calculator',
   'game.options': '/game',
   'game.table': '/game/play',
 } as const;

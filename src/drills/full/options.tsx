@@ -1,4 +1,4 @@
-// Full Table Drills: Options.
+// Compound Running Count: Options.
 
 import { useSettings } from '@/react/app-context';
 import { Section } from '@/components/ui/settings-group';
@@ -54,7 +54,8 @@ export function FullOptions() {
 
   return (
     <DrillOptionsScreen
-      title="Full Table Options"
+      drill="full"
+      title="Compound Running Count"
       help="drills.full.options"
       onLaunch={() => navigate(PATHS['drills.full'])}
     >

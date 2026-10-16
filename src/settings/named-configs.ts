@@ -47,7 +47,14 @@ export const deleteNamed = <T extends Named>(saved: readonly T[], id: string): T
 export const newPresetId = (): string => `saved-${Date.now()}`;
 
 /** The settings that hold which preset is selected. */
-export type PresetSelectionKey = 'betting.strategy' | 'gestures.config';
+export type PresetSelectionKey =
+  | 'betting.strategy'
+  | 'gestures.config'
+  | 'game.config'
+  | 'drills.flash.config'
+  | 'drills.depth.config'
+  | 'drills.count.config'
+  | 'drills.full.config';
 
 /** What a kind of preset is: its built-ins, where its selection is kept, and how it reads and writes the settings. */
 export interface PresetKind<T extends Named, V> {

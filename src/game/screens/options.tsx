@@ -1,6 +1,6 @@
 // Game Options: the settings that apply only to the game, and the button that
-// starts it. The playing strategy, true count and appearance are global
-// (Settings on the home screen).
+// starts it. The playing and betting strategies, true count and appearance are
+// global (Settings on the home screen).
 
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { SettingChecks } from '@/components/settings-controls';
 import { useApp } from '@/react/app-context';
 import { openTable } from '@/game/launch';
 import { PATHS } from '@/app/paths';
+import { PresetPicker } from '@/components/settings/preset-picker';
+import { GAME_SETS } from '@/settings/setting-sets';
 import type { ScreenName } from '@/app/paths';
 
 const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenName])[]])[] = [
@@ -25,13 +27,7 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenNa
       ['Dealer Errs/Biases', 'game.dealerErrors'],
     ],
   ],
-  [
-    'Betting and Peeking',
-    [
-      ['Betting Strategies', 'game.betting'],
-      ['Peeking', 'game.peeking'],
-    ],
-  ],
+  ['Peeking and Warnings', [['Peeking', 'game.peeking']]],
   ['Table', [['Speed/Mechanics', 'game.mechanics']]],
 ];
 
@@ -39,8 +35,9 @@ export function GameOptions() {
   const app = useApp();
   const navigate = useNavigate();
   return (
-    <ScreenLayout title="Game Options" help="game.options">
+    <ScreenLayout title="Blackjack" help="game.options">
       <Column className="gap-6 pt-1">
+        <PresetPicker kind={GAME_SETS.kind} store={app.gameConfigs} />
         {SECTIONS.map(([title, screens]) => (
           <Section key={title} title={title}>
             <SettingsGroup>
@@ -49,7 +46,7 @@ export function GameOptions() {
                   {label}
                 </ListRow>
               ))}
-              {title === 'Betting and Peeking' && (
+              {title === 'Peeking and Warnings' && (
                 <SettingChecks items={[{ label: 'Warning on Strategy Error', key: 'strategy.warnOnError' }]} />
               )}
             </SettingsGroup>
@@ -57,13 +54,13 @@ export function GameOptions() {
         ))}
         <Button
           variant="primary"
-          icon="arrow-r"
+          icon="play"
           large
           block
           onClick={() => openTable(app, () => navigate(PATHS['game.table']))}
           data-action="play"
         >
-          Play Blackjack
+          Play
         </Button>
       </Column>
     </ScreenLayout>
