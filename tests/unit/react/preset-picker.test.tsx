@@ -8,6 +8,7 @@ import { BETTING_PRESETS, BUILT_IN_BETTING } from '@/settings/betting-strategies
 import { createTestApp, renderScreen } from '../../support/render';
 
 const SINGLE = BUILT_IN_BETTING[0].name;
+const MULTI = BUILT_IN_BETTING[1].name;
 const picker = () => screen.getByRole('combobox', { name: 'Betting strategy' });
 const row = (name: string) => screen.queryByRole('button', { name });
 
@@ -130,7 +131,7 @@ describe('the preset picker', () => {
     expect(row('Rename…')).not.toBeInTheDocument();
   });
 
-  it('leaves the built-in strategies read-only, and Reset Defaults back on the single-hand one', async () => {
+  it('leaves the built-in strategies read-only, and Reset Defaults back on the multi-hand one', async () => {
     const app = withSpread();
     act(() => app.settings.update({ 'game.betting.strategy': 'single-hand', 'game.betting.chipValue': 10 }));
     expect(picker()).toHaveDisplayValue(`${SINGLE} (edited)`);
@@ -138,7 +139,7 @@ describe('the preset picker', () => {
     expect(row('Rename…')).not.toBeInTheDocument();
     expect(row('Revert')).toBeInTheDocument();
     act(() => app.settings.reset());
-    expect(picker()).toHaveDisplayValue(SINGLE);
+    expect(picker()).toHaveDisplayValue(MULTI);
     expect(app.bettingStrategies.getState().value).toHaveLength(1);
   });
 });

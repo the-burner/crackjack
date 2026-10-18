@@ -1,6 +1,7 @@
-// Playing Strategy: which counting system one module plays, how many of its indices to use, the
-// rules its tables are built for, and the initial count. Every module keeps its own answers here
-// (settings/scopes.ts); the game's rules are the table's own, so it edits those.
+// Playing Strategy: which counting system one module plays, and of what follows from it only what
+// the module reads (settings/scopes.ts): the indices and the rules its tables are built for where
+// it is judged against them, the initial count where it counts a shoe. The game's rules are the
+// table's own, so it edits those.
 
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { SettingChecks } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
 import { applyIndexRangeChange } from '@/settings/rules-logic';
 import type { IndexRangeKey } from '@/settings/rules-logic';
-import { decksOf, indexMaskKey, scopedSettings, tableRuleKey } from '@/settings/scopes';
+import { decksOf, indexMaskKey, keeps, scopedSettings, tableRuleKey } from '@/settings/scopes';
 import type { ScopeName } from '@/settings/scopes';
 import { INDEX_SETS } from '@/core/strategy/strategy-tables';
 import type { IndexSet } from '@/core/strategy/strategy-tables';
@@ -71,73 +72,79 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
             </ListRow>
           </SettingsGroup>
         </Section>
-        <Section title="Indices">
-          <SettingsGroup>
-            <SettingsRow>
-              <Select
-                aria-label="Indices"
-                options={INDEX_SET_OPTIONS}
-                value={own.get('strategy.indexSet')}
-                onChange={value => own.set('strategy.indexSet', value)}
+        {keeps(scope, 'strategy.indexSet') && (
+          <Section title="Indices">
+            <SettingsGroup>
+              <SettingsRow>
+                <Select
+                  aria-label="Indices"
+                  options={INDEX_SET_OPTIONS}
+                  value={own.get('strategy.indexSet')}
+                  onChange={value => own.set('strategy.indexSet', value)}
+                />
+                <Button
+                  icon="arrow-r"
+                  onClick={() => navigate(tables({ mode: 'editMask', maskKey: indexMaskKey(scope) }))}
+                  data-action="select-indices"
+                >
+                  Select
+                </Button>
+              </SettingsRow>
+              <SettingsRow label="Lowest index">
+                <ValueButton
+                  label="Index range minimum"
+                  value={own.get('strategy.indexRangeMin')}
+                  onChange={v => writeRange('strategy.indexRangeMin', v)}
+                  prompt="Minimum Count"
+                  min={-99}
+                  max={99}
+                />
+              </SettingsRow>
+              <SettingsRow label="Highest index">
+                <ValueButton
+                  label="Index range maximum"
+                  value={own.get('strategy.indexRangeMax')}
+                  onChange={v => writeRange('strategy.indexRangeMax', v)}
+                  prompt="Maximum Count"
+                  min={-99}
+                  max={99}
+                />
+              </SettingsRow>
+            </SettingsGroup>
+          </Section>
+        )}
+        {keeps(scope, 'strategy.indexSet') && (
+          <Section title="Rules">
+            <SettingsGroup>
+              <SettingChecks items={ruleChecks(scope)} />
+            </SettingsGroup>
+          </Section>
+        )}
+        {keeps(scope, 'strategy.adjustInitialCount') && (
+          <Section title="Initial Running Count">
+            <SettingsGroup>
+              <CheckList
+                items={[
+                  {
+                    label: 'Adjust IRC',
+                    checked: own.get('strategy.adjustInitialCount'),
+                    onChange: on => own.set('strategy.adjustInitialCount', on),
+                  },
+                ]}
               />
-              <Button
-                icon="arrow-r"
-                onClick={() => navigate(tables({ mode: 'editMask', maskKey: indexMaskKey(scope) }))}
-                data-action="select-indices"
-              >
-                Select
-              </Button>
-            </SettingsRow>
-            <SettingsRow label="Lowest index">
-              <ValueButton
-                label="Index range minimum"
-                value={own.get('strategy.indexRangeMin')}
-                onChange={v => writeRange('strategy.indexRangeMin', v)}
-                prompt="Minimum Count"
-                min={-99}
-                max={99}
-              />
-            </SettingsRow>
-            <SettingsRow label="Highest index">
-              <ValueButton
-                label="Index range maximum"
-                value={own.get('strategy.indexRangeMax')}
-                onChange={v => writeRange('strategy.indexRangeMax', v)}
-                prompt="Maximum Count"
-                min={-99}
-                max={99}
-              />
-            </SettingsRow>
-          </SettingsGroup>
-        </Section>
-        <Section title="Rules">
-          <SettingsGroup>
-            <SettingChecks items={ruleChecks(scope)} />
-          </SettingsGroup>
-        </Section>
-        <Section title="Initial Running Count">
-          <SettingsGroup>
-            <CheckList
-              items={[
-                {
-                  label: 'Adjust IRC',
-                  checked: own.get('strategy.adjustInitialCount'),
-                  onChange: on => own.set('strategy.adjustInitialCount', on),
-                },
-              ]}
-            />
-            <SettingsRow label="Initial running count">
-              <ValueButton
-                label="Initial running count"
-                value={own.get('strategy.initialCount')}
-                onChange={v => own.set('strategy.initialCount', v)}
-                prompt="Adjust IRC"
-                min={-999}
-                max={999}
-              />
-            </SettingsRow>
-          </SettingsGroup>
-        </Section>
+              <SettingsRow label="Initial running count">
+                <ValueButton
+                  label="Initial running count"
+                  value={own.get('strategy.initialCount')}
+                  onChange={v => own.set('strategy.initialCount', v)}
+                  prompt="Adjust IRC"
+                  min={-999}
+                  max={999}
+                />
+              </SettingsRow>
+            </SettingsGroup>
+          </Section>
+        )}
       </Column>
     </ScreenLayout>
   );

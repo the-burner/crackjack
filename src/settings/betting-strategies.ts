@@ -1,6 +1,5 @@
 // Betting strategies: the bet ramp, chip value and wonging settings saved under a name, beside Crackjack's built-in ones.
 
-import { SETTINGS_SCHEMA } from './schema';
 import type { SettingReader, SettingValues } from './schema';
 import { isRamp } from './bet-ramp';
 import type { Named, PresetKind } from './named-configs';
@@ -25,11 +24,18 @@ export interface BettingStrategy extends Named {
 export const bettingValues = (get: SettingReader): BettingValues =>
   Object.fromEntries(BETTING_KEYS.map(key => [key, get(key)])) as BettingValues;
 
-/** One hand, flat until the count rises: the shipped settings, so a fresh install begins on it unedited. */
-const SINGLE_HAND = bettingValues((key => SETTINGS_SCHEMA[key].default) as SettingReader);
+/** One hand, flat until the count rises. */
+const SINGLE_HAND: BettingValues = {
+  'game.betting.ramp': { minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) },
+  'game.betting.chipValue': 25,
+  'game.betting.wonging': false,
+  'game.betting.wongIn': 1,
+  'game.betting.wongOut': -2,
+  'game.betting.wongStartOut': false,
+};
 
-/** Two hands at the higher counts, sitting out (wonging) between -2 and +1. */
-const MULTI_HAND: BettingValues = {
+/** Two hands at the higher counts, sitting out (wonging) between -2 and +1: the shipped settings. */
+export const MULTI_HAND: BettingValues = {
   'game.betting.ramp': {
     minCount: 0,
     rows: [

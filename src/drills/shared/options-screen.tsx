@@ -50,18 +50,20 @@ export function DrillOptionsScreen({
     <ScreenLayout title={title} help={help}>
       <Column>
         <PresetPicker kind={DRILL_SETS[drill].kind} store={app.drillConfigs[drill]} />
-        {children}
         {/* The drill's own counting system and true count, as the game has its own. */}
         <Section title="Strategy">
           <OptionGroup>
             <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.strategy`])}>
               Playing Strategy
             </ListRow>
-            <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.trueCount`])}>
-              TC Calcs
-            </ListRow>
+            {(drill === 'depth' || drill === 'count') && (
+              <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.trueCount`])}>
+                True Count Conversion
+              </ListRow>
+            )}
           </OptionGroup>
         </Section>
+        {children}
         <Button variant="primary" icon="play" block className="mt-1" onClick={onLaunch} data-action="launch">
           Play
         </Button>

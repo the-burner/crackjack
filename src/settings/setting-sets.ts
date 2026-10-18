@@ -1,9 +1,12 @@
-// Saved sets of a screen's settings: the game's (everything on Game Options) and each drill's. Each kind has one built-in set, the
-// settings a fresh install has, so a fresh install begins on it unedited.
+// Saved sets of a screen's settings: the game's (everything on Game Options) and each drill's. Each kind has built-in sets, one of
+// them the settings a fresh install has, so a fresh install begins on it unedited.
 
 import { SETTINGS_SCHEMA } from './schema';
 import type { SettingKey, SettingReader, SettingsPatch } from './schema';
 import type { Named, PresetKind, PresetSelectionKey } from './named-configs';
+import { FLASH_PRESETS } from './flash-presets';
+import { GAME_PRESETS } from './game-presets';
+import type { PresetSpec } from './game-presets';
 
 export interface SettingSet extends Named {
   values: SettingsPatch;
@@ -42,10 +45,19 @@ const valuesOf = (keys: readonly SettingKey[], get: SettingReader): SettingsPatc
 /** One kind of setting set: its built-in, how it is read back from storage, and the preset picker's view of it. */
 export function settingSets(
   keys: readonly SettingKey[],
-  { label, selectedKey, builtInName }: { label: string; selectedKey: PresetSelectionKey; builtInName: string },
+  {
+    label,
+    selectedKey,
+    presets = [{ id: 'default', name: 'Default', changes: {} }],
+  }: { label: string; selectedKey: PresetSelectionKey; presets?: readonly PresetSpec[] },
 ) {
   const defaults = valuesOf(keys, (key => SETTINGS_SCHEMA[key].default) as SettingReader);
-  const builtIns: readonly SettingSet[] = [{ id: 'default', name: builtInName, values: defaults, builtIn: true }];
+  const builtIns: readonly SettingSet[] = presets.map(({ id, name, changes }) => ({
+    id,
+    name,
+    values: { ...defaults, ...changes },
+    builtIn: true,
+  }));
   /** Only the kind's keys; one added since a set was saved takes its default. */
   const tidy = (values: Record<string, unknown>): SettingsPatch => ({
     ...defaults,
@@ -76,14 +88,14 @@ export function settingSets(
 export const GAME_SETS = settingSets(GAME_KEYS, {
   label: 'Configuration',
   selectedKey: 'game.config',
-  builtInName: 'Default',
+  presets: GAME_PRESETS,
 });
 
 const drillSets = (drill: DrillName) =>
   settingSets(DRILL_KEYS(drill), {
     label: 'Configuration',
     selectedKey: `drills.${drill}.config`,
-    builtInName: 'Default',
+    presets: drill === 'flash' ? FLASH_PRESETS : undefined,
   });
 
 export const DRILL_SETS: Record<DrillName, ReturnType<typeof settingSets>> = {

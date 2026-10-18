@@ -16,7 +16,7 @@ import { STRATEGY_FILES } from '@/data/strategy-files';
 import { SIDE_BET_GAME_DEFINITIONS } from '@/data/side-bet-games';
 
 const read = (file: string) => fs.readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
-const sources = () => ({ files: read('src/data/strategy-files.ts'), catalog: read('src/settings/strategies.ts') });
+const sources = () => ({ files: read('src/data/strategy-files.ts'), catalog: read('src/settings/strategy-list.ts') });
 /** Loads an import-free TypeScript module from source. */
 const load = async (src: string) => {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cj-bundle-')), 'module.ts');

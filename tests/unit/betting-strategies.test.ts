@@ -24,7 +24,7 @@ describe('betting strategies', () => {
     ]);
   });
 
-  it("are built in as Crackjack's single- and multi-hand strategies, a fresh install on the single-hand one", () => {
+  it("are built in as Crackjack's single- and multi-hand strategies, a fresh install on the multi-hand one", () => {
     const fresh = settings();
     expect(BUILT_IN_BETTING.map(s => s.name)).toEqual([
       "Crackjack's Single-Hand Strategy",
@@ -37,7 +37,7 @@ describe('betting strategies', () => {
       BETTING_PRESETS.valuesOf,
       sameValues,
     );
-    expect(state).toEqual({ selected: BUILT_IN_BETTING[0], edited: false });
+    expect(state).toEqual({ selected: BUILT_IN_BETTING[1], edited: false });
   });
 
   it('play two hands at the higher counts in the multi-hand one, and wong', () => {

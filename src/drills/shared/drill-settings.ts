@@ -5,7 +5,7 @@ import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
 import type { CounterSettings, TcDivision, TcLastDeck, TcRounding } from '@/core/counting';
 import type { Strategy } from '@/core/strategy/strategy-tables';
 import type { App } from '@/app/app';
-import { scopedKey } from '@/settings/scopes';
+import { ownOrDefault } from '@/settings/scopes';
 import type { ScopeName } from '@/settings/scopes';
 import type { AppSettings, SettingValues } from '@/settings/schema';
 
@@ -26,9 +26,12 @@ const ROUNDING: Record<SettingValues['game.trueCount.rounding'], TcRounding> = {
   floor: TC_ROUNDING.floor,
 };
 
-/** Module `scope`'s own true-count settings, as a Counter (or the answer helpers) needs them. */
+/**
+ * Module `scope`'s own true-count settings, as a Counter (or the answer helpers) needs them. What a
+ * module keeps none of (a drill that never asks a true count) takes the app's defaults.
+ */
 export function trueCountSettings(settings: Pick<AppSettings, 'get'>, scope: ScopeName): CounterSettings {
-  const own = <T>(key: Parameters<typeof scopedKey>[1]) => settings.get(scopedKey(scope, key)) as T;
+  const own = <T>(key: Parameters<typeof ownOrDefault>[2]) => ownOrDefault(settings, scope, key) as T;
   return {
     division: DIVISION[own<SettingValues['game.trueCount.resolution']>('trueCount.resolution')],
     lastDeck: LAST_DECK[own<SettingValues['game.trueCount.lastDeckResolution']>('trueCount.lastDeckResolution')],

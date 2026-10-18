@@ -2,7 +2,7 @@
 // strategy, trueCount, display) are used by both the game and the drills;
 // drills.* groups belong to one drill each.
 
-import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategies';
+import { BUILTIN_STRATEGIES, HOLE_CARD_STRATEGY } from './strategy-list';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { isRamp } from './bet-ramp';
 import { STANDARD, STANDARD_KEYS, isGestureMap, isKeyMap } from '@/core/gestures';
@@ -56,21 +56,33 @@ const STRATEGY_IDS = [HOLE_CARD_STRATEGY.id, ...BUILTIN_STRATEGIES.map(strategy 
  * how many of its indices to use, and how its true counts are worked out. Each module's are kept
  * under its own prefix (settings/scopes.ts), so one module's strategy is nothing to do with another's.
  */
-const countingDefs = () => ({
+/** The counting system a module plays. */
+const systemDefs = () => ({
   'strategy.system': oneOf(
     BUILTIN_STRATEGIES.map(strategy => strategy.id),
     BUILTIN_STRATEGIES[0].id,
   ),
+});
+
+/** Which of its indices a module plays: only a module judged against the tables has them. */
+const indexDefs = () => ({
   'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
   'strategy.indexRangeMax': int(99, -99, 99),
+});
+
+/** The running count a module counts a shoe from. */
+const initialCountDefs = () => ({
   'strategy.adjustInitialCount': bool(false),
   'strategy.initialCount': int(0, -999, 999),
+});
+
+/** How a module that asks true counts works them out (True Count Conversion). */
+const trueCountDefs = () => ({
   'trueCount.resolution': oneOf(['full', 'half', 'quarter', 'exact'], 'half'),
   'trueCount.lastDeckResolution': oneOf(['half', 'quarter', 'exact'], 'half'),
   'trueCount.rounding': oneOf(['round', 'truncate', 'floor'], 'truncate'),
-  'trueCount.aceSideCount': bool(false),
 });
 
 /** The rules a module's strategy tables are built for; the game uses its own table rules instead. */
@@ -84,20 +96,34 @@ const tableRuleDefs = () => ({
 const gameDefs = () => ({
   'strategy.warnOnError': bool(true),
   'trueCount.remainingCards': oneOf(['dealt', 'shown', 'inTray'], 'inTray'),
+  'trueCount.aceSideCount': bool(false),
   'trueCount.allowedErrorCards': int(13, 0, 13),
   'trueCount.tenSideCount': bool(false),
   'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
   'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
-  'betting.ramp': json<Ramp>({ minCount: 0, rows: [1, 2, 4, 6, 12, 16].map(chips => ({ chips, hands: 1 })) }, isRamp),
+  'betting.ramp': json<Ramp>(
+    {
+      minCount: 0,
+      rows: [
+        { chips: 1, hands: 1 },
+        { chips: 2, hands: 1 },
+        { chips: 2, hands: 2 },
+        { chips: 3, hands: 2 },
+        { chips: 6, hands: 2 },
+        { chips: 12, hands: 2 },
+      ],
+    },
+    isRamp,
+  ),
   /** Wonging: sit out from the Wong Out count until the count is back to Wong In. */
-  'betting.wonging': bool(false),
+  'betting.wonging': bool(true),
   'betting.wongIn': int(1, -99, 99),
   'betting.wongOut': int(-2, -99, 99),
   /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
   'betting.wongStartOut': bool(false),
   /** The betting strategy selected (see betting-strategies.ts); '' for none. */
-  'betting.strategy': text('single-hand'),
+  'betting.strategy': text('multi-hand'),
 });
 
 /** `defs` under `prefix`, as the schema keeps one module's copy of them. */
@@ -107,10 +133,6 @@ const under = <P extends string, T extends Record<string, SettingDef>>(prefix: P
 type Prefixed<P extends string, T> = { [K in keyof T & string as `${P}.${K}`]: T[K] };
 
 /** The settings of the counting module `prefix`: a drill's, with the rules its tables are built for. */
-const drillCounting = <P extends string>(prefix: P) => ({
-  ...under(prefix, countingDefs()),
-  ...under(prefix, tableRuleDefs()),
-});
 
 export const SETTINGS_SCHEMA = {
   // Common rules.
@@ -159,9 +181,10 @@ export const SETTINGS_SCHEMA = {
   'table.roundsPerShoe': int(6, 1, 80),
   'table.burnCards': int(1, 0, 5),
   'table.startingBankroll': int(30000, 100, 1000000),
+  // A fresh install plays Crackjack's 6D table game (settings/game-presets.ts).
   'table.seatCount': oneOf([1, 2, 4, 6], 4),
   /** Seats 1..6: true = computer player. */
-  'table.computerSeats': json([true, false, false, false, false, false]),
+  'table.computerSeats': json([true, false, false, true, false, false]),
   'table.limits': oneOf(
     TABLE_LIMITS.map((_, i) => i),
     7,
@@ -173,7 +196,7 @@ export const SETTINGS_SCHEMA = {
   'table.refreshBankrollOnStart': bool(false),
 
   // What the game counts and bets with (the rules its tables are built for are its own, above).
-  ...under('game', countingDefs()),
+  ...under('game', { ...systemDefs(), ...indexDefs(), ...initialCountDefs(), ...trueCountDefs() }),
   ...under('game', gameDefs()),
 
   // Unusual games, side bets and bonuses (game).
@@ -234,8 +257,8 @@ export const SETTINGS_SCHEMA = {
   /** The gesture configuration selected (see gesture-configs.ts); '' for none. */
   'gestures.config': text('standard'),
   /** The game and drill configurations selected (see setting-sets.ts); '' for none. */
-  'game.config': text('default'),
-  'drills.flash.config': text('default'),
+  'game.config': text('table-6d'),
+  'drills.flash.config': text('infinite-round-robin'),
   'drills.depth.config': text('default'),
   'drills.count.config': text('default'),
   'drills.full.config': text('default'),
@@ -249,11 +272,12 @@ export const SETTINGS_SCHEMA = {
   'display.showRunningCount': bool(false),
   'display.showTrueCount': bool(false),
 
-  // Playing Strategy Flash Cards.
-  ...drillCounting('drills.flash'),
+  // Playing Strategy Flash Cards. A fresh install drills Crackjack's Infinite Round Robin.
+  // Judged against the tables, so their indices and the rules they are built for too.
+  ...under('drills.flash', { ...systemDefs(), ...indexDefs(), ...initialCountDefs(), ...tableRuleDefs() }),
   'drills.flash.hands': oneOf(
     ['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom', 'roundRobin'],
-    'default',
+    'roundRobin',
   ),
   'drills.flash.customHands': json(tableGrids(true)),
   'drills.flash.situations': json({
@@ -266,13 +290,13 @@ export const SETTINGS_SCHEMA = {
   }),
   'drills.flash.countMode': oneOf(['zero', 'random', 'fixed', 'indexTest'], 'random'),
   'drills.flash.fixedCount': int(0, -99, 99),
-  'drills.flash.maxCards': oneOf([2, 3, 4, 5], 2),
+  'drills.flash.maxCards': oneOf([2, 3, 4, 5], 3),
   'drills.flash.testMode': oneOf(['warn', 'errorsAtEnd', 'none'], 'warn'),
   /** Warn on error: a brief "X is incorrect" instead of the blocking explanation. */
   'drills.flash.nonBlockingErrors': bool(false),
-  'drills.flash.timerMode': oneOf(['auto', 'countDownHalt', 'infinite'], 'countDownHalt'),
+  'drills.flash.timerMode': oneOf(['auto', 'countDownHalt', 'infinite'], 'infinite'),
   /** Rounds and Infinite: whether each hand has a time limit (the Time per hand below). */
-  'drills.flash.timePerHand': bool(true),
+  'drills.flash.timePerHand': bool(false),
   'drills.flash.handsPerDrill': int(50, 10, 1000),
   'drills.flash.decks': oneOf(DECKS, 6),
   'drills.flash.spanishDecks': bool(false),
@@ -286,7 +310,8 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.autoPauseSeconds': int(180, 1, 3600),
 
   // Deck Estimation and TC Conversion.
-  ...drillCounting('drills.depth'),
+  // The running count is given, so only the system and how its true count is worked out.
+  ...under('drills.depth', { ...systemDefs(), ...trueCountDefs() }),
   'drills.depth.drill': oneOf(
     ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'],
     'decksLeft',
@@ -308,7 +333,7 @@ export const SETTINGS_SCHEMA = {
   'drills.depth.progressiveSpeed': bool(false),
 
   // Simple Running Count.
-  ...drillCounting('drills.count'),
+  ...under('drills.count', { ...systemDefs(), ...initialCountDefs(), ...trueCountDefs() }),
   'drills.count.drill': oneOf(
     [
       'runningCount',
@@ -344,7 +369,7 @@ export const SETTINGS_SCHEMA = {
   'drills.count.twoCounts': bool(false),
 
   // Compound Running Count.
-  ...drillCounting('drills.full'),
+  ...under('drills.full', { ...systemDefs(), ...initialCountDefs() }),
   'drills.full.drill': oneOf(['runningCount', 'acesLeft', 'acesDealt', 'tenSideCount', 'twoTables'], 'runningCount'),
   'drills.full.accuracy': oneOf(ACCURACY, 0),
   'drills.full.players': oneOf([2, 4, 6], 6),

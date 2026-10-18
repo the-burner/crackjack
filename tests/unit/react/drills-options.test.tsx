@@ -47,9 +47,9 @@ describe('drill options screens', () => {
     const { location } = renderScreen(<FullOptions />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Compound Running Count');
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
+      'Strategy',
       'Drill',
       'Timer',
-      'Strategy',
     ]);
     const launch = screen.getByRole('button', { name: 'Play' });
     expect(screen.getAllByRole('button').at(-1)).toBe(launch);
@@ -77,13 +77,19 @@ describe('drill options screens', () => {
     expect(location().pathname).toBe('/strategy/tables');
     expect(location().search).toContain('mode=editMask');
 
-    // Count Down & Halt is the default.
+    // Infinite, with no limit per hand, is the default.
+    expect(toggle('Time limit per hand')).toBeVisible();
+    expectHidden(duration('Time per hand'));
+    expectHidden(duration('Drill time'));
+    await user.click(screen.getByRole('switch', { name: 'Time limit per hand' }));
+    expect(duration('Time per hand')).toBeVisible();
+    // By its element: the option's text has an ampersand, which selectOptions matches escaped.
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Timer mode' }),
+      screen.getByRole('option', { name: 'Timer Mode: Count Down & Halt' }),
+    );
     expectHidden(toggle('Time limit per hand'));
     expect(duration('Drill time')).toBeVisible();
-    await choose(user, 'Timer mode', 'Timer Mode: Infinite');
-    expect(toggle('Time limit per hand')).toBeVisible();
-    expect(duration('Time per hand')).toBeVisible();
-    expectHidden(duration('Drill time'));
     // The number of rounds.
     expectHidden(numberButton('Rounds'));
     await choose(user, 'Timer mode', 'Timer Mode: Rounds');
@@ -168,11 +174,11 @@ describe('drill options screens', () => {
     const user = userEvent.setup();
     renderScreen(<DepthOptions />);
     const titles = () => screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
-    expect(titles()).toEqual(['Drill', 'Answers', 'Timer', 'Strategy']);
+    expect(titles()).toEqual(['Strategy', 'Drill', 'Answers', 'Timer']);
     expect(screen.getByText('Minimum count')).not.toBeVisible();
     expect(toggle('Decks or Aces in Tray')).toBeVisible();
     await choose(user, 'Drill', 'Drill: TC Conversion');
-    expect(titles()).toEqual(['Drill', 'Count Range', 'Timer', 'Strategy']);
+    expect(titles()).toEqual(['Strategy', 'Drill', 'Count Range', 'Timer']);
     expect(numberButton('Minimum count')).toBeVisible();
     expect(numberButton('Maximum count')).toBeVisible();
     expectHidden(toggle('Decks or Aces in Tray'));

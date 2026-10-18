@@ -40,9 +40,11 @@ describe('Allowed Bets', () => {
     expect(screen.getByRole('button', { name: 'Minimum bet count: 0', hidden: true })).not.toBeVisible();
   });
 
-  it('shows the wonging settings below the bets once wonging is switched on', async () => {
+  it('shows the wonging settings below the bets only while wonging is switched on', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Betting />);
+    await user.click(screen.getByRole('switch', { name: 'Wonging' }));
+    expect(app.settings.get('game.betting.wonging')).toBe(false);
     expect(screen.queryByRole('button', { name: 'Wong in: 1' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('switch', { name: 'Wonging' }));
     expect(app.settings.get('game.betting.wonging')).toBe(true);
@@ -59,21 +61,22 @@ describe('Allowed Bets', () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<Betting />);
     const picker = () => screen.getByRole('combobox', { name: 'Betting strategy' });
-    const single = "Crackjack's Single-Hand Strategy";
-    expect(picker()).toHaveDisplayValue(single);
-    act(() => app.settings.update({ 'game.betting.chipValue': 5, 'game.betting.wonging': true }));
-    expect(picker()).toHaveDisplayValue(`${single} (edited)`);
+    const multi = "Crackjack's Multi-Hand Strategy";
+    expect(picker()).toHaveDisplayValue(multi);
+    act(() => app.settings.update({ 'game.betting.chipValue': 5, 'game.betting.wonging': false }));
+    expect(picker()).toHaveDisplayValue(`${multi} (edited)`);
     await user.click(screen.getByRole('button', { name: 'Save as New…' }));
     await user.type(await screen.findByRole('textbox'), 'Spread');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(picker()).toHaveDisplayValue('Spread'));
-    await choose(user, 'Betting strategy', single);
+    await choose(user, 'Betting strategy', multi);
     expect(app.settings.get('game.betting.chipValue')).toBe(25);
-    await choose(user, 'Betting strategy', "Crackjack's Multi-Hand Strategy");
     expect(app.settings.get('game.betting.ramp').rows[2]).toEqual({ chips: 2, hands: 2 });
+    await choose(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
+    expect(app.settings.get('game.betting.ramp').rows[2]).toEqual({ chips: 4, hands: 1 });
     await choose(user, 'Betting strategy', 'Spread');
     expect(app.settings.get('game.betting.chipValue')).toBe(5);
-    expect(app.settings.get('game.betting.wonging')).toBe(true);
+    expect(app.settings.get('game.betting.wonging')).toBe(false);
   });
 
   it('follows ramp changes and opens the picker for a row', async () => {

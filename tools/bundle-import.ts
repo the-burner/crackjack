@@ -11,7 +11,7 @@ import { decodeSideBetGame, sideBetGameName } from '@/settings/side-bet-games';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STRATEGY_FILES = 'src/data/strategy-files.ts';
-const STRATEGY_CATALOG = 'src/settings/strategies.ts';
+const STRATEGY_CATALOG = 'src/settings/strategy-list.ts';
 const SIDE_BET_GAMES = 'src/data/side-bet-games.ts';
 
 /** Where exports are downloaded from. */

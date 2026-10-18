@@ -62,7 +62,7 @@ describe('Basic Setup', () => {
     const picker = within(screen.getByRole('group', { name: 'Computer players' }));
     expect(picker.getAllByText(/^#\d$/).map(seat => seat.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
     await user.click(picker.getByRole('checkbox', { name: '#3' }));
-    expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, false, false, false]);
+    expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, true, false, false]);
     expect(picker.getByRole('checkbox', { name: '#3' })).toBeChecked();
     expect(picker.getByRole('checkbox', { name: '#1' })).toBeChecked();
     expect(picker.getByRole('checkbox', { name: '#2' })).not.toBeChecked();
@@ -187,8 +187,8 @@ describe('navigation screens', () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<GameOptions />, { path: '/game' });
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
-      'Table and Rules',
       'Strategy',
+      'Table and Rules',
       'Peeking and Warnings',
       'Table',
     ]);

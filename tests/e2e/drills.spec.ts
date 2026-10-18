@@ -102,9 +102,10 @@ test('the home screen opens every drill options screen', async ({ page }) => {
     await expect(screen).toBeVisible();
     await expect(screen.getByRole('heading', { level: 1 })).toHaveText(drill.title);
     await expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
-    // The drill's own strategy and true count, nothing to do with another module's.
+    // The drill's own strategy, and its true count conversion if it asks true counts.
     await expect(screen.getByRole('button', { name: 'Playing Strategy' })).toBeVisible();
-    await expect(screen.getByRole('button', { name: 'TC Calcs' })).toBeVisible();
+    const asksTrueCounts = drill.options === 'drills.depth.options' || drill.options === 'drills.count.options';
+    await expect(screen.getByRole('button', { name: 'True Count Conversion' })).toHaveCount(asksTrueCounts ? 1 : 0);
     await screen.getByRole('button', { name: 'Back' }).click();
     await expect(page.locator('[data-screen="home"]')).toBeVisible();
   }
@@ -305,11 +306,14 @@ test.describe('flash drill', () => {
     const toggle = options.getByRole('switch', { name: 'Time limit per hand' });
     const perHand = options.getByRole('button', { name: 'Time per hand', exact: true });
 
-    await choose(options, 'Timer mode', 'Timer Mode: Infinite');
+    // Infinite, with no limit per hand, is the default.
     await expect(toggle).toBeVisible();
-    await expect(perHand).toBeVisible();
+    await expect(toggle).not.toBeChecked();
+    await expect(perHand).toBeHidden();
     await expect(options.getByRole('button', { name: 'Drill time', exact: true })).toBeHidden();
     await expect(options.getByRole('button', { name: 'Rounds: 50', exact: true })).toBeHidden();
+    await toggle.click();
+    await expect(perHand).toBeVisible();
 
     // Turning the limit off hides the time and Progressive Speed, which shortens it.
     await toggle.click();
@@ -669,6 +673,7 @@ test('sets the Flash drill time with the duration wheels', async ({ page }) => {
   await open(page);
   await page.getByRole('button', { name: 'Playing Strategy Flash Cards' }).click();
   const options = page.locator('[data-screen="drills.flash.options"]');
+  await choose(options, 'Timer mode', 'Timer Mode: Count Down & Halt');
   const row = options.getByRole('button', { name: 'Drill time' });
   await expect(row).toHaveText('00:03:00');
   await row.click();

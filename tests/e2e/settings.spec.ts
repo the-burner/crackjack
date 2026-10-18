@@ -167,14 +167,14 @@ test('Settings holds what the whole app shares; each module its own strategy and
     await expect(settings.getByRole('button', { name: button, exact: true })).toBeVisible();
   }
   // A module's own strategy and counting are on the module, not here.
-  for (const button of ['Playing Strategy', 'Betting Strategy', 'TC Calcs']) {
+  for (const button of ['Playing Strategy', 'Betting Strategy', 'True Count Conversion']) {
     await expect(settings.getByRole('button', { name: button })).toHaveCount(0);
   }
   await expect(settings.locator('[data-action="play"]')).toHaveCount(0);
 
   await settings.locator('[data-action="back"]').click();
   const game = await openHubFromHome(page, 'game.options');
-  for (const button of ['Playing Strategy', 'Betting Strategy', 'TC Calcs']) {
+  for (const button of ['Playing Strategy', 'Betting Strategy', 'True Count Conversion']) {
     await expect(game.getByRole('button', { name: button, exact: true })).toBeVisible();
   }
   await expect(game.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeVisible();

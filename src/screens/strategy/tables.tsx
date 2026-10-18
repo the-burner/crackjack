@@ -14,7 +14,7 @@ import { Select } from '@/components/ui/select';
 import { SettingsGroup } from '@/components/ui/settings-group';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
-import { decksOf, scopedKey } from '@/settings/scopes';
+import { decksOf, ownOrDefault } from '@/settings/scopes';
 import type { ScopeName } from '@/settings/scopes';
 import { DECKS } from '@/settings/schema';
 import type { SettingKey } from '@/settings/schema';
@@ -83,7 +83,7 @@ export function StrategyTables({ params }: { params: TablesParams }) {
   const editingMask = mode === 'editMask' && Boolean(maskKey);
   // Picked here when the screen is opened to look at the tables; otherwise the module's own.
   const [picked, setPicked] = useState(() => ({
-    system: params.system ?? Number(settings.get(scopedKey(scope, 'strategy.system'))),
+    system: params.system ?? Number(ownOrDefault(settings, scope, 'strategy.system')),
     decks: params.decks ?? decksOf(settings, scope),
   }));
   // Built for the settings it was opened with, and for whatever is picked here.

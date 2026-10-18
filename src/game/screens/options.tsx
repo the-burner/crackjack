@@ -16,6 +16,14 @@ import type { ScreenName } from '@/app/paths';
 
 const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenName])[]])[] = [
   [
+    'Strategy',
+    [
+      ['Playing Strategy', 'game.strategy'],
+      ['Betting Strategy', 'game.betting'],
+      ['True Count Conversion', 'game.trueCount'],
+    ],
+  ],
+  [
     'Table and Rules',
     [
       ['Basic Setup', 'game.setup'],
@@ -25,14 +33,6 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenNa
       ['Play Variations', 'game.playVariations'],
       ['Unusual Games', 'game.unusualGames'],
       ['Dealer Errs/Biases', 'game.dealerErrors'],
-    ],
-  ],
-  [
-    'Strategy',
-    [
-      ['Playing Strategy', 'game.strategy'],
-      ['Betting Strategy', 'game.betting'],
-      ['TC Calcs', 'game.trueCount'],
     ],
   ],
   ['Peeking and Warnings', [['Peeking', 'game.peeking']]],

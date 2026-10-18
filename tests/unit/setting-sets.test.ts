@@ -43,8 +43,32 @@ describe('the settings a configuration saves', () => {
 });
 
 describe('a configuration', () => {
-  it('begins a fresh install on Default, unedited', () => {
-    for (const { kind } of [GAME_SETS, ...DRILLS.map(d => DRILL_SETS[d])]) {
+  it("offers Crackjack's four games, and none called Default", () => {
+    expect(GAME_SETS.kind.builtIns.map(s => s.name)).toEqual([
+      "Crackjack's Heads-Up 6D,H17,LS,DAS",
+      "Crackjack's Heads-Up 2D,H17,LS,DAS",
+      "Crackjack's 2D,H17,LS,DAS",
+      "Crackjack's 6D,H17,LS,DAS",
+    ]);
+  });
+
+  it("offers Crackjack's three Flash Cards drills, and none called Default", () => {
+    expect(DRILL_SETS.flash.kind.builtIns.map(s => s.name)).toEqual([
+      "Crackjack's Round Robin 3-Minute Intervals",
+      "Crackjack's Round Robin 4-Minute Intervals",
+      "Crackjack's Infinite Round Robin",
+    ]);
+  });
+
+  it("begins a fresh install unedited: the game on Crackjack's 6D table, Flash Cards on its Infinite Round Robin", () => {
+    const fresh = {
+      game: 'table-6d',
+      flash: 'infinite-round-robin',
+      depth: 'default',
+      count: 'default',
+      full: 'default',
+    };
+    for (const [name, { kind }] of [['game', GAME_SETS], ...DRILLS.map(d => [d, DRILL_SETS[d]] as const)] as const) {
       const state = presetState(
         defaults(kind.selectedKey) as string,
         kind.current(defaults),
@@ -52,7 +76,8 @@ describe('a configuration', () => {
         kind.valuesOf,
         sameValues,
       );
-      expect(state).toEqual({ selected: kind.builtIns[0], edited: false });
+      expect(state).toEqual({ selected: kind.builtIns.find(s => s.id === fresh[name]), edited: false });
+      expect(state.selected).toBeDefined();
     }
   });
 
@@ -91,5 +116,50 @@ describe('a module’s own counting settings', () => {
       scope => app.strategies.current(app.settings, scope, 6).name,
     );
     expect(new Set(names).size).toBe(1);
+  });
+});
+
+describe('what each drill keeps of its own', () => {
+  const kept = (drill: DrillName) =>
+    ALL.filter(
+      key =>
+        key.startsWith(`drills.${drill}.strategy.`) ||
+        key.startsWith(`drills.${drill}.trueCount.`) ||
+        key.startsWith(`drills.${drill}.rules.`),
+    )
+      .map(key => key.slice(`drills.${drill}.`.length))
+      .sort();
+
+  it('is only what the drill reads', () => {
+    // Judged against the tables: their indices, and the rules they are built for.
+    expect(kept('flash')).toEqual([
+      'rules.dealerHitsSoft17',
+      'rules.doubleAfterSplit',
+      'rules.noHoleCard',
+      'strategy.adjustInitialCount',
+      'strategy.customIndexMask',
+      'strategy.indexRangeMax',
+      'strategy.indexRangeMin',
+      'strategy.indexSet',
+      'strategy.initialCount',
+      'strategy.system',
+    ]);
+    // Given the running count: the system, and how it is turned into a true count.
+    expect(kept('depth')).toEqual([
+      'strategy.system',
+      'trueCount.lastDeckResolution',
+      'trueCount.resolution',
+      'trueCount.rounding',
+    ]);
+    expect(kept('count')).toEqual([
+      'strategy.adjustInitialCount',
+      'strategy.initialCount',
+      'strategy.system',
+      'trueCount.lastDeckResolution',
+      'trueCount.resolution',
+      'trueCount.rounding',
+    ]);
+    // Running counts only: the system and the count a shoe starts from.
+    expect(kept('full')).toEqual(['strategy.adjustInitialCount', 'strategy.initialCount', 'strategy.system']);
   });
 });

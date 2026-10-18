@@ -61,15 +61,21 @@ const SCREENS = [
   { name: 'game.peeking', title: 'Peeking', control: 'role=switch[name="Peek when dealer peeks"]' },
   { name: 'settings.appearance', title: 'Appearance & Sound', control: 'role=combobox[name="Theme"]' },
   { name: 'game.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
-  { name: 'game.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
+  { name: 'game.trueCount', title: 'True Count Conversion', control: 'role=combobox[name="True Count Resolution"]' },
   { name: 'drills.flash.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
-  { name: 'drills.flash.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
   { name: 'drills.depth.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
-  { name: 'drills.depth.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
+  {
+    name: 'drills.depth.trueCount',
+    title: 'True Count Conversion',
+    control: 'role=combobox[name="True Count Resolution"]',
+  },
   { name: 'drills.count.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
-  { name: 'drills.count.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
+  {
+    name: 'drills.count.trueCount',
+    title: 'True Count Conversion',
+    control: 'role=combobox[name="True Count Resolution"]',
+  },
   { name: 'drills.full.strategy', title: 'Playing Strategy', control: 'role=combobox[name="Strategy"]' },
-  { name: 'drills.full.trueCount', title: 'TC Calcs', control: 'role=combobox[name="True Count Resolution"]' },
   { name: 'settings.gestures', title: 'Gestures', control: 'role=combobox[name="Configuration"]' },
   { name: 'game.betting', title: 'Betting Strategy', control: 'role=table[name="Bets"]' },
   { name: 'game.betting.select', title: 'Betting Strategy', control: 'role=group[name="Chips"]' },
@@ -245,7 +251,7 @@ test('choosing an unusual game applies its rules and leaving it puts them back',
 test('the True Count screen shows a row for every calculation it sets', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
-  const el = await openFromHub(page, 'TC Calcs', 'game.trueCount');
+  const el = await openFromHub(page, 'True Count Conversion', 'game.trueCount');
   for (const name of ['True Count Resolution', 'Last Deck Resolution', 'True Count Division', 'Remaining Cards']) {
     await expect(el.getByRole('combobox', { name, exact: true })).toBeVisible();
   }

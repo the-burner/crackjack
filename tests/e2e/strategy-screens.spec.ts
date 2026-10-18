@@ -117,7 +117,7 @@ test.describe('Strategy tables', () => {
 
 test('True Count Calcs writes every control', async ({ page }) => {
   await openHub(page);
-  const el = await openFromHub(page, 'TC Calcs', 'game.trueCount');
+  const el = await openFromHub(page, 'True Count Conversion', 'game.trueCount');
 
   await choose(el, 'True Count Resolution', 'Quarter Deck');
   await choose(el, 'True Count Division', 'Floor');

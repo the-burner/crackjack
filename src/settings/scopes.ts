@@ -1,7 +1,8 @@
 // Each module keeps its own copy of the settings it counts cards with: its playing strategy and its
-// true count calcs, and for the game its betting. They live under the module's own prefix; a scope
+// true count conversion, and for the game its betting. They live under the module's own prefix; a scope
 // reads and writes one module's by the names its screens know, so one screen serves every module.
 
+import { SETTINGS_SCHEMA } from './schema';
 import type { AppSettings, SettingKey, SettingValues, SettingsPatch } from './schema';
 
 /** Where each module keeps its own settings. */
@@ -16,6 +17,10 @@ export const SCOPES = {
 /** A module with settings of its own. */
 export type ScopeName = keyof typeof SCOPES;
 
+/** The modules that ask true counts, so keep how they work them out (True Count Conversion). */
+export const TRUE_COUNT_SCOPES = ['game', 'depth', 'count'] as const satisfies readonly ScopeName[];
+export const asksTrueCounts = (scope: ScopeName): boolean => (TRUE_COUNT_SCOPES as readonly string[]).includes(scope);
+
 /** The name under `prefix` of every setting kept there. */
 type Suffix<P extends string> = { [K in SettingKey]: K extends `${P}.${infer Name}` ? Name : never }[SettingKey];
 
@@ -24,6 +29,16 @@ type Suffix<P extends string> = { [K in SettingKey]: K extends `${P}.${infer Nam
  * alone bets), and every module's copy of a setting holds the same type, so its keys name them all.
  */
 export type ScopedKey = Suffix<'game'>;
+
+/** Whether module `scope` keeps `key` at all: a module keeps only the settings it reads. */
+export const keeps = (scope: ScopeName, key: ScopedKey): boolean => `${SCOPES[scope]}.${key}` in SETTINGS_SCHEMA;
+
+/**
+ * Module `scope`'s `key`, or what the app starts every module on when it keeps none: a strategy
+ * is still built whole, so its unused parts take the defaults.
+ */
+export const ownOrDefault = (settings: Pick<AppSettings, 'get'>, scope: ScopeName, key: ScopedKey): unknown =>
+  keeps(scope, key) ? settings.get(scopedKey(scope, key)) : structuredClone(SETTINGS_SCHEMA[`game.${key}`].default);
 
 /** Where module `scope` keeps `key`. */
 export const scopedKey = <K extends ScopedKey>(scope: ScopeName, key: K): SettingKey =>
@@ -42,7 +57,7 @@ export const decksKey = (scope: ScopeName): SettingKey => (scope === 'game' ? 't
 
 /** Where module `scope` keeps the mask of indices it plays (its Custom index set). */
 export const indexMaskKey = (scope: ScopeName) =>
-  `${SCOPES[scope]}.strategy.customIndexMask` as `${(typeof SCOPES)[ScopeName]}.strategy.customIndexMask`;
+  `${SCOPES[scope]}.strategy.customIndexMask` as Extract<SettingKey, `${string}.strategy.customIndexMask`>;
 
 /** The decks module `scope` plays with. */
 export const decksOf = (settings: Pick<AppSettings, 'get'>, scope: ScopeName): number =>

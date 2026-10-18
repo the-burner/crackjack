@@ -3,6 +3,7 @@
 // those stay as they are underneath.
 
 import type { ComponentType, ReactNode } from 'react';
+import { asksTrueCounts } from '@/settings/scopes';
 import type { ScopeName } from '@/settings/scopes';
 import { useState } from 'react';
 import { createHashRouter, Navigate, Outlet, useNavigationType } from 'react-router';
@@ -66,7 +67,7 @@ const tables = () => import('@/screens/strategy/tables').then(m => m.StrategyTab
 const betting = () => import('@/screens/strategy/betting').then(m => m.Betting);
 const betRow = () => import('@/screens/strategy/betting').then(m => m.BetSelectRoute);
 
-/** One module's own Playing Strategy and TC Calcs screens (settings/scopes.ts). */
+/** One module's own Playing Strategy screen, and True Count Conversion if it asks true counts (settings/scopes.ts). */
 const counting = (scope: ScopeName, prefix: string, name: string): RouteObject[] => [
   {
     path: `${prefix}/strategy`,
@@ -75,14 +76,16 @@ const counting = (scope: ScopeName, prefix: string, name: string): RouteObject[]
       return () => <PlayingStrategy scope={scope} />;
     }),
   },
-  {
-    path: `${prefix}/true-count`,
-    ...page(`${name}.trueCount`, async () => {
-      const { TrueCount } = await import('@/screens/strategy/true-count');
-      return () => <TrueCount scope={scope} />;
-    }),
-  },
+  ...(asksTrueCounts(scope) ? [trueCountRoute(scope, prefix, name)] : []),
 ];
+
+const trueCountRoute = (scope: ScopeName, prefix: string, name: string): RouteObject => ({
+  path: `${prefix}/true-count`,
+  ...page(`${name}.trueCount`, async () => {
+    const { TrueCount } = await import('@/screens/strategy/true-count');
+    return () => <TrueCount scope={scope} />;
+  }),
+});
 
 /** Every screen, with the dialogs, toasts and help sheet above them. */
 function Layout() {

@@ -1,4 +1,4 @@
-// True Count Calcs: how one module turns its running count into a true count. The arithmetic
+// True Count Conversion: how one module turns its running count into a true count. The arithmetic
 // itself lives in core/counting.ts; every module keeps its own answers here (settings/scopes.ts).
 
 import { useSettings } from '@/react/app-context';
@@ -69,10 +69,10 @@ function SelectRow<K extends ScopedKey>({ row, own }: { row: Row<K>; own: Scoped
 
 export function TrueCount({ scope }: { scope: ScopeName }) {
   const own = scopedSettings(useSettings(), scope);
-  // Only the game plays hands against the count: the rest is for its own warnings and side counts.
+  // Only the game counts cards on a table and side counts: a drill asks the true count alone.
   const playing = scope === 'game';
   return (
-    <ScreenLayout title="TC Calcs" help="game.trueCount">
+    <ScreenLayout title="True Count Conversion" help="game.trueCount">
       <Column>
         <SettingsNote>Set the method of calculating true counts</SettingsNote>
         <SettingsGroup>
@@ -92,24 +92,22 @@ export function TrueCount({ scope }: { scope: ScopeName }) {
               />
             </SettingsRow>
           )}
-          <CheckList
-            items={[
-              {
-                label: 'Ace side count',
-                checked: own.get('trueCount.aceSideCount'),
-                onChange: on => own.set('trueCount.aceSideCount', on),
-              },
-              ...(playing
-                ? [
-                    {
-                      label: 'Ten side count',
-                      checked: own.get('trueCount.tenSideCount'),
-                      onChange: (on: boolean) => own.set('trueCount.tenSideCount', on),
-                    },
-                  ]
-                : []),
-            ]}
-          />
+          {playing && (
+            <CheckList
+              items={[
+                {
+                  label: 'Ace side count',
+                  checked: own.get('trueCount.aceSideCount'),
+                  onChange: on => own.set('trueCount.aceSideCount', on),
+                },
+                {
+                  label: 'Ten side count',
+                  checked: own.get('trueCount.tenSideCount'),
+                  onChange: on => own.set('trueCount.tenSideCount', on),
+                },
+              ]}
+            />
+          )}
         </SettingsGroup>
       </Column>
     </ScreenLayout>

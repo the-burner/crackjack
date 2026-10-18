@@ -19,7 +19,7 @@ function settings(overrides: SettingsPatch = {}): Pick<AppSettings, 'get'> {
 
 describe('trueCountSettings', () => {
   it('turns the stored choices into the codes a Counter wants', () => {
-    expect(trueCountSettings(settings(), 'flash')).toEqual({
+    expect(trueCountSettings(settings(), 'count')).toEqual({
       division: TC_DIVISION.halfDeck,
       lastDeck: TC_LAST_DECK.halfDeck,
       rounding: TC_ROUNDING.truncate,
@@ -29,24 +29,29 @@ describe('trueCountSettings', () => {
 
   it('maps every resolution, last-deck and rounding choice', () => {
     const divisions = (['full', 'half', 'quarter', 'exact'] as const).map(
-      resolution => trueCountSettings(settings({ 'drills.flash.trueCount.resolution': resolution }), 'flash').division,
+      resolution => trueCountSettings(settings({ 'drills.count.trueCount.resolution': resolution }), 'count').division,
     );
     expect(divisions).toEqual([TC_DIVISION.fullDeck, TC_DIVISION.halfDeck, TC_DIVISION.quarterDeck, TC_DIVISION.exact]);
     const lastDecks = (['half', 'quarter', 'exact'] as const).map(
       resolution =>
-        trueCountSettings(settings({ 'drills.flash.trueCount.lastDeckResolution': resolution }), 'flash').lastDeck,
+        trueCountSettings(settings({ 'drills.count.trueCount.lastDeckResolution': resolution }), 'count').lastDeck,
     );
     expect(lastDecks).toEqual([TC_LAST_DECK.halfDeck, TC_LAST_DECK.quarterDeck, TC_LAST_DECK.exact]);
     const roundings = (['round', 'truncate', 'floor'] as const).map(
-      rounding => trueCountSettings(settings({ 'drills.flash.trueCount.rounding': rounding }), 'flash').rounding,
+      rounding => trueCountSettings(settings({ 'drills.count.trueCount.rounding': rounding }), 'count').rounding,
     );
     expect(roundings).toEqual([TC_ROUNDING.round, TC_ROUNDING.truncate, TC_ROUNDING.floor]);
   });
 
-  it('passes the ace side count through', () => {
-    expect(trueCountSettings(settings({ 'drills.flash.trueCount.aceSideCount': true }), 'flash').aceSideCount).toBe(
-      true,
-    );
+  it('gives a drill that asks no true count the defaults, with nothing of its own to read', () => {
+    expect(trueCountSettings(settings(), 'flash')).toEqual(trueCountSettings(settings(), 'count'));
+    expect(SETTINGS_SCHEMA).not.toHaveProperty(['drills.flash.trueCount.resolution']);
+    expect(SETTINGS_SCHEMA).not.toHaveProperty(['drills.full.trueCount.resolution']);
+  });
+
+  it('passes the ace side count through, for the game, which alone keeps one', () => {
+    expect(trueCountSettings(settings({ 'game.trueCount.aceSideCount': true }), 'game').aceSideCount).toBe(true);
+    expect(trueCountSettings(settings(), 'count').aceSideCount).toBe(false);
   });
 });
 

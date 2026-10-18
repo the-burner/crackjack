@@ -16,26 +16,32 @@ async function saveAs(user: UserEvent, name: string) {
   await user.click(dialog.getByRole('button', { name: 'OK' }));
 }
 
+const TABLE_6D = "Crackjack's 6D,H17,LS,DAS";
+
 describe('a game configuration', () => {
-  it('saves the game’s settings, its betting among them, and loads Default back', async () => {
+  it('saves the game’s settings, its betting among them, and loads a built-in game back', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
     renderScreen(<GameOptions />, { app, path: '/game' });
-    expect(picker()).toHaveDisplayValue('Default');
+    expect(picker()).toHaveDisplayValue(TABLE_6D);
     act(() => app.settings.update({ 'table.decks': 2, 'rules.surrender': 'early', 'game.betting.chipValue': 10 }));
-    expect(picker()).toHaveDisplayValue('Default (edited)');
+    expect(picker()).toHaveDisplayValue(`${TABLE_6D} (edited)`);
     await saveAs(user, 'Two decks');
     await waitFor(() => expect(picker()).toHaveDisplayValue('Two decks'));
     const [saved] = app.gameConfigs.getState().value;
     expect(saved.values).toMatchObject({ 'table.decks': 2, 'rules.surrender': 'early' });
     expect(saved.values['game.betting.chipValue']).toBe(10);
-    await user.selectOptions(picker(), 'Default');
+    await user.selectOptions(picker(), TABLE_6D);
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(6));
     expect(app.settings.get('rules.surrender')).toBe('late');
     // Its betting came back with it.
     expect(app.settings.get('game.betting.chipValue')).toBe(25);
-    await user.selectOptions(picker(), 'Two decks');
+    await user.selectOptions(picker(), "Crackjack's Heads-Up 2D,H17,LS,DAS");
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(2));
+    expect(app.settings.get('table.seatCount')).toBe(1);
+    expect(app.settings.get('game.betting.strategy')).toBe('single-hand');
+    await user.selectOptions(picker(), 'Two decks');
+    await waitFor(() => expect(app.settings.get('rules.surrender')).toBe('early'));
   });
 });
 
