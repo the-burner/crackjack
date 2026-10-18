@@ -32,6 +32,7 @@ Run a single test: `npx vitest run tests/unit/game/engine.test.ts` or
 `npx playwright test tests/e2e/drills.spec.ts -g "name" --project=iphone`
 (projects: `iphone`, `iphone-landscape`, `ipad`, `ipad-landscape`, and `build` for the offline tests).
 Tag a test `@layout` (in its title) when its outcome depends on the screen's size or orientation; only those run on the other devices.
+To see a particular hand in the game (splits, resplits), rig the shoe from the dev server's console with `tools/rig-shoe.js` (instructions inside).
 
 ## Layout
 
