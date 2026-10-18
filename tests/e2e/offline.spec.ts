@@ -24,7 +24,7 @@ test('runs offline after the first visit', { tag: '@build' }, async ({ page, con
 
   // A drill (canvas, card images, tray photos) and the table both work offline.
   await page.locator('[data-screen="home"] button', { hasText: 'Deck Estimation and TC Conversion' }).click();
-  await page.locator('[data-screen="drills.depth.options"] button', { hasText: 'Play' }).click();
+  await page.locator('[data-screen="drills.depth.options"] [data-action="launch"]').click();
   await expect(page.locator('[data-screen="drills.depth"]')).toBeVisible();
   await page.evaluate(() => window.app.router.navigate('/'));
   await startGame(page);

@@ -75,7 +75,7 @@ export function createCountDrill(app: App) {
     thickness: s.get('drills.count.cardThickness'),
     progressive: s.get('drills.count.progressiveSpeed'),
     twoCounts: s.get('drills.count.twoCounts'),
-    ...drillStrategy(app, s.get('drills.count.decks')),
+    ...drillStrategy(app, 'count', s.get('drills.count.decks')),
   };
   /** Cards come at the deal speed unless the player deals them with Next. */
   const auto = !options.dealByHand;

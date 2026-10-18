@@ -27,6 +27,14 @@ const SECTIONS: readonly (readonly [string, readonly (readonly [string, ScreenNa
       ['Dealer Errs/Biases', 'game.dealerErrors'],
     ],
   ],
+  [
+    'Strategy',
+    [
+      ['Playing Strategy', 'game.strategy'],
+      ['Betting Strategy', 'game.betting'],
+      ['TC Calcs', 'game.trueCount'],
+    ],
+  ],
   ['Peeking and Warnings', [['Peeking', 'game.peeking']]],
   ['Table', [['Speed/Mechanics', 'game.mechanics']]],
 ];
@@ -47,7 +55,7 @@ export function GameOptions() {
                 </ListRow>
               ))}
               {title === 'Peeking and Warnings' && (
-                <SettingChecks items={[{ label: 'Warning on Strategy Error', key: 'strategy.warnOnError' }]} />
+                <SettingChecks items={[{ label: 'Warning on Strategy Error', key: 'game.strategy.warnOnError' }]} />
               )}
             </SettingsGroup>
           </Section>

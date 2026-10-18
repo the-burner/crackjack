@@ -46,7 +46,11 @@ describe('drill options screens', () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<FullOptions />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Compound Running Count');
-    expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual(['Drill', 'Timer']);
+    expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
+      'Drill',
+      'Timer',
+      'Strategy',
+    ]);
     const launch = screen.getByRole('button', { name: 'Play' });
     expect(screen.getAllByRole('button').at(-1)).toBe(launch);
     await user.click(launch);
@@ -164,11 +168,11 @@ describe('drill options screens', () => {
     const user = userEvent.setup();
     renderScreen(<DepthOptions />);
     const titles = () => screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
-    expect(titles()).toEqual(['Drill', 'Answers', 'Timer']);
+    expect(titles()).toEqual(['Drill', 'Answers', 'Timer', 'Strategy']);
     expect(screen.getByText('Minimum count')).not.toBeVisible();
     expect(toggle('Decks or Aces in Tray')).toBeVisible();
     await choose(user, 'Drill', 'Drill: TC Conversion');
-    expect(titles()).toEqual(['Drill', 'Count Range', 'Timer']);
+    expect(titles()).toEqual(['Drill', 'Count Range', 'Timer', 'Strategy']);
     expect(numberButton('Minimum count')).toBeVisible();
     expect(numberButton('Maximum count')).toBeVisible();
     expectHidden(toggle('Decks or Aces in Tray'));

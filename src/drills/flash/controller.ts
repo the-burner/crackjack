@@ -107,7 +107,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     autoPauseSeconds: s.get('drills.flash.autoPauseSeconds'),
     doubleAnyCards: s.get('rules.doubleAnyNumberOfCards'),
   };
-  const { strategy } = drillStrategy(app, options.decks);
+  const { strategy } = drillStrategy(app, 'flash', options.decks);
   const indexTest = options.countMode === 'indexTest';
   const warn = options.testMode === 'warn';
   const silent = options.testMode === 'none';

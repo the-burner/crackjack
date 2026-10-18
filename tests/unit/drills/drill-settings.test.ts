@@ -19,7 +19,7 @@ function settings(overrides: SettingsPatch = {}): Pick<AppSettings, 'get'> {
 
 describe('trueCountSettings', () => {
   it('turns the stored choices into the codes a Counter wants', () => {
-    expect(trueCountSettings(settings())).toEqual({
+    expect(trueCountSettings(settings(), 'flash')).toEqual({
       division: TC_DIVISION.halfDeck,
       lastDeck: TC_LAST_DECK.halfDeck,
       rounding: TC_ROUNDING.truncate,
@@ -29,21 +29,24 @@ describe('trueCountSettings', () => {
 
   it('maps every resolution, last-deck and rounding choice', () => {
     const divisions = (['full', 'half', 'quarter', 'exact'] as const).map(
-      resolution => trueCountSettings(settings({ 'trueCount.resolution': resolution })).division,
+      resolution => trueCountSettings(settings({ 'drills.flash.trueCount.resolution': resolution }), 'flash').division,
     );
     expect(divisions).toEqual([TC_DIVISION.fullDeck, TC_DIVISION.halfDeck, TC_DIVISION.quarterDeck, TC_DIVISION.exact]);
     const lastDecks = (['half', 'quarter', 'exact'] as const).map(
-      resolution => trueCountSettings(settings({ 'trueCount.lastDeckResolution': resolution })).lastDeck,
+      resolution =>
+        trueCountSettings(settings({ 'drills.flash.trueCount.lastDeckResolution': resolution }), 'flash').lastDeck,
     );
     expect(lastDecks).toEqual([TC_LAST_DECK.halfDeck, TC_LAST_DECK.quarterDeck, TC_LAST_DECK.exact]);
     const roundings = (['round', 'truncate', 'floor'] as const).map(
-      rounding => trueCountSettings(settings({ 'trueCount.rounding': rounding })).rounding,
+      rounding => trueCountSettings(settings({ 'drills.flash.trueCount.rounding': rounding }), 'flash').rounding,
     );
     expect(roundings).toEqual([TC_ROUNDING.round, TC_ROUNDING.truncate, TC_ROUNDING.floor]);
   });
 
   it('passes the ace side count through', () => {
-    expect(trueCountSettings(settings({ 'trueCount.aceSideCount': true })).aceSideCount).toBe(true);
+    expect(trueCountSettings(settings({ 'drills.flash.trueCount.aceSideCount': true }), 'flash').aceSideCount).toBe(
+      true,
+    );
   });
 });
 
@@ -55,17 +58,26 @@ describe('drillStrategy', () => {
   });
 
   it('builds the selected system for the deck count the drill uses', () => {
-    const { strategy, trueCountSettings: tc } = drillStrategy(app({ 'strategy.system': 30 }), 2);
+    const { strategy, trueCountSettings: tc } = drillStrategy(app({ 'drills.flash.strategy.system': 30 }), 'flash', 2);
     expect(strategy.decks).toBe(2);
     expect(strategy.initialRunningCount[1]).toBe(0);
-    expect(tc).toEqual(trueCountSettings(settings()));
+    expect(tc).toEqual(trueCountSettings(settings(), 'flash'));
   });
 
   it('follows the rules and index settings the strategy was chosen with', () => {
-    const chosen = drillStrategy(app({ 'strategy.system': 30 }), 6).strategy;
-    const noIndices = drillStrategy(app({ 'strategy.system': 30, 'strategy.indexSet': 'none' }), 6).strategy;
+    const chosen = drillStrategy(app({ 'drills.flash.strategy.system': 30 }), 'flash', 6).strategy;
+    const noIndices = drillStrategy(
+      app({ 'drills.flash.strategy.system': 30, 'drills.flash.strategy.indexSet': 'none' }),
+      'flash',
+      6,
+    ).strategy;
     const forcedCount = drillStrategy(
-      app({ 'strategy.system': 30, 'strategy.adjustInitialCount': true, 'strategy.initialCount': 7 }),
+      app({
+        'drills.flash.strategy.system': 30,
+        'drills.flash.strategy.adjustInitialCount': true,
+        'drills.flash.strategy.initialCount': 7,
+      }),
+      'flash',
       6,
     ).strategy;
     expect(noIndices.tables).not.toEqual(chosen.tables);

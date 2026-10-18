@@ -40,11 +40,11 @@ const BASE_SETTINGS = {
   'table.seatCount': 1,
   'table.computerSeats': ALL_HUMAN,
   'table.burnCards': 0,
-  'betting.chipValue': 10,
-  'betting.warnOnError': false,
-  'strategy.warnOnError': false,
+  'game.betting.chipValue': 10,
+  'game.betting.warnOnError': false,
+  'game.strategy.warnOnError': false,
   // A count of 10 is never reached, so the first row is always the right bet.
-  'betting.ramp': {
+  'game.betting.ramp': {
     minCount: 10,
     rows: [
       { chips: 1, hands: 1 },
@@ -394,8 +394,8 @@ test.describe('calling Foul', () => {
 test('bet accuracy is floored and play accuracy rounded, on the Stats screen and the table', async ({ page }) => {
   await openTable(page, {
     settings: {
-      'betting.warnOnError': true,
-      'strategy.warnOnError': true,
+      'game.betting.warnOnError': true,
+      'game.strategy.warnOnError': true,
       'display.showBetAccuracy': true,
       'display.showPlayAccuracy': true,
     },
@@ -464,7 +464,7 @@ test('the insurance offer waits while another screen covers the table', async ({
 test('Customize changes the bets offered as soon as the table is back', async ({ page }) => {
   await openTable(page);
   await overlayButton(page, 'Customize').click();
-  const betting = page.locator('[data-screen="settings.betting"]');
+  const betting = page.locator('[data-screen="game.betting"]');
   await betting.getByRole('combobox', { name: 'Chip Value', exact: true }).selectOption({ label: '$25' });
   await betting.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(overlay(page)).toBeVisible();

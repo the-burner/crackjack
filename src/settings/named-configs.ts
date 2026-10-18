@@ -48,7 +48,7 @@ export const newPresetId = (): string => `saved-${Date.now()}`;
 
 /** The settings that hold which preset is selected. */
 export type PresetSelectionKey =
-  | 'betting.strategy'
+  | 'game.betting.strategy'
   | 'gestures.config'
   | 'game.config'
   | 'drills.flash.config'

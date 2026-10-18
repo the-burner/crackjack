@@ -175,15 +175,12 @@ describe('navigation screens', () => {
     expect(screen.getAllByRole('button').map(b => b.textContent)).toEqual([
       'Back',
       'Help',
-      'Playing Strategy',
-      'Betting Strategy',
-      'True Count Calcs',
       'Appearance & Sound',
       'Gestures',
       'Reset Defaults',
     ]);
-    await user.click(screen.getByRole('button', { name: 'True Count Calcs' }));
-    expect(location().pathname).toBe('/settings/true-count');
+    await user.click(screen.getByRole('button', { name: 'Gestures' }));
+    expect(location().pathname).toBe('/settings/gestures');
   });
 
   it("Game Options opens the game's own screens", async () => {
@@ -191,6 +188,7 @@ describe('navigation screens', () => {
     const { location } = renderScreen(<GameOptions />, { path: '/game' });
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
       'Table and Rules',
+      'Strategy',
       'Peeking and Warnings',
       'Table',
     ]);
@@ -225,7 +223,6 @@ describe('navigation screens', () => {
     app.gestureConfigs.setState({ value: [{ id: 'x', name: 'Mine', portrait: STANDARD, landscape: STANDARD }] });
     app.errorTallies.record('hardStand', 0, 0);
     renderScreen(<SettingsHub />, { app });
-    expect(screen.getByText(/as it was when first installed/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Reset Defaults' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('Erase everything saved');
     await user.click(screen.getByRole('button', { name: 'Yes' }));
@@ -242,9 +239,8 @@ describe('navigation screens', () => {
     expect(screen.getByRole('button', { name: 'Reset Defaults' })).toHaveClass('text-(--warning)');
   });
 
-  it('the home screen lists every module alike, under its slogan, each opening its screen', async () => {
-    const user = userEvent.setup();
-    const { location } = renderScreen(<Home />);
+  it('the home screen lists every module alike, under its slogan', () => {
+    renderScreen(<Home />);
     expect(screen.getByText('Get cracked at blackjack')).toBeInTheDocument();
     // No heading over them.
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
@@ -254,14 +250,10 @@ describe('navigation screens', () => {
       'Deck Estimation and TC Conversion',
       'Simple Running Count',
       'Compound Running Count',
-      'Bet Spread Flash Cards',
-      'Bet Spread Calculator',
       'Playing Strategy Charts',
     ];
     const modules = screen.getAllByRole('button', { name: new RegExp(`^(${NAMES.join('|')})`) });
     expect(modules.map(b => NAMES.find(name => b.textContent?.startsWith(name)))).toEqual(NAMES);
-    await user.click(screen.getByRole('button', { name: /^Bet Spread Calculator/ }));
-    expect(location().pathname).toBe('/spread-calculator');
   });
 
   it('Playing Strategy Charts on the home screen opens the strategy tables to look at', async () => {

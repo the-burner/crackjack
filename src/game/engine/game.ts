@@ -112,7 +112,7 @@ export interface TableConfig {
   limits?: SettingValues['table.limits'];
   maxCardsPerHand?: number;
   /** Which cards the true count treats as gone. Default every card dealt. */
-  remainingCards?: SettingValues['trueCount.remainingCards'];
+  remainingCards?: SettingValues['game.trueCount.remainingCards'];
 }
 
 /** What a computer seat's decision function is told. */

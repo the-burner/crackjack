@@ -11,7 +11,7 @@ const schema = {
   'display.name': { type: 'string', default: 'Player' },
   'rules.decks': { type: 'int', default: 6, min: 1, max: 8 },
   'rules.surrender': { type: 'enum', default: 'none', values: ['none', 'late', 'early'] },
-  'betting.table': { type: 'json', default: [1, 2] },
+  'game.betting.table': { type: 'json', default: [1, 2] },
   paused: { type: 'bool', default: false } as BoolDef,
 } satisfies SettingsSchema;
 
@@ -51,8 +51,8 @@ describe('Settings', () => {
 
   it('does not share default objects between instances', () => {
     const s = new Settings(schema, new Storage(new MemoryBackend()));
-    s.get('betting.table').push(3);
-    expect(schema['betting.table'].default).toEqual([1, 2]);
+    s.get('game.betting.table').push(3);
+    expect(schema['game.betting.table'].default).toEqual([1, 2]);
   });
 
   it('rejects an unknown key on read as well as write', () => {
@@ -114,16 +114,16 @@ describe('coercion', () => {
 
   it('takes a json setting shaped like its default as given', () => {
     const s = fresh();
-    s.set('betting.table', [5, 10]);
-    expect(s.get('betting.table')).toEqual([5, 10]);
+    s.set('game.betting.table', [5, 10]);
+    expect(s.get('game.betting.table')).toEqual([5, 10]);
   });
 
   it('falls back to the default for a json setting of another shape', () => {
     const s = fresh();
-    untyped(s).set('betting.table', 'oops');
-    expect(s.get('betting.table')).toEqual([1, 2]);
-    s.set('betting.table', [5, 10, 15]);
-    expect(s.get('betting.table')).toEqual([1, 2]);
+    untyped(s).set('game.betting.table', 'oops');
+    expect(s.get('game.betting.table')).toEqual([1, 2]);
+    s.set('game.betting.table', [5, 10, 15]);
+    expect(s.get('game.betting.table')).toEqual([1, 2]);
   });
 });
 
@@ -262,7 +262,7 @@ describe('saved format', () => {
     const flat = {
       'table.decks': 2,
       'display.theme': 'latte',
-      'betting.ramp': { minCount: -1, rows: [{ chips: 3, hands: 2 }] },
+      'game.betting.ramp': { minCount: -1, rows: [{ chips: 3, hands: 2 }] },
       'table.computerSeats': [false, true, false, false, false, false],
     };
     const storage = new Storage(new MemoryBackend());
@@ -301,19 +301,19 @@ describe('json values', () => {
     const s = new Settings(schema, storage);
     const seen: [string, unknown][] = [];
     s.subscribe((key, value) => seen.push([key, value]));
-    const table = s.get('betting.table');
+    const table = s.get('game.betting.table');
     table[0] = 9;
-    expect(s.get('betting.table')).toEqual([1, 2]);
-    s.set('betting.table', table);
-    expect(new Settings(schema, storage).get('betting.table')).toEqual([9, 2]);
-    expect(seen).toEqual([['betting.table', [9, 2]]]);
+    expect(s.get('game.betting.table')).toEqual([1, 2]);
+    s.set('game.betting.table', table);
+    expect(new Settings(schema, storage).get('game.betting.table')).toEqual([9, 2]);
+    expect(seen).toEqual([['game.betting.table', [9, 2]]]);
   });
 
   it('say nothing when set to an equal copy', () => {
     const s = fresh();
     const seen: string[] = [];
     s.subscribe((...[key]) => seen.push(key));
-    s.set('betting.table', s.get('betting.table'));
+    s.set('game.betting.table', s.get('game.betting.table'));
     s.reset();
     expect(seen).toEqual([]);
   });
@@ -321,14 +321,14 @@ describe('json values', () => {
   it('are copied when set, so the caller cannot change them afterwards', () => {
     const s = fresh();
     const table = [5, 10];
-    s.set('betting.table', table);
+    s.set('game.betting.table', table);
     table[0] = 99;
-    expect(s.get('betting.table')).toEqual([5, 10]);
+    expect(s.get('game.betting.table')).toEqual([5, 10]);
   });
 
   it('are copies in a group as well', () => {
     const s = fresh();
-    s.group('betting').table.push(3);
-    expect(s.get('betting.table')).toEqual([1, 2]);
+    s.group('game.betting').table.push(3);
+    expect(s.get('game.betting.table')).toEqual([1, 2]);
   });
 });

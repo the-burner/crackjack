@@ -24,8 +24,8 @@ function makeSession(settings: SettingsPatch = {}, seed = 7) {
   app.settings.update({
     'table.seatCount': 4,
     'table.computerSeats': [false, false, true, true, true, true],
-    'betting.warnOnError': false,
-    'strategy.warnOnError': false,
+    'game.betting.warnOnError': false,
+    'game.strategy.warnOnError': false,
     'rules.surrender': 'none',
     ...settings,
   });

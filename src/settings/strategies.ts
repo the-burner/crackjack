@@ -4,6 +4,8 @@
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
 import type { Strategy, TableOptions } from '@/core/strategy/strategy-tables';
+import { scopedKey, tableRuleKey } from './scopes';
+import type { ScopeName } from './scopes';
 import type { AppSettings } from './schema';
 
 /** A strategy the player can pick. */
@@ -91,29 +93,29 @@ export class StrategyLibrary {
     return strategy;
   }
 
-  /** Builds the user's selected strategy for `decks` decks. */
-  current(
-    settings: SettingsSource,
-    decks: number,
-    { system = settings.get('strategy.system') }: { system?: number } = {},
-  ): Strategy {
-    return this.build(system, strategyOptions(settings, decks));
+  /** Builds the strategy module `scope` plays, for `decks` decks. */
+  current(settings: SettingsSource, scope: ScopeName, decks: number, { system }: { system?: number } = {}): Strategy {
+    const options = strategyOptions(settings, scope, decks);
+    return this.build(system ?? Number(settings.get(scopedKey(scope, 'strategy.system'))), options);
   }
 }
 
-/** Strategy table options derived from the shared settings. */
-export function strategyOptions(settings: SettingsSource, decks: number): TableOptions {
+/** Strategy table options from module `scope`'s own settings. */
+export function strategyOptions(settings: SettingsSource, scope: ScopeName, decks: number): TableOptions {
+  const own = <T>(key: Parameters<typeof scopedKey>[1]) => settings.get(scopedKey(scope, key)) as T;
+  const rule = (key: Parameters<typeof tableRuleKey>[1]) => Boolean(settings.get(tableRuleKey(scope, key)));
+  const indexSet = own<TableOptions['indexSet']>('strategy.indexSet');
   return {
     decks,
-    hitSoft17: settings.get('rules.dealerHitsSoft17'),
-    doubleAfterSplit: settings.get('rules.doubleAfterSplit'),
-    noHoleCard: settings.get('rules.noHoleCard'),
-    indexSet: settings.get('strategy.indexSet'),
-    customMask: settings.get('strategy.indexSet') === 'custom' ? settings.get('strategy.customIndexMask') : null,
-    rangeLow: settings.get('strategy.indexRangeMin'),
-    rangeHigh: settings.get('strategy.indexRangeMax'),
-    forcedInitialRunningCount: settings.get('strategy.adjustInitialCount')
-      ? settings.get('strategy.initialCount')
+    hitSoft17: rule('rules.dealerHitsSoft17'),
+    doubleAfterSplit: rule('rules.doubleAfterSplit'),
+    noHoleCard: rule('rules.noHoleCard'),
+    indexSet,
+    customMask: indexSet === 'custom' ? own<TableOptions['customMask']>('strategy.customIndexMask') : null,
+    rangeLow: own<number>('strategy.indexRangeMin'),
+    rangeHigh: own<number>('strategy.indexRangeMax'),
+    forcedInitialRunningCount: own<boolean>('strategy.adjustInitialCount')
+      ? own<number>('strategy.initialCount')
       : null,
   };
 }

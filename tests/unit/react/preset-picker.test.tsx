@@ -24,9 +24,9 @@ const no = async (user: UserEvent) => user.click(await screen.findByRole('button
 /** Allowed Bets with one saved strategy, Spread ($5 chips), selected and unedited. */
 function withSpread() {
   const app = createTestApp();
-  const values = { ...BETTING_PRESETS.current(key => app.settings.get(key)), 'betting.chipValue': 5 as const };
+  const values = { ...BETTING_PRESETS.current(key => app.settings.get(key)), 'game.betting.chipValue': 5 as const };
   app.bettingStrategies.setState({ value: [BETTING_PRESETS.make('spread', 'Spread', values)] });
-  app.settings.update({ ...values, 'betting.strategy': 'spread' });
+  app.settings.update({ ...values, 'game.betting.strategy': 'spread' });
   renderScreen(<Betting />, { app });
   return app;
 }
@@ -36,49 +36,49 @@ describe('the preset picker', () => {
     const user = userEvent.setup();
     const app = withSpread();
     expect(row('Save “Spread”')).not.toBeInTheDocument();
-    act(() => app.settings.set('betting.chipValue', 10));
+    act(() => app.settings.set('game.betting.chipValue', 10));
     expect(picker()).toHaveDisplayValue('Spread (edited)');
     await user.click(row('Save “Spread”')!);
     expect(picker()).toHaveDisplayValue('Spread');
-    expect(app.bettingStrategies.getState().value[0].values['betting.chipValue']).toBe(10);
+    expect(app.bettingStrategies.getState().value[0].values['game.betting.chipValue']).toBe(10);
   });
 
   it('reverts an edit to what was saved', async () => {
     const user = userEvent.setup();
     const app = withSpread();
-    act(() => app.settings.set('betting.chipValue', 10));
+    act(() => app.settings.set('game.betting.chipValue', 10));
     await user.click(row('Revert')!);
-    expect(app.settings.get('betting.chipValue')).toBe(5);
+    expect(app.settings.get('game.betting.chipValue')).toBe(5);
     expect(picker()).toHaveDisplayValue('Spread');
   });
 
   it('asks before an edit is dropped by choosing another, and keeps it when told no', async () => {
     const user = userEvent.setup();
     const app = withSpread();
-    act(() => app.settings.set('betting.chipValue', 10));
+    act(() => app.settings.set('game.betting.chipValue', 10));
     await user.selectOptions(picker(), SINGLE);
     await no(user);
-    expect(app.settings.get('betting.chipValue')).toBe(10);
+    expect(app.settings.get('game.betting.chipValue')).toBe(10);
     expect(picker()).toHaveDisplayValue('Spread (edited)');
     await user.selectOptions(picker(), SINGLE);
     await yes(user);
     await waitFor(() => expect(picker()).toHaveDisplayValue(SINGLE));
-    expect(app.settings.get('betting.chipValue')).toBe(25);
+    expect(app.settings.get('game.betting.chipValue')).toBe(25);
   });
 
   it('asks before Save as New replaces a strategy of the same name, ignoring case', async () => {
     const user = userEvent.setup();
     const app = withSpread();
-    act(() => app.settings.set('betting.chipValue', 100));
+    act(() => app.settings.set('game.betting.chipValue', 100));
     await user.click(row('Save as New…')!);
     await answer(user, 'SPREAD');
     expect(await screen.findByText('Replace “Spread” with these settings?')).toBeInTheDocument();
     await no(user);
-    expect(app.bettingStrategies.getState().value[0].values['betting.chipValue']).toBe(5);
+    expect(app.bettingStrategies.getState().value[0].values['game.betting.chipValue']).toBe(5);
     await user.click(row('Save as New…')!);
     await answer(user, 'SPREAD');
     await yes(user);
-    await waitFor(() => expect(app.bettingStrategies.getState().value[0].values['betting.chipValue']).toBe(100));
+    await waitFor(() => expect(app.bettingStrategies.getState().value[0].values['game.betting.chipValue']).toBe(100));
     expect(app.bettingStrategies.getState().value).toHaveLength(1);
   });
 
@@ -117,7 +117,7 @@ describe('the preset picker', () => {
     await user.click(row('Save as New…')!);
     await answer(user, 'Twin');
     await waitFor(() => expect(picker()).toHaveDisplayValue('Twin'));
-    expect(app.settings.get('betting.strategy')).not.toBe('spread');
+    expect(app.settings.get('game.betting.strategy')).not.toBe('spread');
   });
 
   it('keeps the settings as unsaved Custom ones when the strategy in use is deleted', async () => {
@@ -126,13 +126,13 @@ describe('the preset picker', () => {
     await user.click(row('Delete “Spread”')!);
     await yes(user);
     await waitFor(() => expect(picker()).toHaveDisplayValue('Custom'));
-    expect(app.settings.get('betting.chipValue')).toBe(5);
+    expect(app.settings.get('game.betting.chipValue')).toBe(5);
     expect(row('Rename…')).not.toBeInTheDocument();
   });
 
   it('leaves the built-in strategies read-only, and Reset Defaults back on the single-hand one', async () => {
     const app = withSpread();
-    act(() => app.settings.update({ 'betting.strategy': 'single-hand', 'betting.chipValue': 10 }));
+    act(() => app.settings.update({ 'game.betting.strategy': 'single-hand', 'game.betting.chipValue': 10 }));
     expect(picker()).toHaveDisplayValue(`${SINGLE} (edited)`);
     expect(row(`Save “${SINGLE}”`)).not.toBeInTheDocument();
     expect(row('Rename…')).not.toBeInTheDocument();

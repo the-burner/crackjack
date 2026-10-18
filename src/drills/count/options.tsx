@@ -170,7 +170,7 @@ async function launch(app: App, open: () => void) {
     return;
   }
   const drill = s.get('drills.count.drill');
-  const { strategy } = drillStrategy(app, decks);
+  const { strategy } = drillStrategy(app, 'count', decks);
   if (!aceDrillSuits(drill, strategy)) {
     await alert(
       ACE_DRILLS[drill] === 'neutral'

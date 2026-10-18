@@ -10,15 +10,7 @@ import { useNavigate } from 'react-router';
 import { PATHS } from '@/app/paths';
 import type { ScreenName } from '@/app/paths';
 
-const NOTE = 'These settings apply to every module.';
-
-const RESET_NOTE =
-  'Puts the app back as it was when first installed: every setting, the game’s and every drill’s, to its default, and the bankroll, statistics, error history and saved strategies and gesture configurations erased.';
-
 const SCREENS: readonly (readonly [string, ScreenName])[] = [
-  ['Playing Strategy', 'settings.strategy'],
-  ['Betting Strategy', 'settings.betting'],
-  ['True Count Calcs', 'settings.trueCount'],
   ['Appearance & Sound', 'settings.appearance'],
   ['Gestures', 'settings.gestures'],
 ];
@@ -29,7 +21,7 @@ export function SettingsHub() {
   return (
     <ScreenLayout title="Settings" help="settings">
       <Column className="gap-6 pt-1">
-        <Section footer={NOTE}>
+        <Section>
           <SettingsGroup>
             {SCREENS.map(([label, screen]) => (
               <ListRow key={screen} block onClick={() => navigate(PATHS[screen])}>
@@ -38,7 +30,7 @@ export function SettingsHub() {
             ))}
           </SettingsGroup>
         </Section>
-        <Section footer={RESET_NOTE}>
+        <Section>
           <SettingsGroup>
             <ListRow block chevron={false} className="text-(--warning)" onClick={() => resetDefaults(app)}>
               Reset Defaults

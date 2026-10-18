@@ -44,18 +44,18 @@ export function Betting() {
   const settings = useSettings();
   // A ramp saved out of range is shown tidied, so keep the tidied one.
   useOnShow(() => {
-    const tidy = rampToSave(settings.get('betting.ramp'));
-    if (tidy) settings.set('betting.ramp', tidy);
+    const tidy = rampToSave(settings.get('game.betting.ramp'));
+    if (tidy) settings.set('game.betting.ramp', tidy);
   });
 
-  const ramp = normalizeRamp(settings.get('betting.ramp'));
-  const showCounts = settings.get('betting.warnOnError');
+  const ramp = normalizeRamp(settings.get('game.betting.ramp'));
+  const showCounts = settings.get('game.betting.warnOnError');
   const counts = countLabels(ramp, { showCounts });
   // The row picker sits under this screen, wherever it was opened from.
   const openRow = (row: number) => navigate(String(row));
 
   return (
-    <ScreenLayout title="Betting Strategy" help="settings.betting">
+    <ScreenLayout title="Betting Strategy" help="game.betting">
       <Column>
         <PresetPicker kind={BETTING_PRESETS} store={app.bettingStrategies} />
         <SettingsNote>
@@ -67,21 +67,21 @@ export function Betting() {
               {
                 label: 'Warning on Betting Error',
                 checked: showCounts,
-                onChange: on => settings.set('betting.warnOnError', on),
+                onChange: on => settings.set('game.betting.warnOnError', on),
               },
             ]}
           />
           <Select
             label="Chip Value"
             options={CHIP_OPTIONS}
-            value={settings.get('betting.chipValue')}
-            onChange={value => settings.set('betting.chipValue', value)}
+            value={settings.get('game.betting.chipValue')}
+            onChange={value => settings.set('game.betting.chipValue', value)}
           />
           <SettingsRow label="Number of bets">
             <ValueButton
               label="Number of bets"
               value={ramp.rows.length}
-              onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
+              onChange={count => settings.set('game.betting.ramp', setRowCount(ramp, count))}
               prompt="Number of different bets in table"
               min={MIN_ROWS}
               max={MAX_ROWS}
@@ -91,7 +91,7 @@ export function Betting() {
             <ValueButton
               label="Minimum bet count"
               value={ramp.minCount}
-              onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
+              onChange={minCount => settings.set('game.betting.ramp', normalizeRamp({ ...ramp, minCount }))}
               prompt="Start Count"
               min={-99}
               max={99}
@@ -140,14 +140,14 @@ export function Betting() {
 /** Sitting out the rounds between the Wong Out and Wong In counts. */
 function Wonging() {
   const settings = useSettings();
-  const on = settings.get('betting.wonging');
-  const wongIn = settings.get('betting.wongIn');
-  const wongOut = settings.get('betting.wongOut');
+  const on = settings.get('game.betting.wonging');
+  const wongIn = settings.get('game.betting.wongIn');
+  const wongOut = settings.get('game.betting.wongOut');
   return (
     <Section title="Wonging">
       <SettingsGroup>
         <CheckList
-          items={[{ label: 'Wonging', checked: on, onChange: value => settings.set('betting.wonging', value) }]}
+          items={[{ label: 'Wonging', checked: on, onChange: value => settings.set('game.betting.wonging', value) }]}
         />
         {on && (
           <>
@@ -155,7 +155,7 @@ function Wonging() {
               <ValueButton
                 label="Wong in"
                 value={wongIn}
-                onChange={value => settings.set('betting.wongIn', value)}
+                onChange={value => settings.set('game.betting.wongIn', value)}
                 prompt="Count to start playing at"
                 min={wongOut + 1}
                 max={99}
@@ -165,7 +165,7 @@ function Wonging() {
               <ValueButton
                 label="Wong out"
                 value={wongOut}
-                onChange={value => settings.set('betting.wongOut', value)}
+                onChange={value => settings.set('game.betting.wongOut', value)}
                 prompt="Count to sit out at"
                 min={-99}
                 max={wongIn - 1}
@@ -175,8 +175,8 @@ function Wonging() {
               items={[
                 {
                   label: 'Begin shoe wonged out',
-                  checked: settings.get('betting.wongStartOut'),
-                  onChange: value => settings.set('betting.wongStartOut', value),
+                  checked: settings.get('game.betting.wongStartOut'),
+                  onChange: value => settings.set('game.betting.wongStartOut', value),
                 },
               ]}
             />
@@ -194,11 +194,11 @@ export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) 
   const app = useApp();
   const goBack = useGoBack();
   const { settings } = app;
-  const [current] = useState(() => normalizeRamp(settings.get('betting.ramp')));
+  const [current] = useState(() => normalizeRamp(settings.get('game.betting.ramp')));
   const [hands, setHands] = useState(current.rows[row]?.hands ?? 1);
 
   function choose(chips: number) {
-    settings.set('betting.ramp', setRow(normalizeRamp(settings.get('betting.ramp')), row, { chips, hands }));
+    settings.set('game.betting.ramp', setRow(normalizeRamp(settings.get('game.betting.ramp')), row, { chips, hands }));
     goBack();
   }
 
@@ -212,7 +212,7 @@ export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) 
   }
 
   return (
-    <ScreenLayout title="Betting Strategy" help="settings.betting">
+    <ScreenLayout title="Betting Strategy" help="game.betting">
       <div className="mx-auto flex max-w-[365px] flex-col gap-4">
         <Note className="my-0">
           In the bottom table, click on the number of chips to bet. If you wish to play more than one spot, click on the

@@ -24,8 +24,8 @@ const BASE: SettingsPatch = {
   'table.computerSeats': [false, false, false, false, false, false],
   'table.burnCards': 0,
   'table.decks': 6,
-  'betting.warnOnError': false,
-  'strategy.warnOnError': false,
+  'game.betting.warnOnError': false,
+  'game.strategy.warnOnError': false,
   'rules.surrender': 'none',
 };
 
@@ -131,7 +131,7 @@ describe('Macao surrender', () => {
 });
 
 describe('redouble and hit after double', () => {
-  const tenDollars: SettingsPatch = { 'betting.chipValue': 10 };
+  const tenDollars: SettingsPatch = { 'game.betting.chipValue': 10 };
 
   it('with only Redouble on, offers Double but not Hit after a double', () => {
     const session = riggedSession([...deal(['2s', '3s'], ['Th', '7h']), '2c'], {

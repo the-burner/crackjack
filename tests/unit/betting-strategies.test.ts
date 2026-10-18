@@ -8,19 +8,19 @@ import { Storage, MemoryBackend } from '@/services/storage';
 const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));
 const values = () => {
   const s = settings();
-  s.update({ 'betting.chipValue': 5, 'betting.wonging': true, 'betting.wongIn': 2 });
+  s.update({ 'game.betting.chipValue': 5, 'game.betting.wonging': true, 'game.betting.wongIn': 2 });
   return bettingValues(key => s.get(key));
 };
 
 describe('betting strategies', () => {
   it('hold the ramp, the chip value and the wonging settings, not the error warning', () => {
     expect(Object.keys(values()).sort()).toEqual([
-      'betting.chipValue',
-      'betting.ramp',
-      'betting.wongIn',
-      'betting.wongOut',
-      'betting.wongStartOut',
-      'betting.wonging',
+      'game.betting.chipValue',
+      'game.betting.ramp',
+      'game.betting.wongIn',
+      'game.betting.wongOut',
+      'game.betting.wongStartOut',
+      'game.betting.wonging',
     ]);
   });
 
@@ -31,7 +31,7 @@ describe('betting strategies', () => {
       "Crackjack's Multi-Hand Strategy",
     ]);
     const state = presetState(
-      fresh.get('betting.strategy'),
+      fresh.get('game.betting.strategy'),
       bettingValues(key => fresh.get(key)),
       BUILT_IN_BETTING,
       BETTING_PRESETS.valuesOf,
@@ -42,7 +42,7 @@ describe('betting strategies', () => {
 
   it('play two hands at the higher counts in the multi-hand one, and wong', () => {
     const multi = BUILT_IN_BETTING[1].values;
-    expect(multi['betting.ramp'].rows.map(row => `${row.hands}x${row.chips}`)).toEqual([
+    expect(multi['game.betting.ramp'].rows.map(row => `${row.hands}x${row.chips}`)).toEqual([
       '1x1',
       '1x2',
       '2x2',
@@ -51,11 +51,11 @@ describe('betting strategies', () => {
       '2x12',
     ]);
     expect(multi).toMatchObject({
-      'betting.chipValue': 25,
-      'betting.wonging': true,
-      'betting.wongIn': 1,
-      'betting.wongOut': -2,
-      'betting.wongStartOut': false,
+      'game.betting.chipValue': 25,
+      'game.betting.wonging': true,
+      'game.betting.wongIn': 1,
+      'game.betting.wongOut': -2,
+      'game.betting.wongStartOut': false,
     });
   });
 
@@ -66,7 +66,9 @@ describe('betting strategies', () => {
 
   it('read back only well-formed ones', () => {
     const good = { id: 'a', name: 'A', values: values() };
-    expect(readBettingStrategies([good, { id: 'b', name: 'B', values: { 'betting.ramp': 3 } }, 'x'])).toEqual([good]);
+    expect(readBettingStrategies([good, { id: 'b', name: 'B', values: { 'game.betting.ramp': 3 } }, 'x'])).toEqual([
+      good,
+    ]);
     expect(readBettingStrategies(undefined)).toEqual([]);
   });
 });

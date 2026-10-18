@@ -7,12 +7,12 @@ import type { Named, PresetKind } from './named-configs';
 
 /** The settings a betting strategy holds. */
 export const BETTING_KEYS = [
-  'betting.ramp',
-  'betting.chipValue',
-  'betting.wonging',
-  'betting.wongIn',
-  'betting.wongOut',
-  'betting.wongStartOut',
+  'game.betting.ramp',
+  'game.betting.chipValue',
+  'game.betting.wonging',
+  'game.betting.wongIn',
+  'game.betting.wongOut',
+  'game.betting.wongStartOut',
 ] as const;
 
 export type BettingValues = Pick<SettingValues, (typeof BETTING_KEYS)[number]>;
@@ -30,7 +30,7 @@ const SINGLE_HAND = bettingValues((key => SETTINGS_SCHEMA[key].default) as Setti
 
 /** Two hands at the higher counts, sitting out (wonging) between -2 and +1. */
 const MULTI_HAND: BettingValues = {
-  'betting.ramp': {
+  'game.betting.ramp': {
     minCount: 0,
     rows: [
       { chips: 1, hands: 1 },
@@ -41,11 +41,11 @@ const MULTI_HAND: BettingValues = {
       { chips: 12, hands: 2 },
     ],
   },
-  'betting.chipValue': 25,
-  'betting.wonging': true,
-  'betting.wongIn': 1,
-  'betting.wongOut': -2,
-  'betting.wongStartOut': false,
+  'game.betting.chipValue': 25,
+  'game.betting.wonging': true,
+  'game.betting.wongIn': 1,
+  'game.betting.wongOut': -2,
+  'game.betting.wongStartOut': false,
 };
 
 export const BUILT_IN_BETTING: readonly BettingStrategy[] = [
@@ -61,7 +61,7 @@ export function readBettingStrategies(saved: unknown): BettingStrategy[] {
     const { id, name, values } = entry as Record<string, unknown>;
     if (typeof id !== 'string' || typeof name !== 'string' || typeof values !== 'object' || values === null) return [];
     const read = values as Record<string, unknown>;
-    if (!isRamp(read['betting.ramp']) || BETTING_KEYS.some(key => !(key in read))) return [];
+    if (!isRamp(read['game.betting.ramp']) || BETTING_KEYS.some(key => !(key in read))) return [];
     return [{ id, name, values: values as BettingValues }];
   });
 }
@@ -70,7 +70,7 @@ export function readBettingStrategies(saved: unknown): BettingStrategy[] {
 export const BETTING_PRESETS: PresetKind<BettingStrategy, BettingValues> = {
   label: 'Betting strategy',
   builtIns: BUILT_IN_BETTING,
-  selectedKey: 'betting.strategy',
+  selectedKey: 'game.betting.strategy',
   current: bettingValues,
   valuesOf: strategy => strategy.values,
   patch: values => ({ ...values }),

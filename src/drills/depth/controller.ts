@@ -49,7 +49,7 @@ export function createDepthDrill(app: App) {
     countRange: { min: s.get('drills.depth.countRangeMin'), max: s.get('drills.depth.countRangeMax') },
     askInTray: s.get('drills.depth.askCardsInTray'),
     progressive: s.get('drills.depth.progressiveSpeed'),
-    ...drillStrategy(app, s.get('drills.depth.decks')),
+    ...drillStrategy(app, 'depth', s.get('drills.depth.decks')),
   };
 
   let els: DepthElements | null = null;

@@ -183,14 +183,17 @@ export function applyRuleChange<K extends SettingKey>(
  * clamped to it, so the range is never inverted.
  */
 export function applyIndexRangeChange(
-  get: SettingReader,
-  key: 'strategy.indexRangeMin' | 'strategy.indexRangeMax',
+  get: (key: IndexRangeKey) => number,
+  key: IndexRangeKey,
   value: number,
-): SettingsPatch {
+): Partial<Record<IndexRangeKey, number>> {
   const lowEnd = key === 'strategy.indexRangeMin';
   const other = get(lowEnd ? 'strategy.indexRangeMax' : 'strategy.indexRangeMin');
   return { [key]: lowEnd ? Math.min(value, other) : Math.max(value, other) };
 }
+
+/** One end of a module's index range, as its Playing Strategy screen names it. */
+export type IndexRangeKey = 'strategy.indexRangeMin' | 'strategy.indexRangeMax';
 
 /**
  * Selects a side-bet / unusual game and applies its rule bundle. Rules the

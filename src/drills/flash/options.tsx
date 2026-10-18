@@ -249,7 +249,7 @@ async function launch(app: App, open: () => void) {
     );
     return;
   }
-  const { strategy } = drillStrategy(app, s.get('drills.flash.decks'));
+  const { strategy } = drillStrategy(app, 'flash', s.get('drills.flash.decks'));
   const { error } = buildHandList({
     hands: s.get('drills.flash.hands'),
     situations,

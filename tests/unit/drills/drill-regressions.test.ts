@@ -96,7 +96,7 @@ const FIXED_16_V_TEN: SettingsPatch = {
   'drills.flash.timerMode': 'auto',
   'drills.flash.seconds': 60,
   'drills.flash.handsPerDrill': 10,
-  'strategy.system': 30,
+  'drills.flash.strategy.system': 30,
 };
 
 const flash = (settings: SettingsPatch) => launch(createFlashDrill(appWith(settings), { openTable: () => {} }));
@@ -112,7 +112,7 @@ describe('flash drill', () => {
       'drills.flash.maxCards': 2,
       'drills.flash.timerMode': 'infinite',
       'drills.flash.timePerHand': false,
-      'strategy.system': 30,
+      'drills.flash.strategy.system': 30,
     });
     expect(view(shell).message).toContain('no tests configured');
     expect(tests(shell)).toBe('Hands: 0');

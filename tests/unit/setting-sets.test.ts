@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { SETTINGS_SCHEMA } from '@/settings/schema';
+import { createServices } from '@/app/app';
+import { MemoryBackend } from '@/services/storage';
+import { strategyOptions } from '@/settings/strategies';
 import type { SettingKey, SettingReader } from '@/settings/schema';
 import { DRILL_KEYS, DRILL_SETS, GAME_KEYS, GAME_SETS } from '@/settings/setting-sets';
 import type { DrillName } from '@/settings/setting-sets';
-import { BETTING_KEYS } from '@/settings/betting-strategies';
 import { presetState, sameValues } from '@/settings/named-configs';
 
 const ALL = Object.keys(SETTINGS_SCHEMA) as SettingKey[];
@@ -11,31 +13,24 @@ const DRILLS: DrillName[] = ['flash', 'depth', 'count', 'full'];
 const defaults = (key => SETTINGS_SCHEMA[key].default) as SettingReader;
 
 describe('the settings a configuration saves', () => {
-  it('puts every setting in one place: the global screens, a betting strategy, the game, a drill, or which is selected', () => {
-    const selections = ['betting.strategy', 'gestures.config', 'game.config', ...DRILLS.map(d => `drills.${d}.config`)];
+  it('puts every setting in one place: the global screens, a module, or which configuration is selected', () => {
+    const selections = ['gestures.config', 'game.config', ...DRILLS.map(d => `drills.${d}.config`)];
     const global = ALL.filter(
-      key => /^(strategy|trueCount|gestures)\./.test(key) || (key.startsWith('display.') && !GAME_KEYS.includes(key)),
-    ).filter(key => key !== 'strategy.warnOnError' && !selections.includes(key));
-    const places = [
-      global,
-      BETTING_KEYS.filter(key => key !== ('betting.strategy' as SettingKey)),
-      GAME_KEYS,
-      ...DRILLS.map(DRILL_KEYS),
-      selections,
-    ];
+      key => key.startsWith('gestures.') || (key.startsWith('display.') && !GAME_KEYS.includes(key)),
+    ).filter(key => !selections.includes(key));
+    const places = [global, GAME_KEYS, ...DRILLS.map(DRILL_KEYS), selections];
     const counted = new Map<string, number>();
     for (const keys of places) for (const key of keys) counted.set(key, (counted.get(key) ?? 0) + 1);
-    // betting.warnOnError is on Allowed Bets, shown with the betting strategy but not part of it.
-    counted.set('betting.warnOnError', (counted.get('betting.warnOnError') ?? 0) + 1);
     expect(ALL.filter(key => counted.get(key) !== 1)).toEqual([]);
   });
 
-  it('leaves the game’s out of the betting strategy and the global settings', () => {
+  it('keeps the game’s strategy and betting with the game, and out of a drill’s', () => {
     expect(GAME_KEYS).toContain('rules.surrender');
-    expect(GAME_KEYS).toContain('mechanics.dealerSpeed');
-    expect(GAME_KEYS).not.toContain('betting.ramp');
-    expect(GAME_KEYS).not.toContain('strategy.system');
+    expect(GAME_KEYS).toContain('game.strategy.system');
+    expect(GAME_KEYS).toContain('game.betting.ramp');
     expect(GAME_KEYS).not.toContain('game.config');
+    expect(DRILL_KEYS('flash')).toContain('drills.flash.strategy.system');
+    expect(DRILL_KEYS('flash')).not.toContain('game.strategy.system');
   });
 
   it('keeps each drill to its own', () => {
@@ -73,5 +68,28 @@ describe('a configuration', () => {
     expect(saved.values).not.toHaveProperty('no.such');
     expect(saved.values['table.decks']).toBe(SETTINGS_SCHEMA['table.decks'].default);
     expect(GAME_SETS.read(undefined)).toEqual([]);
+  });
+});
+
+describe('a module’s own counting settings', () => {
+  it('are its own: one module’s strategy is nothing to do with another’s', () => {
+    const app = createServices({ backend: new MemoryBackend() });
+    app.settings.set('game.strategy.system', 32);
+    app.settings.set('drills.flash.strategy.system', 73);
+    expect(app.strategies.current(app.settings, 'game', 6).name).not.toBe(
+      app.strategies.current(app.settings, 'flash', 6).name,
+    );
+    // The game's rules build its tables; a drill keeps its own copy of them.
+    app.settings.set('rules.dealerHitsSoft17', false);
+    expect(strategyOptions(app.settings, 'game', 6).hitSoft17).toBe(false);
+    expect(strategyOptions(app.settings, 'flash', 6).hitSoft17).toBe(true);
+  });
+
+  it('give every module the same answers to begin with', () => {
+    const app = createServices({ backend: new MemoryBackend() });
+    const names = (['game', 'flash', 'depth', 'count', 'full'] as const).map(
+      scope => app.strategies.current(app.settings, scope, 6).name,
+    );
+    expect(new Set(names).size).toBe(1);
   });
 });

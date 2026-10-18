@@ -30,13 +30,13 @@ describe('statistics screen', () => {
     act(() => session.save());
     expect(stat('Total Initial Bets')).toBe('$1,010');
     expect(stat('Average Bet')).toBe('$505');
-    act(() => app.settings.set('trueCount.aceSideCount', true));
+    act(() => app.settings.set('game.trueCount.aceSideCount', true));
     expect(stat('Bet Count')).not.toBeNull();
   });
 
   it('shows the advanced count, the cards left the true count uses in bold', () => {
     const app = createTestApp();
-    app.settings.set('trueCount.remainingCards', 'inTray');
+    app.settings.set('game.trueCount.remainingCards', 'inTray');
     const session = new GameSession(app);
     renderScreen(<GameStats params={{ session }} />, { app });
     expect(screen.getAllByRole('columnheader', { name: 'Advanced Count' })).toHaveLength(2);

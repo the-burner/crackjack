@@ -37,7 +37,7 @@ export function BetSelect({
 }) {
   const app = useApp();
   const goBack = useGoBack();
-  const chipValue = chipParam ?? app.settings.get('betting.chipValue');
+  const chipValue = chipParam ?? app.settings.get('game.betting.chipValue');
   const sideBet = mode === 'sideBet';
   const heading = title ?? (sideBet ? 'Side Bet' : 'Allowed Bets');
   const [hands, setHands] = useState(() => Math.min(Math.max(1, initialHands), HAND_CHOICES.length));

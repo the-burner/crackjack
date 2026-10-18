@@ -91,7 +91,7 @@ export class GameSession {
     this.settings = app.settings;
     this.rules = rulesFrom(this.settings);
     this.table = this.tableFrom();
-    this.strategy = app.strategies.current(this.settings, this.table.decks);
+    this.strategy = app.strategies.current(this.settings, 'game', this.table.decks);
     this.sideBetGame = this.loadSideBetGame();
     this.counter = new Counter(this.strategy, this.trueCountSettings());
     this.stats = { ...app.gameStats.getState().value };
@@ -167,17 +167,17 @@ export class GameSession {
       },
       limits: get('table.limits'),
       maxCardsPerHand: MAX_CARDS_PER_HAND,
-      remainingCards: get('trueCount.remainingCards'),
+      remainingCards: get('game.trueCount.remainingCards'),
     };
   }
 
   trueCountSettings(): CounterSettings {
     const get: AppSettings['get'] = key => this.settings.get(key);
     return {
-      division: DIVISION[get('trueCount.resolution')],
-      lastDeck: LAST_DECK[get('trueCount.lastDeckResolution')],
-      rounding: ROUNDING[get('trueCount.rounding')],
-      aceSideCount: get('trueCount.aceSideCount'),
+      division: DIVISION[get('game.trueCount.resolution')],
+      lastDeck: LAST_DECK[get('game.trueCount.lastDeckResolution')],
+      rounding: ROUNDING[get('game.trueCount.rounding')],
+      aceSideCount: get('game.trueCount.aceSideCount'),
     };
   }
 
@@ -185,7 +185,7 @@ export class GameSession {
 
   /** Cards the true count treats as gone, by the Remaining Cards setting as it is now. */
   cardsGone(): number {
-    return this.game.cardsGone(this.settings.get('trueCount.remainingCards'));
+    return this.game.cardsGone(this.settings.get('game.trueCount.remainingCards'));
   }
 
   /**
@@ -216,8 +216,8 @@ export class GameSession {
   /** The bet the player's ramp calls for right now. */
   suggestedBet(): ExpectedBet {
     return expectedBet({
-      ramp: this.settings.get('betting.ramp'),
-      chipValue: this.settings.get('betting.chipValue'),
+      ramp: this.settings.get('game.betting.ramp'),
+      chipValue: this.settings.get('game.betting.chipValue'),
       count: this.betCount(),
     });
   }
@@ -235,7 +235,7 @@ export class GameSession {
     this.warnings = [];
     const humanSeats = this.humanSeats().slice(0, hands);
     const verdict = this.wongVerdict(false);
-    if (this.settings.get('betting.warnOnError')) {
+    if (this.settings.get('game.betting.warnOnError')) {
       if (verdict === null) this.checkBetting(betPerHand, humanSeats.length);
       else this.recordBetDecision(verdict);
     }
@@ -258,7 +258,7 @@ export class GameSession {
   wong(): GameEvent[] {
     this.warnings = [];
     const verdict = this.wongVerdict(true);
-    if (this.settings.get('betting.warnOnError') && verdict !== null) this.recordBetDecision(verdict);
+    if (this.settings.get('game.betting.warnOnError') && verdict !== null) this.recordBetDecision(verdict);
     // Graded as a bet, but not a round played.
     this.satOut = true;
     this.settledRound = null;
@@ -279,8 +279,11 @@ export class GameSession {
 
   /** The wong state the count now moves the shoe to. */
   nextWongPlaying(): boolean {
-    const rule = { wongIn: this.settings.get('betting.wongIn'), wongOut: this.settings.get('betting.wongOut') };
-    const was = this.wongPlaying ?? shoeStartsIn(rule, this.settings.get('betting.wongStartOut'));
+    const rule = {
+      wongIn: this.settings.get('game.betting.wongIn'),
+      wongOut: this.settings.get('game.betting.wongOut'),
+    };
+    const was = this.wongPlaying ?? shoeStartsIn(rule, this.settings.get('game.betting.wongStartOut'));
     return wongedIn(was, this.betCount(), rule);
   }
 
@@ -289,7 +292,7 @@ export class GameSession {
    * a message when wrong, '' when right, null when the bet itself is to be judged.
    */
   wongVerdict(wonged: boolean): string | null {
-    if (!this.settings.get('betting.wonging')) return null;
+    if (!this.settings.get('game.betting.wonging')) return null;
     const playing = this.nextWongPlaying();
     this.wongPlaying = playing;
     if (wonged) return playing ? 'That should have been a bet, not a Wong' : '';
@@ -309,7 +312,7 @@ export class GameSession {
   /** The count bets are judged by. */
   betCount(): number {
     const count = this.currentCount();
-    return this.settings.get('trueCount.aceSideCount') ? count.betCount : count.trueCount;
+    return this.settings.get('game.trueCount.aceSideCount') ? count.betCount : count.trueCount;
   }
 
   humanSeats(): number[] {
@@ -321,8 +324,8 @@ export class GameSession {
 
   checkBetting(betPerHand: number, hands: number): void {
     const check = checkBet({
-      ramp: this.settings.get('betting.ramp'),
-      chipValue: this.settings.get('betting.chipValue'),
+      ramp: this.settings.get('game.betting.ramp'),
+      chipValue: this.settings.get('game.betting.chipValue'),
       count: this.betCount(),
       betPerHand,
       hands,
@@ -365,7 +368,7 @@ export class GameSession {
   }
 
   checkAction(hand: Hand, action: GameAction): void {
-    if (!this.settings.get('strategy.warnOnError')) return;
+    if (!this.settings.get('game.strategy.warnOnError')) return;
     const check = checkPlay({
       strategy: this.strategy,
       rules: this.rules,
@@ -390,7 +393,7 @@ export class GameSession {
 
   /** The cards left in the shoe under each Remaining Cards choice, and the exact decks and true count for the one in use. */
   advancedCounts() {
-    const inUse = this.settings.get('trueCount.remainingCards');
+    const inUse = this.settings.get('game.trueCount.remainingCards');
     const total = this.game.shoe.decks * 52;
     const cardsLeft = {
       dealt: total - this.game.cardsGone('dealt'),
@@ -409,7 +412,7 @@ export class GameSession {
 
   /** The counts with the allowed estimation error's cards more and fewer gone, as the original checked a close call. */
   nearbyCounts(): Pick<PlayQuestion, 'counts' | 'shoe'>[] {
-    const error = this.settings.get('trueCount.allowedErrorCards');
+    const error = this.settings.get('game.trueCount.allowedErrorCards');
     if (!error) return [];
     const gone = this.cardsGone();
     const { decks } = this.game.shoe;
@@ -423,12 +426,12 @@ export class GameSession {
   }
 
   checkInsuranceDecision(took: boolean): void {
-    if (!this.settings.get('strategy.warnOnError')) return;
+    if (!this.settings.get('game.strategy.warnOnError')) return;
     const check = checkInsurance({
       strategy: this.strategy,
       counts: this.counts,
       hand: this.game.activeHand,
-      tenSideCount: this.settings.get('trueCount.tenSideCount')
+      tenSideCount: this.settings.get('game.trueCount.tenSideCount')
         ? { tens: this.counter.tens, decks: this.table.decks }
         : null,
       tookInsurance: took,

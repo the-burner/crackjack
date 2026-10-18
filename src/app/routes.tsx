@@ -3,6 +3,7 @@
 // those stay as they are underneath.
 
 import type { ComponentType, ReactNode } from 'react';
+import type { ScopeName } from '@/settings/scopes';
 import { useState } from 'react';
 import { createHashRouter, Navigate, Outlet, useNavigationType } from 'react-router';
 import { cn } from '@/lib/utils';
@@ -65,6 +66,24 @@ const tables = () => import('@/screens/strategy/tables').then(m => m.StrategyTab
 const betting = () => import('@/screens/strategy/betting').then(m => m.Betting);
 const betRow = () => import('@/screens/strategy/betting').then(m => m.BetSelectRoute);
 
+/** One module's own Playing Strategy and TC Calcs screens (settings/scopes.ts). */
+const counting = (scope: ScopeName, prefix: string, name: string): RouteObject[] => [
+  {
+    path: `${prefix}/strategy`,
+    ...page(`${name}.strategy`, async () => {
+      const { PlayingStrategy } = await import('@/screens/strategy/playing-strategy');
+      return () => <PlayingStrategy scope={scope} />;
+    }),
+  },
+  {
+    path: `${prefix}/true-count`,
+    ...page(`${name}.trueCount`, async () => {
+      const { TrueCount } = await import('@/screens/strategy/true-count');
+      return () => <TrueCount scope={scope} />;
+    }),
+  },
+];
+
 /** Every screen, with the dialogs, toasts and help sheet above them. */
 function Layout() {
   return (
@@ -89,14 +108,15 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: 'settings', ...page('settings', () => import('@/screens/settings/hub').then(m => m.SettingsHub)) },
-      settings('strategy', 'strategy', () =>
-        import('@/screens/strategy/playing-strategy').then(m => m.PlayingStrategy),
-      ),
-      settings('true-count', 'trueCount', () => import('@/screens/strategy/true-count').then(m => m.TrueCount)),
       settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
       settings('gestures', 'gestures', () => import('@/screens/settings/gestures').then(m => m.Gestures)),
-      settings('betting', 'betting', betting),
-      settings('betting/:row', 'betting.select', betRow),
+      ...counting('game', 'game', 'game'),
+      game('betting', 'betting', betting),
+      game('betting/:row', 'betting.select', betRow),
+      ...counting('flash', 'drills/flash', 'drills.flash'),
+      ...counting('depth', 'drills/depth', 'drills.depth'),
+      ...counting('count', 'drills/count', 'drills.count'),
+      ...counting('full', 'drills/full', 'drills.full'),
       { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
       game('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
       game('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),
@@ -112,14 +132,6 @@ export const routes: RouteObject[] = [
       game('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),
       game('mechanics', 'mechanics', () => import('@/screens/settings/mechanics').then(m => m.Mechanics)),
       { path: 'strategy/tables', ...page('strategy.tables', tables) },
-      {
-        path: 'drills/spread',
-        ...page('drills.spread.options', () => import('@/drills/spread/options').then(m => m.SpreadOptions)),
-      },
-      {
-        path: 'spread-calculator',
-        ...page('spreadCalculator', () => import('@/screens/spread-calculator').then(m => m.SpreadCalculator)),
-      },
       {
         path: 'drills/flash',
         ...page('drills.flash.options', () => import('@/drills/flash/options').then(m => m.FlashOptions)),
@@ -162,8 +174,8 @@ export const routes: RouteObject[] = [
         children: [
           { path: 'stats', ...page('game.stats', () => import('@/game/screens/stats').then(m => m.GameStatsRoute)) },
           { path: 'error', ...page('strategy.tables', tables) },
-          { path: 'customize', ...page('settings.betting', betting) },
-          { path: 'customize/:row', ...page('settings.betting.select', betRow) },
+          { path: 'customize', ...page('game.betting', betting) },
+          { path: 'customize/:row', ...page('game.betting.select', betRow) },
           {
             path: 'side-bet/:spot',
             ...page('game.betSelect', () => import('@/game/screens/bet-select').then(m => m.SideBetRoute)),

@@ -19,40 +19,40 @@ const gridCell = (grid: Locator, row: number, column: number) =>
     .getByRole('cell')
     .nth(column + 1);
 
-/** Opens the settings hub on a clean install. */
+/** Opens Blackjack's options, which hold the game's own strategy screens, on a clean install. */
 async function openHub(page: Page) {
   await page.goto('/index.html');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.locator('[data-screen="settings"]')).toBeVisible();
+  await page.locator('[data-screen="home"] [data-action="play"]').click();
+  await expect(page.locator('[data-screen="game.options"]')).toBeVisible();
 }
 
 test.describe('Playing Strategy', () => {
   test('changes the strategy, the index set, the range and the rules', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Playing Strategy', 'settings.strategy');
+    const el = await openFromHub(page, 'Playing Strategy', 'game.strategy');
 
     await choose(el, 'Strategy', 'Halves');
-    expect(await setting(page, 'strategy.system')).toBe(32);
+    expect(await setting(page, 'game.strategy.system')).toBe(32);
 
     await choose(el, 'Indices', 'Illustrious 18');
-    expect(await setting(page, 'strategy.indexSet')).toBe('illustrious18');
+    expect(await setting(page, 'game.strategy.indexSet')).toBe('illustrious18');
 
     await el.getByRole('switch', { name: 'No hole card' }).check();
     expect(await setting(page, 'rules.noHoleCard')).toBe(true);
 
     await el.getByRole('button', { name: 'Index range minimum: -99' }).click();
     await answerDialog(page, '-4');
-    expect(await setting(page, 'strategy.indexRangeMin')).toBe(-4);
+    expect(await setting(page, 'game.strategy.indexRangeMin')).toBe(-4);
   });
 });
 
 test.describe('Strategy tables', () => {
   test('shows the selected strategy and switches between the views', async ({ page }) => {
     await openHub(page);
-    await page.evaluate(() => window.app.settings.set('strategy.system', 30));
-    const strategy = await openFromHub(page, 'Playing Strategy', 'settings.strategy');
+    await page.evaluate(() => window.app.settings.set('game.strategy.system', 30));
+    const strategy = await openFromHub(page, 'Playing Strategy', 'game.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
@@ -77,20 +77,22 @@ test.describe('Strategy tables', () => {
 
   test('picks custom index cells and uses them for the Custom index set', async ({ page }) => {
     await openHub(page);
-    const strategy = await openFromHub(page, 'Playing Strategy', 'settings.strategy');
+    const strategy = await openFromHub(page, 'Playing Strategy', 'game.strategy');
     await strategy.locator('[data-action="select-indices"]').click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
     await expect(el.getByText('0 of 80 cells selected')).toBeVisible();
     await gridCell(el.getByRole('table', { name: 'Hard Hit/Stand' }), 1, 8).click();
     await expect(el.getByText('1 of 80 cells selected')).toBeVisible();
-    expect(await page.evaluate(() => window.app.settings.get('strategy.customIndexMask').hardStand[1][8])).toBe(true);
+    expect(await page.evaluate(() => window.app.settings.get('game.strategy.customIndexMask').hardStand[1][8])).toBe(
+      true,
+    );
 
     await el.getByRole('button', { name: 'Back' }).click();
     await choose(strategy, 'Indices', 'Custom');
     // 16 vs ten keeps its index; 16 vs nine reverts to basic strategy (hit).
     const tables = await page.evaluate(() => {
-      const t = window.app.strategies.current(window.app.settings, 6).tables.hardStand;
+      const t = window.app.strategies.current(window.app.settings, 'game', 6).tables.hardStand;
       return [t[1][8], t[1][7]];
     });
     expect(tables).toEqual([0, 32000]);
@@ -101,7 +103,7 @@ test.describe('Strategy tables', () => {
     await page.evaluate(() => {
       window.app.errorTallies.record('hardStand', 1, 8);
     });
-    const strategy = await openFromHub(page, 'Playing Strategy', 'settings.strategy');
+    const strategy = await openFromHub(page, 'Playing Strategy', 'game.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();
 
     const el = page.locator('[data-screen="strategy.tables"]');
@@ -115,7 +117,7 @@ test.describe('Strategy tables', () => {
 
 test('True Count Calcs writes every control', async ({ page }) => {
   await openHub(page);
-  const el = await openFromHub(page, 'True Count Calcs', 'settings.trueCount');
+  const el = await openFromHub(page, 'TC Calcs', 'game.trueCount');
 
   await choose(el, 'True Count Resolution', 'Quarter Deck');
   await choose(el, 'True Count Division', 'Floor');
@@ -124,11 +126,11 @@ test('True Count Calcs writes every control', async ({ page }) => {
   await el.getByRole('button', { name: 'Allowed estimation error: 13' }).click();
   await answerDialog(page, '3');
 
-  expect(await setting(page, 'trueCount.resolution')).toBe('quarter');
-  expect(await setting(page, 'trueCount.rounding')).toBe('floor');
-  expect(await setting(page, 'trueCount.remainingCards')).toBe('dealt');
-  expect(await setting(page, 'trueCount.aceSideCount')).toBe(true);
-  expect(await setting(page, 'trueCount.allowedErrorCards')).toBe(3);
+  expect(await setting(page, 'game.trueCount.resolution')).toBe('quarter');
+  expect(await setting(page, 'game.trueCount.rounding')).toBe('floor');
+  expect(await setting(page, 'game.trueCount.remainingCards')).toBe('dealt');
+  expect(await setting(page, 'game.trueCount.aceSideCount')).toBe(true);
+  expect(await setting(page, 'game.trueCount.allowedErrorCards')).toBe(3);
 });
 
 const bets = (el: Locator) => el.getByRole('table', { name: 'Bets' });
@@ -136,7 +138,7 @@ const bets = (el: Locator) => el.getByRole('table', { name: 'Bets' });
 test.describe('Allowed Bets', () => {
   test('shows the count column only when betting errors are flagged', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategy', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategy', 'game.betting');
     // Warning on betting errors is on by default.
     const firstCount = bets(el).locator('tbody tr').first().getByRole('cell').first();
     await expect(firstCount).toHaveText('<=0');
@@ -149,7 +151,7 @@ test.describe('Allowed Bets', () => {
 
   test('resizes the table and edits a row', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategy', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategy', 'game.betting');
     // The default ramp has six bets: 1, 2, 4, 6, 12 and 16 chips.
     await expect(bets(el).locator('tbody tr')).toHaveCount(6);
 
@@ -158,7 +160,7 @@ test.describe('Allowed Bets', () => {
     await expect(bets(el).locator('tbody tr')).toHaveCount(3);
 
     await bets(el).locator('tbody tr').nth(2).click();
-    const pad = page.locator('[data-screen="settings.betting.select"]');
+    const pad = page.locator('[data-screen="game.betting.select"]');
     await expect(pad).toBeVisible();
     await pad.getByRole('button', { name: '3x' }).click();
     // 200 chips on three hands is over the limit, so that button is disabled.
@@ -167,7 +169,7 @@ test.describe('Allowed Bets', () => {
 
     await expect(el).toBeVisible();
     await expect(bets(el).locator('tbody tr').nth(2).getByRole('cell').nth(1)).toHaveText('3x25');
-    expect(await setting(page, 'betting.ramp')).toEqual({
+    expect(await setting(page, 'game.betting.ramp')).toEqual({
       minCount: 0,
       rows: [
         { chips: 1, hands: 1 },
@@ -179,9 +181,9 @@ test.describe('Allowed Bets', () => {
 
   test('takes a custom bet', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategy', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategy', 'game.betting');
     await bets(el).locator('tbody tr').first().click();
-    const pad = page.locator('[data-screen="settings.betting.select"]');
+    const pad = page.locator('[data-screen="game.betting.select"]');
     await pad.locator('[data-action="custom-bet"]').click();
     await answerDialog(page, '400');
     // Clamped to the 200 chip limit.
@@ -190,9 +192,9 @@ test.describe('Allowed Bets', () => {
 
   test('sets the chip value', async ({ page }) => {
     await openHub(page);
-    const el = await openFromHub(page, 'Betting Strategy', 'settings.betting');
+    const el = await openFromHub(page, 'Betting Strategy', 'game.betting');
     await choose(el, 'Chip Value', '$25');
-    expect(await setting(page, 'betting.chipValue')).toBe(25);
+    expect(await setting(page, 'game.betting.chipValue')).toBe(25);
   });
 });
 

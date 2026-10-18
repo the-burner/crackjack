@@ -102,7 +102,7 @@ describe('the suggested bet', () => {
   });
 
   it('still reads the ramp when the ace side count is on', () => {
-    const session = riggedSession([], makeApp({ 'trueCount.aceSideCount': true }));
+    const session = riggedSession([], makeApp({ 'game.trueCount.aceSideCount': true }));
     expect(session.counts.betCount).toBe(0);
     expect(session.suggestedBet()).toMatchObject({ betPerHand: 25, hands: 1 });
   });
@@ -125,20 +125,20 @@ describe('bet warnings', () => {
   });
 
   it('checks nothing when bet warnings are off', () => {
-    const session = riggedSession([], makeApp({ 'betting.warnOnError': false }));
+    const session = riggedSession([], makeApp({ 'game.betting.warnOnError': false }));
     session.startRound({ betPerHand: 10 });
     expect(session.takeWarnings()).toEqual([]);
     expect(session.stats.betDecisions).toBe(0);
   });
 
   it('does not count a round with nothing bet as the lowest bet', () => {
-    const session = riggedSession([], makeApp({ 'betting.warnOnError': false }));
+    const session = riggedSession([], makeApp({ 'game.betting.warnOnError': false }));
     session.startRound({ betPerHand: 0 });
     expect(session.stats).toMatchObject({ rounds: 1, totalBet: 0, highBet: 0, lowBet: 0 });
   });
 
   it('checks the ramp against the ace-adjusted count when that is on', () => {
-    const session = riggedSession([], makeApp({ 'trueCount.aceSideCount': true }));
+    const session = riggedSession([], makeApp({ 'game.trueCount.aceSideCount': true }));
     session.startRound({ betPerHand: 10 });
     expect(session.takeWarnings()).toEqual(['You should have bet $25']);
   });
@@ -178,14 +178,14 @@ describe('insurance', () => {
   });
 
   it('weighs the ten side count when that is on', () => {
-    const session = insuranceRound(makeApp({ 'trueCount.tenSideCount': true }));
+    const session = insuranceRound(makeApp({ 'game.trueCount.tenSideCount': true }));
     session.startRound({ betPerHand: 25 });
     session.takeInsurance();
     expect(session.takeWarnings()).toEqual(['You should have taken no insurance']);
   });
 
   it('checks nothing when strategy warnings are off', () => {
-    const session = insuranceRound(makeApp({ 'strategy.warnOnError': false }));
+    const session = insuranceRound(makeApp({ 'game.strategy.warnOnError': false }));
     session.startRound({ betPerHand: 25 });
     session.takeInsurance();
     expect(session.takeWarnings()).toEqual([]);
@@ -212,7 +212,7 @@ describe('actions', () => {
   it('checks nothing when strategy warnings are off', () => {
     const session = riggedSession(
       deal(card(10), card(9), card(6), card(5)),
-      makeApp({ 'strategy.warnOnError': false }),
+      makeApp({ 'game.strategy.warnOnError': false }),
     );
     session.startRound({ betPerHand: 25 });
     session.act('stand');
@@ -427,8 +427,8 @@ describe('the cards the true count treats as gone', () => {
     const app = makeApp({
       'table.decks': 6,
       'table.burnCards': 0,
-      'trueCount.resolution': 'exact',
-      'trueCount.remainingCards': remainingCards,
+      'game.trueCount.resolution': 'exact',
+      'game.trueCount.remainingCards': remainingCards,
     });
     const session = riggedSession(deal(card(10), card(9), card(6), card(5)), app);
     session.startRound({ betPerHand: 25 });
@@ -463,13 +463,13 @@ describe('the error tallies', () => {
   });
 
   it('leave out an extended strategy, whose columns are not the upcard', () => {
-    expect(wrongDouble({ 'strategy.system': 92 })).toEqual([]);
+    expect(wrongDouble({ 'game.strategy.system': 92 })).toEqual([]);
   });
 });
 
 describe('the advanced count', () => {
   it('gives the cards left under each choice, the exact decks left and the exact true count', () => {
-    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.remainingCards': 'shown' });
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'game.trueCount.remainingCards': 'shown' });
     // 10 and 6 against a 5 up: a running count of +1 with the hole card face down.
     const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
     session.startRound({ betPerHand: 25 });
@@ -483,7 +483,7 @@ describe('the advanced count', () => {
 
 describe('the counts at the start of the round', () => {
   it('are taken as betting opens, and kept through the round', () => {
-    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.remainingCards': 'shown' });
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'game.trueCount.remainingCards': 'shown' });
     const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
     expect(session.roundStartCounts).toBeNull();
     const { runningCount, decksRemaining, trueCount } = session.counts;
@@ -500,10 +500,10 @@ describe('the true count between rounds', () => {
     const app = makeApp({
       'table.decks': 1,
       'table.burnCards': 0,
-      'trueCount.remainingCards': 'inTray',
-      'trueCount.resolution': 'exact',
-      'trueCount.lastDeckResolution': 'exact',
-      'trueCount.rounding': 'round',
+      'game.trueCount.remainingCards': 'inTray',
+      'game.trueCount.resolution': 'exact',
+      'game.trueCount.lastDeckResolution': 'exact',
+      'game.trueCount.rounding': 'round',
     });
     // 2 and 3 against 4 up and 5 in the hole; the dealer draws 6 and 2 to stand on 17. A running count of +6.
     const session = riggedSession(deal(card(2), card(4), card(3), card(5), [card(6), card(2)]), app);
@@ -520,18 +520,18 @@ describe('the true count', () => {
     const app = makeApp({
       'table.decks': 1,
       'table.burnCards': 0,
-      'trueCount.resolution': 'exact',
-      'trueCount.lastDeckResolution': 'exact',
-      'trueCount.rounding': 'truncate',
+      'game.trueCount.resolution': 'exact',
+      'game.trueCount.lastDeckResolution': 'exact',
+      'game.trueCount.rounding': 'truncate',
     });
     const session = riggedSession(deal(card(2), card(4), card(3), card(5), [card(6), card(2)]), app);
     playRound(session);
     session.nextRound();
     // 6 over the 46 cards left: 6.78.
     expect(session.counts.trueCount).toBe(6);
-    app.settings.set('trueCount.rounding', 'round');
+    app.settings.set('game.trueCount.rounding', 'round');
     expect(session.counts.trueCount).toBe(7);
-    app.settings.set('trueCount.remainingCards', 'dealt');
+    app.settings.set('game.trueCount.remainingCards', 'dealt');
     expect(session.counts.decksRemaining).toBeCloseTo(46 / 52);
   });
 });
@@ -539,7 +539,7 @@ describe('the true count', () => {
 describe('a shuffle while betting', () => {
   it('starts the round over on the new shoe', () => {
     // Exact decks, so the round's cards show in the decks left.
-    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'trueCount.resolution': 'exact' });
+    const app = makeApp({ 'table.decks': 6, 'table.burnCards': 0, 'game.trueCount.resolution': 'exact' });
     const session = riggedSession(deal(card(10), card(5), card(6), card(9)), app);
     session.startBetting();
     session.startRound({ betPerHand: 25 });
@@ -556,7 +556,7 @@ describe('wonging', () => {
   const WITH_COMPUTER: SettingsPatch = {
     'table.seatCount': 2,
     'table.computerSeats': [false, true, false, false, false, false],
-    'betting.wonging': true,
+    'game.betting.wonging': true,
   };
   /** Sets the running count that makes the true count `count` over the decks left now. */
   const setTrueCount = (session: GameSession, count: number) => {
@@ -602,19 +602,19 @@ describe('wonging', () => {
   });
 
   it('begins a shoe wonged out when told to, while Wong In is above 0', () => {
-    const session = at(0, { ...WITH_COMPUTER, 'betting.wongStartOut': true });
+    const session = at(0, { ...WITH_COMPUTER, 'game.betting.wongStartOut': true });
     expect(session.shouldWong()).toBe(true);
   });
 
   it('asks nothing of a solo player, who must play every hand', () => {
-    const session = at(-3, { 'betting.wonging': true });
+    const session = at(-3, { 'game.betting.wonging': true });
     expect(session.soloNextRound()).toBe(true);
     session.startRound({ betPerHand: minimumBet(session) });
     expect(session.takeWarnings()).toEqual([]);
   });
 
   it('asks nothing when wonging is off', () => {
-    const session = at(-3, { ...WITH_COMPUTER, 'betting.wonging': false });
+    const session = at(-3, { ...WITH_COMPUTER, 'game.betting.wonging': false });
     session.startRound({ betPerHand: minimumBet(session) });
     expect(session.takeWarnings()).toEqual([]);
   });

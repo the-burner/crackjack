@@ -22,11 +22,9 @@ const MODULES = [
   ['Deck Estimation and TC Conversion', PATHS['drills.depth.options']],
   ['Simple Running Count', PATHS['drills.count.options']],
   ['Compound Running Count', PATHS['drills.full.options']],
-  ['Bet Spread Flash Cards', PATHS['drills.spread.options']],
-  ['Bet Spread Calculator', PATHS.spreadCalculator],
   [
     'Playing Strategy Charts',
-    PATHS['strategy.tables'] + tablesSearch({ mode: 'view', title: 'Playing Strategy Charts' }),
+    PATHS['strategy.tables'] + tablesSearch({ mode: 'view', pick: true, title: 'Playing Strategy Charts' }),
   ],
 ] as const;
 

@@ -12,7 +12,9 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import type { CheckListLayout } from '@/components/ui/check-list';
-import { SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { useNavigate } from 'react-router';
+import { PATHS } from '@/app/paths';
 import { Slider } from '@/components/ui/slider';
 import { DurationPicker } from '@/components/ui/time-wheel';
 import { Column, ScreenLayout } from '@/components/screen-layout';
@@ -43,11 +45,23 @@ export function DrillOptionsScreen({
   children: ReactNode;
 }) {
   const app = useApp();
+  const navigate = useNavigate();
   return (
     <ScreenLayout title={title} help={help}>
       <Column>
         <PresetPicker kind={DRILL_SETS[drill].kind} store={app.drillConfigs[drill]} />
         {children}
+        {/* The drill's own counting system and true count, as the game has its own. */}
+        <Section title="Strategy">
+          <OptionGroup>
+            <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.strategy`])}>
+              Playing Strategy
+            </ListRow>
+            <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.trueCount`])}>
+              TC Calcs
+            </ListRow>
+          </OptionGroup>
+        </Section>
         <Button variant="primary" icon="play" block className="mt-1" onClick={onLaunch} data-action="launch">
           Play
         </Button>

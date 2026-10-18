@@ -12,6 +12,7 @@ import { MemoryBackend } from '@/services/storage';
 import { rulesFrom } from '@/game/engine/rules';
 import { Settings } from '@/settings/store';
 import { SETTINGS_SCHEMA, type SettingKey, type SettingsPatch } from '@/settings/schema';
+import { SCOPES } from '@/settings/scopes';
 import type { Sound } from '@/services/sound';
 import { Storage } from '@/services/storage';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -156,7 +157,11 @@ describe('speeds reaching the table', () => {
 
 describe('true count settings reaching the counter', () => {
   // These two reach the engine by other routes than the counter's settings.
-  const elsewhere = ['trueCount.tenSideCount', 'trueCount.remainingCards', 'trueCount.allowedErrorCards'];
+  const elsewhere = [
+    'game.trueCount.tenSideCount',
+    'game.trueCount.remainingCards',
+    'game.trueCount.allowedErrorCards',
+  ];
 
   for (const key of keysUnder('trueCount.').filter(key => !elsewhere.includes(key))) {
     const other = otherValue(key);
@@ -172,7 +177,7 @@ describe('true count settings reaching the counter', () => {
 
   it('side counts the tens for the insurance advice when that is on', () => {
     const app = makeApp();
-    app.settings.update({ 'trueCount.tenSideCount': true, 'display.showTrueCount': true });
+    app.settings.update({ 'game.trueCount.tenSideCount': true, 'display.showTrueCount': true });
     const session = new GameSession(app);
     session.startRound({ betPerHand: 10, hands: 1 });
     expect(session.counts.tens).toBeTypeOf('number');
@@ -200,10 +205,15 @@ describe('every setting does something', () => {
 
   const consumers = new Map<string, boolean>();
   const sources = sourceFiles.filter(file => !isEditor(file)).map(file => readFileSync(file, 'utf8'));
+  /** A module's own copy of a setting is read by the shared name its screens use (settings/scopes.ts). */
+  const names = (key: string) => {
+    const scope = Object.values(SCOPES).find(prefix => key.startsWith(`${prefix}.`));
+    return scope ? [key, key.slice(scope.length + 1)] : [key];
+  };
   for (const key of Object.keys(SETTINGS_SCHEMA)) {
     consumers.set(
       key,
-      sources.some(text => text.includes(`'${key}'`)),
+      names(key).some(name => sources.some(text => text.includes(`'${name}'`))),
     );
   }
 

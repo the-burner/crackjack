@@ -11,7 +11,7 @@ const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBacke
 describe('the strategy catalog', () => {
   it('offers the Crackjack strategy first, since it is the default', () => {
     expect(BUILTIN_STRATEGIES[0]).toEqual({ id: 100, name: "Crackjack's High-Low Strategy" });
-    expect(SETTINGS_SCHEMA['strategy.system'].default).toBe(100);
+    expect(SETTINGS_SCHEMA['game.strategy.system'].default).toBe(100);
   });
 
   it('lists what the Playing Strategy screen shows', () => {
@@ -80,8 +80,12 @@ describe('building a strategy', () => {
 describe('the options the settings imply', () => {
   it('reads the rules and the index set out of the settings', () => {
     const s = settings();
-    s.update({ 'rules.dealerHitsSoft17': true, 'rules.doubleAfterSplit': false, 'strategy.indexSet': 'illustrious18' });
-    expect(strategyOptions(s, 2)).toMatchObject({
+    s.update({
+      'rules.dealerHitsSoft17': true,
+      'rules.doubleAfterSplit': false,
+      'game.strategy.indexSet': 'illustrious18',
+    });
+    expect(strategyOptions(s, 'game', 2)).toMatchObject({
       decks: 2,
       hitSoft17: true,
       doubleAfterSplit: false,
@@ -91,24 +95,24 @@ describe('the options the settings imply', () => {
 
   it('passes the custom mask only when the custom index set is chosen', () => {
     const s = settings();
-    expect(strategyOptions(s, 6).customMask).toBe(null);
-    s.set('strategy.indexSet', 'custom');
-    expect(strategyOptions(s, 6).customMask).toEqual(s.get('strategy.customIndexMask'));
+    expect(strategyOptions(s, 'game', 6).customMask).toBe(null);
+    s.set('game.strategy.indexSet', 'custom');
+    expect(strategyOptions(s, 'game', 6).customMask).toEqual(s.get('game.strategy.customIndexMask'));
   });
 
   it('forces the initial running count only when the player asked for it', () => {
     const s = settings();
-    s.set('strategy.initialCount', 4);
-    expect(strategyOptions(s, 6).forcedInitialRunningCount).toBe(null);
-    s.set('strategy.adjustInitialCount', true);
-    expect(strategyOptions(s, 6).forcedInitialRunningCount).toBe(4);
+    s.set('game.strategy.initialCount', 4);
+    expect(strategyOptions(s, 'game', 6).forcedInitialRunningCount).toBe(null);
+    s.set('game.strategy.adjustInitialCount', true);
+    expect(strategyOptions(s, 'game', 6).forcedInitialRunningCount).toBe(4);
   });
 
   it('builds the selected strategy, or an overridden one', () => {
     const s = settings();
     const library = new StrategyLibrary();
-    s.set('strategy.system', 5);
-    expect(library.current(s, 6)).toBe(library.build(5, strategyOptions(s, 6)));
-    expect(library.current(s, 6, { system: 30 })).toBe(library.build(30, strategyOptions(s, 6)));
+    s.set('game.strategy.system', 5);
+    expect(library.current(s, 'game', 6)).toBe(library.build(5, strategyOptions(s, 'game', 6)));
+    expect(library.current(s, 'game', 6, { system: 30 })).toBe(library.build(30, strategyOptions(s, 'game', 6)));
   });
 });

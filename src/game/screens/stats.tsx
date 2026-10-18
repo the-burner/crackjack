@@ -54,8 +54,8 @@ function statRows(session: GameSession | undefined, get: SettingReader): StatRow
     row('Remaining Decks', round2(counts.decksRemaining)),
     row('True Count', round1(counts.trueCount)),
   ];
-  if (get('trueCount.aceSideCount')) out.push(row('Bet Count', round1(counts.betCount)));
-  if (get('trueCount.tenSideCount')) out.push(row('Ten Count', counts.tens));
+  if (get('game.trueCount.aceSideCount')) out.push(row('Bet Count', round1(counts.betCount)));
+  if (get('game.trueCount.tenSideCount')) out.push(row('Ten Count', counts.tens));
   const advanced = session.advancedCounts();
   out.push(
     section('Advanced Count'),

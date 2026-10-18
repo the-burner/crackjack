@@ -256,7 +256,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
 
   const sideBetPicker = createSideBetPicker({
     open: nav.sideBet,
-    chipValue: () => settings.get('betting.chipValue'),
+    chipValue: () => settings.get('game.betting.chipValue'),
     onChange: sideBets => setSideBet(sideBetLabel(sideBets)),
   });
 
@@ -270,7 +270,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   });
 
   /** The cards gone as the player has seen them, by Remaining Cards. */
-  const shownCardsGone = () => state.cardsGone(settings.get('trueCount.remainingCards'));
+  const shownCardsGone = () => state.cardsGone(settings.get('game.trueCount.remainingCards'));
 
   function pauses() {
     return {
@@ -539,8 +539,8 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
   /** The bets the overlay offers, from the settings as they are now. */
   function betSource(): BetSource {
     return {
-      ramp: settings.get('betting.ramp'),
-      chipValue: settings.get('betting.chipValue'),
+      ramp: settings.get('game.betting.ramp'),
+      chipValue: settings.get('game.betting.chipValue'),
     };
   }
 

@@ -43,7 +43,7 @@ describe('each screen gets its own help', () => {
 
   it('tells the bet picker apart from the betting settings', () => {
     expect(HELP['game.betSelect']).toBeDefined();
-    expect(HELP['game.betSelect']).not.toBe(HELP['settings.betting']);
+    expect(HELP['game.betSelect']).not.toBe(HELP['game.betting']);
     // The picker is where a bet is chosen, not where the ramp is configured.
     expect(HELP['game.betSelect']).not.toContain('Warning on Betting Error');
   });

@@ -3,7 +3,7 @@
 // list of specialty plays. In "editMask" mode tapping a cell picks or unpicks
 // it in a 6 x 10 x 10 boolean mask held in a setting.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { tablesParams } from '@/app/paths';
 import { useApp, useSettings } from '@/react/app-context';
@@ -14,6 +14,10 @@ import { Select } from '@/components/ui/select';
 import { SettingsGroup } from '@/components/ui/settings-group';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
+import { decksOf, scopedKey } from '@/settings/scopes';
+import type { ScopeName } from '@/settings/scopes';
+import { DECKS } from '@/settings/schema';
+import type { SettingKey } from '@/settings/schema';
 import {
   TABLE_VIEWS,
   viewByKey,
@@ -51,11 +55,15 @@ const CHART_VARS: Record<string, string> = {
 };
 const themed = (color: string) => (CHART_VARS[color] ? `var(${CHART_VARS[color]})` : color);
 
-/** Settings holding the 6 boolean grids a mask is edited in. */
-export type MaskKey = 'strategy.customIndexMask' | 'drills.flash.customHands';
+/** Settings holding the 6 boolean grids a mask is edited in: a module's index mask, or custom hands. */
+export type MaskKey = Extract<SettingKey, `${string}.strategy.customIndexMask` | 'drills.flash.customHands'>;
 
 export type TablesParams = {
   mode?: 'view' | 'editMask';
+  /** Whose strategy and mask: the module the screen was opened from. */
+  scope?: ScopeName;
+  /** Lets the strategy and its decks be picked here (Playing Strategy Charts). */
+  pick?: boolean;
   maskKey?: MaskKey | null;
   /** Deck count the tables are built for. */
   decks?: number;
@@ -71,18 +79,26 @@ export type TablesParams = {
 export function StrategyTables({ params }: { params: TablesParams }) {
   const app = useApp();
   const settings = useSettings();
-  const { mode = 'view', maskKey = null, title = 'Tables', highlight = null } = params;
+  const { mode = 'view', scope = 'game', maskKey = null, title = 'Tables', highlight = null } = params;
   const editingMask = mode === 'editMask' && Boolean(maskKey);
-  // Built once, for the settings the screen opened with.
-  const [strategy] = useState(() => {
-    const decks = params.decks ?? settings.get('table.decks');
-    const system = params.system ?? settings.get('strategy.system');
+  // Picked here when the screen is opened to look at the tables; otherwise the module's own.
+  const [picked, setPicked] = useState(() => ({
+    system: params.system ?? Number(settings.get(scopedKey(scope, 'strategy.system'))),
+    decks: params.decks ?? decksOf(settings, scope),
+  }));
+  // Built for the settings it was opened with, and for whatever is picked here.
+  const strategy = useMemo(() => {
     // Picking custom indices needs every index visible, so the index limits are
     // ignored while the custom-index mask is edited.
-    const pickingIndices = editingMask && maskKey === 'strategy.customIndexMask';
-    const options = strategyOptions(settings, decks);
-    return app.strategies.build(system, pickingIndices ? { ...options, indexSet: 'all', customMask: null } : options);
-  });
+    const pickingIndices = editingMask && maskKey?.endsWith('strategy.customIndexMask');
+    const options = strategyOptions(settings, scope, picked.decks);
+    return app.strategies.build(
+      picked.system,
+      pickingIndices ? { ...options, indexSet: 'all', customMask: null } : options,
+    );
+    // Built once for the module's settings as they were; only the pickers change it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked]);
   const [view, setView] = useState(
     () => (params.view && TABLE_VIEWS.find(v => v.table === params.view || v.key === params.view)) || TABLE_VIEWS[0],
   );
@@ -165,8 +181,25 @@ export function StrategyTables({ params }: { params: TablesParams }) {
     <ScreenLayout title={title} help="strategy.tables">
       <Column wide>
         <SettingsGroup>
+          {params.pick && (
+            <>
+              <Select
+                aria-label="Strategy"
+                options={app.strategies.list().map(({ id, name }) => ({ value: id, label: name }))}
+                value={picked.system}
+                onChange={system => setPicked(was => ({ ...was, system }))}
+              />
+              <Select
+                label="Decks"
+                aria-label="Decks"
+                options={DECKS.map(value => ({ value, label: `${value}` }))}
+                value={picked.decks}
+                onChange={decks => setPicked(was => ({ ...was, decks }))}
+              />
+            </>
+          )}
           <Select
-            label={strategy.name}
+            label={params.pick ? 'Table' : strategy.name}
             aria-label="Table"
             options={views}
             value={view.key}

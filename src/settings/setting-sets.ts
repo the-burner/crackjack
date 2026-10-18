@@ -25,10 +25,9 @@ const withPrefix = (...prefixes: string[]) =>
     key => prefixes.some(p => key.startsWith(`${p}.`)) && !SELECTION_KEYS.includes(key as PresetSelectionKey),
   );
 
-/** Every setting on Game Options and the screens it opens. */
+/** Every setting on Blackjack's options and the screens it opens, its strategy and betting among them. */
 export const GAME_KEYS: readonly SettingKey[] = [
-  ...withPrefix('table', 'rules', 'bonuses', 'dealerErrors', 'peeking', 'mechanics'),
-  'strategy.warnOnError',
+  ...withPrefix('game', 'table', 'rules', 'bonuses', 'dealerErrors', 'peeking', 'mechanics'),
   'display.hideActionButtons',
   'display.hideDiscardTray',
   'display.hideShoe',

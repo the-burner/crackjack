@@ -43,11 +43,11 @@ const BASE = {
   'table.computerSeats': [false, false, false, false, false, false],
   'table.burnCards': 0,
   'table.decks': 6,
-  'betting.chipValue': 5,
-  'betting.warnOnError': false,
+  'game.betting.chipValue': 5,
+  'game.betting.warnOnError': false,
   // The first tile is five chips: $25.
-  'betting.ramp': { minCount: 0, rows: [{ chips: 5, hands: 1 }] },
-  'strategy.warnOnError': false,
+  'game.betting.ramp': { minCount: 0, rows: [{ chips: 5, hands: 1 }] },
+  'game.strategy.warnOnError': false,
   'rules.surrender': 'none',
   'display.hideActionButtons': false,
 };
@@ -363,7 +363,10 @@ test.describe('insurance', () => {
 });
 
 test.describe('8. redouble and hit after double', () => {
-  const tenDollars = { 'betting.chipValue': 10, 'betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] } };
+  const tenDollars = {
+    'game.betting.chipValue': 10,
+    'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
+  };
 
   test('a redouble stakes the bet plus the doubles already made', async ({ page }) => {
     await openTable(page, {
@@ -392,8 +395,8 @@ test.describe('9. player blackjack always wins', () => {
     await openTable(page, {
       settings: {
         'rules.playerBlackjackAlwaysWins': true,
-        'betting.chipValue': 10,
-        'betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
+        'game.betting.chipValue': 10,
+        'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
       },
       stack: deal(['As', 'Ks'], ['Kh', 'Ah']),
     });
@@ -407,8 +410,8 @@ test.describe('9. player blackjack always wins', () => {
 test.describe('10. suited 6-7-8 pays 2:1 if it wins', () => {
   const settings = {
     'bonuses.suited678IfWins': true,
-    'betting.chipValue': 10,
-    'betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
+    'game.betting.chipValue': 10,
+    'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
   };
 
   test('pays 2:1 when it beats the dealer', async ({ page }) => {
@@ -468,7 +471,10 @@ test.describe('11. side bets', () => {
 test.describe('12. bankroll limits', () => {
   test('Insure is unavailable with $0 left after a $100 bet', async ({ page }) => {
     await openTable(page, {
-      settings: { 'table.startingBankroll': 100, 'betting.ramp': { minCount: 0, rows: [{ chips: 20, hands: 1 }] } },
+      settings: {
+        'table.startingBankroll': 100,
+        'game.betting.ramp': { minCount: 0, rows: [{ chips: 20, hands: 1 }] },
+      },
       stack: deal(['Ts', '6s'], ['Ah', '7h']),
     });
     await bet(page);

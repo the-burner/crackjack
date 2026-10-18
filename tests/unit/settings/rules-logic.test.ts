@@ -9,6 +9,7 @@ import {
 import {
   applyGameChange,
   applyIndexRangeChange,
+  type IndexRangeKey,
   applyRuleChange,
   gameVariant,
   prepareLaunch,
@@ -294,21 +295,31 @@ describe('applyGameChange', () => {
 });
 
 describe('applyIndexRangeChange', () => {
+  /** The index range as a module's own screen reads it, over the game's saved values. */
+  const range =
+    (overrides: Partial<Record<IndexRangeKey, number>> = {}) =>
+    (key: IndexRangeKey) =>
+      overrides[key] ?? Number(reader()(`game.${key}`));
+
   it('refuses a minimum count above the maximum', () => {
-    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMax': 10 }), 'strategy.indexRangeMin', 50)).toEqual({
+    expect(applyIndexRangeChange(range({ 'strategy.indexRangeMax': 10 }), 'strategy.indexRangeMin', 50)).toEqual({
       'strategy.indexRangeMin': 10,
     });
   });
 
   it('refuses a maximum count below the minimum', () => {
-    expect(applyIndexRangeChange(reader({ 'strategy.indexRangeMin': -4 }), 'strategy.indexRangeMax', -20)).toEqual({
+    expect(applyIndexRangeChange(range({ 'strategy.indexRangeMin': -4 }), 'strategy.indexRangeMax', -20)).toEqual({
       'strategy.indexRangeMax': -4,
     });
   });
 
   it('takes a range that is the right way round as it is', () => {
-    expect(applyIndexRangeChange(reader(), 'strategy.indexRangeMin', -4)).toEqual({ 'strategy.indexRangeMin': -4 });
-    expect(applyIndexRangeChange(reader(), 'strategy.indexRangeMax', 12)).toEqual({ 'strategy.indexRangeMax': 12 });
+    expect(applyIndexRangeChange(range(), 'strategy.indexRangeMin', -4)).toEqual({
+      'strategy.indexRangeMin': -4,
+    });
+    expect(applyIndexRangeChange(range(), 'strategy.indexRangeMax', 12)).toEqual({
+      'strategy.indexRangeMax': 12,
+    });
   });
 });
 

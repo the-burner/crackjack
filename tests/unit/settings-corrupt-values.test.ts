@@ -29,9 +29,11 @@ describe('corrupt json settings', () => {
   });
 
   it('replaces an index mask whose grids are the wrong size', () => {
-    const mask = structuredClone(SETTINGS_SCHEMA['strategy.customIndexMask'].default);
+    const mask = structuredClone(SETTINGS_SCHEMA['game.strategy.customIndexMask'].default);
     mask.hardStand[0] = new Array(23).fill(false);
-    expect(saved({ 'strategy.customIndexMask': mask }).get('strategy.customIndexMask').hardStand[0]).toHaveLength(10);
+    expect(
+      saved({ 'game.strategy.customIndexMask': mask }).get('game.strategy.customIndexMask').hardStand[0],
+    ).toHaveLength(10);
   });
 
   it('replaces a situation list that is missing a situation', () => {
@@ -42,15 +44,17 @@ describe('corrupt json settings', () => {
 
   it('keeps a bet ramp whatever number of rows it has', () => {
     const ramp = { minCount: -2, rows: [{ chips: 5, hands: 2 }] };
-    expect(saved({ 'betting.ramp': ramp }).get('betting.ramp')).toEqual(ramp);
+    expect(saved({ 'game.betting.ramp': ramp }).get('game.betting.ramp')).toEqual(ramp);
   });
 
   it('replaces a bet ramp that is not a ramp', () => {
-    expect(saved({ 'betting.ramp': 'oops' }).get('betting.ramp')).toEqual(SETTINGS_SCHEMA['betting.ramp'].default);
+    expect(saved({ 'game.betting.ramp': 'oops' }).get('game.betting.ramp')).toEqual(
+      SETTINGS_SCHEMA['game.betting.ramp'].default,
+    );
   });
 
   it('replaces a bet ramp whose rows or minimum count are not numbers', () => {
-    const fallback = SETTINGS_SCHEMA['betting.ramp'].default;
+    const fallback = SETTINGS_SCHEMA['game.betting.ramp'].default;
     for (const ramp of [
       { minCount: 0, rows: [{ chips: '5', hands: 1 }] },
       { minCount: 0, rows: [{ chips: 5 }] },
@@ -58,17 +62,17 @@ describe('corrupt json settings', () => {
       { minCount: '2', rows: [{ chips: 5, hands: 1 }] },
       { rows: [{ chips: 5, hands: 1 }] },
     ])
-      expect(saved({ 'betting.ramp': ramp }).get('betting.ramp')).toEqual(fallback);
+      expect(saved({ 'game.betting.ramp': ramp }).get('game.betting.ramp')).toEqual(fallback);
   });
 });
 
 describe('unknown strategy and game ids', () => {
   it('falls back to the default strategy when the saved system is not one of them', () => {
-    expect(saved({ 'strategy.system': 12345 }).get('strategy.system')).toBe(100);
+    expect(saved({ 'game.strategy.system': 12345 }).get('game.strategy.system')).toBe(100);
   });
 
   it('defaults to the first built-in strategy', () => {
-    expect(SETTINGS_SCHEMA['strategy.system'].default).toBe(BUILTIN_STRATEGIES[0].id);
+    expect(SETTINGS_SCHEMA['game.strategy.system'].default).toBe(BUILTIN_STRATEGIES[0].id);
   });
 
   it('falls back to the hole-carding strategy when a saved hole-card strategy is not one', () => {
@@ -83,7 +87,8 @@ describe('unknown strategy and game ids', () => {
   });
 
   it('keeps every id the two pickers offer', () => {
-    for (const { id } of BUILTIN_STRATEGIES) expect(saved({ 'strategy.system': id }).get('strategy.system')).toBe(id);
+    for (const { id } of BUILTIN_STRATEGIES)
+      expect(saved({ 'game.strategy.system': id }).get('game.strategy.system')).toBe(id);
     for (const { id } of BUILTIN_SIDE_BET_GAMES) expect(saved({ 'bonuses.game': id }).get('bonuses.game')).toBe(id);
   });
 });

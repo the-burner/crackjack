@@ -5,7 +5,7 @@ import { STRATEGY_FILES } from '@/data/strategy-files';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
 
 describe('the default strategy', () => {
-  const id = SETTINGS_SCHEMA['strategy.system'].default;
+  const id = SETTINGS_SCHEMA['game.strategy.system'].default;
 
   it("is Crackjack's High-Low Strategy, listed first", () => {
     expect(id).toBe(100);

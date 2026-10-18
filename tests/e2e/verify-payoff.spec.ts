@@ -167,10 +167,10 @@ async function openTable(
           'table.startingBankroll': 1000,
           'table.seatCount': 4,
           'table.computerSeats': [false, true, true, true, false, false],
-          'betting.chipValue': 5,
-          'betting.warnOnError': false,
-          'strategy.warnOnError': false,
-          'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+          'game.betting.chipValue': 5,
+          'game.betting.warnOnError': false,
+          'game.strategy.warnOnError': false,
+          'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
           'display.hideActionButtons': false,
           ...overrides,
         }),
@@ -315,7 +315,7 @@ test.describe('the payoff at the end of a round', () => {
   // Seed 15: seat 1 wins, seat 2 loses, computer seat 3 wins, computer seat 4 pushes.
   const settings = {
     'table.computerSeats': TWO_HUMAN,
-    'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
+    'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
     'mechanics.payoffSpeed': 1,
   };
   const order = [
@@ -412,7 +412,7 @@ test.describe('a hand settled during play', () => {
 test.describe('the result label', () => {
   const settings = {
     'table.computerSeats': TWO_HUMAN,
-    'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
+    'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
     'mechanics.payoffSpeed': 60,
   };
   for (const [name, size] of [
@@ -489,7 +489,7 @@ test.describe('the turn pointer', () => {
       seed: 15,
       settings: {
         'table.computerSeats': TWO_HUMAN,
-        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
+        'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 2 })) },
         'mechanics.otherPlayerSpeed': speed,
       },
     });

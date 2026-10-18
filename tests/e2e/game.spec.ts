@@ -59,9 +59,9 @@ async function openTable(
         'table.startingBankroll': 1000,
         'table.seatCount': 4,
         'table.computerSeats': [false, false, true, true, true, true],
-        'betting.chipValue': 5,
-        'betting.warnOnError': false,
-        'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+        'game.betting.chipValue': 5,
+        'game.betting.warnOnError': false,
+        'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
         'rules.surrender': 'none',
         // Hidden by default; most tests play with the buttons.
         'display.hideActionButtons': false,
@@ -302,7 +302,7 @@ test.describe('the table', () => {
 
   test("shows a hand's result on its chips, then sweeps its cards", async ({ page }) => {
     // Slow enough to see each result.
-    await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 } });
+    await openTable(page, { settings: { 'game.strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 } });
     await tapBetTile(page);
     const hit = action(page, 'hit');
     const result = page.getByTestId('seat-chip').getByTestId('seat-result');
@@ -323,7 +323,7 @@ test.describe('the table', () => {
     ['landscape', LANDSCAPE],
   ] as const)
     test(`shows the result on a seat like the app’s other pop-ups in ${name} @layout`, async ({ page }) => {
-      await openTable(page, { settings: { 'strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 }, size });
+      await openTable(page, { settings: { 'game.strategy.warnOnError': false, 'mechanics.payoffSpeed': 1 }, size });
       await grid(page).click({ position: { x: 25, y: 25 } });
       const stand = action(page, 'stand');
       const pass = action(page, 'pass');
@@ -394,7 +394,7 @@ test.describe('the table', () => {
   // raised or the buttons moved off the felt, which is a design decision.
   for (const seats of [4, 6]) {
     test.fixme(`keeps the action buttons clear of every seat's bet at ${seats} seats @layout`, async ({ page }) => {
-      await openTable(page, { settings: { 'strategy.warnOnError': false, 'table.seatCount': seats } });
+      await openTable(page, { settings: { 'game.strategy.warnOnError': false, 'table.seatCount': seats } });
       await grid(page).click({ position: { x: 25, y: 25 } });
       await expect(action(page, 'stand')).toBeVisible({ timeout: 30000 });
       const covered = await page.evaluate(sel => {
@@ -442,9 +442,9 @@ test.describe('the table', () => {
     await openTable(page, {
       settings: {
         'mechanics.dealerSpeed': 10,
-        'betting.warnOnError': true,
+        'game.betting.warnOnError': true,
         // The first tile is the bet for a count of -1, so at 0 it is a mistake.
-        'betting.ramp': { minCount: -1, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+        'game.betting.ramp': { minCount: -1, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
       },
     });
     await tapBetTile(page);
@@ -592,7 +592,7 @@ test.describe('wonging', () => {
   const wongButton = (page: Page) => overlayButton(page, 'Wong');
 
   test('sits a round out: the computer seats play it and the bankroll is untouched', async ({ page }) => {
-    await openTable(page, { settings: { 'betting.wonging': true } });
+    await openTable(page, { settings: { 'game.betting.wonging': true } });
     const before = await bankroll(page).textContent();
     await wongButton(page).click();
     await expect(overlay(page)).toBeHidden();
@@ -601,7 +601,7 @@ test.describe('wonging', () => {
   });
 
   test('stays highlighted for the next round, like any bet placed', async ({ page }) => {
-    await openTable(page, { settings: { 'betting.wonging': true } });
+    await openTable(page, { settings: { 'game.betting.wonging': true } });
     await wongButton(page).click();
     await expect(overlay(page)).toBeHidden();
     await expect(overlay(page)).toBeVisible({ timeout: 20000 });
@@ -612,7 +612,7 @@ test.describe('wonging', () => {
   test('is refused with an error at a table with no one else', async ({ page }) => {
     await openTable(page, {
       settings: {
-        'betting.wonging': true,
+        'game.betting.wonging': true,
         'table.seatCount': 1,
         'table.computerSeats': [false, false, false, false, false, false],
       },

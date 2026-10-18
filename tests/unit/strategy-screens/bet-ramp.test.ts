@@ -189,7 +189,7 @@ describe('checkBet', () => {
 
 describe('packed encoding', () => {
   it('round-trips the shipped default ramp', () => {
-    const shipped = SETTINGS_SCHEMA['betting.ramp'].default;
+    const shipped = SETTINGS_SCHEMA['game.betting.ramp'].default;
     expect(fromPackedRamp(toPackedRamp(shipped))).toEqual(shipped);
   });
 

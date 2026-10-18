@@ -160,20 +160,24 @@ for (const hub of ['settings', 'game.options'] as const) {
   });
 }
 
-test('Settings holds what the whole app shares; Game Options what only the game uses', async ({ page }) => {
+test('Settings holds what the whole app shares; each module its own strategy and counting', async ({ page }) => {
   await page.goto('/index.html');
   const settings = await openHubFromHome(page, 'settings');
-  // The strategy screens are covered by their own tests, so only check that the links are there.
-  for (const button of ['Playing Strategy', 'Betting Strategy', 'True Count Calcs', 'Appearance & Sound']) {
+  for (const button of ['Appearance & Sound', 'Gestures']) {
     await expect(settings.getByRole('button', { name: button, exact: true })).toBeVisible();
+  }
+  // A module's own strategy and counting are on the module, not here.
+  for (const button of ['Playing Strategy', 'Betting Strategy', 'TC Calcs']) {
+    await expect(settings.getByRole('button', { name: button })).toHaveCount(0);
   }
   await expect(settings.locator('[data-action="play"]')).toHaveCount(0);
 
   await settings.locator('[data-action="back"]').click();
   const game = await openHubFromHome(page, 'game.options');
-  await expect(game.getByRole('button', { name: 'Betting Strategy' })).toHaveCount(0);
+  for (const button of ['Playing Strategy', 'Betting Strategy', 'TC Calcs']) {
+    await expect(game.getByRole('button', { name: button, exact: true })).toBeVisible();
+  }
   await expect(game.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeVisible();
-  await expect(game.getByRole('button', { name: 'Playing Strategy' })).toHaveCount(0);
 });
 
 for (const testCase of CASES) {
@@ -306,9 +310,9 @@ test('Game Options keeps its sections and Play button in one centred column in l
   await openHub(page, 'game.options', { fresh: true });
   const options = page.locator('[data-screen="game.options"]');
   const sections = options.getByRole('heading', { level: 2 });
-  await expect(sections).toHaveCount(3);
+  await expect(sections).toHaveCount(4);
   const play = (await options.locator('[data-action="play"]').boundingBox())!;
-  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(2).boundingBox()]) {
+  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(3).boundingBox()]) {
     expect(box!.x).toBeGreaterThanOrEqual(play.x);
     expect(box!.x).toBeLessThan(play.x + 40);
   }
@@ -332,7 +336,7 @@ test('a focused select shows the pressed shade, not a ring its group would clip 
 });
 
 test('a labelled select fills its row: a tap anywhere on it, the label too, opens it @layout', async ({ page }) => {
-  for (const path of ['/settings/gestures', '/settings/true-count', '/game/peeking', '/settings/betting']) {
+  for (const path of ['/settings/gestures', '/game/true-count', '/game/peeking', '/game/betting']) {
     await page.goto(`/index.html#${path}`);
     const selects = page.locator('[data-slot="select"]:has(> span)');
     await expect(selects.first()).toBeVisible();

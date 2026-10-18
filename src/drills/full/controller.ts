@@ -92,7 +92,7 @@ export function createFullDrill(app: App) {
     alarmSeconds: s.get('drills.full.alarmSeconds'),
     progressive: s.get('drills.full.progressiveSpeed'),
     twoCounts: s.get('drills.full.twoCounts'),
-    ...drillStrategy(app, s.get('drills.full.decks')),
+    ...drillStrategy(app, 'full', s.get('drills.full.decks')),
   };
   /** Auto times each test (and warns near the end of the shoe); Count Down & Halt times the whole drill. */
   const timedTests = options.timerMode === TIMER_MODE.auto;

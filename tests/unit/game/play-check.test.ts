@@ -19,7 +19,7 @@ const SPADES = 0,
 const card = (rank: number, suit = SPADES) => cardId(rank, suit);
 
 /** The default High-Low strategy, whose insurance index is a whole true count. */
-const DEFAULT_SYSTEM = SETTINGS_SCHEMA['strategy.system'].default;
+const DEFAULT_SYSTEM = SETTINGS_SCHEMA['game.strategy.system'].default;
 /** Silver Fox, whose insurance index is fractional (+3.8). */
 const FRACTIONAL_INSURANCE_SYSTEM = 70;
 

@@ -202,7 +202,7 @@ describe('roundTrueCount', () => {
 });
 
 describe('the true count at another depth', () => {
-  const hiLo = buildStrategy(STRATEGY_FILES[SETTINGS_SCHEMA['strategy.system'].default], {
+  const hiLo = buildStrategy(STRATEGY_FILES[SETTINGS_SCHEMA['game.strategy.system'].default], {
     decks: 6,
     hitSoft17: false,
     doubleAfterSplit: true,

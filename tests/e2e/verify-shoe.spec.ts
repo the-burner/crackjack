@@ -45,10 +45,10 @@ async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: S
           'table.startingBankroll': 1000,
           'table.seatCount': 1,
           'table.computerSeats': [false, false, false, false, false, false],
-          'betting.chipValue': 5,
-          'betting.warnOnError': false,
-          'strategy.warnOnError': false,
-          'betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
+          'game.betting.chipValue': 5,
+          'game.betting.warnOnError': false,
+          'game.strategy.warnOnError': false,
+          'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },
           'rules.surrender': 'none',
           'display.hideActionButtons': false,
           'display.showRunningCount': true,
@@ -79,7 +79,7 @@ const countOf = (page: Page, cards: number[]) =>
     const url = '/src/core/counting.ts';
     const { Counter }: typeof import('@/core/counting') = await import(url);
     const decks = window.app.settings.get('table.decks');
-    const counter = new Counter(window.app.strategies.current(window.app.settings, decks), {
+    const counter = new Counter(window.app.strategies.current(window.app.settings, 'game', decks), {
       division: 0,
       lastDeck: 1,
       rounding: 0,

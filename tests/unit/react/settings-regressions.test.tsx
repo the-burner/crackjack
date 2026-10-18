@@ -27,7 +27,7 @@ const groups = (container: HTMLElement) =>
 describe('Playing Strategy', () => {
   it('a rule ticked here applies the rules it implies', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<PlayingStrategy />);
+    const { app } = renderScreen(<PlayingStrategy scope="game" />);
     await user.click(screen.getByRole('switch', { name: 'No hole card' }));
     expect(app.settings.get('rules.dealerPeeksTen')).toBe(false);
     expect(app.settings.get('rules.dealerPeeksAce')).toBe(false);
@@ -37,13 +37,13 @@ describe('Playing Strategy', () => {
 
   it('the Index Range cannot be turned the wrong way round', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<PlayingStrategy />);
+    const { app } = renderScreen(<PlayingStrategy scope="game" />);
     await user.click(screen.getByRole('button', { name: 'Index range maximum: 99' }));
     await answer(user, '-4');
-    expect(app.settings.get('strategy.indexRangeMax')).toBe(-4);
+    expect(app.settings.get('game.strategy.indexRangeMax')).toBe(-4);
     await user.click(screen.getByRole('button', { name: 'Index range minimum: -99' }));
     await answer(user, '50');
-    expect(app.settings.get('strategy.indexRangeMin')).toBe(-4);
+    expect(app.settings.get('game.strategy.indexRangeMin')).toBe(-4);
     expect(await screen.findByRole('button', { name: 'Index range minimum: -4' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Index range maximum: -4' })).toBeInTheDocument();
   });
@@ -53,8 +53,8 @@ describe('strategy tables', () => {
   it('tapping a dealer-total column of an extended strategy keeps the picked indices', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
-    app.settings.set('strategy.system', 92);
-    renderScreen(<StrategyTables params={{ mode: 'editMask', maskKey: 'strategy.customIndexMask' }} />, { app });
+    app.settings.set('game.strategy.system', 92);
+    renderScreen(<StrategyTables params={{ mode: 'editMask', maskKey: 'game.strategy.customIndexMask' }} />, { app });
     const grid = screen.getByRole('table', { name: 'Hard Hit/Stand' });
     /** A grid cell; the first cell of each body row is its label. */
     const cell = (row: number, column: number) =>
@@ -65,7 +65,7 @@ describe('strategy tables', () => {
     // The extra columns hold dealer totals, which have no index to pick.
     await user.click(cell(0, 13));
     expect(screen.getByText('1 of 100 cells selected')).toBeInTheDocument();
-    const grids = app.settings.get('strategy.customIndexMask');
+    const grids = app.settings.get('game.strategy.customIndexMask');
     expect(grids.hardStand[0]).toHaveLength(10);
     expect(grids.hardStand[0][9]).toBe(true);
   });
@@ -73,7 +73,7 @@ describe('strategy tables', () => {
 
 describe('grouping', () => {
   it('the TC Calcs rows sit in one inset group', () => {
-    const { container } = renderScreen(<TrueCount />);
+    const { container } = renderScreen(<TrueCount scope="game" />);
     const all = groups(container);
     expect(all).toHaveLength(1);
     expect(within(all[0]).getAllByRole('combobox')).toHaveLength(4);
@@ -99,9 +99,9 @@ describe('Allowed Bets', () => {
   it('saves the bet ramp it brought back into range', () => {
     const backend = new MemoryBackend();
     const app = createServices({ backend });
-    app.settings.set('betting.ramp', { minCount: 1.5, rows: [{ chips: 999, hands: 9 }] });
+    app.settings.set('game.betting.ramp', { minCount: 1.5, rows: [{ chips: 999, hands: 9 }] });
     renderScreen(<Betting />, { app });
-    const saved = JSON.parse(backend.getItem('cj.settings') ?? '{}').state.values['betting.ramp'];
+    const saved = JSON.parse(backend.getItem('cj.settings') ?? '{}').state.values['game.betting.ramp'];
     expect(saved).toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
   });
 });
