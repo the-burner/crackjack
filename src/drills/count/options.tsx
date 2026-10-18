@@ -72,10 +72,14 @@ const POSITION_OPTIONS: Options<'drills.count.positions'> = [
   { value: 'mixed', label: 'Positions: Mixed' },
 ];
 
-/** Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out. */
+/**
+ * Shoe: each test timed, through the whole shoe. Count Down & Halt: until the drill time runs out.
+ * Infinite: shoe after shoe until stopped, with the time counting up.
+ */
 const MODE_OPTIONS: Options<'drills.count.timerMode'> = [
   { value: 'auto', label: 'Timer Mode: Shoe' },
   COUNT_DOWN_HALT_OPTION,
+  { value: 'infinite', label: 'Timer Mode: Infinite' },
 ];
 
 export function CountOptions() {
@@ -83,13 +87,17 @@ export function CountOptions() {
   const navigate = useNavigate();
   const settings = useSettings();
   // Settings that only matter in some set-ups.
-  const autoMode = settings.get('drills.count.timerMode') === 'auto';
+  const mode = settings.get('drills.count.timerMode');
+  const infinite = mode === 'infinite';
   const byHand = settings.get('drills.count.dealByHand');
   const tests = settings.get('drills.count.testEvery') !== 'never';
   const shown = {
-    // Shoe mode times each test; Count Down & Halt times the whole drill.
-    perTest: autoMode && tests,
-    drillTime: !autoMode,
+    // Shoe mode times each test, Infinite when asked to; Count Down & Halt times the whole drill.
+    timeLimit: infinite && tests,
+    perTest: (mode === 'auto' || (infinite && settings.get('drills.count.timePerTest'))) && tests,
+    drillTime: mode === 'countDownHalt',
+    // Infinite never ends, so it can pause by itself every so often.
+    interval: infinite && settings.get('drills.count.autoPause'),
     // The deal speed, and speeding it up, only apply when the cards deal themselves.
     dealSpeed: !byHand,
     progressive: !byHand,
@@ -147,8 +155,11 @@ export function CountOptions() {
       <Section title="Timer">
         <OptionGroup>
           <SettingSelect label="Timer mode" setting="drills.count.timerMode" options={MODE_OPTIONS} />
+          <OptionSwitch label="Time limit per test" setting="drills.count.timePerTest" hidden={!shown.timeLimit} />
           <OptionDuration label="Time per test" setting="drills.count.testSeconds" hidden={!shown.perTest} />
           <OptionDuration label="Drill time" setting="drills.count.alarmSeconds" hidden={!shown.drillTime} />
+          <OptionSwitch label="Pause every interval" setting="drills.count.autoPause" hidden={!infinite} />
+          <OptionDuration label="Interval" setting="drills.count.autoPauseSeconds" hidden={!shown.interval} />
           <OptionSwitch label="Deal by hand" setting="drills.count.dealByHand" />
           <OptionDuration label="Deal speed" setting="drills.count.dealTenths" tenths hidden={!shown.dealSpeed} />
           <OptionSwitch label="Progressive Speed" setting="drills.count.progressiveSpeed" hidden={!shown.progressive} />

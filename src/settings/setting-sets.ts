@@ -4,6 +4,7 @@
 import { SETTINGS_SCHEMA } from './schema';
 import type { SettingKey, SettingReader, SettingsPatch } from './schema';
 import type { Named, PresetKind, PresetSelectionKey } from './named-configs';
+import { COUNT_PRESETS } from './count-presets';
 import { FLASH_PRESETS } from './flash-presets';
 import { GAME_PRESETS } from './game-presets';
 import type { PresetSpec } from './game-presets';
@@ -95,7 +96,7 @@ const drillSets = (drill: DrillName) =>
   settingSets(DRILL_KEYS(drill), {
     label: 'Configuration',
     selectedKey: `drills.${drill}.config`,
-    presets: drill === 'flash' ? FLASH_PRESETS : undefined,
+    presets: drill === 'flash' ? FLASH_PRESETS : drill === 'count' ? COUNT_PRESETS : undefined,
   });
 
 export const DRILL_SETS: Record<DrillName, ReturnType<typeof settingSets>> = {

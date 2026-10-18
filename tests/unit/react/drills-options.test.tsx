@@ -220,6 +220,7 @@ describe('drill options screens', () => {
   it('count hides what no tests, dealing by hand or a single card leave unused', async () => {
     const user = userEvent.setup();
     renderScreen(<CountOptions />);
+    await choose(user, 'Timer mode', 'Timer Mode: Count Down & Halt');
     expectHidden(duration('Time per test'));
     expect(duration('Drill time')).toBeVisible();
     await choose(user, 'Timer mode', 'Timer Mode: Shoe');
@@ -242,8 +243,31 @@ describe('drill options screens', () => {
     expectHidden(select('Positions'));
   });
 
+  it('count Infinite offers a time limit per test and a pause every interval', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<CountOptions />);
+    // Infinite, pausing every interval, is the default.
+    expectHidden(duration('Drill time'));
+    expect(toggle('Time limit per test')).toBeVisible();
+    expect(duration('Time per test')).toBeVisible();
+    expect(duration('Interval')).toHaveTextContent(/^00:02:45$/);
+    await user.click(screen.getByRole('switch', { name: 'Time limit per test' }));
+    expect(app.settings.get('drills.count.timePerTest')).toBe(false);
+    expectHidden(duration('Time per test'));
+    await user.click(screen.getByRole('switch', { name: 'Pause every interval' }));
+    expectHidden(duration('Interval'));
+    await choose(user, 'Timer mode', 'Timer Mode: Shoe');
+    expectHidden(toggle('Time limit per test'));
+    expectHidden(toggle('Pause every interval'));
+    await choose(user, 'Timer mode', 'Timer Mode: Infinite');
+    // Without tests there is nothing to time.
+    await choose(user, 'Test', 'Test: No Tests');
+    expectHidden(toggle('Time limit per test'));
+  });
+
   it('count shows the deal speed in tenths of a second', () => {
-    renderScreen(<CountOptions />);
+    const { app } = renderScreen(<CountOptions />);
+    act(() => app.settings.set('drills.count.timerMode', 'countDownHalt'));
     expect(duration('Deal speed')).toHaveTextContent(/^0\.8 s$/);
     expect(duration('Drill time')).toHaveTextContent(/^00:03:00$/);
   });
@@ -251,6 +275,7 @@ describe('drill options screens', () => {
   it('sets a duration with the wheels, and Cancel leaves it alone', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<CountOptions />);
+    act(() => app.settings.set('drills.count.timerMode', 'countDownHalt'));
     const drillTime = () => screen.getByRole('button', { name: 'Drill time' });
     await user.click(drillTime());
     let dialog = await screen.findByRole('dialog', { name: 'Drill time' });

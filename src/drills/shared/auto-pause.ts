@@ -40,18 +40,20 @@ export function intervalTime(seconds: number): string {
  * Takes the pause that is due: the message summing up the interval just ended
  * ("3:00 done: 54 hands, 96%") and the interval that begins on Continue.
  * @param score  The run's totals now.
+ * @param unit   What the drill calls a test.
  */
 export function takeAutoPause(
   pause: AutoPause,
   elapsed: number,
   score: { tests: number; errors: number },
+  unit = 'hand',
 ): { message: string; next: AutoPause } {
   const tests = score.tests - pause.tests;
   const errors = score.errors - pause.errors;
   const accuracy = tests === 0 ? 0 : Math.floor(100 * (1 - errors / tests));
-  const hands = `${tests} hand${tests === 1 ? '' : 's'}`;
+  const counted = `${tests} ${unit}${tests === 1 ? '' : 's'}`;
   return {
-    message: `${intervalTime(pause.interval)} done: ${hands}, ${accuracy}%`,
+    message: `${intervalTime(pause.interval)} done: ${counted}, ${accuracy}%`,
     next: { ...pause, dueAt: elapsed + pause.interval, tests: score.tests, errors: score.errors },
   };
 }

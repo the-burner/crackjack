@@ -264,7 +264,7 @@ export const SETTINGS_SCHEMA = {
   'game.config': text('table-6d'),
   'drills.flash.config': text('infinite-round-robin'),
   'drills.depth.config': text('default'),
-  'drills.count.config': text('default'),
+  'drills.count.config': text('running-count-3-minute'),
   'drills.full.config': text('default'),
   'display.sound': bool(false),
   'display.quietErrorSound': bool(false),
@@ -346,7 +346,7 @@ export const SETTINGS_SCHEMA = {
   'drills.depth.askCardsInTray': bool(false),
   'drills.depth.progressiveSpeed': bool(false),
 
-  // Simple Running Count.
+  // Simple Running Count. A fresh install drills Crackjack's Running Count 3-Minute Intervals.
   ...under('drills.count', { ...systemDefs(), ...initialCountDefs(), ...trueCountDefs() }),
   'drills.count.drill': oneOf(
     [
@@ -370,7 +370,12 @@ export const SETTINGS_SCHEMA = {
   'drills.count.endWarning': oneOf(['none', 'oneCardLeft', 'twoCardsLeft'], 'none'),
   'drills.count.decks': oneOf(DECKS, 6),
   'drills.count.trayStyle': oneOf(TRAY_STYLES, 'sixDeckFront'),
-  'drills.count.timerMode': oneOf(['auto', 'countDownHalt'], 'countDownHalt'),
+  'drills.count.timerMode': oneOf(['auto', 'countDownHalt', 'infinite'], 'infinite'),
+  /** Infinite: whether each test has a time limit (the Time per test). */
+  'drills.count.timePerTest': bool(true),
+  /** Infinite: pause by itself every `autoPauseSeconds` of drill time, between deals. */
+  'drills.count.autoPause': bool(true),
+  'drills.count.autoPauseSeconds': int(165, 1, 3600),
   /** Deal each group of cards with Next instead of at the deal speed. */
   'drills.count.dealByHand': bool(false),
   /** Tenths of a second between flashes. */

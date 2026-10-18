@@ -17,6 +17,8 @@ import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
 import type { GridTap } from '@/drills/shared/grid-answers';
 import { END_WARNING_SECONDS, WARNING_REMAINING, WARNING_TEXT } from '@/drills/shared/end-warning';
+import { autoPauseDue, intervalLeft, startAutoPause, takeAutoPause } from '@/drills/shared/auto-pause';
+import type { AutoPause } from '@/drills/shared/auto-pause';
 import { loadTrayImage, drawTray, trayImage, preloadTrayImages } from '@/drills/shared/discard-tray';
 import type { TrayPhoto } from '@/drills/shared/discard-tray';
 import {
@@ -75,12 +77,17 @@ export function createCountDrill(app: App) {
     thickness: s.get('drills.count.cardThickness'),
     progressive: s.get('drills.count.progressiveSpeed'),
     twoCounts: s.get('drills.count.twoCounts'),
+    timePerTest: s.get('drills.count.timePerTest'),
+    autoPause: s.get('drills.count.autoPause'),
+    autoPauseSeconds: s.get('drills.count.autoPauseSeconds'),
     ...drillStrategy(app, 'count', s.get('drills.count.decks')),
   };
   /** Cards come at the deal speed unless the player deals them with Next. */
   const auto = !options.dealByHand;
-  /** Auto mode times each test; Count Down & Halt times the whole drill. */
-  const timedTests = options.timerMode === TIMER_MODE.auto;
+  /** Infinite deals shoe after shoe until stopped. */
+  const infinite = options.timerMode === TIMER_MODE.infinite;
+  /** Auto mode times each test, Infinite when asked to; Count Down & Halt times the whole drill. */
+  const timedTests = options.timerMode === TIMER_MODE.auto || (infinite && options.timePerTest);
   const maxCards = maxFlashSize(options.cardsPerFlash);
   const inHalfSteps = halfSteps(options.drill, options.strategy);
 
@@ -106,9 +113,22 @@ export function createCountDrill(app: App) {
   let resumePending = false;
   /** The wait between a right answer and the next deal, so it can be called off. */
   const advanceTimer = new AnswerPause();
+  /** Infinite with "Pause every": the interval in progress. */
+  let autoPause: AutoPause | null = null;
+  /** Paused at the end of an interval: the one that begins on Continue. */
+  let nextInterval: AutoPause | null = null;
 
   const shell = new DrillShell(app, {
     countLabel: 'Tests',
+    // The next interval starts as Continue is tapped, so Time shows it during the countdown.
+    onContinue: () => {
+      if (!nextInterval) return;
+      autoPause = nextInterval;
+      nextInterval = null;
+      shell.clearMessage();
+    },
+    // With Pause every interval, Time counts down each interval.
+    timeShown: clock => (autoPause ? intervalLeft(autoPause, clock.elapsed) : clock.display()),
     pausable: true,
     onStart: start,
     onStop: stop,
@@ -133,12 +153,9 @@ export function createCountDrill(app: App) {
     grid = null;
     tray = null;
     flash = null;
-    shoe = new DrillShoe({
-      decks: options.decks,
-      strategy: options.strategy,
-      trueCountSettings: options.trueCountSettings,
-    });
-    preloadTrayImages(options.decks, options.trayStyle);
+    nextInterval = null;
+    autoPause = infinite && options.autoPause ? startAutoPause(options.autoPauseSeconds) : null;
+    shoe = newShoe();
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextShown = !auto;
     const clock = drillClockFor(shell, {
@@ -155,6 +172,42 @@ export function createCountDrill(app: App) {
     }
   }
 
+  function newShoe() {
+    preloadTrayImages(options.decks, options.trayStyle);
+    return new DrillShoe({
+      decks: options.decks,
+      strategy: options.strategy,
+      trueCountSettings: options.trueCountSettings,
+    });
+  }
+
+  /** Infinite: the shoe is done, so a new one is shuffled, its count starting over; said a moment before dealing on. */
+  function shuffle() {
+    shoe = newShoe();
+    notice = 'Shuffle';
+    flash = null;
+    tray = null;
+    if (auto) {
+      shell.clock?.every('deal', END_WARNING_SECONDS, () => {
+        shell.clock?.every('deal', dealSpeed(), dealFlash);
+        dealFlash();
+      });
+    }
+    changed();
+  }
+
+  /** The interval is up: pause between deals, saying how the interval went. */
+  function pauseForInterval() {
+    if (!autoPause || !shell.clock) return;
+    const { message, next } = takeAutoPause(autoPause, shell.clock.elapsed, shell.score, 'test');
+    // Time stays at 0 (overdue) until Continue starts the next interval.
+    nextInterval = next;
+    flash = null;
+    shell.togglePause();
+    shell.setMessage(message);
+    app.sound.play('alarm');
+  }
+
   function stop() {
     shell.clock?.stop();
     advanceTimer.cancel();
@@ -167,6 +220,10 @@ export function createCountDrill(app: App) {
 
   function dealFlash() {
     if (done || !shoe) return;
+    if (autoPause && shell.clock && autoPauseDue(autoPause, shell.clock.elapsed)) {
+      pauseForInterval();
+      return;
+    }
     notice = '';
     if (lastTest) {
       if (testsPossible(options.drill, shoe)) startTest();
@@ -194,7 +251,8 @@ export function createCountDrill(app: App) {
     }
     // The shoe only ends once the cards it had left have been shown.
     if (!ids.length) {
-      finishShoe();
+      if (infinite) shuffle();
+      else finishShoe();
       return;
     }
     tray = null;
@@ -274,7 +332,8 @@ export function createCountDrill(app: App) {
     cardsToDeal = cardsUntilTest(options.testEvery, Math.random);
     nextShown = !auto;
     dealFlash();
-    if (auto && !done) shell.clock?.every('deal', dealSpeed(), dealFlash);
+    // Not while paused at the end of an interval: dealing goes on with Continue.
+    if (auto && !done && !shell.paused) shell.clock?.every('deal', dealSpeed(), dealFlash);
     changed();
   }
 

@@ -60,12 +60,32 @@ describe('a configuration', () => {
     ]);
   });
 
+  it("offers Crackjack's four Simple Running Count drills, and none called Default", () => {
+    expect(DRILL_SETS.count.kind.builtIns.map(s => s.name)).toEqual([
+      "Crackjack's Running Count 3-Minute Intervals",
+      "Crackjack's Running Count 4-Minute Intervals",
+      "Crackjack's True Count 3-Minute Intervals",
+      "Crackjack's True Count 4-Minute Intervals",
+    ]);
+    // Infinite, a test about every 36 cards, pausing every 2:45 or 3:45.
+    for (const set of DRILL_SETS.count.kind.builtIns) {
+      const values = DRILL_SETS.count.kind.valuesOf(set);
+      expect(values).toMatchObject({
+        'drills.count.timerMode': 'infinite',
+        'drills.count.testEvery': 'about36',
+        'drills.count.autoPause': true,
+        'drills.count.drill': set.id.startsWith('true') ? 'trueCount' : 'runningCount',
+        'drills.count.autoPauseSeconds': set.id.endsWith('3-minute') ? 165 : 225,
+      });
+    }
+  });
+
   it("begins a fresh install unedited: the game on Crackjack's 6D table, Flash Cards on its Infinite Round Robin", () => {
     const fresh = {
       game: 'table-6d',
       flash: 'infinite-round-robin',
       depth: 'default',
-      count: 'default',
+      count: 'running-count-3-minute',
       full: 'default',
     };
     for (const [name, { kind }] of [['game', GAME_SETS], ...DRILLS.map(d => [d, DRILL_SETS[d]] as const)] as const) {

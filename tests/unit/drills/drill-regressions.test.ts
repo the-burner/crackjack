@@ -289,6 +289,70 @@ describe('count drill answers', () => {
   });
 });
 
+describe('count drill Infinite', () => {
+  /** Infinite, one card at a time every tenth of a second, from one deck. */
+  const INFINITE: SettingsPatch = {
+    'drills.count.decks': 1,
+    'drills.count.cardsPerFlash': '1',
+    'drills.count.testEvery': 'never',
+    'drills.count.accuracy': 0,
+    'drills.count.dealTenths': 1,
+    'drills.count.timerMode': 'infinite',
+  };
+
+  it('shuffles a new shoe when one runs out, says so, and deals on', () => {
+    const drill = count(INFINITE);
+    const deals: { shoe: DrillShoe; at: number }[] = [];
+    const deal = DrillShoe.prototype.deal;
+    vi.spyOn(DrillShoe.prototype, 'deal').mockImplementation(function recordedDeal(this: DrillShoe) {
+      deals.push({ shoe: this, at: Date.now() });
+      return deal.call(this);
+    });
+    wait(60 * 100 + 3000);
+    const shoes = [...new Set(deals.map(d => d.shoe))];
+    expect(shoes.length).toBeGreaterThan(1);
+    // The first shoe dealt every card it had, then "Shuffle" showed for a moment.
+    const first = deals.filter(d => d.shoe === shoes[0]);
+    expect(first.length).toBeGreaterThanOrEqual(51);
+    const next = deals.find(d => d.shoe === shoes[1])!;
+    expect(next.at - first.at(-1)!.at).toBeGreaterThanOrEqual(3000);
+    expect(drill.shell.paused).toBe(false);
+  });
+
+  it('pauses between deals once each interval is up, until Continue', () => {
+    const drill = count({
+      ...INFINITE,
+      'drills.count.dealTenths': 10,
+      'drills.count.decks': 2,
+      'drills.count.autoPause': true,
+      'drills.count.autoPauseSeconds': 5,
+    });
+    const deals = recordDeals();
+    wait(6000);
+    expect(drill.shell.paused).toBe(true);
+    expect(drill.getSnapshot().shell.message).toBe('0:05 done: 0 tests, 0%');
+    const dealt = deals.length;
+    wait(30000);
+    expect(deals).toHaveLength(dealt);
+    drill.shell.togglePause();
+    wait(5000);
+    expect(drill.shell.paused).toBe(false);
+    expect(deals.length).toBeGreaterThan(dealt);
+  });
+
+  it('times each test only when Time limit per test is on', () => {
+    const tested = { ...INFINITE, 'drills.count.testEvery': 'everyCard', 'drills.count.testSeconds': 2 } as const;
+    const untimed = count({ ...tested, 'drills.count.timePerTest': false });
+    wait(5000);
+    expect(untimed.getSnapshot().gridShown).toBe(true);
+    expect(untimed.shell.score.errors).toBe(0);
+    untimed.shell.destroy();
+    const timed = count({ ...tested, 'drills.count.timePerTest': true });
+    wait(5000);
+    expect(timed.shell.score.errors).toBe(1);
+  });
+});
+
 describe('count drill time up', () => {
   /** Count Down & Halt over ten seconds, a card every three, and no tests of its own. */
   const HALT: SettingsPatch = {

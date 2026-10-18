@@ -782,7 +782,13 @@ test.describe('count drill', () => {
     const button = (name: string) => options.getByRole('button', { name, exact: true });
     const check = (name: string) => options.getByRole('switch', { name });
 
+    // Infinite, pausing every interval, is the default.
+    await expect(button('Interval')).toBeVisible();
+    await expect(button('Drill time')).toBeHidden();
+
     // Count Down & Halt, dealt automatically.
+    await choose(options, 'Timer mode', 'Timer Mode: Count Down & Halt');
+    await expect(button('Interval')).toBeHidden();
     await expect(button('Drill time')).toBeVisible();
     await expect(button('Time per test')).toBeHidden();
     await expect(button('Deal speed')).toBeVisible();
@@ -880,6 +886,7 @@ test.describe('count drill', () => {
       'drills.count.testEvery': 'about16',
       'drills.count.dealByHand': true,
       'drills.count.accuracy': 0,
+      'drills.count.timerMode': 'countDownHalt',
       'drills.count.alarmSeconds': 1799,
       'strategy.system': 30,
     });
@@ -950,6 +957,7 @@ test.describe('count drill', () => {
       'drills.count.cardsPerFlash': '3',
       'drills.count.testEvery': 'never',
       'drills.count.dealByHand': true,
+      'drills.count.timerMode': 'countDownHalt',
       'drills.count.alarmSeconds': 1799,
     });
     const screen = await launch(page, DRILLS.count);

@@ -19,6 +19,10 @@ describe('pausing every interval', () => {
     expect(first.message).toBe('3:00 done: 50 hands, 90%');
     const second = takeAutoPause(first.next, 362, { tests: 80, errors: 6 });
     expect(second.message).toBe('3:00 done: 30 hands, 96%');
+    // In the drill's own word for a test.
+    expect(takeAutoPause(startAutoPause(60), 61, { tests: 1, errors: 0 }, 'test').message).toBe(
+      '1:00 done: 1 test, 100%',
+    );
   });
 
   it('says so when no hand was dealt in the interval', () => {
