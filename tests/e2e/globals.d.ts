@@ -23,5 +23,6 @@ declare global {
     __cjOffered: string[];
     __cjToasts: { text: string | null; type: string | undefined }[];
     canvasFonts: string[];
+    gridTexts: { text: string; x: number; y: number }[];
   }
 }

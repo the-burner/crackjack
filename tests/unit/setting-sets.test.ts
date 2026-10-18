@@ -125,6 +125,7 @@ describe('what each drill keeps of its own', () => {
       key =>
         key.startsWith(`drills.${drill}.strategy.`) ||
         key.startsWith(`drills.${drill}.trueCount.`) ||
+        key.startsWith(`drills.${drill}.betting.`) ||
         key.startsWith(`drills.${drill}.rules.`),
     )
       .map(key => key.slice(`drills.${drill}.`.length))
@@ -144,8 +145,14 @@ describe('what each drill keeps of its own', () => {
       'strategy.initialCount',
       'strategy.system',
     ]);
-    // Given the running count: the system, and how it is turned into a true count.
+    // Given the running count: the system, how it is turned into a true count and, for the TC Bet
+    // drills, the bet at each true count (in dollars, as the game labels it) and where it sits out.
     expect(kept('depth')).toEqual([
+      'betting.chipValue',
+      'betting.ramp',
+      'betting.strategy',
+      'betting.wongOut',
+      'betting.wonging',
       'strategy.system',
       'trueCount.lastDeckResolution',
       'trueCount.resolution',

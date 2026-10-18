@@ -26,7 +26,16 @@ import { PATHS } from '@/app/paths';
 type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[];
 
 const DRILL_OPTIONS: Options<'drills.depth.drill'> = (
-  ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'] as const
+  [
+    'decksLeft',
+    'halfDecksLeft',
+    'quarterDecksLeft',
+    'acesLeft',
+    'trueCount',
+    'trueCountAndDecks',
+    'bet',
+    'betAndDecks',
+  ] as const
 ).map(value => ({ value, label: `Drill: ${DRILL_LABELS[value]}` }));
 
 /** Rounds: a set number of tests, each timed. Count Down & Halt: until the drill time runs out. */
@@ -66,7 +75,7 @@ export function DepthOptions() {
         </OptionGroup>
       </Section>
       {/* One group for the drill-specific settings: the count range feeds the TC
-          Conversion drills, "in tray" the others. Its title follows what it holds. */}
+          Conversion and TC Bet drills, "in tray" the others. Its title follows what it holds. */}
       <Section title={trueCount ? 'Count Range' : 'Answers'}>
         <OptionGroup>
           <SettingNumber

@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { UserEvent } from '@testing-library/user-event';
 import { Betting, BetSelect } from '@/screens/strategy/betting';
+import { bettingPresets, bettingValues } from '@/settings/betting-strategies';
 import { StrategyTables } from '@/screens/strategy/tables';
 import { TrueCount } from '@/screens/strategy/true-count';
 import { PlayingStrategy } from '@/screens/strategy/playing-strategy';
@@ -31,7 +32,7 @@ const cell = (row: number, column: number) => within(bodyRows()[row]).getAllByRo
 describe('Allowed Bets', () => {
   it('shows counts and the minimum count row only when betting errors are flagged', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app } = renderScreen(<Betting scope="game" />);
     expect(within(bodyRows()[0]).getAllByRole('cell')[0]).toHaveTextContent('<=0');
     expect(screen.getByRole('button', { name: 'Minimum bet count: 0' })).toBeVisible();
     await user.click(screen.getByRole('switch', { name: 'Warning on Betting Error' }));
@@ -42,7 +43,7 @@ describe('Allowed Bets', () => {
 
   it('shows the wonging settings below the bets only while wonging is switched on', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app } = renderScreen(<Betting scope="game" />);
     await user.click(screen.getByRole('switch', { name: 'Wonging' }));
     expect(app.settings.get('game.betting.wonging')).toBe(false);
     expect(screen.queryByRole('button', { name: 'Wong in: 1' })).not.toBeInTheDocument();
@@ -59,7 +60,7 @@ describe('Allowed Bets', () => {
 
   it('saves the betting strategy under a name and loads it back', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app } = renderScreen(<Betting scope="game" />);
     const picker = () => screen.getByRole('combobox', { name: 'Betting strategy' });
     const multi = "Crackjack's Multi-Hand Strategy";
     expect(picker()).toHaveDisplayValue(multi);
@@ -81,7 +82,7 @@ describe('Allowed Bets', () => {
 
   it('follows ramp changes and opens the picker for a row', async () => {
     const user = userEvent.setup();
-    const { app, location } = renderScreen(<Betting />, { path: '/game/betting' });
+    const { app, location } = renderScreen(<Betting scope="game" />, { path: '/game/betting' });
     expect(bodyRows()).toHaveLength(6);
     act(() => app.settings.set('game.betting.ramp', { minCount: 0, rows: [{ chips: 3, hands: 2 }] }));
     expect(bodyRows()).toHaveLength(1);
@@ -92,7 +93,7 @@ describe('Allowed Bets', () => {
 
   it('resizes the table from the number of bets', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app } = renderScreen(<Betting scope="game" />);
     await user.click(screen.getByRole('button', { name: 'Number of bets: 6' }));
     await answer(user, '3');
     expect(app.settings.get('game.betting.ramp').rows).toHaveLength(3);
@@ -101,16 +102,73 @@ describe('Allowed Bets', () => {
 
   it('writes the chip value', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Betting />);
+    const { app } = renderScreen(<Betting scope="game" />);
     await choose(user, 'Chip Value', '$100');
     expect(app.settings.get('game.betting.chipValue')).toBe(100);
+  });
+});
+
+describe('Deck Estimation’s Betting Strategy', () => {
+  it('shows only the bets, with their counts, the chip value and Wong out, writing its own', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<Betting scope="depth" />);
+    expect(screen.queryByRole('switch', { name: 'Warning on Betting Error' })).not.toBeInTheDocument();
+    await choose(user, 'Chip Value', '$100');
+    expect(app.settings.get('drills.depth.betting.chipValue')).toBe(100);
+    expect(app.settings.get('game.betting.chipValue')).toBe(25);
+    expect(within(bodyRows()[0]).getAllByRole('cell')[0]).toHaveTextContent('<=0');
+    expect(screen.getByRole('button', { name: 'Minimum bet count: 0' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Wong out: -2' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /^Wong in/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Begin shoe wonged out' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Wong out: -2' }));
+    await answer(user, '5');
+    expect(app.settings.get('drills.depth.betting.wongOut')).toBe(5);
+    expect(app.settings.get('game.betting.wongOut')).toBe(-2);
+    await choose(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    await waitFor(() => expect(app.settings.get('drills.depth.betting.wonging')).toBe(false));
+    expect(app.settings.get('game.betting.strategy')).toBe('multi-hand');
+  });
+
+  it('follows a saved strategy edited in the game, unless it has its own edit', async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    const spread = bettingPresets('game').make(
+      'spread',
+      'Spread',
+      bettingValues(key => app.settings.get(key)),
+    );
+    app.bettingStrategies.setState({ value: [spread] });
+    app.settings.update({ 'game.betting.strategy': 'spread', 'drills.depth.betting.strategy': 'spread' });
+    renderScreen(<Betting scope="game" />, { app });
+    await user.click(screen.getByRole('button', { name: 'Wong out: -2' }));
+    await answer(user, '-3');
+    await user.click(screen.getByRole('button', { name: 'Save “Spread”' }));
+    expect(app.settings.get('drills.depth.betting.wongOut')).toBe(-3);
+
+    // Moved off it, Deck Estimation keeps its own.
+    act(() => app.settings.set('drills.depth.betting.wongOut', 0));
+    await user.click(screen.getByRole('button', { name: 'Wong out: -3' }));
+    await answer(user, '-5');
+    await user.click(screen.getByRole('button', { name: 'Save “Spread”' }));
+    expect(app.settings.get('drills.depth.betting.wongOut')).toBe(0);
+  });
+
+  it('picks its own rows', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<BetSelect scope="depth" params={{ row: 0 }} />);
+    await user.click(within(screen.getByRole('group', { name: 'Chips' })).getByRole('button', { name: '3' }));
+    expect(app.settings.get('drills.depth.betting.ramp').rows[0]).toEqual({ chips: 3, hands: 1 });
+    expect(app.settings.get('game.betting.ramp').rows[0]).toEqual({ chips: 1, hands: 1 });
   });
 });
 
 describe('bet picker', () => {
   it('limits chips to the hands chosen and writes the row', async () => {
     const user = userEvent.setup();
-    const { app, location } = renderScreen(<BetSelect params={{ row: 1 }} />);
+    const { app, location } = renderScreen(<BetSelect scope="game" params={{ row: 1 }} />);
     const spots = within(screen.getByRole('group', { name: 'Spots' }));
     const chips = within(screen.getByRole('group', { name: 'Chips' }));
     expect(spots.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');

@@ -56,7 +56,7 @@ export function PresetPicker<T extends Named, V>({
 
   function save() {
     if (!own) return;
-    keep(putNamed(saved, kind.make(own.id, own.name, values)));
+    keep(putNamed(saved, kind.make(own.id, own.name, values, own)));
     toast(`Saved “${own.name}”`);
   }
 
@@ -70,7 +70,7 @@ export function PresetPicker<T extends Named, V>({
     }
     const existing = named(saved, checked.name);
     if (existing && !(await confirm(`Replace “${existing.name}” with these settings?`))) return;
-    const preset = kind.make(existing?.id ?? newPresetId(), checked.name, values);
+    const preset = kind.make(existing?.id ?? newPresetId(), checked.name, values, selected ?? undefined);
     keep(putNamed(saved, preset));
     settings.set(kind.selectedKey, preset.id);
     toast(`Saved “${preset.name}”`);

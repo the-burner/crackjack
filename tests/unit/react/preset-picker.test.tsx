@@ -28,7 +28,7 @@ function withSpread() {
   const values = { ...BETTING_PRESETS.current(key => app.settings.get(key)), 'game.betting.chipValue': 5 as const };
   app.bettingStrategies.setState({ value: [BETTING_PRESETS.make('spread', 'Spread', values)] });
   app.settings.update({ ...values, 'game.betting.strategy': 'spread' });
-  renderScreen(<Betting />, { app });
+  renderScreen(<Betting scope="game" />, { app });
   return app;
 }
 

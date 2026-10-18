@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { BETTING_PRESETS, BUILT_IN_BETTING, bettingValues, readBettingStrategies } from '@/settings/betting-strategies';
+import {
+  BETTING_PRESETS,
+  BUILT_IN_BETTING,
+  bettingPresets,
+  bettingValues,
+  readBettingStrategies,
+} from '@/settings/betting-strategies';
 import { presetState, sameValues } from '@/settings/named-configs';
 import { Settings } from '@/settings/store';
 import { SETTINGS_SCHEMA } from '@/settings/schema';
@@ -62,6 +68,36 @@ describe('betting strategies', () => {
   it('write back as settings the strategy holds', () => {
     const preset = BETTING_PRESETS.make('a', 'Spread', values());
     expect(BETTING_PRESETS.patch(BETTING_PRESETS.valuesOf(preset))).toEqual(values());
+  });
+
+  it('load into Deck Estimation only the bets, chip value and Wong out it keeps', () => {
+    const depth = bettingPresets('depth');
+    const single = BUILT_IN_BETTING[0];
+    expect(depth.selectedKey).toBe('drills.depth.betting.strategy');
+    expect(depth.patch(depth.valuesOf(single))).toEqual({
+      'drills.depth.betting.chipValue': 25,
+      'drills.depth.betting.ramp': single.values['game.betting.ramp'],
+      'drills.depth.betting.wonging': false,
+      'drills.depth.betting.wongOut': -2,
+    });
+    const s = settings();
+    expect(Object.keys(depth.current(key => s.get(key))).sort()).toEqual([
+      'game.betting.chipValue',
+      'game.betting.ramp',
+      'game.betting.wongOut',
+      'game.betting.wonging',
+    ]);
+  });
+
+  it('saved from Deck Estimation, keep the rest of the strategy saved over', () => {
+    const depth = bettingPresets('depth');
+    const base = BETTING_PRESETS.make('a', 'Spread', values());
+    const saved = depth.make('a', 'Spread', { 'game.betting.wongOut': -4 }, base);
+    expect(saved.values).toEqual({ ...values(), 'game.betting.wongOut': -4 });
+    // With nothing saved over, the rest is the shipped settings; Wong in stays above Wong out.
+    const fresh = depth.make('b', 'Steep', { 'game.betting.wonging': true, 'game.betting.wongOut': 3 });
+    expect(fresh.values).toMatchObject({ 'game.betting.wongStartOut': false, 'game.betting.wongIn': 4 });
+    expect(readBettingStrategies([fresh])).toEqual([fresh]);
   });
 
   it('read back only well-formed ones', () => {

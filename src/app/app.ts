@@ -15,7 +15,7 @@ import { readBankroll, readStats } from '@/game/record';
 import type { GameStats } from '@/game/record';
 import { readGestureConfigs } from '@/settings/gesture-configs';
 import type { GestureConfig } from '@/core/gestures';
-import { readBettingStrategies } from '@/settings/betting-strategies';
+import { followSaved, readBettingStrategies } from '@/settings/betting-strategies';
 import type { BettingStrategy } from '@/settings/betting-strategies';
 import { DRILL_SETS, GAME_SETS } from '@/settings/setting-sets';
 import type { DrillName, SettingSet } from '@/settings/setting-sets';
@@ -54,6 +54,12 @@ export type App = Services;
 export function createServices({ backend }: { backend?: StorageBackend } = {}): Services {
   const storage = new Storage(backend);
   const settings = new Settings(SETTINGS_SCHEMA, storage);
+  const bettingStrategies = persistedStore(storage, 'bettingStrategies', readBettingStrategies);
+  // A strategy saved in one module reaches every other module on it.
+  bettingStrategies.subscribe(({ value }, { value: before }) => {
+    const changes = followSaved(key => settings.get(key), before, value);
+    if (Object.keys(changes).length) settings.update(changes);
+  });
   return {
     storage,
     settings,
@@ -64,7 +70,7 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
-    bettingStrategies: persistedStore(storage, 'bettingStrategies', readBettingStrategies),
+    bettingStrategies,
     gameConfigs: persistedStore(storage, 'gameConfigs', GAME_SETS.read),
     drillConfigs: {
       flash: persistedStore(storage, 'flashConfigs', DRILL_SETS.flash.read),

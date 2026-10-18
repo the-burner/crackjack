@@ -19,7 +19,8 @@ const select = (label: string) => screen.queryByRole('combobox', { name: label, 
 
 /** Picks `option` in the select labelled `label`, as the user would. */
 async function choose(user: User, label: string, option: string) {
-  await user.selectOptions(screen.getByRole('combobox', { name: label }), option);
+  const select = screen.getByRole('combobox', { name: label });
+  await user.selectOptions(select, within(select).getByRole('option', { name: option }));
 }
 
 const toggle = (label: string) => screen.queryByRole('switch', { name: label, hidden: true });
@@ -83,11 +84,7 @@ describe('drill options screens', () => {
     expectHidden(duration('Drill time'));
     await user.click(screen.getByRole('switch', { name: 'Time limit per hand' }));
     expect(duration('Time per hand')).toBeVisible();
-    // By its element: the option's text has an ampersand, which selectOptions matches escaped.
-    await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Timer mode' }),
-      screen.getByRole('option', { name: 'Timer Mode: Count Down & Halt' }),
-    );
+    await choose(user, 'Timer mode', 'Timer Mode: Count Down & Halt');
     expectHidden(toggle('Time limit per hand'));
     expect(duration('Drill time')).toBeVisible();
     // The number of rounds.
@@ -188,6 +185,25 @@ describe('drill options screens', () => {
     expect(duration('Time per test')).toBeVisible();
     expect(toggle('Progressive Speed')).toBeVisible();
     expectHidden(duration('Drill time'));
+  });
+
+  it('depth keeps its own Betting Strategy, and the TC Bet drills ask a count range', async () => {
+    const user = userEvent.setup();
+    const { location } = renderScreen(<DepthOptions />);
+    await choose(user, 'Drill', 'Drill: TC Bet');
+    expect(numberButton('Minimum count')).toBeVisible();
+    await choose(user, 'Drill', 'Drill: TC Bet & Decks');
+    expect(numberButton('Minimum count')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Betting Strategy' }));
+    expect(location().pathname).toBe('/drills/depth/betting');
+  });
+
+  it('only depth has a Betting Strategy among the drills', () => {
+    for (const Options of [FlashOptions, CountOptions, FullOptions]) {
+      const { unmount } = renderScreen(<Options />);
+      expect(screen.queryByRole('button', { name: 'Betting Strategy' })).not.toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('depth corrects the tray style at launch', async () => {

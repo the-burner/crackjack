@@ -49,6 +49,7 @@ export const newPresetId = (): string => `saved-${Date.now()}`;
 /** The settings that hold which preset is selected. */
 export type PresetSelectionKey =
   | 'game.betting.strategy'
+  | 'drills.depth.betting.strategy'
   | 'gestures.config'
   | 'game.config'
   | 'drills.flash.config'
@@ -65,7 +66,8 @@ export interface PresetKind<T extends Named, V> {
   current: (get: SettingReader) => V;
   valuesOf: (preset: T) => V;
   patch: (values: V) => SettingsPatch;
-  make: (id: string, name: string, values: V) => T;
+  /** `base`, when given, is the preset the values are saved over. */
+  make: (id: string, name: string, values: V, base?: T) => T;
 }
 
 /** The same settings, whatever order their keys were written in. */

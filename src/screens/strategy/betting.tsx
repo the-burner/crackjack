@@ -1,6 +1,7 @@
 // Betting Strategy: the table of bets the player
 // may make, optionally tied to the count so betting errors can be flagged,
 // and saved with the chip value and wonging as a named betting strategy.
+// Each module that bets keeps its own, and shows only what it uses (settings/scopes.ts).
 
 import { useState } from 'react';
 import { useOnShow } from '@/react/screen';
@@ -30,26 +31,30 @@ import {
   setRow,
   setRowCount,
 } from '@/settings/bet-ramp';
-import { BETTING_PRESETS } from '@/settings/betting-strategies';
+import { bettingPresets } from '@/settings/betting-strategies';
 import { PresetPicker } from '@/components/settings/preset-picker';
+import { keeps, scopedSettings } from '@/settings/scopes';
+import type { BettingScope, ScopedSettings } from '@/settings/scopes';
 
 const CHIP_OPTIONS = ([1, 5, 10, 25, 100, 500, 1000] as const).map(value => ({ value, label: `$${value}` }));
 
 const chunk = <T,>(items: readonly T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, i * size + size));
 
-export function Betting() {
+export function Betting({ scope }: { scope: BettingScope }) {
   const app = useApp();
   const navigate = useNavigate();
-  const settings = useSettings();
+  const settings = scopedSettings(useSettings(), scope);
   // A ramp saved out of range is shown tidied, so keep the tidied one.
   useOnShow(() => {
-    const tidy = rampToSave(settings.get('game.betting.ramp'));
-    if (tidy) settings.set('game.betting.ramp', tidy);
+    const tidy = rampToSave(settings.get('betting.ramp'));
+    if (tidy) settings.set('betting.ramp', tidy);
   });
 
-  const ramp = normalizeRamp(settings.get('game.betting.ramp'));
-  const showCounts = settings.get('game.betting.warnOnError');
+  const ramp = normalizeRamp(settings.get('betting.ramp'));
+  // Only the game can turn its bets' counts off: a drill asks the bet for a count.
+  const warns = keeps(scope, 'betting.warnOnError');
+  const showCounts = !warns || settings.get('betting.warnOnError');
   const counts = countLabels(ramp, { showCounts });
   // The row picker sits under this screen, wherever it was opened from.
   const openRow = (row: number) => navigate(String(row));
@@ -57,31 +62,35 @@ export function Betting() {
   return (
     <ScreenLayout title="Betting Strategy" help="game.betting">
       <Column>
-        <PresetPicker kind={BETTING_PRESETS} store={app.bettingStrategies} />
+        <PresetPicker kind={bettingPresets(scope)} store={app.bettingStrategies} />
         <SettingsNote>
           Enter the number of different bets in the table and then click on a table cell to enter a new bet.
         </SettingsNote>
         <SettingsGroup>
-          <CheckList
-            items={[
-              {
-                label: 'Warning on Betting Error',
-                checked: showCounts,
-                onChange: on => settings.set('game.betting.warnOnError', on),
-              },
-            ]}
-          />
-          <Select
-            label="Chip Value"
-            options={CHIP_OPTIONS}
-            value={settings.get('game.betting.chipValue')}
-            onChange={value => settings.set('game.betting.chipValue', value)}
-          />
+          {warns && (
+            <CheckList
+              items={[
+                {
+                  label: 'Warning on Betting Error',
+                  checked: showCounts,
+                  onChange: on => settings.set('betting.warnOnError', on),
+                },
+              ]}
+            />
+          )}
+          {keeps(scope, 'betting.chipValue') && (
+            <Select
+              label="Chip Value"
+              options={CHIP_OPTIONS}
+              value={settings.get('betting.chipValue')}
+              onChange={value => settings.set('betting.chipValue', value)}
+            />
+          )}
           <SettingsRow label="Number of bets">
             <ValueButton
               label="Number of bets"
               value={ramp.rows.length}
-              onChange={count => settings.set('game.betting.ramp', setRowCount(ramp, count))}
+              onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
               prompt="Number of different bets in table"
               min={MIN_ROWS}
               max={MAX_ROWS}
@@ -91,7 +100,7 @@ export function Betting() {
             <ValueButton
               label="Minimum bet count"
               value={ramp.minCount}
-              onChange={minCount => settings.set('game.betting.ramp', normalizeRamp({ ...ramp, minCount }))}
+              onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
               prompt="Start Count"
               min={-99}
               max={99}
@@ -131,55 +140,59 @@ export function Betting() {
             </tbody>
           </Grid>
         </div>
-        <Wonging />
+        <Wonging settings={settings} />
       </Column>
     </ScreenLayout>
   );
 }
 
-/** Sitting out the rounds between the Wong Out and Wong In counts. */
-function Wonging() {
-  const settings = useSettings();
-  const on = settings.get('game.betting.wonging');
-  const wongIn = settings.get('game.betting.wongIn');
-  const wongOut = settings.get('game.betting.wongOut');
+/** Sitting out the rounds between the Wong Out and Wong In counts; a drill, asking one count at a time, has only Wong Out. */
+function Wonging({ settings }: { settings: ScopedSettings }) {
+  const wongsIn = keeps(settings.scope, 'betting.wongIn');
+  const on = settings.get('betting.wonging');
+  const wongIn = wongsIn ? settings.get('betting.wongIn') : 99;
+  const wongOut = settings.get('betting.wongOut');
   return (
     <Section title="Wonging">
       <SettingsGroup>
         <CheckList
-          items={[{ label: 'Wonging', checked: on, onChange: value => settings.set('game.betting.wonging', value) }]}
+          items={[{ label: 'Wonging', checked: on, onChange: value => settings.set('betting.wonging', value) }]}
         />
         {on && (
           <>
-            <SettingsRow label="Wong in">
-              <ValueButton
-                label="Wong in"
-                value={wongIn}
-                onChange={value => settings.set('game.betting.wongIn', value)}
-                prompt="Count to start playing at"
-                min={wongOut + 1}
-                max={99}
-              />
-            </SettingsRow>
+            {wongsIn && (
+              <SettingsRow label="Wong in">
+                <ValueButton
+                  label="Wong in"
+                  value={wongIn}
+                  onChange={value => settings.set('betting.wongIn', value)}
+                  prompt="Count to start playing at"
+                  min={wongOut + 1}
+                  max={99}
+                />
+              </SettingsRow>
+            )}
             <SettingsRow label="Wong out">
               <ValueButton
                 label="Wong out"
                 value={wongOut}
-                onChange={value => settings.set('game.betting.wongOut', value)}
+                onChange={value => settings.set('betting.wongOut', value)}
                 prompt="Count to sit out at"
                 min={-99}
                 max={wongIn - 1}
               />
             </SettingsRow>
-            <CheckList
-              items={[
-                {
-                  label: 'Begin shoe wonged out',
-                  checked: settings.get('game.betting.wongStartOut'),
-                  onChange: value => settings.set('game.betting.wongStartOut', value),
-                },
-              ]}
-            />
+            {wongsIn && (
+              <CheckList
+                items={[
+                  {
+                    label: 'Begin shoe wonged out',
+                    checked: settings.get('betting.wongStartOut'),
+                    onChange: value => settings.set('betting.wongStartOut', value),
+                  },
+                ]}
+              />
+            )}
           </>
         )}
       </SettingsGroup>
@@ -190,15 +203,14 @@ function Wonging() {
 export type BetSelectParams = { row?: number };
 
 /** Picks the number of hands and chips for one row of the bet table. */
-export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) {
-  const app = useApp();
+export function BetSelect({ scope, params: { row = 0 } }: { scope: BettingScope; params: BetSelectParams }) {
   const goBack = useGoBack();
-  const { settings } = app;
-  const [current] = useState(() => normalizeRamp(settings.get('game.betting.ramp')));
+  const settings = scopedSettings(useApp().settings, scope);
+  const [current] = useState(() => normalizeRamp(settings.get('betting.ramp')));
   const [hands, setHands] = useState(current.rows[row]?.hands ?? 1);
 
   function choose(chips: number) {
-    settings.set('game.betting.ramp', setRow(normalizeRamp(settings.get('game.betting.ramp')), row, { chips, hands }));
+    settings.set('betting.ramp', setRow(normalizeRamp(settings.get('betting.ramp')), row, { chips, hands }));
     goBack();
   }
 
@@ -258,7 +270,7 @@ export function BetSelect({ params: { row = 0 } }: { params: BetSelectParams }) 
 }
 
 /** The row picker at its route (`betting/:row`). */
-export function BetSelectRoute() {
+export function BetSelectRoute({ scope }: { scope: BettingScope }) {
   const { row } = useParams();
-  return <BetSelect params={{ row: Number(row) || 0 }} />;
+  return <BetSelect scope={scope} params={{ row: Number(row) || 0 }} />;
 }

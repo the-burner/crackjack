@@ -50,7 +50,7 @@ export function DrillOptionsScreen({
     <ScreenLayout title={title} help={help}>
       <Column>
         <PresetPicker kind={DRILL_SETS[drill].kind} store={app.drillConfigs[drill]} />
-        {/* The drill's own counting system and true count, as the game has its own. */}
+        {/* The drill's own counting system, true count and betting, as the game has its own. */}
         <Section title="Strategy">
           <OptionGroup>
             <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.strategy`])}>
@@ -59,6 +59,11 @@ export function DrillOptionsScreen({
             {(drill === 'depth' || drill === 'count') && (
               <ListRow block onClick={() => navigate(PATHS[`drills.${drill}.trueCount`])}>
                 True Count Conversion
+              </ListRow>
+            )}
+            {drill === 'depth' && (
+              <ListRow block onClick={() => navigate(PATHS['drills.depth.betting'])}>
+                Betting Strategy
               </ListRow>
             )}
           </OptionGroup>

@@ -42,10 +42,20 @@ const showing = (page: Page, name: string) => page.locator(`[data-screen="${name
  */
 /** The router keeps its factories to itself. */
 /** Every screen: those with a URL of their own, and those under another screen's. */
-const ALL_SCREENS = [...Object.keys(PATHS), 'game.betting.select', 'game.betSelect', 'game.stats', 'help'];
+const ALL_SCREENS = [
+  ...Object.keys(PATHS),
+  'game.betting.select',
+  'drills.depth.betting.select',
+  'game.betSelect',
+  'game.stats',
+  'help',
+];
 
 /** The URL that opens a screen directly. */
-const urlOf = (name: string) => (name === 'game.betting.select' ? '/game/betting/0' : PATHS[name as ScreenName]);
+const urlOf = (name: string) =>
+  name.endsWith('.betting.select')
+    ? `${PATHS[name.replace('.select', '') as ScreenName]}/0`
+    : PATHS[name as ScreenName];
 
 const SCREENS = [
   { name: 'settings', title: 'Settings', control: 'role=button[name="Appearance & Sound"]' },
@@ -79,6 +89,8 @@ const SCREENS = [
   { name: 'settings.gestures', title: 'Gestures', control: 'role=combobox[name="Configuration"]' },
   { name: 'game.betting', title: 'Betting Strategy', control: 'role=table[name="Bets"]' },
   { name: 'game.betting.select', title: 'Betting Strategy', control: 'role=group[name="Chips"]' },
+  { name: 'drills.depth.betting', title: 'Betting Strategy', control: 'role=table[name="Bets"]' },
+  { name: 'drills.depth.betting.select', title: 'Betting Strategy', control: 'role=group[name="Chips"]' },
   { name: 'strategy.tables', title: 'Tables', control: 'role=table[name="Hard Hit/Stand"]' },
   { name: 'drills.flash.options', title: 'Playing Strategy Flash Cards', control: '[data-action="launch"]' },
   { name: 'drills.depth.options', title: 'Deck Estimation and TC Conversion', control: '[data-action="launch"]' },

@@ -92,15 +92,9 @@ const tableRuleDefs = () => ({
   'rules.noHoleCard': bool(false),
 });
 
-/** What only the game keeps: its warning, the cards its true count counts as gone, and its betting. */
-const gameDefs = () => ({
-  'strategy.warnOnError': bool(true),
-  'trueCount.remainingCards': oneOf(['dealt', 'shown', 'inTray'], 'inTray'),
-  'trueCount.aceSideCount': bool(false),
-  'trueCount.allowedErrorCards': int(13, 0, 13),
-  'trueCount.tenSideCount': bool(false),
+/** A betting strategy as a drill asks it: the bet at each count, and the count it sits out at. */
+const bettingDefs = () => ({
   'betting.chipValue': oneOf([1, 5, 10, 25, 100, 500, 1000], 25),
-  'betting.warnOnError': bool(true),
   /** Bet ramp: rows[i] applies at count minCount + i (first row "or less", last row "or more"). */
   'betting.ramp': json<Ramp>(
     {
@@ -118,12 +112,22 @@ const gameDefs = () => ({
   ),
   /** Wonging: sit out from the Wong Out count until the count is back to Wong In. */
   'betting.wonging': bool(true),
-  'betting.wongIn': int(1, -99, 99),
   'betting.wongOut': int(-2, -99, 99),
-  /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
-  'betting.wongStartOut': bool(false),
   /** The betting strategy selected (see betting-strategies.ts); '' for none. */
   'betting.strategy': text('multi-hand'),
+});
+
+/** What only the game keeps: its warning, the cards its true count counts as gone, and the rest of its betting. */
+const gameDefs = () => ({
+  'strategy.warnOnError': bool(true),
+  'trueCount.remainingCards': oneOf(['dealt', 'shown', 'inTray'], 'inTray'),
+  'trueCount.aceSideCount': bool(false),
+  'trueCount.allowedErrorCards': int(13, 0, 13),
+  'trueCount.tenSideCount': bool(false),
+  'betting.warnOnError': bool(true),
+  'betting.wongIn': int(1, -99, 99),
+  /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
+  'betting.wongStartOut': bool(false),
 });
 
 /** `defs` under `prefix`, as the schema keeps one module's copy of them. */
@@ -197,7 +201,7 @@ export const SETTINGS_SCHEMA = {
 
   // What the game counts and bets with (the rules its tables are built for are its own, above).
   ...under('game', { ...systemDefs(), ...indexDefs(), ...initialCountDefs(), ...trueCountDefs() }),
-  ...under('game', gameDefs()),
+  ...under('game', { ...bettingDefs(), ...gameDefs() }),
 
   // Unusual games, side bets and bonuses (game).
   'bonuses.game': oneOf(
@@ -310,10 +314,20 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.autoPauseSeconds': int(180, 1, 3600),
 
   // Deck Estimation and TC Conversion.
-  // The running count is given, so only the system and how its true count is worked out.
-  ...under('drills.depth', { ...systemDefs(), ...trueCountDefs() }),
+  // The running count is given, so only the system, how its true count is worked out and, for the
+  // TC Bet drills, the bet at each true count.
+  ...under('drills.depth', { ...systemDefs(), ...trueCountDefs(), ...bettingDefs() }),
   'drills.depth.drill': oneOf(
-    ['decksLeft', 'halfDecksLeft', 'quarterDecksLeft', 'acesLeft', 'trueCount', 'trueCountAndDecks'],
+    [
+      'decksLeft',
+      'halfDecksLeft',
+      'quarterDecksLeft',
+      'acesLeft',
+      'trueCount',
+      'trueCountAndDecks',
+      'bet',
+      'betAndDecks',
+    ],
     'decksLeft',
   ),
   'drills.depth.accuracy': oneOf(ACCURACY, 0),

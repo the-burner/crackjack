@@ -1,5 +1,5 @@
 // Each module keeps its own copy of the settings it counts cards with: its playing strategy and its
-// true count conversion, and for the game its betting. They live under the module's own prefix; a scope
+// true count conversion, and for the game and Deck Estimation their betting. They live under the module's own prefix; a scope
 // reads and writes one module's by the names its screens know, so one screen serves every module.
 
 import { SETTINGS_SCHEMA } from './schema';
@@ -20,6 +20,12 @@ export type ScopeName = keyof typeof SCOPES;
 /** The modules that ask true counts, so keep how they work them out (True Count Conversion). */
 export const TRUE_COUNT_SCOPES = ['game', 'depth', 'count'] as const satisfies readonly ScopeName[];
 export const asksTrueCounts = (scope: ScopeName): boolean => (TRUE_COUNT_SCOPES as readonly string[]).includes(scope);
+
+/** The modules that ask bets, so keep a Betting Strategy. */
+export const BETTING_SCOPES = ['game', 'depth'] as const satisfies readonly ScopeName[];
+export type BettingScope = (typeof BETTING_SCOPES)[number];
+export const isBettingScope = (scope: ScopeName): scope is BettingScope =>
+  (BETTING_SCOPES as readonly string[]).includes(scope);
 
 /** The name under `prefix` of every setting kept there. */
 type Suffix<P extends string> = { [K in SettingKey]: K extends `${P}.${infer Name}` ? Name : never }[SettingKey];

@@ -656,6 +656,51 @@ test.describe('depth drill', () => {
     await expect(page.locator('[data-screen="drills.depth.options"]')).toBeVisible();
   });
 
+  test('TC Bet asks the bet for the true count, its buttons in a new order each test', async ({ page }) => {
+    // The labels the answer grid was last drawn with, and where.
+    await page.addInitScript(() => {
+      window.gridTexts = [];
+      const proto = CanvasRenderingContext2D.prototype;
+      const { clearRect, fillText } = proto;
+      const isGrid = (ctx: CanvasRenderingContext2D) => ctx.canvas.getAttribute('aria-label') === 'Answer grid';
+      proto.clearRect = function (this: CanvasRenderingContext2D, ...args: Parameters<typeof clearRect>) {
+        if (isGrid(this)) window.gridTexts = [];
+        clearRect.apply(this, args);
+      };
+      proto.fillText = function (this: CanvasRenderingContext2D, text: string, x: number, y: number) {
+        if (isGrid(this)) window.gridTexts.push({ text, x, y });
+        fillText.call(this, text, x, y);
+      };
+    });
+    // KO has no true count, so the bet is the running count's: Crackjack's Multi-Hand Strategy,
+    // in $25 chips, sitting out at -2 or below.
+    await open(page, {
+      'drills.depth.drill': 'bet',
+      'drills.depth.strategy.system': 73,
+      'drills.depth.countRangeMin': -6,
+      'drills.depth.countRangeMax': 8,
+      'drills.depth.accuracy': 0,
+    });
+    const screen = await launch(page, DRILLS.depth);
+    const canvas = screen.getByRole('img', { name: 'Answer grid' });
+    const bets = ['25', '50', '2x50', '2x75', '2x150', '2x300'];
+    const orders = new Set<string>();
+    for (let test = 1; test <= 6; test++) {
+      const panel = (await screen.getByText(/^RC: /).textContent())!;
+      expect(panel).toMatch(/^RC: -?\d+ Decks: /);
+      const count = Number(/^RC: (-?\d+)/.exec(panel)![1]);
+      const expected = count <= -2 ? 'Wong' : bets[Math.min(Math.max(count, 0), bets.length - 1)];
+      const cells = await page.evaluate(() => window.gridTexts);
+      expect(cells.map(c => c.text).sort()).toEqual(['Wong', ...bets].sort());
+      orders.add(cells.map(c => c.text).join());
+      const cell = cells.find(c => c.text === expected)!;
+      await canvas.click({ position: { x: cell.x, y: cell.y } });
+      await expect(statsOf(screen)).toContainText(`Tests: ${test + 1}`);
+    }
+    expect(await statsText(screen)).toContain('Accuracy: 100%');
+    expect(orders.size).toBeGreaterThan(1);
+  });
+
   test('moves the tray style up when it cannot hold the decks in play', async ({ page }) => {
     await open(page, { 'drills.depth.decks': 6, 'drills.depth.trayStyle': 'doubleDeckFront' });
     await page.getByRole('button', { name: 'Deck Estimation and TC Conversion' }).click();

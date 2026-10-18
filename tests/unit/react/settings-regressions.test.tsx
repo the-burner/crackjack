@@ -81,7 +81,7 @@ describe('grouping', () => {
   });
 
   it('the Allowed Bets rows sit in one inset group', () => {
-    const { container } = renderScreen(<Betting />);
+    const { container } = renderScreen(<Betting scope="game" />);
     // The saved strategies, the bet rows, then Wonging's own group below the table.
     const all = groups(container);
     expect(all).toHaveLength(3);
@@ -100,7 +100,7 @@ describe('Allowed Bets', () => {
     const backend = new MemoryBackend();
     const app = createServices({ backend });
     app.settings.set('game.betting.ramp', { minCount: 1.5, rows: [{ chips: 999, hands: 9 }] });
-    renderScreen(<Betting />, { app });
+    renderScreen(<Betting scope="game" />, { app });
     const saved = JSON.parse(backend.getItem('cj.settings') ?? '{}').state.values['game.betting.ramp'];
     expect(saved).toEqual({ minCount: 2, rows: [{ chips: 33, hands: 6 }] });
   });

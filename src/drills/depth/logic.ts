@@ -1,10 +1,14 @@
 // Depth drills: a photo of a discard tray is shown and the player says how
-// deep the shoe is (or converts a running count to a true count).
+// deep the shoe is (or converts a running count to a true count, or to the bet for it).
 
 import { decksRemaining, roundTrueCount } from '@/core/counting';
 import type { CounterSettings } from '@/core/counting';
 import { CARDS_PER_DECK } from '@/core/cards';
+import { shuffle } from '@/core/random';
 import type { Random } from '@/core/random';
+import { normalizeRamp, rowForCount } from '@/settings/bet-ramp';
+import { betLabel } from '@/game/table/bet-grid';
+import type { Ramp } from '@/settings/bet-ramp';
 import type { Strategy } from '@/core/strategy/strategy-tables';
 import { AnswerGrid } from '@/drills/shared/answer-grid';
 import type { GridCell } from '@/drills/shared/answer-grid';
@@ -14,9 +18,17 @@ import type { TrayPhoto } from '@/drills/shared/discard-tray';
 import { mixedNumber } from '@/drills/shared/format';
 
 export type DepthDrill =
-  'decksLeft' | 'halfDecksLeft' | 'quarterDecksLeft' | 'acesLeft' | 'trueCount' | 'trueCountAndDecks';
+  | 'decksLeft'
+  | 'halfDecksLeft'
+  | 'quarterDecksLeft'
+  | 'acesLeft'
+  | 'trueCount'
+  | 'trueCountAndDecks'
+  | 'bet'
+  | 'betAndDecks';
 export type Resolution = 'full' | 'half' | 'quarter';
-type TrueCountDrill = 'trueCount' | 'trueCountAndDecks';
+type BetDrill = 'bet' | 'betAndDecks';
+type TrueCountDrill = 'trueCount' | 'trueCountAndDecks' | BetDrill;
 
 /** Steps per deck the chosen resolution asks about. */
 export const RESOLUTION_STEPS: Readonly<Record<Resolution, number>> = { full: 1, half: 2, quarter: 4 };
@@ -36,11 +48,19 @@ export const DRILL_LABELS: Readonly<Record<DepthDrill, string>> = {
   acesLeft: 'Aces Left',
   trueCount: 'TC Conversion',
   trueCountAndDecks: 'TC Conv. & Decks',
+  bet: 'TC Bet',
+  betAndDecks: 'TC Bet & Decks',
 };
 
-/** The two drills that ask for a true count rather than a depth. */
+/** The drills that work out a true count from a running count rather than ask a depth. */
 export const isTrueCountDrill = (drill: string): drill is TrueCountDrill =>
-  drill === 'trueCount' || drill === 'trueCountAndDecks';
+  drill === 'trueCount' || drill === 'trueCountAndDecks' || isBetDrill(drill);
+
+/** The drills that ask the bet for the true count. */
+export const isBetDrill = (drill: string): drill is BetDrill => drill === 'bet' || drill === 'betAndDecks';
+
+/** The drills that show the decks in the tray beside the running count. */
+const showsDecks = (drill: TrueCountDrill): boolean => drill === 'trueCount' || drill === 'bet';
 
 /** Running counts the true-count drills draw from, and the answers they accept. */
 const RUNNING_COUNT_RANGE = { low: -35, high: 65 };
@@ -51,7 +71,8 @@ const TC_ROWS = 4;
 const TC_LOWEST = TRUE_COUNT_ANSWERS.low - 1;
 
 export interface DepthGridOptions {
-  drill: DepthDrill;
+  /** The TC Bet drills draw a new grid each test (betGrid). */
+  drill: Exclude<DepthDrill, BetDrill>;
   decks: number;
   resolution: Resolution;
   /** Ask about the cards in the tray instead of those left. */
@@ -115,9 +136,56 @@ export interface DepthTestOptions extends TrueCountOptions {
   trayStyle: string;
   /** Running counts the TC drills use. */
   countRange: CountRange;
+  /** The bets the TC Bet drills ask. */
+  betting: BetOptions;
   /** Never asked twice in a row. */
   previousAnswer: number | null;
   random: Random;
+}
+
+/** The betting strategy the TC Bet drills ask from. */
+export interface BetOptions {
+  ramp: Ramp;
+  /** Dollar value of one chip: the bets are labelled as the game's are. */
+  chipValue: number;
+  /** Sits out at this true count or below; null when the strategy does not wong. */
+  wongOut: number | null;
+}
+
+/** The game's button for sitting out. */
+export const WONG = 'Wong';
+
+/** A ramp row as the game's bet button reads. */
+const label = ({ chips, hands }: { chips: number; hands: number }, chipValue: number) =>
+  betLabel(chips * chipValue, hands);
+
+/** The TC Bet drills' answers, lowest first: Wong when the strategy wongs, then each different bet. */
+export function betAnswers({ ramp, chipValue, wongOut }: BetOptions): string[] {
+  const bets = [...new Set(normalizeRamp(ramp).rows.map(row => label(row, chipValue)))];
+  return wongOut === null ? bets : [WONG, ...bets];
+}
+
+/** The answer (its place in `betAnswers`) for a true count. */
+export function betFor(trueCount: number, betting: BetOptions): number {
+  if (betting.wongOut !== null && trueCount <= betting.wongOut) return 0;
+  return betAnswers(betting).indexOf(label(rowForCount(betting.ramp, trueCount), betting.chipValue));
+}
+
+/** The TC Bet drills' grid: every answer once, in a new order each test, a little wider than tall. */
+export function betGrid(betting: BetOptions, random: Random): AnswerGrid {
+  const answers = betAnswers(betting);
+  const columns = Math.min(answers.length, Math.ceil(Math.sqrt(2 * answers.length)));
+  const order = shuffle(
+    answers.map((_, value) => value),
+    random,
+  );
+  const cells = order.map((value, i) => ({
+    row: Math.floor(i / columns),
+    column: i % columns,
+    value,
+    label: answers[value],
+  }));
+  return new AnswerGrid({ cells, rows: Math.ceil(answers.length / columns), columns });
 }
 
 /** What `trueCountFor` needs to know about the shoe and the count. */
@@ -167,11 +235,12 @@ export function generateDepthTest(o: DepthTestOptions): DepthTest | null {
 
   const runningCount = drawRunningCount(o.countRange, o.random);
   if (runningCount === null) return null;
-  const answer = trueCountFor(runningCount, decksInTray, o);
-  if (answer < TRUE_COUNT_ANSWERS.low || answer > TRUE_COUNT_ANSWERS.high) return null;
-  if (answer === o.previousAnswer) return null;
-  const panel =
-    o.drill === 'trueCount' ? `RC: ${runningCount} Decks: ${mixedNumber(decksInTray)}` : `RC: ${runningCount}`;
+  const trueCount = trueCountFor(runningCount, decksInTray, o);
+  if (trueCount < TRUE_COUNT_ANSWERS.low || trueCount > TRUE_COUNT_ANSWERS.high) return null;
+  const answer = isBetDrill(o.drill) ? betFor(trueCount, o.betting) : trueCount;
+  // A strategy with a single bet can only ask it.
+  if (answer === o.previousAnswer && !(isBetDrill(o.drill) && betAnswers(o.betting).length === 1)) return null;
+  const panel = showsDecks(o.drill) ? `RC: ${runningCount} Decks: ${mixedNumber(decksInTray)}` : `RC: ${runningCount}`;
   return { ...test, answer, runningCount, panel };
 }
 

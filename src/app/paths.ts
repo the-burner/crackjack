@@ -29,6 +29,7 @@ export const PATHS = {
   'drills.flash.strategy': '/drills/flash/strategy',
   'drills.depth.strategy': '/drills/depth/strategy',
   'drills.depth.trueCount': '/drills/depth/true-count',
+  'drills.depth.betting': '/drills/depth/betting',
   'drills.count.strategy': '/drills/count/strategy',
   'drills.count.trueCount': '/drills/count/true-count',
   'drills.full.strategy': '/drills/full/strategy',

@@ -3,8 +3,8 @@
 // those stay as they are underneath.
 
 import type { ComponentType, ReactNode } from 'react';
-import { asksTrueCounts } from '@/settings/scopes';
-import type { ScopeName } from '@/settings/scopes';
+import { asksTrueCounts, isBettingScope } from '@/settings/scopes';
+import type { BettingScope, ScopeName } from '@/settings/scopes';
 import { useState } from 'react';
 import { createHashRouter, Navigate, Outlet, useNavigationType } from 'react-router';
 import { cn } from '@/lib/utils';
@@ -64,10 +64,20 @@ const settings = area('settings');
 const game = area('game');
 
 const tables = () => import('@/screens/strategy/tables').then(m => m.StrategyTablesRoute);
-const betting = () => import('@/screens/strategy/betting').then(m => m.Betting);
-const betRow = () => import('@/screens/strategy/betting').then(m => m.BetSelectRoute);
+/** Module `scope`'s Betting Strategy, and the picker for one of its rows. */
+const betting = (scope: BettingScope) => async () => {
+  const { Betting } = await import('@/screens/strategy/betting');
+  return () => <Betting scope={scope} />;
+};
+const betRow = (scope: BettingScope) => async () => {
+  const { BetSelectRoute } = await import('@/screens/strategy/betting');
+  return () => <BetSelectRoute scope={scope} />;
+};
 
-/** One module's own Playing Strategy screen, and True Count Conversion if it asks true counts (settings/scopes.ts). */
+/**
+ * One module's own Playing Strategy screen, True Count Conversion if it asks true counts, and Betting Strategy
+ * if it asks bets (settings/scopes.ts).
+ */
 const counting = (scope: ScopeName, prefix: string, name: string): RouteObject[] => [
   {
     path: `${prefix}/strategy`,
@@ -77,6 +87,12 @@ const counting = (scope: ScopeName, prefix: string, name: string): RouteObject[]
     }),
   },
   ...(asksTrueCounts(scope) ? [trueCountRoute(scope, prefix, name)] : []),
+  ...(isBettingScope(scope)
+    ? [
+        { path: `${prefix}/betting`, ...page(`${name}.betting`, betting(scope)) },
+        { path: `${prefix}/betting/:row`, ...page(`${name}.betting.select`, betRow(scope)) },
+      ]
+    : []),
 ];
 
 const trueCountRoute = (scope: ScopeName, prefix: string, name: string): RouteObject => ({
@@ -114,8 +130,6 @@ export const routes: RouteObject[] = [
       settings('appearance', 'appearance', () => import('@/screens/settings/appearance').then(m => m.Appearance)),
       settings('gestures', 'gestures', () => import('@/screens/settings/gestures').then(m => m.Gestures)),
       ...counting('game', 'game', 'game'),
-      game('betting', 'betting', betting),
-      game('betting/:row', 'betting.select', betRow),
       ...counting('flash', 'drills/flash', 'drills.flash'),
       ...counting('depth', 'drills/depth', 'drills.depth'),
       ...counting('count', 'drills/count', 'drills.count'),
@@ -177,8 +191,8 @@ export const routes: RouteObject[] = [
         children: [
           { path: 'stats', ...page('game.stats', () => import('@/game/screens/stats').then(m => m.GameStatsRoute)) },
           { path: 'error', ...page('strategy.tables', tables) },
-          { path: 'customize', ...page('game.betting', betting) },
-          { path: 'customize/:row', ...page('game.betting.select', betRow) },
+          { path: 'customize', ...page('game.betting', betting('game')) },
+          { path: 'customize/:row', ...page('game.betting.select', betRow('game')) },
           {
             path: 'side-bet/:spot',
             ...page('game.betSelect', () => import('@/game/screens/bet-select').then(m => m.SideBetRoute)),

@@ -13,7 +13,7 @@ import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
 import type { GridTap } from '@/drills/shared/grid-answers';
 import { loadTrayImage, drawTray } from '@/drills/shared/discard-tray';
 import type { App } from '@/app/app';
-import { depthGrid, generateDepthTest } from './logic';
+import { betGrid, depthGrid, generateDepthTest, isBetDrill } from './logic';
 import type { DepthTest } from './logic';
 
 /** How many draws to try before giving up on finding a usable test. */
@@ -49,6 +49,11 @@ export function createDepthDrill(app: App) {
     countRange: { min: s.get('drills.depth.countRangeMin'), max: s.get('drills.depth.countRangeMax') },
     askInTray: s.get('drills.depth.askCardsInTray'),
     progressive: s.get('drills.depth.progressiveSpeed'),
+    betting: {
+      ramp: s.get('drills.depth.betting.ramp'),
+      chipValue: s.get('drills.depth.betting.chipValue'),
+      wongOut: s.get('drills.depth.betting.wonging') ? s.get('drills.depth.betting.wongOut') : null,
+    },
     ...drillStrategy(app, 'depth', s.get('drills.depth.decks')),
   };
 
@@ -79,7 +84,9 @@ export function createDepthDrill(app: App) {
   function start() {
     run += 1;
     previousAnswer = null;
-    grid = depthGrid(options);
+    const { drill } = options;
+    // The TC Bet drills shuffle their grid for each test.
+    grid = isBetDrill(drill) ? null : depthGrid({ ...options, drill });
     drillClockFor(shell, { mode: options.timerMode, limit: options.drillSeconds, onHalt: finish }).start();
     nextTest();
   }
@@ -106,6 +113,7 @@ export function createDepthDrill(app: App) {
       return;
     }
     previousAnswer = test.answer;
+    if (isBetDrill(options.drill)) grid = betGrid(options.betting, Math.random);
     image = loadTrayImage(test.tray.src);
     if (!image.complete) image.addEventListener('load', changed, { once: true });
     grid?.clearMarks();

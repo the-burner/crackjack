@@ -1,14 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
+  betAnswers,
+  betFor,
+  betGrid,
   depthGrid,
   depthLabel,
   generateDepthTest,
   trueCountFor,
   trayStyleFor,
+  isBetDrill,
   isTrueCountDrill,
   RESOLUTION_STEPS,
 } from '@/drills/depth/logic';
-import type { DepthTestOptions, TrueCountOptions } from '@/drills/depth/logic';
+import type { BetOptions, DepthTestOptions, TrueCountOptions } from '@/drills/depth/logic';
+import { MULTI_HAND } from '@/settings/betting-strategies';
 import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import type { CounterSettings } from '@/core/counting';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
@@ -23,6 +28,8 @@ const highLow = buildStrategy(STRATEGY_FILES[30], {
   indexSet: 'all',
 });
 const tc: CounterSettings = { division: 0, lastDeck: 1, rounding: 0 };
+/** Crackjack's Multi-Hand Strategy: 1, 2, 2x2, 2x3, 2x6, 2x12 $25 chips from a count of 0, sitting out at -2. */
+const multiHand: BetOptions = { ramp: MULTI_HAND['game.betting.ramp'], chipValue: 25, wongOut: -2 };
 
 /** The labels of a grid, row by row from the top. */
 function rows(grid: AnswerGrid) {
@@ -111,19 +118,21 @@ describe('depthLabel', () => {
   });
 });
 
-describe('generateDepthTest', () => {
-  const base: Omit<DepthTestOptions, 'random'> = {
-    decks: 6,
-    resolution: 'half',
-    drill: 'halfDecksLeft',
-    askInTray: false,
-    trayStyle: 'sixDeckFront',
-    countRange: { min: -10, max: 15 },
-    strategy: highLow,
-    trueCountSettings: tc,
-    previousAnswer: null,
-  };
+/** A test's options: six decks at half-deck resolution. */
+const base: Omit<DepthTestOptions, 'random'> = {
+  decks: 6,
+  resolution: 'half',
+  drill: 'halfDecksLeft',
+  askInTray: false,
+  trayStyle: 'sixDeckFront',
+  countRange: { min: -10, max: 15 },
+  strategy: highLow,
+  trueCountSettings: tc,
+  betting: multiHand,
+  previousAnswer: null,
+};
 
+describe('generateDepthTest', () => {
   it('never asks for an empty or a full shoe', () => {
     const random = seededRandom(4);
     for (let i = 0; i < 300; i++) {
@@ -201,6 +210,83 @@ describe('generateDepthTest', () => {
   });
 });
 
+describe('the TC Bet drills', () => {
+  it('offer Wong when the strategy wongs, then each different bet as the game labels it, lowest first', () => {
+    expect(betAnswers(multiHand)).toEqual(['Wong', '25', '50', '2x50', '2x75', '2x150', '2x300']);
+    expect(betAnswers({ ...multiHand, wongOut: null })).toEqual(['25', '50', '2x50', '2x75', '2x150', '2x300']);
+    const repeated = { minCount: 1, rows: [1, 2, 2, 1, 40].map(chips => ({ chips, hands: 1 })) };
+    expect(betAnswers({ ramp: repeated, chipValue: 100, wongOut: null })).toEqual(['100', '200', '4K']);
+  });
+
+  it('ask the ramp bet for the true count, and Wong out at the wong-out count or below', () => {
+    const bet = (trueCount: number, betting = multiHand) => betAnswers(betting)[betFor(trueCount, betting)];
+    expect([-5, -2, -1, 0, 1, 2, 3, 4, 5, 9].map(count => bet(count))).toEqual([
+      'Wong',
+      'Wong',
+      '25',
+      '25',
+      '50',
+      '2x50',
+      '2x75',
+      '2x150',
+      '2x300',
+      '2x300',
+    ]);
+    // Without wonging the lowest bet stands for every count below the ramp.
+    expect(bet(-5, { ...multiHand, wongOut: null })).toBe('25');
+  });
+
+  it('lay every answer out once, in a new order each test', () => {
+    const random = seededRandom(3);
+    const orders = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const grid = betGrid(multiHand, random);
+      expect([...grid.cells].map(c => c.value).sort()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+      expect(grid.cells.every(c => c.label === betAnswers(multiHand)[c.value])).toBe(true);
+      orders.add(grid.cells.map(c => c.label).join());
+    }
+    expect(orders.size).toBeGreaterThan(15);
+  });
+
+  it('lay the answers out a little wider than tall', () => {
+    const grid = betGrid(multiHand, seededRandom(1));
+    expect([grid.rows, grid.columns]).toEqual([2, 4]);
+    const one = betGrid(
+      { ramp: { minCount: 0, rows: [{ chips: 1, hands: 1 }] }, chipValue: 25, wongOut: null },
+      seededRandom(1),
+    );
+    expect([one.rows, one.columns]).toEqual([1, 1]);
+  });
+
+  it('ask the bet for the converted true count, with the decks on the panel for TC Bet only', () => {
+    const random = seededRandom(21);
+    let found = 0;
+    for (let i = 0; i < 400; i++) {
+      const drill = i % 2 ? 'bet' : 'betAndDecks';
+      const test = generateDepthTest({ ...base, drill, random });
+      if (!test) continue;
+      found += 1;
+      const trueCount = trueCountFor(test.runningCount!, test.decksInTray, base);
+      expect(test.answer).toBe(betFor(trueCount, multiHand));
+      expect(test.panel).toMatch(drill === 'bet' ? /^RC: -?\d+ Decks: / : /^RC: -?\d+$/);
+    }
+    expect(found).toBeGreaterThan(50);
+  });
+
+  it('never ask the same bet twice in a row, unless the strategy has only one', () => {
+    const random = seededRandom(22);
+    for (let i = 0; i < 200; i++) {
+      const test = generateDepthTest({ ...base, drill: 'bet', previousAnswer: 1, random });
+      if (test) expect(test.answer).not.toBe(1);
+    }
+    const flat = { ramp: { minCount: 0, rows: [{ chips: 1, hands: 1 }] }, chipValue: 25, wongOut: null };
+    const tests = Array.from({ length: 50 }, () =>
+      generateDepthTest({ ...base, drill: 'bet', betting: flat, previousAnswer: 0, random }),
+    );
+    expect(tests.some(test => test?.answer === 0)).toBe(true);
+  });
+});
+
 describe('trueCountFor', () => {
   it('divides the running count by the decks left, rounded by the settings', () => {
     const o: TrueCountOptions = { decks: 6, strategy: highLow, trueCountSettings: tc };
@@ -233,8 +319,10 @@ describe('tray styles', () => {
 });
 
 describe('isTrueCountDrill', () => {
-  it('knows the two conversion drills', () => {
-    expect(['trueCount', 'trueCountAndDecks'].every(isTrueCountDrill)).toBe(true);
+  it('knows the conversion and bet drills, which work from a running count', () => {
+    expect(['trueCount', 'trueCountAndDecks', 'bet', 'betAndDecks'].every(isTrueCountDrill)).toBe(true);
     expect(['decksLeft', 'acesLeft'].some(isTrueCountDrill)).toBe(false);
+    expect(['bet', 'betAndDecks'].every(isBetDrill)).toBe(true);
+    expect(['trueCount', 'trueCountAndDecks', 'decksLeft'].some(isBetDrill)).toBe(false);
   });
 });
