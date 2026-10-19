@@ -50,13 +50,13 @@ describe('a drill configuration', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     renderScreen(<DepthOptions />, { app, path: '/drills/depth' });
-    expect(picker()).toHaveDisplayValue('Default');
-    act(() => app.settings.update({ 'drills.depth.decks': 2, 'drills.flash.decks': 2 }));
-    expect(picker()).toHaveDisplayValue('Default (edited)');
+    expect(picker()).toHaveDisplayValue("Crackjack's Decks Left 6D");
+    act(() => app.settings.update({ 'drills.depth.decks': 4, 'drills.flash.decks': 2 }));
+    expect(picker()).toHaveDisplayValue("Crackjack's Decks Left 6D (edited)");
     await saveAs(user, 'Short shoe');
     await waitFor(() => expect(app.drillConfigs.depth.getState().value).toHaveLength(1));
     const [saved] = app.drillConfigs.depth.getState().value;
-    expect(saved.values['drills.depth.decks']).toBe(2);
+    expect(saved.values['drills.depth.decks']).toBe(4);
     expect(saved.values).not.toHaveProperty('drills.flash.decks');
     expect(app.drillConfigs.flash.getState().value).toEqual([]);
   });

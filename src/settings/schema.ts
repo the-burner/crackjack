@@ -263,7 +263,7 @@ export const SETTINGS_SCHEMA = {
   /** The game and drill configurations selected (see setting-sets.ts); '' for none. */
   'game.config': text('table-6d'),
   'drills.flash.config': text('infinite-round-robin'),
-  'drills.depth.config': text('default'),
+  'drills.depth.config': text('decks-left-6d'),
   'drills.count.config': text('running-count-3-minute'),
   'drills.full.config': text('default'),
   'display.sound': bool(false),
@@ -313,7 +313,7 @@ export const SETTINGS_SCHEMA = {
   'drills.flash.autoPause': bool(false),
   'drills.flash.autoPauseSeconds': int(180, 1, 3600),
 
-  // Deck Estimation and TC Conversion.
+  // Deck Estimation and TC Conversion. A fresh install drills Crackjack's Decks Left 6D.
   // The running count is given, so only the system, how its true count is worked out and, for the
   // TC Bet drills, the bet at each true count.
   ...under('drills.depth', { ...systemDefs(), ...trueCountDefs(), ...bettingDefs() }),

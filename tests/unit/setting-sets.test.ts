@@ -80,11 +80,27 @@ describe('a configuration', () => {
     }
   });
 
+  it("offers Crackjack's four Deck Estimation drills, and none called Default", () => {
+    const builtIns = DRILL_SETS.depth.kind.builtIns;
+    expect(builtIns.map(s => s.name)).toEqual([
+      "Crackjack's Decks Left 6D",
+      "Crackjack's Decks Left 2D",
+      "Crackjack's TC Bet & Decks 6D",
+      "Crackjack's TC Bet & Decks 2D",
+    ]);
+    expect(builtIns.map(set => DRILL_SETS.depth.kind.valuesOf(set))).toMatchObject([
+      { 'drills.depth.drill': 'decksLeft', 'drills.depth.decks': 6 },
+      { 'drills.depth.drill': 'decksLeft', 'drills.depth.decks': 2 },
+      { 'drills.depth.drill': 'betAndDecks', 'drills.depth.decks': 6 },
+      { 'drills.depth.drill': 'betAndDecks', 'drills.depth.decks': 2 },
+    ]);
+  });
+
   it("begins a fresh install unedited: the game on Crackjack's 6D table, Flash Cards on its Infinite Round Robin", () => {
     const fresh = {
       game: 'table-6d',
       flash: 'infinite-round-robin',
-      depth: 'default',
+      depth: 'decks-left-6d',
       count: 'running-count-3-minute',
       full: 'default',
     };
