@@ -3,7 +3,7 @@
 import { toast } from '@/components/ui/toast';
 import { useApp, useSettings } from '@/react/app-context';
 import { CheckList } from '@/components/ui/check-list';
-import { ListRow, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
 import { SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import { DECKS } from '@/settings/schema';
@@ -52,51 +52,55 @@ export function Setup() {
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
     <SettingsScreen title="Basic Setup" help="game.setup" note={NOTE}>
-      <SettingsGroup>
-        <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
-        <SettingsNote>Below, highlighted seats are computer players. Click to change.</SettingsNote>
-        <SeatPicker />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingSelect
-          label="Decks"
-          setting="table.decks"
-          options={DECK_OPTIONS}
-          onChange={value => {
-            settings.set('table.decks', value);
-            settings.set(
-              'table.cardsBehindCutCard',
-              Math.min(settings.get('table.cardsBehindCutCard'), maxCardsBehindCutCard(value)),
-            );
-          }}
-        />
-        <SettingSelect
-          label="Shuffle"
-          setting="table.shuffleMode"
-          options={SHUFFLE_MODES}
-          onChange={value => settings.set('table.shuffleMode', value)}
-        />
-        <SettingNumber
-          label="Shuffle Point/Cards"
-          setting="table.cardsBehindCutCard"
-          prompt="Cards after the cut card"
-          clamp={value => Math.min(value, maxCardsBehindCutCard(decks))}
-          hidden={!byCutCard}
-        />
-        <SettingNumber label="Rounds" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />
-        <SettingNumber label="Burn Cards" setting="table.burnCards" prompt="Burn Cards" />
-        <SettingNumber label="Starting Bankroll" setting="table.startingBankroll" prompt="Starting Bankroll" />
-        <ListRow
-          block
-          chevron={false}
-          onClick={() => {
-            app.bankroll.setState({ value: settings.get('table.startingBankroll') });
-            toast('Bankroll refreshed');
-          }}
-        >
-          Refresh Bankroll
-        </ListRow>
-      </SettingsGroup>
+      <Section title="Seats">
+        <SettingsGroup>
+          <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
+          <SettingsNote>Below, highlighted seats are computer players. Click to change.</SettingsNote>
+          <SeatPicker />
+        </SettingsGroup>
+      </Section>
+      <Section title="Shoe and Bankroll">
+        <SettingsGroup>
+          <SettingSelect
+            label="Decks"
+            setting="table.decks"
+            options={DECK_OPTIONS}
+            onChange={value => {
+              settings.set('table.decks', value);
+              settings.set(
+                'table.cardsBehindCutCard',
+                Math.min(settings.get('table.cardsBehindCutCard'), maxCardsBehindCutCard(value)),
+              );
+            }}
+          />
+          <SettingSelect
+            label="Shuffle"
+            setting="table.shuffleMode"
+            options={SHUFFLE_MODES}
+            onChange={value => settings.set('table.shuffleMode', value)}
+          />
+          <SettingNumber
+            label="Shuffle Point/Cards"
+            setting="table.cardsBehindCutCard"
+            prompt="Cards after the cut card"
+            clamp={value => Math.min(value, maxCardsBehindCutCard(decks))}
+            hidden={!byCutCard}
+          />
+          <SettingNumber label="Rounds" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />
+          <SettingNumber label="Burn Cards" setting="table.burnCards" prompt="Burn Cards" />
+          <SettingNumber label="Starting Bankroll" setting="table.startingBankroll" prompt="Starting Bankroll" />
+          <ListRow
+            block
+            chevron={false}
+            onClick={() => {
+              app.bankroll.setState({ value: settings.get('table.startingBankroll') });
+              toast('Bankroll refreshed');
+            }}
+          >
+            Refresh Bankroll
+          </ListRow>
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

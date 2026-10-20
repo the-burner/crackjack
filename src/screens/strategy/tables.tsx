@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
+import { CHART, CHART_LABEL, CHART_LINES } from '@/components/ui/chart';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { strategyOptions } from '@/settings/strategies';
 import { decksOf, ownOrDefault } from '@/settings/scopes';
@@ -30,6 +31,7 @@ import {
   specialtyPlays,
   countsTables,
   GRID_COLOR,
+  DECKS_TABLE_RULE,
   sameCell,
   comparableTables,
   comparableCounts,
@@ -163,9 +165,23 @@ export function StrategyTables({ params }: { params: TablesParams }) {
     content = (
       <>
         <CountsViewTables counts={counts} compared={other} />
+        <ul aria-label="Legend" className="m-0 flex list-none flex-wrap justify-center gap-x-4 gap-y-1.5 p-0">
+          {[
+            { label: 'Count Value', color: COUNT_COLORS.data.background },
+            { label: 'Take Insurance >= Value', color: COUNT_COLORS.insurance.background },
+          ].map(({ label, color }) => (
+            <li key={label} className="flex items-center gap-1.5 text-caption font-medium text-(--text-secondary)">
+              <span aria-hidden className="size-3.5 shrink-0" style={{ backgroundColor: color }} />
+              {label}
+            </li>
+          ))}
+        </ul>
         {other && <CompareKey first={firstName} second={secondName} />}
-        <Hint>{editingMask ? 'These tables have no mask.' : counts.rule}</Hint>
-        {other && other.rule !== counts.rule && <Hint>{`${secondName}: ${other.rule}`}</Hint>}
+        {/* The usual rule goes without saying: the Insurance Decks Table shows it. */}
+        <Hint>{editingMask ? 'These tables have no mask.' : counts.rule === DECKS_TABLE_RULE ? '' : counts.rule}</Hint>
+        {other && other.rule !== counts.rule && other.rule !== DECKS_TABLE_RULE && (
+          <Hint>{`${secondName}: ${other.rule}`}</Hint>
+        )}
       </>
     );
   } else {
@@ -254,30 +270,36 @@ export function StrategyTables({ params }: { params: TablesParams }) {
                 {second && <SideRows side="compare" />}
               </SettingsGroup>
             </Section>
+            <Section title="Table">
+              <SettingsGroup>
+                <Select
+                  label="Table"
+                  aria-label="Table"
+                  options={views}
+                  value={view.key}
+                  onChange={key => setView(viewByKey(key))}
+                />
+              </SettingsGroup>
+            </Section>
+          </>
+        ) : (
+          <Section title="Table">
             <SettingsGroup>
               <Select
-                label="Table"
+                label={strategy.name}
                 aria-label="Table"
                 options={views}
                 value={view.key}
                 onChange={key => setView(viewByKey(key))}
               />
             </SettingsGroup>
-          </>
-        ) : (
-          <SettingsGroup>
-            <Select
-              label={strategy.name}
-              aria-label="Table"
-              options={views}
-              value={view.key}
-              onChange={key => setView(viewByKey(key))}
-            />
-          </SettingsGroup>
+          </Section>
         )}
         {content}
         {!charts && (
-          <CheckList items={[{ label: 'Shade error counts', checked: showErrors, onChange: setShowErrors }]} />
+          <Section title="Errors">
+            <CheckList items={[{ label: 'Shade error counts', checked: showErrors, onChange: setShowErrors }]} />
+          </Section>
         )}
       </Column>
     </ScreenLayout>
@@ -329,18 +351,8 @@ const Hint = ({ children }: { children: string }) => (
 /** The cell the game's Error button points at: its outline blinks. */
 const MARKED = 'animate-[marked-cell_1.4s_steps(1,end)_infinite] outline-3 -outline-offset-3 outline-(--grid-mark)';
 
-/** A chart sits on a card, as the settings groups do; one too wide for the screen scrolls inside it. */
-const CHART_CARD = 'overflow-x-auto rounded-(--radius) bg-(--group-bg) p-2';
-
-/** Flat square cells with a thin line between them, the dealer's cards and the player's hands labelled on lighter ones. */
-const CHART = cn(
-  'w-full min-w-75 table-fixed border-separate border-spacing-px text-[13px] leading-none font-semibold tabular-nums',
-  '[&_th]:p-0 [&_th]:text-center [&_th]:text-caption [&_th]:font-semibold [&_th]:bg-(--grid-head-bg) [&_th]:text-(--grid-head-text) [&_th:empty]:bg-transparent',
-  '[&_td]:p-0 [&_td]:text-center [&_td]:text-(--grid-text)',
-);
-
-/** A row's label, on the same lighter cell as the column labels. */
-const CHART_LABEL = 'bg-(--grid-head-bg)! text-caption! font-semibold text-(--grid-head-text)!';
+/** A chart sits on the page; one too wide for the screen scrolls sideways. */
+const CHART_CARD = 'overflow-x-auto';
 
 /** The narrowest a chart's cell gets: a wider strategy scrolls inside its card instead. */
 const MIN_CELL = 28;
@@ -373,7 +385,7 @@ function TableGrid({
   return (
     <table
       aria-label={view.label}
-      className={cn(CHART, 'border-spacing-(--chart-line-width) bg-(--chart-line)')}
+      className={cn(CHART, CHART_LINES)}
       style={{ minWidth: (heads.length + 1) * MIN_CELL }}
     >
       <thead>
@@ -478,7 +490,24 @@ function SpecialtyList({
   );
 }
 
-/** The four small tables of the Insurance/Counts view. */
+/** A count's cell: an insurance index takes the charts' index colour, as a play "at the value or above" does; plain data the blue. */
+const COUNT_COLORS = {
+  data: { background: 'var(--chart-below)', color: 'var(--chart-text-alt)' },
+  insurance: { background: 'var(--chart-index)', color: 'var(--chart-text)' },
+} as const;
+
+/**
+ * The four tables in order: what their cells hold, and the label of a row that has none of its own
+ * (a label column keeps their cells the size of the charts').
+ */
+const COUNTS_TABLES = [
+  { kind: 'data', label: null },
+  { kind: 'data', label: 'Count' },
+  { kind: 'insurance', label: 'Index' },
+  { kind: 'insurance', label: 'Index' },
+] as const;
+
+/** The four small tables of the Insurance/Counts view, drawn as the charts are. */
 function CountsViewTables({ counts, compared }: { counts: CountsTables; compared: CountsTables | null }) {
   const tables = [counts.pointValues, counts.startingCount, counts.insuranceDecks, counts.insuranceHands];
   const theirs = compared && [
@@ -488,44 +517,64 @@ function CountsViewTables({ counts, compared }: { counts: CountsTables; compared
     compared.insuranceHands,
   ];
   return (
-    <div className="mx-auto flex w-full max-w-125 flex-col gap-3">
+    <div className="flex w-full flex-col gap-4">
       {tables.map((t, i) => {
         const other = theirs && comparableCounts(t ?? EMPTY_COUNTS, theirs[i]) ? theirs[i] : null;
-        return t ? (
+        if (!t) return null;
+        const { kind, label: rowLabel } = COUNTS_TABLES[i];
+        const colors = COUNT_COLORS[kind];
+        // A table of fewer columns widens its labels, so every table's cells line up with the chart's.
+        const span = Math.max(1, BASE_COLUMNS + 1 - t.columns.length);
+        const cells = t.columns.length + span;
+        return (
           <div key={i} className={CHART_CARD}>
-            <table className={cn(CHART, '[&_td]:text-(--text) [&_th]:py-1')}>
+            <table className={cn(CHART, CHART_LINES)} style={{ minWidth: cells * MIN_CELL }}>
               <caption className="pb-1.5 text-left text-caption font-semibold tracking-[0.02em] text-(--text-secondary) uppercase">
                 {t.caption}
               </caption>
               <thead>
                 <tr>
-                  {t.rows[0].label !== undefined ? <th /> : null}
+                  <th colSpan={span} />
                   {t.columns.map((c, j) => (
-                    <th key={j}>{c}</th>
+                    <th key={j}>
+                      <div className={SQUARE}>{c}</div>
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {t.rows.map((r, j) => (
                   <tr key={j}>
-                    {r.label !== undefined ? (
-                      <td className={cn(CHART_LABEL, 'whitespace-nowrap', r.label.length > 3 && 'text-tiny!')}>
-                        {r.label}
-                      </td>
-                    ) : null}
+                    <td colSpan={span} className={CHART_LABEL}>
+                      <div
+                        // A label wider than a cell stays a cell tall, and has room for the usual text size.
+                        className={cn(
+                          span === 1 ? SQUARE : 'flex items-center justify-center',
+                          'whitespace-nowrap',
+                          span === 1 && (r.label ?? rowLabel ?? '').length > 3 && 'text-tiny',
+                        )}
+                      >
+                        {r.label ?? rowLabel}
+                      </div>
+                    </td>
                     {r.values.map((v, k) => {
                       const w = other?.rows[j].values[k];
+                      // The two sides share a colour; a difference is split between their values.
                       return w !== undefined && w !== v ? (
                         <td
                           key={k}
                           data-differs
-                          style={{ background: splitBackground('transparent', 'transparent', 'var(--separator)') }}
+                          style={{ background: splitBackground(colors.background, colors.background) }}
                         >
-                          <SplitValues className={SQUARE} first={{ text: v }} second={{ text: w }} />
+                          <SplitValues
+                            className={SQUARE}
+                            first={{ text: v, color: colors.color }}
+                            second={{ text: w, color: colors.color }}
+                          />
                         </td>
                       ) : (
-                        <td key={k} className="py-1.5!">
-                          {v}
+                        <td key={k} style={colors}>
+                          <div className={SQUARE}>{v}</div>
                         </td>
                       );
                     })}
@@ -534,7 +583,7 @@ function CountsViewTables({ counts, compared }: { counts: CountsTables; compared
               </tbody>
             </table>
           </div>
-        ) : null;
+        );
       })}
     </div>
   );

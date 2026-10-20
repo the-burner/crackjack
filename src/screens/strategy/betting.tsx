@@ -4,11 +4,12 @@
 // Each module that bets keeps its own, and shows only what it uses (settings/scopes.ts).
 
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { useOnShow } from '@/react/screen';
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
-import { Grid } from '@/components/ui/grid';
+import { CHART, CHART_LABEL, CHART_LINES } from '@/components/ui/chart';
 import { Select } from '@/components/ui/select';
 import { Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
 import { Note } from '@/components/ui/text';
@@ -63,82 +64,90 @@ export function Betting({ scope }: { scope: BettingScope }) {
     <ScreenLayout title="Betting Strategy" help="game.betting">
       <Column>
         <PresetPicker kind={bettingPresets(scope)} store={app.bettingStrategies} />
-        <SettingsNote>
-          Enter the number of different bets in the table and then click on a table cell to enter a new bet.
-        </SettingsNote>
-        <SettingsGroup>
-          {warns && (
-            <CheckList
-              items={[
-                {
-                  label: 'Warning on Betting Error',
-                  checked: showCounts,
-                  onChange: on => settings.set('betting.warnOnError', on),
-                },
-              ]}
-            />
-          )}
-          {keeps(scope, 'betting.chipValue') && (
-            <Select
-              label="Chip Value"
-              options={CHIP_OPTIONS}
-              value={settings.get('betting.chipValue')}
-              onChange={value => settings.set('betting.chipValue', value)}
-            />
-          )}
-          <SettingsRow label="Number of bets">
-            <ValueButton
-              label="Number of bets"
-              value={ramp.rows.length}
-              onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
-              prompt="Number of different bets in table"
-              min={MIN_ROWS}
-              max={MAX_ROWS}
-            />
-          </SettingsRow>
-          <SettingsRow label="Minimum bet count" hidden={!showCounts}>
-            <ValueButton
-              label="Minimum bet count"
-              value={ramp.minCount}
-              onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
-              prompt="Start Count"
-              min={-99}
-              max={99}
-            />
-          </SettingsRow>
-        </SettingsGroup>
+        <Section title="Bets">
+          <SettingsNote>
+            Enter the number of different bets in the table and then click on a table cell to enter a new bet.
+          </SettingsNote>
+          <SettingsGroup>
+            {warns && (
+              <CheckList
+                items={[
+                  {
+                    label: 'Warning on Betting Error',
+                    checked: showCounts,
+                    onChange: on => settings.set('betting.warnOnError', on),
+                  },
+                ]}
+              />
+            )}
+            {keeps(scope, 'betting.chipValue') && (
+              <Select
+                label="Chip Value"
+                options={CHIP_OPTIONS}
+                value={settings.get('betting.chipValue')}
+                onChange={value => settings.set('betting.chipValue', value)}
+              />
+            )}
+            <SettingsRow label="Number of bets">
+              <ValueButton
+                label="Number of bets"
+                value={ramp.rows.length}
+                onChange={count => settings.set('betting.ramp', setRowCount(ramp, count))}
+                prompt="Number of different bets in table"
+                min={MIN_ROWS}
+                max={MAX_ROWS}
+              />
+            </SettingsRow>
+            <SettingsRow label="Minimum bet count" hidden={!showCounts}>
+              <ValueButton
+                label="Minimum bet count"
+                value={ramp.minCount}
+                onChange={minCount => settings.set('betting.ramp', normalizeRamp({ ...ramp, minCount }))}
+                prompt="Start Count"
+                min={-99}
+                max={99}
+              />
+            </SettingsRow>
+          </SettingsGroup>
+        </Section>
         <div>
-          <Grid
+          {/* Drawn as the charts are: the counts labelling the rows, each bet on the charts' colour for plain data. */}
+          <table
             aria-label="Bets"
-            className="mx-auto max-w-[365px] [&_td]:h-[34px] [&_td]:bg-transparent [&_td]:text-[16px] [&_th]:text-[16px] [&_th:first-child]:w-[35%]"
+            className={cn(
+              CHART,
+              CHART_LINES,
+              'mx-auto max-w-[365px] [&_td]:h-10 [&_td]:text-[16px] [&_th]:h-10 [&_th]:text-[16px]',
+            )}
           >
             <thead>
               <tr>
-                <th>Count</th>
+                <th className="w-[35%]">Count</th>
                 <th>Hands x Chips</th>
               </tr>
             </thead>
             <tbody>
               {ramp.rows.map((row, i) => (
-                <tr
-                  key={i}
-                  data-row={i}
-                  tabIndex={0}
-                  className="cursor-pointer"
-                  onClick={() => openRow(i)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      openRow(i);
-                    }
-                  }}
-                >
-                  <td>{counts[i]}</td>
-                  <td>{formatRow(row)}</td>
+                <tr key={i} data-row={i}>
+                  <td className={cn(CHART_LABEL, 'text-[16px]!')}>{counts[i]}</td>
+                  {/* The bet alone opens its picker; its count only labels it. */}
+                  <td
+                    tabIndex={0}
+                    className="cursor-pointer bg-(--chart-below) text-(--chart-text-alt)! engaged:brightness-90"
+                    onClick={() => openRow(i)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openRow(i);
+                      }
+                    }}
+                  >
+                    {formatRow(row)}
+                  </td>
                 </tr>
               ))}
             </tbody>
-          </Grid>
+          </table>
         </div>
         <Wonging settings={settings} />
       </Column>

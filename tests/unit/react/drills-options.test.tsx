@@ -48,6 +48,7 @@ describe('drill options screens', () => {
     const { location } = renderScreen(<FullOptions />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Compound Running Count');
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
+      'Preset',
       'Strategy',
       'Drill',
       'Timer',
@@ -171,11 +172,11 @@ describe('drill options screens', () => {
     const user = userEvent.setup();
     renderScreen(<DepthOptions />);
     const titles = () => screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent);
-    expect(titles()).toEqual(['Strategy', 'Drill', 'Answers', 'Timer']);
+    expect(titles()).toEqual(['Preset', 'Strategy', 'Drill', 'Answers', 'Timer']);
     expect(screen.getByText('Minimum count')).not.toBeVisible();
     expect(toggle('Decks or Aces in Tray')).toBeVisible();
     await choose(user, 'Drill', 'Drill: TC Conversion');
-    expect(titles()).toEqual(['Strategy', 'Drill', 'Count Range', 'Timer']);
+    expect(titles()).toEqual(['Preset', 'Strategy', 'Drill', 'Count Range', 'Timer']);
     expect(numberButton('Minimum count')).toBeVisible();
     expect(numberButton('Maximum count')).toBeVisible();
     expectHidden(toggle('Decks or Aces in Tray'));

@@ -2,7 +2,7 @@
 // non-random dealing bias.
 
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 
@@ -31,12 +31,16 @@ const ERRORS: readonly SettingCheck[] = [
 export function DealerErrors() {
   return (
     <SettingsScreen title="Errs/Biases" help="game.dealerErrors" note={NOTE}>
-      <SettingsGroup>
-        <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingChecks items={ERRORS} />
-      </SettingsGroup>
+      <Section title="Bias">
+        <SettingsGroup>
+          <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />
+        </SettingsGroup>
+      </Section>
+      <Section title="Dealer Errors">
+        <SettingsGroup>
+          <SettingChecks items={ERRORS} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

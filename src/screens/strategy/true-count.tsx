@@ -5,7 +5,7 @@ import { useSettings } from '@/react/app-context';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { scopedSettings } from '@/settings/scopes';
 import type { ScopedKey, ScopedSettings, ScopeName } from '@/settings/scopes';
@@ -74,41 +74,43 @@ export function TrueCount({ scope }: { scope: ScopeName }) {
   return (
     <ScreenLayout title="True Count Conversion" help="game.trueCount">
       <Column>
-        <SettingsNote>Set the method of calculating true counts</SettingsNote>
-        <SettingsGroup>
-          <SelectRow row={RESOLUTION} own={own} />
-          <SelectRow row={LAST_DECK} own={own} />
-          <SelectRow row={ROUNDING} own={own} />
-          {playing && <SelectRow row={REMAINING} own={own} />}
-          {playing && (
-            <SettingsRow label="Allowed estimation error">
-              <ValueButton
-                label="Allowed estimation error"
-                value={own.get('trueCount.allowedErrorCards')}
-                onChange={v => own.set('trueCount.allowedErrorCards', v)}
-                prompt="Cards"
-                min={0}
-                max={13}
+        <Section title="Calculation">
+          <SettingsNote>Set the method of calculating true counts</SettingsNote>
+          <SettingsGroup>
+            <SelectRow row={RESOLUTION} own={own} />
+            <SelectRow row={LAST_DECK} own={own} />
+            <SelectRow row={ROUNDING} own={own} />
+            {playing && <SelectRow row={REMAINING} own={own} />}
+            {playing && (
+              <SettingsRow label="Allowed estimation error">
+                <ValueButton
+                  label="Allowed estimation error"
+                  value={own.get('trueCount.allowedErrorCards')}
+                  onChange={v => own.set('trueCount.allowedErrorCards', v)}
+                  prompt="Cards"
+                  min={0}
+                  max={13}
+                />
+              </SettingsRow>
+            )}
+            {playing && (
+              <CheckList
+                items={[
+                  {
+                    label: 'Ace side count',
+                    checked: own.get('trueCount.aceSideCount'),
+                    onChange: on => own.set('trueCount.aceSideCount', on),
+                  },
+                  {
+                    label: 'Ten side count',
+                    checked: own.get('trueCount.tenSideCount'),
+                    onChange: on => own.set('trueCount.tenSideCount', on),
+                  },
+                ]}
               />
-            </SettingsRow>
-          )}
-          {playing && (
-            <CheckList
-              items={[
-                {
-                  label: 'Ace side count',
-                  checked: own.get('trueCount.aceSideCount'),
-                  onChange: on => own.set('trueCount.aceSideCount', on),
-                },
-                {
-                  label: 'Ten side count',
-                  checked: own.get('trueCount.tenSideCount'),
-                  onChange: on => own.set('trueCount.tenSideCount', on),
-                },
-              ]}
-            />
-          )}
-        </SettingsGroup>
+            )}
+          </SettingsGroup>
+        </Section>
       </Column>
     </ScreenLayout>
   );

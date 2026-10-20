@@ -310,9 +310,9 @@ test('Game Options keeps its sections and Play button in one centred column in l
   await openHub(page, 'game.options', { fresh: true });
   const options = page.locator('[data-screen="game.options"]');
   const sections = options.getByRole('heading', { level: 2 });
-  await expect(sections).toHaveCount(4);
+  await expect(sections).toHaveCount(5);
   const play = (await options.locator('[data-action="play"]').boundingBox())!;
-  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(3).boundingBox()]) {
+  for (const box of [await sections.nth(0).boundingBox(), await sections.nth(4).boundingBox()]) {
     expect(box!.x).toBeGreaterThanOrEqual(play.x);
     expect(box!.x).toBeLessThan(play.x + 40);
   }

@@ -1,7 +1,7 @@
 // Rule Variations: the less common rules.
 
 import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'You will find less common rule variations on this screen.';
@@ -29,12 +29,16 @@ const SPLITTING: readonly SettingCheck[] = [
 export function RuleVariations() {
   return (
     <SettingsScreen title="Rule Variations" help="game.ruleVariations" note={NOTE}>
-      <SettingsGroup>
-        <SettingChecks items={DOUBLING} />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingChecks items={SPLITTING} />
-      </SettingsGroup>
+      <Section title="Doubling">
+        <SettingsGroup>
+          <SettingChecks items={DOUBLING} />
+        </SettingsGroup>
+      </Section>
+      <Section title="Splitting">
+        <SettingsGroup>
+          <SettingChecks items={SPLITTING} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

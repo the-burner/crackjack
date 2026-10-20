@@ -4,7 +4,7 @@
 import { useStore } from 'zustand';
 import { confirm, prompt } from '@/components/dialogs';
 import { Select } from '@/components/ui/select';
-import { ListRow, SettingsGroup } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
 import { toast } from '@/components/ui/toast';
 import { useSettings } from '@/react/app-context';
 import type { PersistedStore } from '@/services/persisted-store';
@@ -97,31 +97,33 @@ export function PresetPicker<T extends Named, V>({
   }
 
   return (
-    <SettingsGroup>
-      <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
-      {own && edited && (
-        <ListRow block chevron={false} onClick={save}>
-          {`Save “${own.name}”`}
+    <Section title="Preset">
+      <SettingsGroup>
+        <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
+        {own && edited && (
+          <ListRow block chevron={false} onClick={save}>
+            {`Save “${own.name}”`}
+          </ListRow>
+        )}
+        {selected && edited && (
+          <ListRow block chevron={false} onClick={() => load(selected)}>
+            Revert
+          </ListRow>
+        )}
+        <ListRow block chevron={false} onClick={() => void saveAsNew()}>
+          Save as New…
         </ListRow>
-      )}
-      {selected && edited && (
-        <ListRow block chevron={false} onClick={() => load(selected)}>
-          Revert
-        </ListRow>
-      )}
-      <ListRow block chevron={false} onClick={() => void saveAsNew()}>
-        Save as New…
-      </ListRow>
-      {own && (
-        <ListRow block chevron={false} onClick={() => void rename()}>
-          Rename…
-        </ListRow>
-      )}
-      {own && (
-        <ListRow block chevron={false} onClick={() => void remove()}>
-          {`Delete “${own.name}”`}
-        </ListRow>
-      )}
-    </SettingsGroup>
+        {own && (
+          <ListRow block chevron={false} onClick={() => void rename()}>
+            Rename…
+          </ListRow>
+        )}
+        {own && (
+          <ListRow block chevron={false} onClick={() => void remove()}>
+            {`Delete “${own.name}”`}
+          </ListRow>
+        )}
+      </SettingsGroup>
+    </Section>
   );
 }

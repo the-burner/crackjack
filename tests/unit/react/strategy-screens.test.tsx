@@ -87,7 +87,10 @@ describe('Allowed Bets', () => {
     act(() => app.settings.set('game.betting.ramp', { minCount: 0, rows: [{ chips: 3, hands: 2 }] }));
     expect(bodyRows()).toHaveLength(1);
     expect(within(bodyRows()[0]).getAllByRole('cell')[1]).toHaveTextContent('2x3');
-    await user.click(bodyRows()[0]);
+    // Its count only labels it: a tap there does nothing.
+    await user.click(within(bodyRows()[0]).getAllByRole('cell')[0]);
+    expect(location().pathname).toBe('/game/betting');
+    await user.click(within(bodyRows()[0]).getAllByRole('cell')[1]);
     expect(location().pathname).toBe('/game/betting/0');
   });
 
@@ -384,7 +387,12 @@ describe('strategy tables', () => {
     await choose(user, 'Table', 'Insurance/Counts');
     expect(screen.getByRole('table', { name: 'Card Point Values' })).toBeInTheDocument();
     expect(screen.queryByText('Specialty Plays')).not.toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'Legend' })).not.toBeInTheDocument();
+    // Its own legend: the counts, and the insurance indices.
+    expect(
+      within(screen.getByRole('list', { name: 'Legend' }))
+        .getAllByRole('listitem')
+        .map(i => i.textContent),
+    ).toEqual(['Count Value', 'Take Insurance >= Value']);
     expect(screen.queryByRole('table', { name: 'Hard Hit/Stand' })).not.toBeInTheDocument();
   });
 });

@@ -71,7 +71,7 @@ test.describe('Strategy tables', () => {
 
     await choose(el, 'Table', 'Insurance/Counts');
     await expect(el.getByRole('table', { name: 'Card Point Values' })).toBeVisible();
-    await expect(el.getByRole('list', { name: 'Legend' })).toBeHidden();
+    await expect(legend).toHaveText(['Count Value', 'Take Insurance >= Value']);
     await expect(el.getByText('Specialty Plays')).toBeHidden();
   });
 
@@ -159,7 +159,7 @@ test.describe('Allowed Bets', () => {
     await answerDialog(page, '3');
     await expect(bets(el).locator('tbody tr')).toHaveCount(3);
 
-    await bets(el).locator('tbody tr').nth(2).click();
+    await bets(el).locator('tbody tr').nth(2).getByRole('cell').nth(1).click();
     const pad = page.locator('[data-screen="game.betting.select"]');
     await expect(pad).toBeVisible();
     await pad.getByRole('button', { name: '3x' }).click();

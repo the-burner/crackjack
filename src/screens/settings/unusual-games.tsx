@@ -3,7 +3,7 @@
 import { useSettings } from '@/react/app-context';
 import { SettingsScreen } from '@/components/settings-controls';
 import { Select } from '@/components/ui/select';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { applyGameChange } from '@/settings/rules-logic';
 
@@ -15,19 +15,21 @@ export function UnusualGames() {
   const settings = useSettings();
   return (
     <SettingsScreen title="Unusual Games" help="game.unusualGames">
-      <SettingsGroup>
-        <Select
-          name="bonuses.game"
-          aria-label="Game"
-          options={GAMES}
-          value={settings.get('bonuses.game')}
-          onChange={gameId => settings.update(applyGameChange(key => settings.get(key), gameId))}
-        />
-        {/* The explanation, in a scrolling box. */}
-        <div className="max-h-[46vh] overflow-y-auto px-3.5 py-0.5 text-caption leading-[1.45] text-(--text-secondary) [&_p]:my-[1em]">
-          <p>{NOTE}</p>
-        </div>
-      </SettingsGroup>
+      <Section title="Game">
+        <SettingsGroup>
+          <Select
+            name="bonuses.game"
+            aria-label="Game"
+            options={GAMES}
+            value={settings.get('bonuses.game')}
+            onChange={gameId => settings.update(applyGameChange(key => settings.get(key), gameId))}
+          />
+          {/* The explanation, in a scrolling box. */}
+          <div className="max-h-[46vh] overflow-y-auto px-3.5 py-0.5 text-caption leading-[1.45] text-(--text-secondary) [&_p]:my-[1em]">
+            <p>{NOTE}</p>
+          </div>
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

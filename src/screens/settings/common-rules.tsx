@@ -1,7 +1,7 @@
 // Common Rules.
 
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import { TABLE_LIMITS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
@@ -47,16 +47,20 @@ const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits:
 export function CommonRules() {
   return (
     <SettingsScreen title="Common Rules" help="game.commonRules" note={NOTE}>
-      <SettingsGroup>
-        <SettingChecks items={CHECKS} />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingSelect label="Hard doubles" setting="rules.hardDoubles" options={HARD_DOUBLES} />
-        <SettingSelect label="Soft doubles" setting="rules.softDoubles" options={SOFT_DOUBLES} />
-        <SettingSelect label="Insurance" setting="rules.insurance" options={INSURANCE} />
-        <SettingSelect label="Surrender" setting="rules.surrender" options={SURRENDER} />
-        <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
-      </SettingsGroup>
+      <Section title="Dealing">
+        <SettingsGroup>
+          <SettingChecks items={CHECKS} />
+        </SettingsGroup>
+      </Section>
+      <Section title="Rules and Limits">
+        <SettingsGroup>
+          <SettingSelect label="Hard doubles" setting="rules.hardDoubles" options={HARD_DOUBLES} />
+          <SettingSelect label="Soft doubles" setting="rules.softDoubles" options={SOFT_DOUBLES} />
+          <SettingSelect label="Insurance" setting="rules.insurance" options={INSURANCE} />
+          <SettingSelect label="Surrender" setting="rules.surrender" options={SURRENDER} />
+          <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

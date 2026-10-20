@@ -136,7 +136,7 @@ describe('the themes', () => {
 
   it('reach the palette through named roles, not raw hex', () => {
     // Deliberately the same in both flavours, so it takes a literal.
-    const SHARED = ['--toggle-knob'];
+    const SHARED = ['--toggle-knob', '--chart-line'];
     const rawHex = definitions(THEMES)
       .filter(({ name, value }) => !PALETTE.has(name) && /^#[0-9a-fA-F]{3,8}$/.test(value))
       .map(({ name }) => name)

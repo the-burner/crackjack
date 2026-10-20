@@ -2,7 +2,7 @@
 // used once it has been seen.
 
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 import { HOLE_CARD_STRATEGY } from '@/settings/strategies';
@@ -27,14 +27,18 @@ const STRATEGIES = [{ value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.na
 export function Peeking() {
   return (
     <SettingsScreen title="Peeking" help="game.peeking" note={NOTE}>
-      <SettingsGroup>
-        <SettingChecks items={CHECKS} />
-        <SettingSelect labelled label="Percent of the time" setting="peeking.percent" options={PERCENTS} />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingSelect labelled label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
-        <SettingSelect labelled label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
-      </SettingsGroup>
+      <Section title="Peek">
+        <SettingsGroup>
+          <SettingChecks items={CHECKS} />
+          <SettingSelect labelled label="Percent of the time" setting="peeking.percent" options={PERCENTS} />
+        </SettingsGroup>
+      </Section>
+      <Section title="Hole-Card Strategies">
+        <SettingsGroup>
+          <SettingSelect labelled label="HC High" setting="peeking.strategyHigh" options={STRATEGIES} />
+          <SettingSelect labelled label="HC Low" setting="peeking.strategyLow" options={STRATEGIES} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

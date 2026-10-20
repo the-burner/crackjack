@@ -21,7 +21,7 @@ export function SettingsHub() {
   return (
     <ScreenLayout title="Settings" help="settings">
       <Column className="gap-6 pt-1">
-        <Section>
+        <Section title="Preferences">
           <SettingsGroup>
             {SCREENS.map(([label, screen]) => (
               <ListRow key={screen} block onClick={() => navigate(PATHS[screen])}>
@@ -30,7 +30,7 @@ export function SettingsHub() {
             ))}
           </SettingsGroup>
         </Section>
-        <Section>
+        <Section title="Reset">
           <SettingsGroup>
             <ListRow block chevron={false} className="text-(--warning)" onClick={() => resetDefaults(app)}>
               Reset Defaults

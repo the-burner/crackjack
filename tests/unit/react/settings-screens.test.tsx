@@ -187,6 +187,7 @@ describe('navigation screens', () => {
     const user = userEvent.setup();
     const { location } = renderScreen(<GameOptions />, { path: '/game' });
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
+      'Preset',
       'Strategy',
       'Table and Rules',
       'Peeking and Warnings',

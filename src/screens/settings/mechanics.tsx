@@ -1,7 +1,7 @@
 // Speed/Mechanics: the three speed sliders and the operational switches.
 
 import { SettingChecks, SettingSlider, SettingsScreen } from '@/components/settings-controls';
-import { SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
 const NOTE = 'Operational controls are found here. Move speed controls to the right for faster operation.';
@@ -17,14 +17,18 @@ const CHECKS: readonly SettingCheck[] = [
 export function Mechanics() {
   return (
     <SettingsScreen title="Speed/Ops" help="game.mechanics" note={NOTE}>
-      <SettingsGroup>
-        <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />
-        <SettingSlider label="Other Player Speed" setting="mechanics.otherPlayerSpeed" />
-        <SettingSlider label="Payoff Speed" setting="mechanics.payoffSpeed" />
-      </SettingsGroup>
-      <SettingsGroup>
-        <SettingChecks items={CHECKS} />
-      </SettingsGroup>
+      <Section title="Speed">
+        <SettingsGroup>
+          <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />
+          <SettingSlider label="Other Player Speed" setting="mechanics.otherPlayerSpeed" />
+          <SettingSlider label="Payoff Speed" setting="mechanics.payoffSpeed" />
+        </SettingsGroup>
+      </Section>
+      <Section title="Table">
+        <SettingsGroup>
+          <SettingChecks items={CHECKS} />
+        </SettingsGroup>
+      </Section>
     </SettingsScreen>
   );
 }

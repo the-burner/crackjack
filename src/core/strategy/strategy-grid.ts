@@ -266,9 +266,12 @@ const INSURANCE_RULES: Readonly<Partial<Record<number, string>>> = {
   9998: 'Use Insurance Hand Table',
 };
 
+/** The usual rule: insure from the per-deck index, as the Insurance Decks Table shows. */
+export const DECKS_TABLE_RULE = 'Use Insurance Decks Table';
+
 /** The sentence describing how the strategy decides on insurance. */
 export function insuranceRuleText(insuranceCode: number): string {
-  return INSURANCE_RULES[insuranceCode] ?? 'Use Insurance Decks Table';
+  return INSURANCE_RULES[insuranceCode] ?? DECKS_TABLE_RULE;
 }
 
 /** True when the per-deck insurance table applies (and so is worth showing). */

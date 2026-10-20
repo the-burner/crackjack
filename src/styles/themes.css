@@ -141,8 +141,8 @@
   --chart-below: var(--blue);
   --chart-unselected: var(--overlay1);
   --chart-no-errors: var(--surface1);
-  /** The lines between a strategy chart's cells, and around it. */
-  --chart-line: var(--crust);
+  /** The lines between a chart's cells, and around it: black in both flavours (Mocha's crust). */
+  --chart-line: #11111b;
   --chart-line-width: 1px;
   --chart-text: var(--on-accent);
   --chart-text-alt: var(--on-accent);
