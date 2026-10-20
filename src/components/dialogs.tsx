@@ -92,7 +92,7 @@ function RequestDialog({ request }: { request: Request }) {
   }
   // The confirming button comes first, as on iOS; Escape answers as the last one would.
   return (
-    <Modal open onClose={() => close(false)} className="w-[290px]">
+    <Modal open onClose={() => close(false)} focusSelf={!request.input} className="w-[290px]">
       <DialogTitle>{request.title}</DialogTitle>
       <DialogBody className="whitespace-pre-line">
         {request.message}

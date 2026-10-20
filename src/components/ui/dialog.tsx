@@ -1,6 +1,7 @@
 // A centred modal card over a dimmed screen. Base UI's dialog handles focus,
 // Escape and the screen reader; the look is the app's own.
 
+import { useRef } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { cn } from '@/lib/utils';
@@ -8,20 +9,29 @@ import { cn } from '@/lib/utils';
 export function Modal({
   open,
   onClose,
+  focusSelf = false,
   className,
   children,
 }: {
   open: boolean;
   /** Escape (or Back) asks the modal to close. */
   onClose: () => void;
+  /**
+   * Focus the card itself rather than its first control, so no button starts out pressed: as a dialog
+   * opened by a tap is, even when it opens before the first tap (the update offer at launch).
+   */
+  focusSelf?: boolean;
   className?: string;
   children: ReactNode;
 }) {
+  const popup = useRef<HTMLDivElement>(null);
   return (
     <AlertDialog.Root open={open} onOpenChange={next => !next && onClose()}>
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 z-[3000] animate-fade-in bg-(--overlay)" />
         <AlertDialog.Popup
+          ref={popup}
+          initialFocus={focusSelf ? popup : true}
           className={cn(
             'fixed top-1/2 left-1/2 z-[3000] max-w-[calc(100%-40px)] -translate-1/2 animate-dialog-in overflow-hidden rounded-[14px] bg-(--dialog-bg) text-center shadow-[0_10px_40px_var(--dialog-shadow)] outline-none',
             className,

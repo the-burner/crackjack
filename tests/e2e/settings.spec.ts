@@ -381,3 +381,21 @@ test('a clicked select stays unshaded when its picker hands focus back; keyboard
   await swipe.focus();
   await expect.poll(shade).not.toBe(rest);
 });
+
+test('a dialog shown before any tap starts with no button pressed, as one opened by a tap does', async ({ page }) => {
+  await page.goto('/index.html');
+  // As the update offer does at launch.
+  await page.evaluate(async () => {
+    const url = '/src/components/dialogs.tsx';
+    const { confirm }: typeof import('@/components/dialogs') = await import(url);
+    void confirm('A new version of Crackjack is ready.', { title: 'Update', yes: 'Reload', no: 'Later' });
+  });
+  const dialog = page.getByRole('alertdialog');
+  await expect(dialog).toBeFocused();
+  for (const name of ['Reload', 'Later']) {
+    const shade = await dialog.getByRole('button', { name }).evaluate(e => getComputedStyle(e).backgroundColor);
+    expect(shade, name).toBe('rgba(0, 0, 0, 0)');
+  }
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+});
