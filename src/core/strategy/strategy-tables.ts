@@ -21,7 +21,8 @@ import {
 import type { FileTables, Grid, OneBased, StrategyFile, TableName } from './strategy-file';
 import { BASIC_STRATEGY_FILE } from '@/data/strategy-files';
 
-export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'] as const;
+/** The original's index sets in its own order (the recorded fixtures number them so), then Crackjack's. */
+export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom', 'crack33'] as const;
 export type IndexSet = (typeof INDEX_SETS)[number];
 
 /** Special cell codes. Some are resolved while building tables, the rest by the advisor. */
@@ -172,6 +173,60 @@ const FAB_4_SURRENDERS: Cell[] = [
   [2, 9],
   [3, 8],
 ];
+
+/** The Crack 33: Crackjack's own 32 index plays, with the insurance index every set keeps. */
+const CRACK_33: Readonly<Record<TableName, Cell[]>> = {
+  // 16 v 9, 16 v X, 15 v X, 13 v 2, 13 v 3, 12 v 2, 12 v 3, 12 v 4.
+  hardStand: [
+    [1, 7],
+    [1, 8],
+    [2, 8],
+    [4, 0],
+    [4, 1],
+    [5, 0],
+    [5, 1],
+    [5, 2],
+  ],
+  softStand: [],
+  // 11 v A, 10 v X, 10 v A, 9 v 2, 9 v 7, 8 v 4, 8 v 5, 8 v 6.
+  hardDouble: [
+    [0, 9],
+    [1, 8],
+    [1, 9],
+    [2, 0],
+    [2, 5],
+    [3, 2],
+    [3, 3],
+    [3, 4],
+  ],
+  // A9 v 4, A9 v 5, A9 v 6, A8 v 4, A8 v 5, A8 v 6, A7 v 2, A6 v 2.
+  softDouble: [
+    [0, 2],
+    [0, 3],
+    [0, 4],
+    [1, 2],
+    [1, 3],
+    [1, 4],
+    [2, 0],
+    [3, 0],
+  ],
+  // TT v 4, TT v 5, TT v 6.
+  split: [
+    [1, 2],
+    [1, 3],
+    [1, 4],
+  ],
+  // 15 v 9, 15 v X, 15 v A, 14 v X, 77 v X.
+  surrender: [
+    [2, 7],
+    [2, 8],
+    [2, 9],
+    [3, 8],
+    [8, 8],
+  ],
+};
+/** The surrender rows past the hard totals: pairs, or other hands in an early-surrender strategy. */
+const SURRENDER_PAIR_ROWS = 6;
 
 const QUARTER_COUNT_BY_DECKS: Readonly<Record<number, number>> = {
   1: 2,
@@ -445,6 +500,15 @@ export function buildStrategy(file: string | StrategyFile, options: TableOptions
         useBasic('hardDouble', k, l);
       useBasic('softStand', k, l);
       if (!(fab4 && contains(FAB_4_SURRENDERS, k, l))) useBasic('surrender', k, l);
+    });
+  }
+  if (indexSet === 'crack33') {
+    eachCell(BASE_COLUMNS, (k, l) => {
+      for (const name of TABLE_NAMES) {
+        // An early-surrender strategy's later rows are other hands than the pairs the Crack 33 keeps.
+        const pairOf = name === 'surrender' && k >= SURRENDER_PAIR_ROWS && f.earlySurrender;
+        if (pairOf || !contains(CRACK_33[name], k, l)) useBasic(name, k, l);
+      }
     });
   }
   if (indexSet === 'custom' && customMask) {

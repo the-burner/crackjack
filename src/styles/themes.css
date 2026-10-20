@@ -140,7 +140,10 @@
   --chart-index: var(--teal);
   --chart-below: var(--blue);
   --chart-unselected: var(--overlay1);
-  --chart-no-errors: var(--surface0);
+  --chart-no-errors: var(--surface1);
+  /** The lines between a strategy chart's cells, and around it. */
+  --chart-line: var(--crust);
+  --chart-line-width: 1px;
   --chart-text: var(--on-accent);
   --chart-text-alt: var(--on-accent);
   color: var(--text);

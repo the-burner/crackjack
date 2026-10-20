@@ -9,9 +9,9 @@ import type { TableOptions } from '@/core/strategy/strategy-tables';
 const settings = () => new Settings(SETTINGS_SCHEMA, new Storage(new MemoryBackend()));
 
 describe('the strategy catalog', () => {
-  it('offers the Crackjack strategy first, since it is the default', () => {
-    expect(BUILTIN_STRATEGIES[0]).toEqual({ id: 100, name: "Crackjack's High-Low Strategy" });
-    expect(SETTINGS_SCHEMA['game.strategy.system'].default).toBe(100);
+  it('offers High-Low first, since it is the default', () => {
+    expect(BUILTIN_STRATEGIES[0]).toEqual({ id: 30, name: 'High-Low' });
+    expect(SETTINGS_SCHEMA['game.strategy.system'].default).toBe(30);
   });
 
   it('lists what the Playing Strategy screen shows', () => {

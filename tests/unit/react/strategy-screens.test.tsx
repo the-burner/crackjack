@@ -186,6 +186,143 @@ describe('bet picker', () => {
   });
 });
 
+describe('Playing Strategy Charts', () => {
+  const charts = () => <StrategyTables params={{ pick: true, title: 'Playing Strategy Charts' }} />;
+  /** Each cell's action (its colour) and index. */
+  const tableText = () =>
+    bodyRows()
+      .flatMap(row => within(row).getAllByRole('cell'))
+      .map(cell => `${cell.style.backgroundColor}:${cell.textContent}`)
+      .join('|');
+
+  it('builds the tables for the rules switched on, its own and not the game’s', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(charts());
+    const das = screen.getByRole('switch', { name: 'Double after split' });
+    expect(das).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Hit soft 17' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'No hole card' })).not.toBeChecked();
+    await choose(user, 'Table', 'Split');
+    const withDas = tableText();
+    await user.click(das);
+    expect(app.settings.get('charts.rules.doubleAfterSplit')).toBe(false);
+    expect(app.settings.get('rules.doubleAfterSplit')).toBe(true);
+    expect(tableText()).not.toBe(withDas);
+    // The game's rules leave the Charts alone.
+    const withoutDas = tableText();
+    act(() => app.settings.set('rules.doubleAfterSplit', true));
+    expect(tableText()).toBe(withoutDas);
+  });
+
+  it('keeps the strategy, decks, rules and table picked on it, and shows no error history', async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    const { unmount } = renderScreen(charts(), { app });
+    await choose(user, 'Decks', '2');
+    await choose(user, 'Table', 'Split');
+    await user.click(screen.getByRole('switch', { name: 'No hole card' }));
+    expect(screen.queryByRole('switch', { name: 'Shade error counts' })).not.toBeInTheDocument();
+    const system = within(screen.getByRole('combobox', { name: 'Strategy' })).getAllByRole('option')[1];
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Strategy' }), system);
+    unmount();
+
+    renderScreen(charts(), { app });
+    expect(screen.getByRole('combobox', { name: 'Decks' })).toHaveDisplayValue('2');
+    expect(screen.getByRole('combobox', { name: 'Table' })).toHaveDisplayValue('Split');
+    expect(screen.getByRole('switch', { name: 'No hole card' })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Strategy' })).toHaveDisplayValue(system.textContent!);
+    expect(app.settings.get('table.decks')).toBe(6);
+  });
+
+  it('shows the index set picked on it, of those a strategy has built in', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(charts());
+    const indices = screen.getByRole('combobox', { name: 'Indices' });
+    expect(
+      within(indices)
+        .getAllByRole('option')
+        .map(o => o.textContent),
+    ).toEqual(['All Indices', 'Illustrious 18', 'Sweet 16', 'Catch 20', 'Crack 33', 'No Indices']);
+    // 16 vs ten stands from a count of 0.
+    expect(cell(1, 8)).toHaveTextContent('0');
+    await choose(user, 'Indices', 'No Indices');
+    expect(app.settings.get('charts.strategy.indexSet')).toBe('none');
+    expect(app.settings.get('game.strategy.indexSet')).toBe('crack33');
+    expect(cell(1, 8)).toHaveTextContent(/^$/);
+  });
+
+  /** The rows of one side: the Charts' own ("Strategy") or the one laid over it ("Compare with"). */
+  const side = (name: 'Strategy' | 'Compare with') => within(screen.getByRole('group', { name }));
+  /** Picks an option in one side's select. */
+  async function pick(user: UserEvent, group: 'Strategy' | 'Compare with', select: string, option: string) {
+    const element = side(group).getByRole('combobox', { name: select });
+    await user.selectOptions(element, within(element).getByRole('option', { name: option }));
+  }
+
+  it('starts Compare as a copy of the first side, so only a change splits the cells', async () => {
+    const user = userEvent.setup();
+    const { app, container } = renderScreen(charts());
+    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a split is drawn, not named
+    const differing = () => container.querySelectorAll('[data-differs]').length;
+    await pick(user, 'Strategy', 'Decks', '2');
+    expect(side('Compare with').queryByRole('combobox', { name: 'Strategy' })).not.toBeInTheDocument();
+    await user.click(side('Compare with').getByRole('switch', { name: 'Compare' }));
+    expect(app.settings.get('charts.compare.on')).toBe(true);
+    expect(side('Compare with').getByRole('combobox', { name: 'Decks' })).toHaveDisplayValue('2');
+    expect(differing()).toBe(0);
+
+    // The same strategy, standing on soft 17 instead: only the plays that rule changes split (High-Low's surrenders).
+    await user.click(side('Compare with').getByRole('switch', { name: 'Hit soft 17' }));
+    expect(app.settings.get('charts.compare.rules.dealerHitsSoft17')).toBe(false);
+    expect(app.settings.get('charts.rules.dealerHitsSoft17')).toBe(true);
+    await choose(user, 'Table', 'Surrender');
+    expect(differing()).toBeGreaterThan(0);
+    const key = within(screen.getByRole('list', { name: 'Compared strategies' }));
+    expect(key.getAllByRole('listitem').map(item => item.textContent)).toEqual([
+      'High-Low · Hit soft 17',
+      'High-Low · Stand soft 17',
+    ]);
+
+    await user.click(side('Compare with').getByRole('switch', { name: 'Compare' }));
+    expect(differing()).toBe(0);
+    expect(screen.queryByRole('list', { name: 'Compared strategies' })).not.toBeInTheDocument();
+  });
+
+  it('compares two strategies, each with its own decks and indices', async () => {
+    const user = userEvent.setup();
+    const { container } = renderScreen(charts());
+    await user.click(side('Compare with').getByRole('switch', { name: 'Compare' }));
+    await pick(user, 'Compare with', 'Strategy', 'Basic Strategy');
+    await pick(user, 'Compare with', 'Indices', 'No Indices');
+    // 16 v X: High-Low stands from 0, Basic Strategy always hits.
+    expect(cell(1, 8)).toHaveAttribute('data-differs');
+    expect(cell(1, 8)).toHaveTextContent(/^0$/);
+    const key = within(screen.getByRole('list', { name: 'Compared strategies' }));
+    expect(key.getAllByRole('listitem').map(item => item.textContent)).toEqual([
+      'High-Low · Crack 33',
+      'Basic Strategy · No Indices',
+    ]);
+    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a split is drawn, not named
+    expect(container.querySelectorAll('[data-differs]').length).toBeGreaterThan(0);
+  });
+
+  it('splits the counts the two sides differ on', async () => {
+    const user = userEvent.setup();
+    const { app, container } = renderScreen(charts());
+    act(() => app.settings.set('charts.table', 'counts'));
+    await user.click(side('Compare with').getByRole('switch', { name: 'Compare' }));
+    await pick(user, 'Compare with', 'Strategy', 'KO Rookie');
+    // KO starts its count below zero, High-Low at it.
+    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a split is drawn, not named
+    expect(container.querySelectorAll('[data-differs]').length).toBeGreaterThan(0);
+  });
+
+  it('offers no rule switches when showing a module’s own tables', () => {
+    renderScreen(<StrategyTables params={{}} />);
+    expect(screen.queryByRole('switch', { name: 'Double after split' })).not.toBeInTheDocument();
+  });
+});
+
 describe('strategy tables', () => {
   it('toggles mask cells and counts them', async () => {
     const user = userEvent.setup();
@@ -236,7 +373,7 @@ describe('strategy tables', () => {
     expect(screen.getByText('Hit < Value')).toBeVisible();
     await user.click(screen.getByRole('switch', { name: 'Shade error counts' }));
     expect(cell(1, 8)).toHaveTextContent(/^1$/);
-    expect(cell(1, 7)).toBeEmptyDOMElement();
+    expect(cell(1, 7)).toHaveTextContent(/^$/);
     expect(screen.getByText('Hit < Value')).not.toBeVisible();
   });
 
@@ -283,6 +420,6 @@ describe('Playing Strategy', () => {
     expect(location().pathname).toBe('/strategy/tables');
     const opened = new URLSearchParams(location().search);
     // The game's own strategy, built for its decks.
-    expect([opened.get('scope'), opened.get('system'), opened.get('decks')]).toEqual(['game', '100', '6']);
+    expect([opened.get('scope'), opened.get('system'), opened.get('decks')]).toEqual(['game', '30', '6']);
   });
 });

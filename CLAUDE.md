@@ -70,7 +70,7 @@ To see a particular hand in the game (splits, resplits), rig the shoe from the d
 
 ## Gotchas
 
-- `tests/fixtures/*.json.gz` is behavior recorded from the original apps; it **cannot be regenerated** (the originals were removed — recoverable from git tag `original-apps-reference`). If a fixture test fails, the code changed behavior: either fix the code or, if the change is intentional, adjust the test deliberately.
+- `tests/fixtures/*.json.gz` is behavior recorded from the original apps; it **cannot be regenerated** (the originals were removed — recoverable from git tag `original-apps-reference`). If a fixture test fails, the code changed behavior: either fix the code or, if the change is intentional, adjust the test deliberately (the deliberate differences live in `tests/support/corrections.ts`).
 - The service worker's precache list is generated at build time from `dist/` (`globPatterns` in `vite.config.ts`). Installed copies offer a Reload when a new build is deployed.
 - E2E tests import and patch source modules in the page (`import('/src/...ts')`), which only the dev server serves (started with `E2E=1`, so no hot reload mid-test); tests needing the service worker are tagged `@build` and run on the production build. A seeded `Math.random` must follow only calls whose nearest frame is the app's (React and React Router draw random ids). Tests hear sounds by replacing `app.sound.output`. Locally Playwright reuses any server already on ports 5174/4173; stop a stale one first.
 - The app makes no network requests; users cannot import strategies or side-bet games. New ones are bundled with `tools/bundle-import.ts`, which edits `src/data/` and `src/settings/strategy-list.ts`.

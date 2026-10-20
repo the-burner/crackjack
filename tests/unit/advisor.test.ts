@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildStrategy, INDEX_SETS } from '@/core/strategy/strategy-tables';
-import { advisePlay, adviseInsurance } from '@/core/strategy/advisor';
+import { ACTION, advisePlay, adviseInsurance } from '@/core/strategy/advisor';
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { loadFixture } from '../support/fixtures';
+import { sevensIndex } from '../support/corrections';
 import type { Probe } from '@/core/strategy/advisor';
 
 interface RecordedConfig {
@@ -44,9 +45,11 @@ function strategyFor(c: RecordedConfig) {
   });
 }
 
+/** Each decision, and the index Crackjack corrects it to where it is one (tests/support/corrections.ts). */
 function run(record: RecordedAdvice) {
   const strategy = strategyFor(record.config);
   const out: string[] = [];
+  const corrected: ({ index: number; count: number; surrender: boolean } | null)[] = [];
   for (const probe of record.probeModes)
     for (const h of record.hands)
       for (let up = 1; up <= 10; up++)
@@ -70,8 +73,11 @@ function run(record: RecordedAdvice) {
             out.push(
               `${r.action},${r.section},${r.row},${r.doubleOrLess ? 1 : 0},${r.threshold === null ? -9999 : Number(r.threshold)}`,
             );
+            const index = sevensIndex(record.config.system, null, up, strategy.tables.surrender);
+            const sevens = h.c1 === 7 && h.c2 === 7 && h.n === 2;
+            corrected.push(index === null ? null : { index, count: tc, surrender: allowed.surrender && sevens });
           }
-  return out;
+  return { out, corrected };
 }
 
 for (const app of ['game', 'drill']) {
@@ -79,11 +85,20 @@ for (const app of ['game', 'drill']) {
     it.each(loadFixture<RecordedAdvice[]>(`advisor.${app}`).map(r => [JSON.stringify(r.config), r] as const))(
       '%s',
       (_, record) => {
-        const actual = run(record);
+        const { out: actual, corrected } = run(record);
         const mismatches: { i: number; expected: string; actual: string }[] = [];
         actual.forEach((v, i) => {
-          if (v !== record.results[i] && mismatches.length < 5)
-            mismatches.push({ i, expected: record.results[i], actual: v });
+          // A corrected decision surrenders from the index, where the original played on; below it the play is
+          // the original's, judged (where the surrender is what decides it) against the index rather than "never".
+          const fix = corrected[i];
+          const asRecorded = (text: string) => text.split(',').slice(0, 4).join();
+          const ok = !fix
+            ? v === record.results[i]
+            : fix.surrender && fix.count >= fix.index
+              ? v.startsWith(`${ACTION.surrender},`) && !record.results[i].startsWith(`${ACTION.surrender},`)
+              : v === record.results[i] ||
+                (asRecorded(v) === asRecorded(record.results[i]) && v.endsWith(`,${fix.index}`));
+          if (!ok && mismatches.length < 5) mismatches.push({ i, expected: record.results[i], actual: v });
         });
         expect(mismatches).toEqual([]);
         expect(actual.length).toBe(record.results.length);

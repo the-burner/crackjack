@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { buildStrategy, INDEX_SETS } from '@/core/strategy/strategy-tables';
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { loadFixture } from '../../support/fixtures';
+import { correctedSurrender } from '../../support/corrections';
 import { ALWAYS, NEVER, NO_ENTRY } from '@/core/strategy/strategy-file';
 import {
   TABLE_VIEWS,
@@ -104,8 +105,18 @@ describe.each(records.map(r => [`${r.name} ${JSON.stringify(r.config)}`, r] as c
     expect(columnLabels({ extended })).toEqual(record.views[0].columnLabels);
   });
 
-  for (const recorded of record.views) {
-    const view = viewFor(recorded.tablenum);
+  const allIndices = INDEX_SETS[record.config.indexSet] === 'all';
+  for (const original of record.views) {
+    const view = viewFor(original.tablenum);
+    // As Crackjack corrects it (tests/support/corrections.ts).
+    const recorded =
+      view.table === 'surrender'
+        ? {
+            ...original,
+            cells: correctedSurrender(record.config.system, allIndices, original.cells),
+            colors: correctedSurrender(record.config.system, allIndices, original.colors),
+          }
+        : original;
     const rows = rowCount(view, { extended });
 
     describe(view.label, () => {

@@ -66,7 +66,7 @@ const systemDefs = () => ({
 
 /** Which of its indices a module plays: only a module judged against the tables has them. */
 const indexDefs = () => ({
-  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom'], 'all'),
+  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack33', 'none', 'custom'], 'crack33'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
   'strategy.indexRangeMax': int(99, -99, 99),
@@ -128,6 +128,15 @@ const gameDefs = () => ({
   'betting.wongIn': int(1, -99, 99),
   /** Begin each shoe sitting out, until the count reaches Wong In (when that is above 0). */
   'betting.wongStartOut': bool(false),
+});
+
+/** What one side of the Playing Strategy Charts is built for. */
+const chartSideDefs = () => ({
+  ...systemDefs(),
+  ...tableRuleDefs(),
+  decks: oneOf(DECKS, 6),
+  /** Which indices it shows; a custom set is a module's own. */
+  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack33', 'none'], 'crack33'),
 });
 
 /** `defs` under `prefix`, as the schema keeps one module's copy of them. */
@@ -275,6 +284,16 @@ export const SETTINGS_SCHEMA = {
   'display.showPlayAccuracy': bool(false),
   'display.showRunningCount': bool(false),
   'display.showTrueCount': bool(false),
+
+  // Playing Strategy Charts: the strategy, decks and rules its tables are built for, and what it shows.
+  ...under('charts', chartSideDefs()),
+  // A second side laid over the first: its own strategy, decks, indices and rules, when Compare is on.
+  'charts.compare.on': bool(false),
+  ...under('charts.compare', chartSideDefs()),
+  'charts.table': oneOf(
+    ['hardStand', 'softStand', 'hardDouble', 'softDouble', 'split', 'surrender', 'counts'],
+    'hardStand',
+  ),
 
   // Playing Strategy Flash Cards. A fresh install drills Crackjack's Infinite Round Robin.
   // Judged against the tables, so their indices and the rules they are built for too.

@@ -41,7 +41,7 @@ const options = (extra: Partial<TableOptions> = {}): TableOptions => ({
 const highLow = buildStrategy(STRATEGY_FILES[30], options());
 const basic = buildStrategy(STRATEGY_FILES[5], options());
 /** The system a fresh install drills with, and an unbalanced one that counts to a pivot. */
-const crackjack = buildStrategy(STRATEGY_FILES[100], options());
+const crackHighLow = buildStrategy(STRATEGY_FILES[30], options({ indexSet: 'crack33' }));
 const knockOut = buildStrategy(STRATEGY_FILES[74], options());
 
 // Situations left out of a literal read as switched off.
@@ -399,7 +399,7 @@ describe('the spread of the random count over a drill', () => {
   };
 
   it('straddles zero for a balanced system', () => {
-    const counts = sample(crackjack, 4);
+    const counts = sample(crackHighLow, 4);
     expect(Math.abs(mean(counts))).toBeLessThan(1);
     expect(counts.filter(n => n < 0).length / counts.length).toBeGreaterThan(0.25);
   });

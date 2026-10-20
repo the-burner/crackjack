@@ -82,6 +82,12 @@ const NOT_IMPLEMENTED_YET: Partial<Record<SettingKey, string>> = {
   'peeking.strategyLow': 'needs the original hole-card strategy tables, which are not bundled',
 };
 
+/** Settings that only change what their own screen shows, so that screen is what reads them. */
+const SHOWN_ON_ITS_SCREEN: Partial<Record<SettingKey, string>> = {
+  'charts.table': 'src/screens/strategy/tables.tsx',
+  'charts.compare.on': 'src/screens/strategy/tables.tsx',
+};
+
 describe('rules reaching the engine', () => {
   // The unusual-game picker rewrites other rule settings instead of being read
   // as a rule itself; it is checked on its own below.
@@ -219,10 +225,13 @@ describe('every setting does something', () => {
 
   it('is read by something other than the screen that edits it', () => {
     const dead = [...consumers]
-      .filter(([, used]) => !used)
+      .filter(([key, used]) => !used && !(key in SHOWN_ON_ITS_SCREEN))
       .map(([key]) => key)
       .sort();
     expect(dead).toEqual(Object.keys(NOT_IMPLEMENTED_YET).sort());
+    for (const [key, screen] of Object.entries(SHOWN_ON_ITS_SCREEN)) {
+      expect(readFileSync(screen, 'utf8'), key).toContain(`'${key}'`);
+    }
   });
 
   it('keeps a reason for each setting nothing reads yet', () => {

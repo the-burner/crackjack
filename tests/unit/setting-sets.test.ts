@@ -13,12 +13,14 @@ const DRILLS: DrillName[] = ['flash', 'depth', 'count', 'full'];
 const defaults = (key => SETTINGS_SCHEMA[key].default) as SettingReader;
 
 describe('the settings a configuration saves', () => {
-  it('puts every setting in one place: the global screens, a module, or which configuration is selected', () => {
+  it('puts every setting in one place: the global screens, a module, the Charts, or which configuration is selected', () => {
     const selections = ['gestures.config', 'game.config', ...DRILLS.map(d => `drills.${d}.config`)];
     const global = ALL.filter(
       key => key.startsWith('gestures.') || (key.startsWith('display.') && !GAME_KEYS.includes(key)),
     ).filter(key => !selections.includes(key));
-    const places = [global, GAME_KEYS, ...DRILLS.map(DRILL_KEYS), selections];
+    // The Charts keep what is picked on them, in no configuration.
+    const charts = ALL.filter(key => key.startsWith('charts.'));
+    const places = [global, GAME_KEYS, ...DRILLS.map(DRILL_KEYS), charts, selections];
     const counted = new Map<string, number>();
     for (const keys of places) for (const key of keys) counted.set(key, (counted.get(key) ?? 0) + 1);
     expect(ALL.filter(key => counted.get(key) !== 1)).toEqual([]);

@@ -8,6 +8,9 @@ import type { AppSettings, SettingKey, SettingValues, SettingsPatch } from './sc
 /** Where each module keeps its own settings. */
 export const SCOPES = {
   game: 'game',
+  // Ahead of the Charts' own, as its settings sit under theirs.
+  compare: 'charts.compare',
+  charts: 'charts',
   flash: 'drills.flash',
   depth: 'drills.depth',
   count: 'drills.count',

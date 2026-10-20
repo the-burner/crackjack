@@ -16,21 +16,25 @@ import { applyIndexRangeChange } from '@/settings/rules-logic';
 import type { IndexRangeKey } from '@/settings/rules-logic';
 import { decksOf, indexMaskKey, keeps, scopedSettings, tableRuleKey } from '@/settings/scopes';
 import type { ScopeName } from '@/settings/scopes';
-import { INDEX_SETS } from '@/core/strategy/strategy-tables';
 import type { IndexSet } from '@/core/strategy/strategy-tables';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
 import { useNavigate } from 'react-router';
 import { PATHS, tablesSearch } from '@/app/paths';
 
-const INDEX_SET_LABELS: Record<IndexSet, string> = {
+export const INDEX_SET_LABELS: Record<IndexSet, string> = {
   all: 'All Indices',
   illustrious18: 'Illustrious 18',
   sweet16: 'Sweet 16',
   catch20: 'Catch 20',
+  crack33: 'Crack 33',
   none: 'No Indices',
   custom: 'Custom',
 };
 
-const INDEX_SET_OPTIONS = INDEX_SETS.map(value => ({ value, label: INDEX_SET_LABELS[value] }));
+const INDEX_SET_OPTIONS = SETTINGS_SCHEMA['game.strategy.indexSet'].values.map(value => ({
+  value,
+  label: INDEX_SET_LABELS[value],
+}));
 
 /**
  * The rules this module's tables are built for. The game's are the table's own rules, shown on its

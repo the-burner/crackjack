@@ -9,9 +9,8 @@ export interface StrategyEntry {
 
 /** Built-in strategies in display order. The first is the default (see settings/schema.ts). */
 export const BUILTIN_STRATEGIES = [
-  [100, "Crackjack's High-Low Strategy"],
-  [5, 'Basic Strategy'],
   [30, 'High-Low'],
+  [5, 'Basic Strategy'],
   [31, 'Complete High-Low'],
   [32, 'Halves'],
   [73, 'KO Rookie'],

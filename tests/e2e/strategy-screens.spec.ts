@@ -207,3 +207,17 @@ test('opens a named table with one cell marked', async ({ page }) => {
   await expect(grid.locator('[data-marked]')).toHaveCount(1);
   await expect(gridCell(grid, 2, 3)).toHaveAttribute('data-marked');
 });
+
+test('Crack 33, picked on Playing Strategy, is what the game plays', async ({ page }) => {
+  await openHub(page);
+  await page.evaluate(() => window.app.settings.set('game.strategy.system', 31));
+  const el = await openFromHub(page, 'Playing Strategy', 'game.strategy');
+  await choose(el, 'Indices', 'Crack 33');
+  expect(await setting(page, 'game.strategy.indexSet')).toBe('crack33');
+  // 16 v X keeps its index; 12 v 5 is played by basic strategy.
+  const cells = await page.evaluate(() => {
+    const t = window.app.strategies.current(window.app.settings, 'game', 6).tables.hardStand;
+    return [t[1][8], t[5][3]];
+  });
+  expect(cells).toEqual([0, -32000]);
+});

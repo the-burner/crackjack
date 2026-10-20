@@ -59,13 +59,13 @@ describe('addStrategy', () => {
 
   it('adds the file under the next id and lists it last', async () => {
     const { id, name, files, catalog } = addStrategy(sources(), text);
-    expect([id, name]).toEqual([101, 'My Halves']);
-    expect((await load(files)).STRATEGY_FILES[101]).toBe(text);
-    expect(catalog).toContain("\n  [101, 'My Halves'],\n].map(");
+    expect([id, name]).toEqual([100, 'My Halves']);
+    expect((await load(files)).STRATEGY_FILES[100]).toBe(text);
+    expect(catalog).toContain("\n  [100, 'My Halves'],\n].map(");
   });
 
   it('takes a display name, escaping quotes', () => {
-    expect(addStrategy(sources(), text, "Ethan's Halves").catalog).toContain("[101, 'Ethan\\'s Halves'],");
+    expect(addStrategy(sources(), text, "Ethan's Halves").catalog).toContain("[100, 'Ethan\\'s Halves'],");
   });
 
   it('rejects a bad download and a strategy that is already bundled', () => {

@@ -68,7 +68,7 @@ describe('corrupt json settings', () => {
 
 describe('unknown strategy and game ids', () => {
   it('falls back to the default strategy when the saved system is not one of them', () => {
-    expect(saved({ 'game.strategy.system': 12345 }).get('game.strategy.system')).toBe(100);
+    expect(saved({ 'game.strategy.system': 12345 }).get('game.strategy.system')).toBe(30);
   });
 
   it('defaults to the first built-in strategy', () => {

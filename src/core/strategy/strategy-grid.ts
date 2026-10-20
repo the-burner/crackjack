@@ -345,3 +345,19 @@ export function isIndexCell(value: number): boolean {
 
 const range = <T>(n: number, fn: (i: number) => T): T[] => Array.from({ length: n }, (_, i) => fn(i));
 const trimNumber = (n: number): string => String(Math.round(n * 1000) / 1000);
+
+/** Whether two cells read the same: the same play and the same index. */
+export const sameCell = (a: GridCell, b: GridCell): boolean => a.background === b.background && a.text === b.text;
+
+/** Whether two strategies' versions of a table can be laid over each other: the same hands down the side and cards across. */
+export function comparableTables(view: TableGridView, a: Strategy, b: Strategy): boolean {
+  const rows = (s: Strategy) => rowLabels(view, { extended: s.extended, earlySurrender: s.earlySurrender }).join();
+  return a.extended === b.extended && rows(a) === rows(b);
+}
+
+/** Whether two strategies' versions of a counts table can be laid over each other: the same rows and columns. */
+export function comparableCounts(a: CountsTable, b: CountsTable | null): b is CountsTable {
+  const shape = (t: CountsTable) =>
+    [t.columns.join(), t.rows.map(r => `${r.label}:${r.values.length}`).join()].join('|');
+  return b !== null && shape(a) === shape(b);
+}

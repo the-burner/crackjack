@@ -3,7 +3,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { loadFixture } from '../../support/fixtures';
+import { sevensIndex } from '../../support/corrections';
 import { buildStrategy } from '@/core/strategy/strategy-tables';
+import { ACTION } from '@/core/strategy/advisor';
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { roundTrueCount, TC_ROUNDING, TC_DIVISION, TC_LAST_DECK } from '@/core/counting';
 import { emptyTallies } from '@/services/error-tallies';
@@ -178,6 +180,19 @@ describe('flash indices and plays match the original', () => {
           doubleAnyCards: Boolean(r.config.doubleAnyCards),
         });
         const cell = errorCell(mine, null, hand);
+        // A corrected play surrenders, where the original played on (tests/support/corrections.ts).
+        const index = sevensIndex(r.config.system, r.hand, r.upcard, strategy.tables.surrender);
+        if (index !== null && play.count >= index) {
+          if (mine.action !== ACTION.surrender || play.action === ACTION.surrender)
+            wrong.push({
+              ...r.hand,
+              upcard: r.upcard,
+              count: play.count,
+              system: r.config.system,
+              mine: [mine.action],
+            });
+          continue;
+        }
         if (mine.action !== play.action || mine.section !== play.table || (cell && cell.row !== play.row)) {
           wrong.push({
             ...r.hand,

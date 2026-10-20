@@ -3,6 +3,7 @@ import { buildStrategy, CODE, INDEX_SETS, INSURANCE } from '@/core/strategy/stra
 import { TABLE, TABLE_NAMES, VARIANT, parseStrategyFile } from '@/core/strategy/strategy-file';
 import { STRATEGY_FILES } from '@/data/strategy-files';
 import { loadFixture } from '../support/fixtures';
+import { correctedSurrender } from '../support/corrections';
 import type { CustomMask, Strategy, TableOptions } from '@/core/strategy/strategy-tables';
 import type { Grid, StrategyFile, TableName } from '@/core/strategy/strategy-file';
 
@@ -60,7 +61,11 @@ describe('buildStrategy matches the recorded strategy tables', () => {
   it.each(records.map(r => [`${r.name} ${JSON.stringify(r.config)}`, r] as const))('%s', (_, r) => {
     const s = buildStrategy(STRATEGY_FILES[r.config.system], optionsFromFixture(r.config));
     expect(s.name).toBe(r.name);
-    for (const [name, table] of Object.entries(r.tables) as [TableName, Grid][]) {
+    for (const [name, recorded] of Object.entries(r.tables) as [TableName, Grid][]) {
+      const table =
+        name === 'surrender'
+          ? correctedSurrender(r.config.system, INDEX_SETS[r.config.indexSet] === 'all', recorded)
+          : recorded;
       const cols = table[0].length;
       expect(toNumbers(s.tables[name].map(row => row.slice(0, cols))), name).toEqual(toNumbers(table));
     }
