@@ -1,0 +1,28 @@
+<h2>True Count Calculations</h2>
+
+<h3>True Count Resolution</h3>
+  <p>These options are used only in card counting systems in which a  running count is converted to a true count. The options vary the exactness of  the division. <strong>Important</strong>: This is not the same as the True Count Divisor.  The divisor is set in the strategy itself.</p>
+  <ul>
+    <li><strong>Full Deck </strong>- This option is only meaningful if  your counting system true count conversion is in full decks. If it is in half  decks and this option is set, the Half Deck option below will be used. The  option means that you will estimate the remaining decks in terms of full decks  and always divide by a whole number.</li>
+    <li> <strong>Half Deck</strong> - When set, the running count divisor  will be the remaining decks (or half decks if specified by your system) to the  nearest half deck. This requires a better estimate of the remaining decks.</li>
+    <li> <strong>Quarter Deck</strong> - This is quite difficult with many  decks remaining. When set, you must estimate the remaining decks to the closest  number of quarter decks.</li>
+    <li> <strong>Exact Calculation</strong> - The True Count is calculated  to the card.</li>
+  </ul>
+  <h3>    Last Deck Resolution<br />
+  </h3>
+  <p>It is easier and more important to estimate the remaining decks  when you are in the last deck of a shoe (when you are lucky enough to find a  casino that deals that far.) This option allows you to force a better estimate  during the last deck.
+  </p>
+  </p>
+<h3>True Count Division</h3>
+<ul>
+  <li> <strong>Round</strong> - After the True Count division, the result  is rounded to the nearest integer.</li>
+  <li> <strong>Truncate</strong> - For positive numbers, round down and  for negative numbers round up.</li>
+  <li> <strong>Floor</strong> - Fractions are always removed.</li>
+</ul>
+<h3>Allowed estimation error</h3>
+<p>If you estimate the deck depth slightly incorrectly, it can change  your true count and change a playing decision. But, the error is very minor.  This feature can be used to set the number of cards of inaccuracy allowed. If  you are off by this many cards or fewer and it causes a misplay, you will  receive a close call warning instead of an error. The hand will not be marked  in the error hands since you probably know how to play the hand.</p>
+<h3>Side Counts (expert play)</h3>
+<ul>
+  <li><strong>Ace Side Count</strong> - In addition to any other counts, you can set this option to side count Aces  to improve playing betting counts. </li>
+  <li><strong>Ten Side Count</strong> - In addition to any other counts, you can set this option to side count Tens  versus non-Tens for a perfect Insurance Count. </li>
+</ul>
