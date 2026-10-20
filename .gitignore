@@ -8,3 +8,6 @@ playwright-report/
 .tmp/
 dist/
 coverage/
+
+# macOS folder settings
+.DS_Store
