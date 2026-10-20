@@ -65,9 +65,6 @@ export function Betting({ scope }: { scope: BettingScope }) {
       <Column>
         <PresetPicker kind={bettingPresets(scope)} store={app.bettingStrategies} />
         <Section title="Bets">
-          <SettingsNote>
-            Enter the number of different bets in the table and then click on a table cell to enter a new bet.
-          </SettingsNote>
           <SettingsGroup>
             {warns && (
               <CheckList
@@ -111,6 +108,9 @@ export function Betting({ scope }: { scope: BettingScope }) {
           </SettingsGroup>
         </Section>
         <div>
+          <SettingsNote className="text-center">
+            Enter the number of different bets in the table and then click on a table cell to enter a new bet.
+          </SettingsNote>
           {/* Drawn as the charts are: the counts labelling the rows, each bet on the charts' colour for plain data. */}
           <table
             aria-label="Bets"
