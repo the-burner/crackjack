@@ -25,7 +25,12 @@ const HEADS_UP: SettingsPatch = {
 
 export const GAME_PRESETS: readonly PresetSpec[] = [
   { id: 'heads-up-6d', name: "Crackjack's Heads-Up 6D,H17,LS,DAS", changes: HEADS_UP },
-  { id: 'heads-up-2d', name: "Crackjack's Heads-Up 2D,H17,LS,DAS", changes: { ...HEADS_UP, ...DOUBLE_DECK } },
+  // Heads up, the double deck is dealt face up.
+  {
+    id: 'heads-up-2d',
+    name: "Crackjack's Heads-Up 2D,H17,LS,DAS",
+    changes: { ...HEADS_UP, ...DOUBLE_DECK, 'table.cardsFaceDown': false },
+  },
   { id: 'table-2d', name: "Crackjack's 2D,H17,LS,DAS", changes: DOUBLE_DECK },
   { id: 'table-6d', name: "Crackjack's 6D,H17,LS,DAS", changes: {} },
 ];
