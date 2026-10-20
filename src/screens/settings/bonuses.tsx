@@ -4,8 +4,6 @@ import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
-const NOTE = 'Oddball bonuses are found here.';
-
 // The three payout rows are one setting; clearing them all pays the usual 3:2.
 const BLACKJACK: readonly SettingCheck[] = [
   { label: 'Player BJ always wins', key: 'rules.playerBlackjackAlwaysWins' },
@@ -32,7 +30,7 @@ const HANDS: readonly SettingCheck[] = [
 
 export function Bonuses() {
   return (
-    <SettingsScreen title="Bonuses" help="game.bonuses" note={NOTE}>
+    <SettingsScreen title="Bonuses" help="game.bonuses">
       <Section title="Blackjack Payout">
         <SettingsGroup>
           <SettingChecks items={BLACKJACK} />

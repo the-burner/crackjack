@@ -4,8 +4,6 @@ import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
-const NOTE = 'Dealer behavior and unusual rules.';
-
 const DEALER: readonly SettingCheck[] = [
   { label: 'Dealer makes obvious plays', key: 'mechanics.dealerMakesObviousPlays' },
   { label: 'Dealer points out stupid plays', key: 'mechanics.dealerPointsOutStupidPlays' },
@@ -27,7 +25,7 @@ const HANDS: readonly SettingCheck[] = [
 
 export function PlayVariations() {
   return (
-    <SettingsScreen title="Play Variations" help="game.playVariations" note={NOTE}>
+    <SettingsScreen title="Play Variations" help="game.playVariations">
       <Section title="Dealer">
         <SettingsGroup>
           <SettingChecks items={DEALER} />

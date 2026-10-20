@@ -7,7 +7,7 @@ import { CheckList } from '@/components/ui/check-list';
 import type { CheckListLayout } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
 import type { Option } from '@/components/ui/select';
-import { SettingsCols, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { SettingsCols, SettingsRow } from '@/components/ui/settings-group';
 import { Slider } from '@/components/ui/slider';
 import { ValueButton } from '@/components/ui/value-button';
 import { ScreenLayout } from '@/components/screen-layout';
@@ -24,21 +24,10 @@ export function useWriteSetting() {
     settings.update(applyRuleChange(k => settings.get(k), key, value));
 }
 
-/** A settings screen: title bar, an optional note, then groups in one or two columns. */
-export function SettingsScreen({
-  title,
-  help,
-  note,
-  children,
-}: {
-  title: string;
-  help: string;
-  note?: string;
-  children: ReactNode;
-}) {
+/** A settings screen: title bar, then groups in one or two columns. */
+export function SettingsScreen({ title, help, children }: { title: string; help: string; children: ReactNode }) {
   return (
     <ScreenLayout title={title} help={help}>
-      {note && <SettingsNote>{note}</SettingsNote>}
       <SettingsCols>{children}</SettingsCols>
     </ScreenLayout>
   );

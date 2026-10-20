@@ -4,8 +4,6 @@ import { SettingChecks, SettingSlider, SettingsScreen } from '@/components/setti
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
-const NOTE = 'Operational controls are found here. Move speed controls to the right for faster operation.';
-
 const CHECKS: readonly SettingCheck[] = [
   { label: 'Refresh bankroll at startup', key: 'table.refreshBankrollOnStart' },
   { label: 'Hide Buttons', key: 'display.hideActionButtons' },
@@ -16,7 +14,7 @@ const CHECKS: readonly SettingCheck[] = [
 
 export function Mechanics() {
   return (
-    <SettingsScreen title="Speed/Ops" help="game.mechanics" note={NOTE}>
+    <SettingsScreen title="Speed/Ops" help="game.mechanics">
       <Section title="Speed">
         <SettingsGroup>
           <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />

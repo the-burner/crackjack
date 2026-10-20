@@ -4,8 +4,6 @@ import { SettingChecks, SettingsScreen } from '@/components/settings-controls';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
-const NOTE = 'You will find less common rule variations on this screen.';
-
 const DOUBLING: readonly SettingCheck[] = [
   { label: 'Double down on 3 cards', key: 'rules.doubleOnThreeCards' },
   { label: 'ReDouble', key: 'rules.redouble' },
@@ -28,7 +26,7 @@ const SPLITTING: readonly SettingCheck[] = [
 
 export function RuleVariations() {
   return (
-    <SettingsScreen title="Rule Variations" help="game.ruleVariations" note={NOTE}>
+    <SettingsScreen title="Rule Variations" help="game.ruleVariations">
       <Section title="Doubling">
         <SettingsGroup>
           <SettingChecks items={DOUBLING} />

@@ -6,8 +6,6 @@ import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 
-const NOTE = 'The dealer can be made to deal cards non-randomly or make errors. Catching errors is important.';
-
 const BIASES: readonly Option<SettingValues['dealerErrors.dealingBias']>[] = [
   { value: 'none', label: 'No bias' },
   { value: 'positiveCounts', label: 'Positive counts' },
@@ -30,7 +28,7 @@ const ERRORS: readonly SettingCheck[] = [
 
 export function DealerErrors() {
   return (
-    <SettingsScreen title="Errs/Biases" help="game.dealerErrors" note={NOTE}>
+    <SettingsScreen title="Errs/Biases" help="game.dealerErrors">
       <Section title="Bias">
         <SettingsGroup>
           <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />

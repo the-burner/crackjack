@@ -6,8 +6,6 @@ import type { Option, SettingCheck } from '@/components/settings-controls';
 import { TABLE_LIMITS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
 
-const NOTE = 'Common rule variations are set using this screen.';
-
 const CHECKS: readonly SettingCheck[] = [
   { label: 'Cards dealt face down', key: 'table.cardsFaceDown' },
   { label: 'DD card dealt face up', key: 'table.doubleDownCardFaceUp' },
@@ -46,7 +44,7 @@ const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits:
 
 export function CommonRules() {
   return (
-    <SettingsScreen title="Common Rules" help="game.commonRules" note={NOTE}>
+    <SettingsScreen title="Common Rules" help="game.commonRules">
       <Section title="Dealing">
         <SettingsGroup>
           <SettingChecks items={CHECKS} />

@@ -9,10 +9,6 @@ import type { Option } from '@/components/settings-controls';
 import { DECKS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
 
-const NOTE =
-  'Set the basic configuation on this screen. Seats can have computer players ' +
-  'or can be available for you to play. You can bet in any number of the available seats.';
-
 const SEAT_COUNTS: readonly Option<SettingValues['table.seatCount']>[] = [
   { value: 1, label: 'One Seat' },
   { value: 2, label: 'Two Seats' },
@@ -51,7 +47,7 @@ export function Setup() {
   // shown depends on the shuffle mode.
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
-    <SettingsScreen title="Basic Setup" help="game.setup" note={NOTE}>
+    <SettingsScreen title="Basic Setup" help="game.setup">
       <Section title="Seats">
         <SettingsGroup>
           <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />

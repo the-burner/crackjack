@@ -7,8 +7,6 @@ import type { Option, SettingCheck } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 import { HOLE_CARD_STRATEGY } from '@/settings/strategies';
 
-const NOTE = 'These options are for more advanced play.';
-
 // The first two rows are the one peek mode; clearing both turns peeking off.
 const CHECKS: readonly SettingCheck[] = [
   { label: 'Peek at dealer down card', key: 'peeking.mode', value: 'holeCard', off: 'off' },
@@ -26,7 +24,7 @@ const STRATEGIES = [{ value: HOLE_CARD_STRATEGY.id, label: HOLE_CARD_STRATEGY.na
 
 export function Peeking() {
   return (
-    <SettingsScreen title="Peeking" help="game.peeking" note={NOTE}>
+    <SettingsScreen title="Peeking" help="game.peeking">
       <Section title="Peek">
         <SettingsGroup>
           <SettingChecks items={CHECKS} />

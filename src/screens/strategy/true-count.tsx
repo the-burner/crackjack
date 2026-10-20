@@ -5,7 +5,7 @@ import { useSettings } from '@/react/app-context';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { Section, SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { scopedSettings } from '@/settings/scopes';
 import type { ScopedKey, ScopedSettings, ScopeName } from '@/settings/scopes';
@@ -75,7 +75,6 @@ export function TrueCount({ scope }: { scope: ScopeName }) {
     <ScreenLayout title="True Count Conversion" help="game.trueCount">
       <Column>
         <Section title="Calculation">
-          <SettingsNote>Set the method of calculating true counts</SettingsNote>
           <SettingsGroup>
             <SelectRow row={RESOLUTION} own={own} />
             <SelectRow row={LAST_DECK} own={own} />
