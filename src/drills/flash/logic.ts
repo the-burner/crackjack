@@ -17,7 +17,10 @@ export type Situation = TableName;
 /** Which situations are selected. */
 export type Situations = Record<Situation, boolean>;
 /** The 'drills.flash.hands' choices. */
-export type HandList = 'default' | 'illustrious18' | 'withIndices' | 'drillErrors' | 'custom' | 'roundRobin';
+export type HandList = 'default' | 'illustrious18' | 'withIndices' | 'drillErrors' | 'custom' | 'all';
+
+/** The order hands are dealt in: any of the list each time, or each once in a random order before any repeats. */
+export type Shuffle = 'random' | 'roundRobin';
 
 /** One hand of a hand list: a situation's table row against a dealer upcard. */
 export interface Entry {
@@ -242,7 +245,7 @@ const HAND_TYPE: Readonly<Record<Situation, 'hard' | 'soft' | 'pair'>> = {
  * the entry remembers both (`kinds`), so either may be dealt. A pair is its own
  * hand, so 5,5 v 10 is separate from hard 10 v 10.
  */
-export function roundRobinEntries(situations: Situations): (Entry & { kinds: Situation[] })[] {
+export function allHandEntries(situations: Situations): (Entry & { kinds: Situation[] })[] {
   const byHand = new Map<string, Entry & { kinds: Situation[] }>();
   for (const e of scanTables(situations, () => true)) {
     const key = `${HAND_TYPE[e.kind]} ${e.value} ${e.upcard}`;
@@ -313,7 +316,7 @@ export function buildHandList({
   tallies?: Tallies;
 }): { entries: Entry[]; error: string | null } {
   if (hands === 'default' || hands === 'illustrious18') return { entries: FIXED_LISTS[hands], error: null };
-  if (hands === 'roundRobin') return { entries: roundRobinEntries(situations), error: null };
+  if (hands === 'all') return { entries: allHandEntries(situations), error: null };
   const keep = {
     withIndices: (table: Situation, row: number, column: number) => hasIndex(strategy.tables[table][row][column]),
     drillErrors: (table: Situation, row: number, column: number) => (tallies?.[table]?.[row][column] ?? 0) !== 0,
@@ -422,7 +425,7 @@ export interface DealOptions {
 export function dealHand(list: readonly Entry[], options: DealOptions, random: Random): FlashHand | null {
   for (let attempt = 0; attempt < 300; attempt++) {
     const picked = list[randomInt(list.length, random)];
-    // A Round Robin entry may stand for several situations; deal one of those
+    // An All Hands entry may stand for several situations; deal one of those
     // that are selected, so its cards follow that situation's rules.
     const kinds = (picked.kinds ?? [picked.kind]).filter(kind => options.situations[kind]);
     if (kinds.length === 0) continue;

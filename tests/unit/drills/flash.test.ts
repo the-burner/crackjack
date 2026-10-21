@@ -18,7 +18,7 @@ import {
   columnOf,
   upcardOf,
   SITUATIONS,
-  roundRobinEntries,
+  allHandEntries,
   RoundRobin,
 } from '@/drills/flash/logic';
 import type { Entry, FlashHand, Situation, Situations } from '@/drills/flash/logic';
@@ -137,14 +137,14 @@ describe('hand lists', () => {
     expect(error).toMatch(/ERRORS/);
   });
 
-  it('builds the round-robin list from the selected situations', () => {
+  it('builds the All Hands list from the selected situations', () => {
     const { entries, error } = buildHandList({
-      hands: 'roundRobin',
+      hands: 'all',
       situations: only({ surrender: true }),
       strategy: highLow,
     });
     expect(error).toBe(null);
-    expect(entries).toEqual(roundRobinEntries(only({ surrender: true })));
+    expect(entries).toEqual(allHandEntries(only({ surrender: true })));
   });
 
   it('only includes situations that are switched on', () => {
@@ -641,7 +641,7 @@ describe('Round Robin', () => {
   const all = Object.fromEntries(SITUATIONS.map(kind => [kind, true])) as Situations;
 
   it('lists each player hand once per dealer card, merging situations that share it', () => {
-    const entries = roundRobinEntries(all);
+    const entries = allHandEntries(all);
     // Hard 5-17, soft 2-9 (A,2 to A,9) and ten pairs, against ten dealer cards.
     expect(entries.length).toBe((13 + 8 + 10) * 10);
     const hardTenVsTen = entries.filter(e => e.upcard === 10 && e.value === 10 && e.kinds.includes('hardStand'));
@@ -652,7 +652,7 @@ describe('Round Robin', () => {
   });
 
   it('covers only the selected situations', () => {
-    const entries = roundRobinEntries({
+    const entries = allHandEntries({
       ...(Object.fromEntries(SITUATIONS.map(k => [k, false])) as Situations),
       softDouble: true,
     });
@@ -661,7 +661,7 @@ describe('Round Robin', () => {
   });
 
   it('deals every hand once before any hand repeats', () => {
-    const entries = roundRobinEntries(all);
+    const entries = allHandEntries(all);
     const robin = new RoundRobin(entries, seededRandom(3));
     for (let round = 0; round < 3; round++) {
       const dealt = Array.from({ length: entries.length }, () => robin.next());
@@ -670,7 +670,7 @@ describe('Round Robin', () => {
   });
 
   it('marks the last hand of each round', () => {
-    const entries = roundRobinEntries(all);
+    const entries = allHandEntries(all);
     const robin = new RoundRobin(entries, seededRandom(5));
     expect(robin.endsRound).toBe(false);
     for (let round = 0; round < 2; round++) {
@@ -701,7 +701,7 @@ describe('Round Robin', () => {
   });
 
   it('never starts a new round with the hand the last one ended on', () => {
-    const entries = roundRobinEntries({
+    const entries = allHandEntries({
       ...(Object.fromEntries(SITUATIONS.map(k => [k, false])) as Situations),
       surrender: true,
     });
@@ -717,7 +717,7 @@ describe('Round Robin', () => {
   });
 
   it('deals a merged hand as one of the selected situations only', () => {
-    const entries = roundRobinEntries(all);
+    const entries = allHandEntries(all);
     const hardTenVsTen = entries.find(e => e.upcard === 10 && e.value === 10 && e.kinds.includes('hardDouble'));
     const onlyDoubles = { ...(Object.fromEntries(SITUATIONS.map(k => [k, false])) as Situations), hardDouble: true };
     const random = seededRandom(9);
@@ -732,7 +732,7 @@ describe('Round Robin', () => {
   });
 
   it('makes the same hand from different cards', () => {
-    const entries = roundRobinEntries(all);
+    const entries = allHandEntries(all);
     const hardFourteen = entries.find(e => e.upcard === 10 && e.value === 14 && e.kinds.includes('hardStand'));
     const random = seededRandom(5);
     const makes = new Set<string>();

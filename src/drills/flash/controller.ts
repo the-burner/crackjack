@@ -89,6 +89,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
   const s = app.settings;
   const options = {
     hands: s.get('drills.flash.hands'),
+    shuffle: s.get('drills.flash.shuffle'),
     situations: s.get('drills.flash.situations'),
     countMode: s.get('drills.flash.countMode'),
     fixedCount: s.get('drills.flash.fixedCount'),
@@ -119,7 +120,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
   let els: FlashElements | null = null;
   let run = -1;
   let list: Entry[] = [];
-  /** Deals the Round Robin list in order; null for the other hand lists. */
+  /** Deals the hand list in Round Robin order; null when shuffling at random. */
   let robin: RoundRobin | null = null;
   /** Round Robin rounds finished this run. */
   let rounds = 0;
@@ -161,7 +162,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     pausable: true,
     accuracyText: score => (warn ? `Accuracy: ${score.accuracy}%` : silent ? 'No Tests' : 'Displayed at end'),
     countText: score =>
-      options.hands === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`,
+      options.shuffle === 'roundRobin' ? `Hands: ${score.tests}, Rounds: ${rounds}` : `Hands: ${score.tests}`,
     onStart: start,
     onStop: stop,
     onRestart: () => {
@@ -197,7 +198,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     });
     list = built.entries;
     // Round Robin deals every hand once, in a random order, before any repeats.
-    robin = options.hands === 'roundRobin' ? new RoundRobin(list, Math.random) : null;
+    robin = options.shuffle === 'roundRobin' ? new RoundRobin(list, Math.random) : null;
     if (built.error) {
       shell.setMessage(built.error);
       return;

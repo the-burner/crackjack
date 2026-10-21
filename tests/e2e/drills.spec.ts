@@ -390,7 +390,8 @@ test.describe('flash drill', () => {
 
   test('Round Robin deals hands from the selected situations', async ({ page }) => {
     await open(page, {
-      'drills.flash.hands': 'roundRobin',
+      'drills.flash.hands': 'all',
+      'drills.flash.shuffle': 'roundRobin',
       'drills.flash.situations': {
         hardStand: false,
         softStand: false,
@@ -410,9 +411,32 @@ test.describe('flash drill', () => {
     await expect(screen.getByRole('status')).toHaveText('');
   });
 
+  test('shuffles any hand list Round Robin: each of Hands with Indices once a round', async ({ page }) => {
+    await open(page, {
+      'drills.flash.hands': 'withIndices',
+      'drills.flash.shuffle': 'roundRobin',
+      // High-Low's Crack 33 splits tens against 4, 5 and 6: three hands a round.
+      'drills.flash.situations': {
+        hardStand: false,
+        softStand: false,
+        hardDouble: false,
+        softDouble: false,
+        split: true,
+        surrender: false,
+      },
+      'drills.flash.timerMode': 'infinite',
+      'drills.flash.timePerHand': false,
+      'drills.flash.testMode': 'errorsAtEnd',
+    });
+    const screen = await launch(page, DRILLS.flash);
+    for (let i = 0; i < 3; i++) await screen.getByRole('button', { name: 'Split', exact: true }).click();
+    expect(await statsText(screen)).toContain('Hands: 4, Rounds: 1');
+  });
+
   test('counts finished Round Robin rounds', async ({ page }) => {
     await open(page, {
-      'drills.flash.hands': 'roundRobin',
+      'drills.flash.hands': 'all',
+      'drills.flash.shuffle': 'roundRobin',
       'drills.flash.situations': {
         hardStand: false,
         softStand: false,

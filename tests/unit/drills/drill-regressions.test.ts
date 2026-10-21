@@ -88,6 +88,7 @@ const maskWith = (row: number, column: number) => {
 /** Every hand is 16 against a ten at a count of zero, so Stand is right. */
 const FIXED_16_V_TEN: SettingsPatch = {
   'drills.flash.hands': 'custom',
+  'drills.flash.shuffle': 'random',
   'drills.flash.customHands': maskWith(1, 8),
   'drills.flash.situations': ONLY_HARD_STAND,
   'drills.flash.countMode': 'fixed',
@@ -106,6 +107,7 @@ describe('flash drill', () => {
     // Hard 17 against a six is always Stand, so there is no index to be asked for.
     const { shell } = flash({
       'drills.flash.hands': 'custom',
+      'drills.flash.shuffle': 'random',
       'drills.flash.customHands': maskWith(0, 4),
       'drills.flash.situations': ONLY_HARD_STAND,
       'drills.flash.countMode': 'indexTest',
@@ -132,6 +134,7 @@ describe('flash drill', () => {
   it('no tests mode neither grades the index test nor records an error', () => {
     const app = appWith({
       'drills.flash.hands': 'illustrious18',
+      'drills.flash.shuffle': 'random',
       'drills.flash.countMode': 'indexTest',
       'drills.flash.testMode': 'none',
       'drills.flash.timerMode': 'infinite',

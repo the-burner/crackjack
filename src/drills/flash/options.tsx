@@ -32,7 +32,13 @@ const HANDS_OPTIONS: Options<'drills.flash.hands'> = [
   { value: 'withIndices', label: 'Hands: Hands with Indices' },
   { value: 'drillErrors', label: 'Hands: Drill Errors' },
   { value: 'custom', label: 'Hands: Custom' },
-  { value: 'roundRobin', label: 'Hands: Round Robin' },
+  { value: 'all', label: 'Hands: All Hands' },
+];
+
+/** Random: any hand of the list each time. Round Robin: each once, in a random order, before any repeats. */
+const SHUFFLE_OPTIONS: Options<'drills.flash.shuffle'> = [
+  { value: 'random', label: 'Shuffle: Random' },
+  { value: 'roundRobin', label: 'Shuffle: Round Robin' },
 ];
 
 const COUNT_OPTIONS: Options<'drills.flash.countMode'> = [
@@ -146,6 +152,7 @@ export function FlashOptions() {
               </Button>
             )}
           </SettingsRow>
+          <SettingSelect label="Shuffle" setting="drills.flash.shuffle" options={SHUFFLE_OPTIONS} />
           <SettingsRow>
             <SettingSelect label="Count" setting="drills.flash.countMode" options={COUNT_OPTIONS} />
             {/* The set count; only Count: Set Count to: uses it. */}
