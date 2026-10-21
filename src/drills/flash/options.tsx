@@ -28,7 +28,6 @@ type Options<K extends keyof SettingValues> = readonly Option<SettingValues[K]>[
 
 const HANDS_OPTIONS: Options<'drills.flash.hands'> = [
   { value: 'default', label: 'Hands: Default Hands' },
-  { value: 'illustrious18', label: 'Hands: Illustrious 18' },
   { value: 'withIndices', label: 'Hands: Hands with Indices' },
   { value: 'drillErrors', label: 'Hands: Drill Errors' },
   { value: 'custom', label: 'Hands: Custom' },

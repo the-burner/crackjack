@@ -133,7 +133,7 @@ describe('flash drill', () => {
 
   it('no tests mode neither grades the index test nor records an error', () => {
     const app = appWith({
-      'drills.flash.hands': 'illustrious18',
+      'drills.flash.hands': 'withIndices',
       'drills.flash.shuffle': 'random',
       'drills.flash.countMode': 'indexTest',
       'drills.flash.testMode': 'none',

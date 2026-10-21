@@ -68,14 +68,6 @@ describe('hand lists', () => {
     expect(entries.filter(e => e.kind === 'surrender')).toHaveLength(0);
   });
 
-  it('has the 17 Illustrious 18 playing hands', () => {
-    const { entries } = buildHandList({ hands: 'illustrious18', situations: ALL_SITUATIONS, strategy: highLow });
-    expect(entries).toHaveLength(17);
-    expect(entries).toContainEqual({ kind: 'hardStand', upcard: 10, value: 16 });
-    expect(entries).toContainEqual({ kind: 'split', upcard: 6, value: 10 });
-    expect(entries).toContainEqual({ kind: 'hardDouble', upcard: 1, value: 11 });
-  });
-
   it('builds the index list from cells that hold an index', () => {
     const { entries } = buildHandList({
       hands: 'withIndices',

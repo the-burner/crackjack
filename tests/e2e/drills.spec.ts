@@ -528,7 +528,7 @@ test.describe('flash drill', () => {
 
   test('asks for an index instead of a play in the index test', async ({ page }) => {
     await open(page, {
-      'drills.flash.hands': 'illustrious18',
+      'drills.flash.hands': 'withIndices',
       'drills.flash.countMode': 'indexTest',
       'drills.flash.seconds': 60,
     });
@@ -558,7 +558,7 @@ test.describe('flash drill', () => {
 
   test('the index test grid leaves the cards on screen in landscape @layout', async ({ page }) => {
     await open(page, {
-      'drills.flash.hands': 'illustrious18',
+      'drills.flash.hands': 'withIndices',
       'drills.flash.countMode': 'indexTest',
       'drills.flash.timerMode': 'infinite',
       'drills.flash.timePerHand': false,

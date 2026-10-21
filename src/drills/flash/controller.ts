@@ -455,7 +455,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
 
   /** Which answers the chosen situations allow. */
   function visibleActions(): Record<Action, boolean> {
-    const all = options.hands === 'illustrious18' || options.hands === 'drillErrors';
+    const all = options.hands === 'drillErrors';
     return {
       [ACTION.hit]: true,
       [ACTION.stand]: true,

@@ -298,7 +298,7 @@ export const SETTINGS_SCHEMA = {
   // Playing Strategy Flash Cards. A fresh install drills Crackjack's Infinite Round Robin.
   // Judged against the tables, so their indices and the rules they are built for too.
   ...under('drills.flash', { ...systemDefs(), ...indexDefs(), ...initialCountDefs(), ...tableRuleDefs() }),
-  'drills.flash.hands': oneOf(['default', 'illustrious18', 'withIndices', 'drillErrors', 'custom', 'all'], 'all'),
+  'drills.flash.hands': oneOf(['default', 'withIndices', 'drillErrors', 'custom', 'all'], 'all'),
   /** The order the hands are dealt in, whichever they are (see drills/flash/logic.ts). */
   'drills.flash.shuffle': oneOf(['random', 'roundRobin'], 'roundRobin'),
   'drills.flash.customHands': json(tableGrids(true)),

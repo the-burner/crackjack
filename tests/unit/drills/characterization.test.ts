@@ -113,7 +113,12 @@ const packed = (e: Entry) => [
 ];
 
 describe('flash hand lists match the original', () => {
-  for (const record of loadFixture<HandListRecord[]>('drills-hand-lists')) {
+  // The original's Illustrious 18 hand list is gone: those plays are Hands with Indices under the
+  // Illustrious 18 index set now, so the recordings of that list no longer apply.
+  const records = loadFixture<HandListRecord[]>('drills-hand-lists').filter(
+    r => (r.config.hands as string) !== 'illustrious18',
+  );
+  for (const record of records) {
     const { config } = record;
     const chosen = Object.entries(config.situations)
       .filter(([, on]) => on)

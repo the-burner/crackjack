@@ -17,7 +17,7 @@ export type Situation = TableName;
 /** Which situations are selected. */
 export type Situations = Record<Situation, boolean>;
 /** The 'drills.flash.hands' choices. */
-export type HandList = 'default' | 'illustrious18' | 'withIndices' | 'drillErrors' | 'custom' | 'all';
+export type HandList = 'default' | 'withIndices' | 'drillErrors' | 'custom' | 'all';
 
 /** The order hands are dealt in: any of the list each time, or each once in a random order before any repeats. */
 export type Shuffle = 'random' | 'roundRobin';
@@ -175,39 +175,6 @@ const DEFAULT_HANDS = DEFAULT_HAND_GROUPS.flatMap(([kind, byUpcard]) =>
   byUpcard.flatMap(([upcard, values]) => values.map(v => entry(kind, upcard, v))),
 );
 
-/** The Illustrious 18 playing indices (insurance is not a playing decision). */
-const ILLUSTRIOUS_18_HANDS: Entry[] = [
-  ...[
-    [2, 13],
-    [2, 12],
-    [3, 13],
-    [3, 12],
-    [4, 12],
-    [5, 12],
-    [6, 12],
-    [9, 16],
-    [10, 16],
-    [10, 15],
-  ].map(([u, v]) => entry('hardStand', u, v)),
-  ...[
-    [2, 9],
-    [7, 9],
-    [10, 10],
-    [1, 11],
-    [1, 10],
-  ].map(([u, v]) => entry('hardDouble', u, v)),
-  ...[
-    [5, 10],
-    [6, 10],
-  ].map(([u, v]) => entry('split', u, v)),
-];
-
-/** Hand lists that are not built from the strategy tables. */
-const FIXED_LISTS: Readonly<Record<'default' | 'illustrious18', Entry[]>> = {
-  default: DEFAULT_HANDS,
-  illustrious18: ILLUSTRIOUS_18_HANDS,
-};
-
 /** A strategy cell holds an index (rather than "always" or "never"). */
 const hasIndex = (value: number): boolean => value !== ALWAYS && value !== NEVER;
 
@@ -315,7 +282,7 @@ export function buildHandList({
   customMask?: CustomMask;
   tallies?: Tallies;
 }): { entries: Entry[]; error: string | null } {
-  if (hands === 'default' || hands === 'illustrious18') return { entries: FIXED_LISTS[hands], error: null };
+  if (hands === 'default') return { entries: DEFAULT_HANDS, error: null };
   if (hands === 'all') return { entries: allHandEntries(situations), error: null };
   const keep = {
     withIndices: (table: Situation, row: number, column: number) => hasIndex(strategy.tables[table][row][column]),
