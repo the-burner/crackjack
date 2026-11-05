@@ -11,7 +11,7 @@ import { drawGridIn } from '@/drills/shared/answer-grid';
 import type { AnswerGrid } from '@/drills/shared/answer-grid';
 import { AnswerPause, gridAnswers } from '@/drills/shared/grid-answers';
 import type { GridTap } from '@/drills/shared/grid-answers';
-import { loadTrayImage, drawTray } from '@/drills/shared/discard-tray';
+import { loadTrayImage, drawTray, preloadTrayImages } from '@/drills/shared/discard-tray';
 import type { App } from '@/app/app';
 import { betGrid, depthGrid, generateDepthTest, isBetDrill } from './logic';
 import type { DepthTest } from './logic';
@@ -83,6 +83,7 @@ export function createDepthDrill(app: App) {
 
   function start() {
     run += 1;
+    preloadTrayImages(options.decks, options.trayStyle);
     previousAnswer = null;
     const { drill } = options;
     // The TC Bet drills shuffle their grid for each test.
