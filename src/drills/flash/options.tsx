@@ -6,11 +6,11 @@ import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { ListRow, Section, SettingsRow } from '@/components/ui/settings-group';
+import { Section, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { SettingSelect } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
-import { alert, confirm } from '@/components/dialogs';
+import { alert } from '@/components/dialogs';
 import type { SettingValues } from '@/settings/schema';
 import {
   DrillOptionsScreen,
@@ -211,24 +211,8 @@ export function FlashOptions() {
           )}
         </OptionGroup>
       </Section>
-      <Section title="Error History">
-        <OptionGroup>
-          <ListRow block onClick={() => navigate(PATHS['drills.flash.errors'])} data-action="error-history">
-            Error history
-          </ListRow>
-          <ListRow block chevron={false} onClick={() => clearErrors(app)}>
-            Clear error history
-          </ListRow>
-        </OptionGroup>
-      </Section>
     </DrillOptionsScreen>
   );
-}
-
-async function clearErrors(app: App) {
-  if (!(await confirm('Delete the record of all drill errors?'))) return;
-  app.errorTallies.clear();
-  toast('Error history cleared');
 }
 
 /** What the Drill Errors hand list holds. */

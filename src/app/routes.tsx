@@ -156,11 +156,13 @@ export const routes: RouteObject[] = [
       {
         path: 'drills/flash/play',
         ...page('drills.flash', () => import('@/drills/flash/screen').then(m => m.FlashDrill)),
-        children: [{ path: 'table', ...page('strategy.tables', tables) }],
-      },
-      {
-        path: 'drills/flash/errors',
-        ...page('drills.flash.errors', () => import('@/drills/flash/errors').then(m => m.FlashErrors)),
+        children: [
+          { path: 'table', ...page('strategy.tables', tables) },
+          {
+            path: 'stats',
+            ...page('drills.flash.stats', () => import('@/drills/flash/stats').then(m => m.FlashStats)),
+          },
+        ],
       },
       {
         path: 'drills/depth',

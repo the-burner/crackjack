@@ -62,6 +62,8 @@ export type DrillScreenProps = {
   title: string;
   /** Help topic. */
   help: string;
+  /** Shows a Stats button in the title bar. */
+  onStats?: () => void;
   layout: DrillLayout;
   /** The drill's own area; its size is the canvases'. */
   displayRef: RefObject<HTMLDivElement | null>;
@@ -85,6 +87,7 @@ export function DrillScreen({
   shell,
   title,
   help,
+  onStats,
   layout,
   displayRef,
   rootRef,
@@ -130,9 +133,16 @@ export function DrillScreen({
         </BarButton>
         {/* The felt has no visible title; this names the screen for screen readers. */}
         <h1 className="sr-only">{title}</h1>
-        <BarButton onClick={() => openHelp(help, title)} data-action="help">
-          Help
-        </BarButton>
+        <div className="flex gap-0.5">
+          {onStats && (
+            <BarButton icon="grid" onClick={onStats} data-action="stats">
+              Stats
+            </BarButton>
+          )}
+          <BarButton onClick={() => openHelp(help, title)} data-action="help">
+            Help
+          </BarButton>
+        </div>
       </header>
       <div className={cn('min-h-0 flex-1 px-1 pb-1.5', parts.body)}>
         <div ref={displayRef} data-slot="drill-display" className={cn('relative min-h-0', parts.display)}>

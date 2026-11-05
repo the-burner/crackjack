@@ -57,6 +57,7 @@ export function FlashDrill() {
       above={above}
       title="Playing Strategy Flash Cards"
       help="drills.flash"
+      onStats={() => void navigate('stats')}
       layout="flash"
       displayRef={display}
       onLayout={drill.draw}

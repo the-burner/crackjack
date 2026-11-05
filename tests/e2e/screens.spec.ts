@@ -48,6 +48,7 @@ const ALL_SCREENS = [
   'drills.depth.betting.select',
   'game.betSelect',
   'game.stats',
+  'drills.flash.stats',
   'help',
 ];
 
@@ -96,7 +97,6 @@ const SCREENS = [
   { name: 'drills.depth.options', title: 'Deck Estimation and TC Conversion', control: '[data-action="launch"]' },
   { name: 'drills.count.options', title: 'Simple Running Count', control: '[data-action="launch"]' },
   { name: 'drills.full.options', title: 'Compound Running Count', control: '[data-action="launch"]' },
-  { name: 'drills.flash.errors', title: 'Error History', control: 'main p' },
 ];
 
 const DRIVEN_ELSEWHERE = [
@@ -106,6 +106,7 @@ const DRIVEN_ELSEWHERE = [
   'game.stats',
   'game.betSelect',
   'drills.flash',
+  'drills.flash.stats',
   'drills.depth',
   'drills.count',
   'drills.full',

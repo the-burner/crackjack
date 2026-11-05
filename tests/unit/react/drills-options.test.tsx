@@ -6,7 +6,7 @@ import { FlashOptions } from '@/drills/flash/options';
 import { DepthOptions } from '@/drills/depth/options';
 import { CountOptions } from '@/drills/count/options';
 import { FullOptions } from '@/drills/full/options';
-import { FlashErrors } from '@/drills/flash/errors';
+import { FlashStats } from '@/drills/flash/stats';
 import { SITUATIONS, SITUATION_LABELS } from '@/drills/flash/logic';
 import { renderScreen } from '../../support/render';
 
@@ -149,17 +149,6 @@ describe('drill options screens', () => {
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('No situations have been selected.');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     expect(location().pathname).toBe('/screen');
-  });
-
-  it('flash clears the error history after confirming', async () => {
-    const user = userEvent.setup();
-    const { app, location } = renderScreen(<FlashOptions />);
-    app.errorTallies.record('hardStand', 6, 8);
-    await user.click(screen.getByRole('button', { name: 'Clear error history' }));
-    await user.click(await screen.findByRole('button', { name: 'Yes' }));
-    expect(app.errorTallies.cells()).toHaveLength(0);
-    await user.click(screen.getByRole('button', { name: 'Error history' }));
-    expect(location().pathname).toBe('/drills/flash/errors');
   });
 
   it('flash follows settings written by other screens', () => {
@@ -333,15 +322,25 @@ describe('drill options screens', () => {
   });
 });
 
-describe('flash error history', () => {
+describe('flash statistics', () => {
   it('says when nothing has been recorded, and follows the tallies as they change', () => {
-    const { app } = renderScreen(<FlashErrors />);
+    const { app } = renderScreen(<FlashStats />);
     expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
     act(() => app.errorTallies.record('hardStand', 6, 8));
-    expect(screen.getByText('Total errors')).toBeInTheDocument();
+    expect(screen.getByText('Total Errors')).toBeInTheDocument();
     // The one error is all of its situation's and its hand's.
     expect(screen.getByText('Hard H/S')).toBeInTheDocument();
     expect(screen.getAllByText('1 · 100%')).toHaveLength(2);
+  });
+
+  it('resets after confirming', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<FlashStats />);
+    act(() => app.errorTallies.record('hardStand', 6, 8));
+    await user.click(screen.getByRole('button', { name: 'Reset Stats' }));
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    expect(app.errorTallies.cells()).toHaveLength(0);
+    expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
   });
 });

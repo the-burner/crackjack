@@ -1,12 +1,13 @@
-// Playing Strategy Flash Cards: Error History - which hands and situations the recorded
+// Playing Strategy Flash Cards: Statistics - which hands and situations the recorded
 // strategy errors come from, and each one's share of all errors.
 
 import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
 import { Column, ScreenLayout } from '@/components/screen-layout';
-import { Section, SettingsGroup } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
 import { StatTiles } from '@/components/ui/stat-tiles';
 import { Note } from '@/components/ui/text';
+import { confirm } from '@/components/dialogs';
 import { errorSummary, describeEntry, percent } from './logic';
 
 /** One statistic: a label, the count and share on the right, and a bar under them. */
@@ -20,14 +21,18 @@ const StatRow = ({ label, count, share }: { label: string; count: number; share:
   </div>
 );
 
-export function FlashErrors() {
+export function FlashStats() {
   const app = useApp();
   // Read live: the drills record errors while this screen exists.
   useStore(app.errorTallies.store, state => state.value);
   const { total, hands, situations } = errorSummary(app.errorTallies.cells());
 
+  async function resetStats() {
+    if (await confirm('Reset the statistics? This also empties the Drill Errors hand list.')) app.errorTallies.clear();
+  }
+
   return (
-    <ScreenLayout title="Error History" help="drills.flash.errors">
+    <ScreenLayout title="Statistics" help="drills.flash.stats">
       <Column>
         {total === 0 ? (
           <Note>No errors have been recorded yet.</Note>
@@ -36,9 +41,8 @@ export function FlashErrors() {
             <Section title="Summary">
               <StatTiles
                 stats={[
-                  { label: 'Total errors', value: total },
-                  { label: 'Hands missed', value: hands.length },
-                  { label: 'Most missed', value: describeEntry(hands[0].entry) },
+                  { label: 'Total Errors', value: total },
+                  { label: 'Hands Missed', value: hands.length },
                 ]}
               />
             </Section>
@@ -58,6 +62,11 @@ export function FlashErrors() {
             </Section>
           </>
         )}
+        <SettingsGroup>
+          <ListRow chevron={false} block onClick={resetStats}>
+            Reset Stats
+          </ListRow>
+        </SettingsGroup>
       </Column>
     </ScreenLayout>
   );

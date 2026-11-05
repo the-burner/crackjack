@@ -37,7 +37,6 @@ export const PATHS = {
   'strategy.tables': '/strategy/tables',
   'drills.flash.options': '/drills/flash',
   'drills.flash': '/drills/flash/play',
-  'drills.flash.errors': '/drills/flash/errors',
   'drills.depth.options': '/drills/depth',
   'drills.depth': '/drills/depth/play',
   'drills.count.options': '/drills/count',

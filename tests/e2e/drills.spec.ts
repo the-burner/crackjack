@@ -1167,7 +1167,7 @@ test.describe('full table drill', () => {
   });
 });
 
-test('the drills record errors that the Flash options screen can clear', async ({ page }) => {
+test('the drills record errors that the Flash Stats screen shows and resets', async ({ page }) => {
   const mask = emptyMask();
   mask.hardStand[1][8] = true;
   await open(page, {
@@ -1196,19 +1196,21 @@ test('the drills record errors that the Flash options screen can clear', async (
   await choose(options, 'Hands', 'Hands: Drill Errors');
   await expect(toasts.getByText(/Hard H\/S 16 v T/)).toBeVisible();
 
-  // Error History breaks the record down.
-  await options.getByRole('button', { name: 'Error history', exact: true }).click();
-  const history = page.locator('[data-screen="drills.flash.errors"]');
+  // Stats, from the drill's title bar, breaks the record down.
+  await options.locator('[data-action="launch"]').click();
+  await screen.getByRole('button', { name: 'Stats' }).click();
+  const stats = page.locator('[data-screen="drills.flash.stats"]');
   const section = (title: string) =>
-    history.locator('section').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
-  await expect(section('Summary')).toContainText('Total errors1');
+    stats.locator('section').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+  await expect(section('Summary')).toContainText('Total Errors1');
   await expect(section('By situation')).toContainText('Hard H/S1 · 100%');
   await expect(section('Hands')).toContainText('Hard H/S 16 v T1 · 100%');
-  await history.getByRole('button', { name: 'Back' }).click();
 
-  await options.getByRole('button', { name: 'Clear error history' }).click();
+  await stats.getByRole('button', { name: 'Reset Stats' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Yes' }).click();
-  await expect(toasts.getByText('Error history cleared', { exact: true })).toBeVisible();
+  await expect(stats.getByText('No errors have been recorded yet.')).toBeVisible();
+  await stats.getByRole('button', { name: 'Back' }).click();
+  await screen.getByRole('button', { name: 'Back' }).click();
 
   // Choosing the list again reports that it is empty.
   await choose(options, 'Hands', 'Hands: Default Hands');
