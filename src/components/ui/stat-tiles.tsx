@@ -12,10 +12,7 @@ export function StatTiles({ stats, className }: { stats: readonly Stat[]; classN
         <div
           key={label}
           data-slot="stat"
-          className={cn(
-            'flex flex-col-reverse justify-end gap-0.5 rounded-(--radius-s) bg-(--group-bg) px-3 py-2',
-            strong && 'ring-2 ring-(--accent) ring-inset',
-          )}
+          className="flex flex-col-reverse justify-end gap-0.5 rounded-(--radius-s) bg-(--group-bg) px-3 py-2"
         >
           <dt className="text-caption leading-tight text-(--text-secondary)">{label}</dt>
           <dd

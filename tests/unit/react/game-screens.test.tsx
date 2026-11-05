@@ -47,7 +47,8 @@ describe('statistics screen', () => {
     expect(stat('In Tray', 'Cards Remaining')?.textContent).toBe(String(left.inTray));
     expect(stat('In Tray', 'Cards Remaining')).toHaveClass('font-semibold');
     expect(stat('Dealt', 'Cards Remaining')).not.toHaveClass('font-semibold');
-    expect(stat('Decks Remaining', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
+    expect(stat('Remaining Decks', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
+    expect(stat('Running Count', 'Exact Count')?.textContent).toBe(String(session.counts.runningCount));
     expect(stat('True Count', 'Exact Count')?.textContent).toMatch(/^-?\d+\.\d\d$/);
   });
 

@@ -50,17 +50,18 @@ function statSections(session: GameSession, get: SettingReader): StatSection[] {
   return [
     { title: 'Counts', rows: countRows },
     {
+      title: 'Exact Count',
+      rows: [
+        row('Running Count', round2(counts.runningCount)),
+        row('Remaining Decks', advanced.exactDecks.toFixed(2)),
+        row('True Count', advanced.exactTrueCount.toFixed(2)),
+      ],
+    },
+    {
       title: 'Cards Remaining',
       rows: (['dealt', 'shown', 'inTray'] as const).map(choice =>
         row(REMAINING_LABELS[choice], advanced.cardsLeft[choice], choice === advanced.inUse),
       ),
-    },
-    {
-      title: 'Exact Count',
-      rows: [
-        row('Decks Remaining', advanced.exactDecks.toFixed(2)),
-        row('True Count', advanced.exactTrueCount.toFixed(2)),
-      ],
     },
     {
       title: 'Bankroll',
