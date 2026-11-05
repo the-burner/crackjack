@@ -33,15 +33,6 @@ const row = (label: string, value: string | number, strong = false): Stat => ({ 
 
 const REMAINING_LABELS = { dealt: 'Dealt', shown: 'Shown', inTray: 'In Tray' } as const;
 
-/** The counts as betting opened for the round ('-' before the first round). */
-function roundStartRows(start: GameSession['roundStartCounts']): Stat[] {
-  return [
-    row('Running Count', start ? round1(start.runningCount) : '-'),
-    row('Remaining Decks', start ? round2(start.decksRemaining) : '-'),
-    row('True Count', start ? round1(start.trueCount) : '-'),
-  ];
-}
-
 /** The screen's sections for `session`. */
 function statSections(session: GameSession, get: SettingReader): StatSection[] {
   const { stats } = session;
@@ -58,7 +49,6 @@ function statSections(session: GameSession, get: SettingReader): StatSection[] {
   const advanced = session.advancedCounts();
   return [
     { title: 'Counts', rows: countRows },
-    { title: 'Round Start', rows: roundStartRows(session.roundStartCounts) },
     {
       title: 'Cards Remaining',
       rows: (['dealt', 'shown', 'inTray'] as const).map(choice =>

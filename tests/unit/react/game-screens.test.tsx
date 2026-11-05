@@ -49,16 +49,6 @@ describe('statistics screen', () => {
     expect(stat('Dealt', 'Cards Remaining')).not.toHaveClass('font-semibold');
     expect(stat('Decks Remaining', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
     expect(stat('True Count', 'Exact Count')?.textContent).toMatch(/^-?\d+\.\d\d$/);
-    // No round yet.
-    expect(stat('True Count', 'Round Start')?.textContent).toBe('-');
-    act(() => {
-      session.startBetting();
-      session.startRound({ betPerHand: 25 });
-    });
-    act(() => session.save());
-    expect(stat('Running Count', 'Round Start')?.textContent).toMatch(/^-?\d+(\.\d)?$/);
-    expect(stat('Remaining Decks', 'Round Start')?.textContent).toBe(String(session.roundStartCounts!.decksRemaining));
-    expect(stat('True Count', 'Round Start')?.textContent).toBe(String(session.roundStartCounts!.trueCount));
   });
 
   it('the display switches write their settings', async () => {
