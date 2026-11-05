@@ -251,7 +251,7 @@ describe('drill options screens', () => {
     expectHidden(duration('Drill time'));
     expect(toggle('Time limit per test')).toBeVisible();
     expect(duration('Time per test')).toBeVisible();
-    expect(duration('Interval')).toHaveTextContent(/^00:02:45$/);
+    expect(duration('Interval')).toHaveTextContent(/^00:02:30$/);
     await user.click(screen.getByRole('switch', { name: 'Time limit per test' }));
     expect(app.settings.get('drills.count.timePerTest')).toBe(false);
     expectHidden(duration('Time per test'));

@@ -56,20 +56,20 @@ describe('a configuration', () => {
 
   it("offers Crackjack's three Flash Cards drills, and none called Default", () => {
     expect(DRILL_SETS.flash.kind.builtIns.map(s => s.name)).toEqual([
-      "Crackjack's Round Robin 3-Minute Intervals",
-      "Crackjack's Round Robin 4-Minute Intervals",
+      "Crackjack's Round Robin 2.5-Minute Intervals",
+      "Crackjack's Round Robin 3.5-Minute Intervals",
       "Crackjack's Infinite Round Robin",
     ]);
   });
 
   it("offers Crackjack's four Simple Running Count drills, and none called Default", () => {
     expect(DRILL_SETS.count.kind.builtIns.map(s => s.name)).toEqual([
-      "Crackjack's Running Count 3-Minute Intervals",
-      "Crackjack's Running Count 4-Minute Intervals",
-      "Crackjack's True Count 3-Minute Intervals",
-      "Crackjack's True Count 4-Minute Intervals",
+      "Crackjack's Running Count 2.5-Minute Intervals",
+      "Crackjack's Running Count 3.5-Minute Intervals",
+      "Crackjack's True Count 2.5-Minute Intervals",
+      "Crackjack's True Count 3.5-Minute Intervals",
     ]);
-    // Infinite, a test about every 36 cards, pausing every 2:45 or 3:45.
+    // Infinite, a test about every 36 cards, pausing every 2:30 or 3:30.
     for (const set of DRILL_SETS.count.kind.builtIns) {
       const values = DRILL_SETS.count.kind.valuesOf(set);
       expect(values).toMatchObject({
@@ -77,7 +77,7 @@ describe('a configuration', () => {
         'drills.count.testEvery': 'about36',
         'drills.count.autoPause': true,
         'drills.count.drill': set.id.startsWith('true') ? 'trueCount' : 'runningCount',
-        'drills.count.autoPauseSeconds': set.id.endsWith('3-minute') ? 165 : 225,
+        'drills.count.autoPauseSeconds': set.id.endsWith('2.5-minute') ? 150 : 210,
       });
     }
   });
@@ -103,7 +103,7 @@ describe('a configuration', () => {
       game: 'table-6d',
       flash: 'infinite-round-robin',
       depth: 'decks-left-6d',
-      count: 'running-count-3-minute',
+      count: 'running-count-2.5-minute',
       full: 'default',
     };
     for (const [name, { kind }] of [['game', GAME_SETS], ...DRILLS.map(d => [d, DRILL_SETS[d]] as const)] as const) {
