@@ -38,6 +38,7 @@ import type { Gesture, GestureAction } from '@/core/gestures';
 import { obviouslyBad, areYouSure } from './bad-plays';
 import { dealerErrorsOn, enabledErrors, missedMessage } from '@/game/dealer-errors';
 import { betError } from '@/game/bet-validation';
+import { clockTime } from '@/drills/shared/format';
 import { blackjackUnknown, withDealerError, createDealerErrorRound } from '@/game/dealer-error-round';
 import type { TablesParams } from '@/screens/strategy/tables';
 
@@ -344,7 +345,15 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     if (settings.get('display.showRunningCount')) parts.push(`RC: ${round1(shown.running)}`);
     if (settings.get('display.showTrueCount'))
       parts.push(`TC: ${round1(shown.trueCountAt(shownCardsGone(), session.trueCountSettings()))}`);
+    if (settings.get('display.showSessionClock'))
+      parts.push(clockTime(session.pace.seconds()), `Rounds/Hr: ${session.pace.perHour()}`);
     return parts.join(', ');
+  }
+
+  let clockTimer: ReturnType<typeof setInterval> | undefined;
+  function stopClock() {
+    clearInterval(clockTimer);
+    session.pace.pause();
   }
 
   function updateReadout() {
@@ -824,6 +833,13 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       } else if (!animator.busy) armNextRound();
       showing = true;
       if (insuranceToast === null && asking()) askInsurance();
+      session.pace.resume();
+      // The readout's switches may have changed on the Stats screen.
+      updateReadout();
+      clearInterval(clockTimer);
+      clockTimer = setInterval(() => {
+        if (settings.get('display.showSessionClock')) updateReadout();
+      }, 1000);
     },
 
     /**
@@ -850,6 +866,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
 
     onHide() {
       showing = false;
+      stopClock();
       releaseWakeLock?.();
       releaseWakeLock = null;
       observer.disconnect();
@@ -863,6 +880,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       cancelOpening();
       alive = false;
       showing = false;
+      stopClock();
       releaseWakeLock?.();
       releaseWakeLock = null;
       observer.disconnect();

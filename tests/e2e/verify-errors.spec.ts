@@ -145,7 +145,7 @@ const overlay = betOverlay;
 const action = playButton;
 const foul = (page: Page) => overlayButton(page, 'Foul');
 const statsScreen = (page: Page) => page.locator('[data-screen="game.stats"]');
-const statsTable = (page: Page) => statsScreen(page).getByRole('table');
+const statsTable = (page: Page) => statsScreen(page).getByRole('heading', { name: 'Counts' });
 const closeStats = (page: Page) => statsScreen(page).getByRole('button', { name: 'Back', exact: true }).click();
 
 /**

@@ -75,7 +75,7 @@ async function openTable(
   return tableScreen(page);
 }
 
-const statsRows = (page: Page) => page.locator('[data-screen="game.stats"]').getByRole('row');
+const statsRows = (page: Page) => page.locator('[data-screen="game.stats"] [data-slot=stat]');
 const yes = (page: Page) => dialog(page).getByRole('button', { name: 'Yes' });
 const chips = (page: Page) => page.locator('[data-screen="game.betSelect"]').getByRole('group', { name: 'Chips' });
 const chip = (page: Page, n: number) => chips(page).getByRole('button', { name: String(n), exact: true });
@@ -208,8 +208,8 @@ test.describe('the table', () => {
     // While betting, the round's start is the table as it is now.
     const sameAsNow = async () => {
       for (const label of ['Running Count', 'Remaining Decks', 'True Count'])
-        await expect(statValue(page, `${label} (Round Start)`)).toHaveText(
-          (await statValue(page, label).textContent())!,
+        await expect(statValue(page, label, 'Round Start')).toHaveText(
+          (await statValue(page, label, 'Counts').textContent())!,
         );
     };
     await sameAsNow();
@@ -230,6 +230,16 @@ test.describe('the table', () => {
     await tapBetTile(page);
     await playRound(page);
     await expect(page.getByTestId('counts')).toContainText('RC:');
+  });
+
+  test('shows the session clock and the rounds per hour, ticking', async ({ page }) => {
+    await openTable(page, { settings: { 'display.showSessionClock': true } });
+    await tapBetTile(page);
+    await playRound(page);
+    const counts = page.getByTestId('counts');
+    await expect(counts).toHaveText(/^\d\d:\d\d:\d\d, Rounds\/Hr: [1-9]\d*$/);
+    const before = await counts.textContent();
+    await expect(counts).not.toHaveText(before ?? '');
   });
 
   test('offers the betting overlay buttons, and Foul only when the dealer makes mistakes', async ({ page }) => {

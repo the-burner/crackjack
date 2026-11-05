@@ -25,6 +25,7 @@ import { sideBetSpots } from './engine/side-bets';
 import type { SideBetSpot } from './engine/side-bets';
 import { emptyStats } from './record';
 import type { GameStats } from './record';
+import { SessionPace } from './pace';
 
 const DIVISION = {
   full: TC_DIVISION.fullDeck,
@@ -70,6 +71,7 @@ export class GameSession {
   /** The round in play is one the player sat out. */
   satOut = false;
   stats: GameStats;
+  pace = new SessionPace();
   warnings: string[];
   lastError: PlayError | null;
   /** The last settled round's bankroll figures, until the next round starts. */
@@ -244,6 +246,7 @@ export class GameSession {
     // Bet stats are round totals, not per hand.
     const roundBet = betPerHand * humanSeats.length;
     this.stats.rounds += 1;
+    this.pace.rounds += 1;
     this.stats.totalBet += roundBet;
     this.stats.highBet = Math.max(this.stats.highBet, roundBet);
     if (roundBet > 0) this.stats.lowBet = this.stats.lowBet === 0 ? roundBet : Math.min(this.stats.lowBet, roundBet);
@@ -261,6 +264,8 @@ export class GameSession {
     if (this.settings.get('game.betting.warnOnError') && verdict !== null) this.recordBetDecision(verdict);
     // Graded as a bet, but not a round played.
     this.satOut = true;
+    // Still dealt, so it counts toward the pace.
+    this.pace.rounds += 1;
     this.settledRound = null;
     const events = this.game.startRound([]);
     this.afterEngineStep();
@@ -533,6 +538,7 @@ export class GameSession {
 
   resetStats(): void {
     this.stats = emptyStats();
+    this.pace.reset();
     this.save();
   }
 

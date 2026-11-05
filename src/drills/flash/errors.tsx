@@ -4,7 +4,8 @@
 import { useStore } from 'zustand';
 import { useApp } from '@/react/app-context';
 import { Column, ScreenLayout } from '@/components/screen-layout';
-import { Section, SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
+import { StatTiles } from '@/components/ui/stat-tiles';
 import { Note } from '@/components/ui/text';
 import { errorSummary, describeEntry, percent } from './logic';
 
@@ -17,12 +18,6 @@ const StatRow = ({ label, count, share }: { label: string; count: number; share:
       <span className="block h-full rounded-xs bg-(--accent)" style={{ width: `${Math.max(2, share * 100)}%` }} />
     </div>
   </div>
-);
-
-const ValueRow = ({ label, value }: { label: string; value: string }) => (
-  <SettingsRow label={label} trailing>
-    <span className="text-right text-body font-medium text-(--text-secondary)">{value}</span>
-  </SettingsRow>
 );
 
 export function FlashErrors() {
@@ -39,11 +34,13 @@ export function FlashErrors() {
         ) : (
           <>
             <Section title="Summary">
-              <SettingsGroup>
-                <ValueRow label="Total errors" value={String(total)} />
-                <ValueRow label="Hands missed" value={String(hands.length)} />
-                <ValueRow label="Most missed" value={describeEntry(hands[0].entry)} />
-              </SettingsGroup>
+              <StatTiles
+                stats={[
+                  { label: 'Total errors', value: total },
+                  { label: 'Hands missed', value: hands.length },
+                  { label: 'Most missed', value: describeEntry(hands[0].entry) },
+                ]}
+              />
             </Section>
             <Section title="By situation">
               <SettingsGroup>

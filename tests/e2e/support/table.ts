@@ -69,12 +69,17 @@ export async function tapBetTile(page: Page, index = 0): Promise<void> {
 
 const statsScreen = (page: Page): Locator => page.locator('[data-screen="game.stats"]');
 
-/** The value in the statistics row labelled `label`. */
-export const statValue = (page: Page, label: string): Locator =>
-  statsScreen(page)
-    .getByRole('row')
-    .filter({ has: page.getByRole('rowheader', { name: label, exact: true }) })
-    .getByRole('cell');
+/** The value of the stat labelled `label`, in the section titled `section` if given. */
+export const statValue = (page: Page, label: string, section?: string): Locator =>
+  (section
+    ? statsScreen(page)
+        .locator('section')
+        .filter({ has: page.getByRole('heading', { name: section, exact: true }) })
+    : statsScreen(page)
+  )
+    .locator('[data-slot=stat]')
+    .filter({ has: page.getByText(label, { exact: true }) })
+    .locator('[data-slot=value]');
 
 /** Opens the Statistics screen from the table. */
 export async function openStats(page: Page): Promise<Locator> {
@@ -92,7 +97,7 @@ export async function closeStats(page: Page): Promise<void> {
 /** The running count the Statistics screen reports: the session's own. */
 export async function statsRunningCount(page: Page): Promise<string> {
   await openStats(page);
-  const value = ((await statValue(page, 'Running Count').textContent()) ?? '').trim();
+  const value = ((await statValue(page, 'Running Count', 'Counts').textContent()) ?? '').trim();
   await closeStats(page);
   return value;
 }

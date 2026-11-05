@@ -309,7 +309,7 @@ test('the game table and the screens it opens log nothing while a round is playe
   await page.locator('[data-screen="game.betSelect"] [data-action="back"]').click();
 
   await barButton(page, 'Stats').click();
-  await expect(showing(page, 'game.stats').getByRole('table')).toBeVisible();
+  await expect(showing(page, 'game.stats').getByRole('heading', { name: 'Counts' })).toBeVisible();
   await page.locator('[data-screen="game.stats"] [data-action="back"]').click();
   await expect(overlay).toBeVisible();
   expectNoErrors(errors);

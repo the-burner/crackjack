@@ -5,10 +5,12 @@
 import { useReducer } from 'react';
 import { useStore } from 'zustand';
 import { money } from '@/core/money';
-import { cn } from '@/lib/utils';
 import { useApp, useSettings } from '@/react/app-context';
 import { useOnShow } from '@/react/screen';
-import { Button } from '@/components/ui/button';
+import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
+import { StatTiles } from '@/components/ui/stat-tiles';
+import type { Stat } from '@/components/ui/stat-tiles';
+import { Note } from '@/components/ui/text';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { SettingChecks } from '@/components/settings-controls';
 import { confirm } from '@/components/dialogs';
@@ -22,70 +24,80 @@ const DISPLAY_OPTIONS = [
   { key: 'display.showPlayAccuracy', label: 'Display Play Accuracy' },
   { key: 'display.showRunningCount', label: 'Display Running Count' },
   { key: 'display.showTrueCount', label: 'Display True Count' },
+  { key: 'display.showSessionClock', label: 'Display Session Clock' },
 ] as const;
 
-type StatRow = { label: string; value: string | number; head?: boolean; strong?: boolean };
+type StatSection = { title: string; rows: Stat[] };
 
-/** A section heading row: the name in both columns. */
-const section = (name: string): StatRow => ({ label: name, value: name, head: true });
-const row = (label: string, value: string | number, strong = false): StatRow => ({ label, value, strong });
+const row = (label: string, value: string | number, strong = false): Stat => ({ label, value: String(value), strong });
 
 const REMAINING_LABELS = { dealt: 'Dealt', shown: 'Shown', inTray: 'In Tray' } as const;
 
-/** The counts as betting opened for the round, as the Counts rows show them ('-' before the first round). */
-function roundStartRows(start: GameSession['roundStartCounts']): StatRow[] {
+/** The counts as betting opened for the round ('-' before the first round). */
+function roundStartRows(start: GameSession['roundStartCounts']): Stat[] {
   return [
-    row('Running Count (Round Start)', start ? round1(start.runningCount) : '-'),
-    row('Remaining Decks (Round Start)', start ? round2(start.decksRemaining) : '-'),
-    row('True Count (Round Start)', start ? round1(start.trueCount) : '-'),
+    row('Running Count', start ? round1(start.runningCount) : '-'),
+    row('Remaining Decks', start ? round2(start.decksRemaining) : '-'),
+    row('True Count', start ? round1(start.trueCount) : '-'),
   ];
 }
 
-/** The table's rows for `session`, or a placeholder without one. */
-function statRows(session: GameSession | undefined, get: SettingReader): StatRow[] {
-  if (!session) return [section('Counts'), row('No session', '-')];
+/** The screen's sections for `session`. */
+function statSections(session: GameSession, get: SettingReader): StatSection[] {
   const { stats } = session;
   const counts = session.counts;
   const accuracy = session.accuracy();
   const average = (total: number, n: number) => (n > 0 ? Math.round(total / n) : 0);
-  const out = [
-    section('Counts'),
+  const countRows = [
     row('Running Count', round1(counts.runningCount)),
     row('Remaining Decks', round2(counts.decksRemaining)),
     row('True Count', round1(counts.trueCount)),
   ];
-  if (get('game.trueCount.aceSideCount')) out.push(row('Bet Count', round1(counts.betCount)));
-  if (get('game.trueCount.tenSideCount')) out.push(row('Ten Count', counts.tens));
+  if (get('game.trueCount.aceSideCount')) countRows.push(row('Bet Count', round1(counts.betCount)));
+  if (get('game.trueCount.tenSideCount')) countRows.push(row('Ten Count', counts.tens));
   const advanced = session.advancedCounts();
-  out.push(
-    section('Advanced Count'),
-    ...(['dealt', 'shown', 'inTray'] as const).map(choice =>
-      row(`Cards Remaining (${REMAINING_LABELS[choice]})`, advanced.cardsLeft[choice], choice === advanced.inUse),
-    ),
-    row('Exact Decks Remaining', advanced.exactDecks.toFixed(2)),
-    row('Exact True Count', advanced.exactTrueCount.toFixed(2)),
-    ...roundStartRows(session.roundStartCounts),
-  );
-  out.push(
-    section('Bankroll'),
-    row('Rounds Played', stats.rounds),
-    row('Total Initial Bets', money(stats.totalBet)),
-    row('Low Bet', money(stats.lowBet)),
-    row('Top Bet', money(stats.highBet)),
-    row('Average Bet', money(average(stats.totalBet, stats.rounds))),
-    row('Bankroll', money(session.bankroll)),
-    row('Bankroll Low', money(stats.lowBankroll)),
-    row('Bankroll High', money(stats.highBankroll)),
-    row('Bankroll Average', money(average(stats.bankrollSum, stats.rounds))),
-    section('Errors'),
-    row('Play Correct', `${accuracy.play}%`),
-    row('Bet Correct', `${accuracy.bet}%`),
-    row('Play Errors', stats.playErrors),
-    row('Bet Errors', stats.betErrors),
-    row('Dealer Error Correct', `${accuracy.foul}%`),
-    row('Dealer Errors Missed', stats.foulErrors),
-  );
-  return out;
+  return [
+    { title: 'Counts', rows: countRows },
+    { title: 'Round Start', rows: roundStartRows(session.roundStartCounts) },
+    {
+      title: 'Cards Remaining',
+      rows: (['dealt', 'shown', 'inTray'] as const).map(choice =>
+        row(REMAINING_LABELS[choice], advanced.cardsLeft[choice], choice === advanced.inUse),
+      ),
+    },
+    {
+      title: 'Exact Count',
+      rows: [
+        row('Decks Remaining', advanced.exactDecks.toFixed(2)),
+        row('True Count', advanced.exactTrueCount.toFixed(2)),
+      ],
+    },
+    {
+      title: 'Bankroll',
+      rows: [
+        row('Rounds Played', stats.rounds),
+        row('Total Initial Bets', money(stats.totalBet)),
+        row('Low Bet', money(stats.lowBet)),
+        row('Top Bet', money(stats.highBet)),
+        row('Average Bet', money(average(stats.totalBet, stats.rounds))),
+        row('Bankroll', money(session.bankroll)),
+        row('Bankroll Low', money(stats.lowBankroll)),
+        row('Bankroll High', money(stats.highBankroll)),
+        row('Bankroll Average', money(average(stats.bankrollSum, stats.rounds))),
+      ],
+    },
+    {
+      title: 'Errors',
+      rows: [
+        row('Play Correct', `${accuracy.play}%`),
+        row('Bet Correct', `${accuracy.bet}%`),
+        row('Play Errors', stats.playErrors),
+        row('Bet Errors', stats.betErrors),
+        row('Dealer Error Correct', `${accuracy.foul}%`),
+        row('Dealer Errors Missed', stats.foulErrors),
+      ],
+    },
+  ];
 }
 
 export function GameStats({ params: { session } }: { params: { session?: GameSession } }) {
@@ -102,27 +114,28 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
     refresh();
   }
 
-  const cell = 'border border-(--panel-border) px-2 py-[5px] text-center text-body font-normal text-(--panel-text)';
   return (
     <ScreenLayout title="Statistics" help="game.stats">
-      <Column wide className="gap-2.5">
-        <table className="w-full border-collapse bg-(--panel-bg)">
-          <tbody>
-            {statRows(session, key => settings.get(key)).map(({ label, value, head, strong }, i) => (
-              // A section row is a heading across the table; its name shows in both columns.
-              <tr key={i} className={cn(head && '*:bg-(--panel-head-bg) *:font-semibold', strong && '*:font-semibold')}>
-                <th scope={head ? 'colgroup' : 'row'} className={cell}>
-                  {label}
-                </th>
-                {head ? <th className={cell}>{String(value)}</th> : <td className={cell}>{String(value)}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Button block icon="refresh" onClick={resetStats} data-action="reset-stats">
-          Reset Stats
-        </Button>
-        <SettingChecks items={DISPLAY_OPTIONS} />
+      <Column>
+        {session ? (
+          statSections(session, key => settings.get(key)).map(({ title, rows }) => (
+            <Section key={title} title={title}>
+              <StatTiles stats={rows} />
+            </Section>
+          ))
+        ) : (
+          <Note>No session.</Note>
+        )}
+        <Section title="Display">
+          <SettingsGroup>
+            <SettingChecks items={DISPLAY_OPTIONS} />
+          </SettingsGroup>
+        </Section>
+        <SettingsGroup>
+          <ListRow chevron={false} block onClick={resetStats}>
+            Reset Stats
+          </ListRow>
+        </SettingsGroup>
       </Column>
     </ScreenLayout>
   );

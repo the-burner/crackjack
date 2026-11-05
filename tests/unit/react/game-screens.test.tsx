@@ -6,30 +6,32 @@ import { GameStats } from '@/game/screens/stats';
 import { BetSelect } from '@/game/screens/bet-select';
 import { createTestApp, renderScreen } from '../../support/render';
 
-/** The value shown in the stats row labelled `label`, or null without one. */
-function stat(label: string): string | null {
-  const row = screen.queryByRole('row', { name: new RegExp(`^${label} `) });
-  return row ? within(row).getByRole('cell').textContent : null;
+/** The value of the stat labelled `label`, in the section titled `section` if given, or null without one. */
+function stat(label: string, section?: string): HTMLElement | null {
+  /* eslint-disable testing-library/no-node-access -- stats have no role */
+  const scope = section ? screen.getByRole('heading', { name: section }).closest('section')! : document.body;
+  const tile = within(scope).queryByText(label, { exact: true })?.closest('[data-slot=stat]');
+  return tile?.querySelector<HTMLElement>('[data-slot=value]') ?? null;
+  /* eslint-enable testing-library/no-node-access */
 }
 
 describe('statistics screen', () => {
   it('shows a placeholder without a session', () => {
     renderScreen(<GameStats params={{}} />);
-    // A section row shows its name in both columns, as the original's did.
-    expect(screen.getAllByRole('row').map(row => row.textContent)).toEqual(['CountsCounts', 'No session-']);
+    expect(screen.getByText('No session.')).toBeInTheDocument();
   });
 
   it('shows the session, money as the app shows it, and follows its saves', () => {
     const app = createTestApp();
     const session = new GameSession(app);
     renderScreen(<GameStats params={{ session }} />, { app });
-    expect(stat('Rounds Played')).toBe('0');
+    expect(stat('Rounds Played')?.textContent).toBe('0');
     expect(stat('Bet Count')).toBeNull();
     session.stats.totalBet = 1010;
     session.stats.rounds = 2;
     act(() => session.save());
-    expect(stat('Total Initial Bets')).toBe('$1,010');
-    expect(stat('Average Bet')).toBe('$505');
+    expect(stat('Total Initial Bets')?.textContent).toBe('$1,010');
+    expect(stat('Average Bet')?.textContent).toBe('$505');
     act(() => app.settings.set('game.trueCount.aceSideCount', true));
     expect(stat('Bet Count')).not.toBeNull();
   });
@@ -39,31 +41,30 @@ describe('statistics screen', () => {
     app.settings.set('game.trueCount.remainingCards', 'inTray');
     const session = new GameSession(app);
     renderScreen(<GameStats params={{ session }} />, { app });
-    expect(screen.getAllByRole('columnheader', { name: 'Advanced Count' })).toHaveLength(2);
+    expect(screen.getByRole('heading', { name: 'Cards Remaining' })).toBeInTheDocument();
     const left = session.advancedCounts().cardsLeft;
-    expect(stat('Cards Remaining \\(Dealt\\)')).toBe(String(left.dealt));
-    expect(stat('Cards Remaining \\(In Tray\\)')).toBe(String(left.inTray));
-    // The row sets its cells in bold.
-    expect(screen.getByRole('row', { name: /^Cards Remaining \(In Tray\) / })).toHaveClass('*:font-semibold');
-    expect(screen.getByRole('row', { name: /^Cards Remaining \(Dealt\) / })).not.toHaveClass('*:font-semibold');
-    expect(stat('Exact Decks Remaining')).toMatch(/^\d+\.\d\d$/);
-    expect(stat('Exact True Count')).toMatch(/^-?\d+\.\d\d$/);
+    expect(stat('Dealt', 'Cards Remaining')?.textContent).toBe(String(left.dealt));
+    expect(stat('In Tray', 'Cards Remaining')?.textContent).toBe(String(left.inTray));
+    expect(stat('In Tray', 'Cards Remaining')).toHaveClass('font-semibold');
+    expect(stat('Dealt', 'Cards Remaining')).not.toHaveClass('font-semibold');
+    expect(stat('Decks Remaining', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
+    expect(stat('True Count', 'Exact Count')?.textContent).toMatch(/^-?\d+\.\d\d$/);
     // No round yet.
-    expect(stat('True Count \\(Round Start\\)')).toBe('-');
+    expect(stat('True Count', 'Round Start')?.textContent).toBe('-');
     act(() => {
       session.startBetting();
       session.startRound({ betPerHand: 25 });
     });
     act(() => session.save());
-    expect(stat('Running Count \\(Round Start\\)')).toMatch(/^-?\d+(\.\d)?$/);
-    expect(stat('Remaining Decks \\(Round Start\\)')).toBe(String(session.roundStartCounts!.decksRemaining));
-    expect(stat('True Count \\(Round Start\\)')).toBe(String(session.roundStartCounts!.trueCount));
+    expect(stat('Running Count', 'Round Start')?.textContent).toMatch(/^-?\d+(\.\d)?$/);
+    expect(stat('Remaining Decks', 'Round Start')?.textContent).toBe(String(session.roundStartCounts!.decksRemaining));
+    expect(stat('True Count', 'Round Start')?.textContent).toBe(String(session.roundStartCounts!.trueCount));
   });
 
   it('the display switches write their settings', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<GameStats params={{}} />);
-    expect(screen.getAllByRole('switch')).toHaveLength(4);
+    expect(screen.getAllByRole('switch')).toHaveLength(5);
     await user.click(screen.getByRole('switch', { name: 'Display True Count' }));
     expect(app.settings.get('display.showTrueCount')).toBe(true);
   });

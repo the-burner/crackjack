@@ -284,6 +284,7 @@ export const SETTINGS_SCHEMA = {
   'display.showPlayAccuracy': bool(false),
   'display.showRunningCount': bool(false),
   'display.showTrueCount': bool(false),
+  'display.showSessionClock': bool(false),
 
   // Playing Strategy Charts: the strategy, decks and rules its tables are built for, and what it shows.
   ...under('charts', chartSideDefs()),
