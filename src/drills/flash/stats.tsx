@@ -9,6 +9,9 @@ import { StatTiles } from '@/components/ui/stat-tiles';
 import { Note } from '@/components/ui/text';
 import { confirm } from '@/components/dialogs';
 import { errorSummary, describeEntry, percent } from './logic';
+import { accuracy, emptyRecord } from './record';
+
+const shown = (percentRight: number | null) => (percentRight === null ? '-' : `${percentRight}%`);
 
 /** One statistic: a label, the count and share on the right, and a bar under them. */
 const StatRow = ({ label, count, share }: { label: string; count: number; share: number }) => (
@@ -26,26 +29,39 @@ export function FlashStats() {
   // Read live: the drills record errors while this screen exists.
   useStore(app.errorTallies.store, state => state.value);
   const { total, hands, situations } = errorSummary(app.errorTallies.cells());
+  const record = useStore(app.flashRecord, state => state.value);
 
   async function resetStats() {
-    if (await confirm('Reset the statistics? This also empties the Drill Errors hand list.')) app.errorTallies.clear();
+    if (!(await confirm('Reset the statistics? This also empties the Drill Errors hand list.'))) return;
+    app.errorTallies.clear();
+    app.flashRecord.setState({ value: emptyRecord() });
   }
 
   return (
     <ScreenLayout title="Statistics" help="drills.flash.stats">
       <Column>
+        <Section title="Summary">
+          <StatTiles
+            stats={[
+              { label: 'Total Hands', value: record.hands },
+              { label: 'Total Errors', value: total },
+              { label: 'Hands Missed', value: hands.length },
+            ]}
+          />
+        </Section>
+        <Section title="Accuracy">
+          <StatTiles
+            className="grid-cols-4"
+            stats={[
+              { label: 'All Time', value: shown(accuracy(record)) },
+              ...[1000, 500, 100].map(last => ({ label: `Last ${last}`, value: shown(accuracy(record, last)) })),
+            ]}
+          />
+        </Section>
         {total === 0 ? (
           <Note>No errors have been recorded yet.</Note>
         ) : (
           <>
-            <Section title="Summary">
-              <StatTiles
-                stats={[
-                  { label: 'Total Errors', value: total },
-                  { label: 'Hands Missed', value: hands.length },
-                ]}
-              />
-            </Section>
             <Section title="By situation">
               <SettingsGroup>
                 {situations.map(s => (

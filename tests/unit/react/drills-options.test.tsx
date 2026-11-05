@@ -326,7 +326,10 @@ describe('flash statistics', () => {
   it('says when nothing has been recorded, and follows the tallies as they change', () => {
     const { app } = renderScreen(<FlashStats />);
     expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Hands' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('-')).toHaveLength(4);
+    act(() => app.flashRecord.setState({ value: { hands: 2, correct: 1, recent: '01' } }));
+    expect(screen.getByText('50%')).toBeInTheDocument();
     act(() => app.errorTallies.record('hardStand', 6, 8));
     expect(screen.getByText('Total Errors')).toBeInTheDocument();
     // The one error is all of its situation's and its hand's.
@@ -337,10 +340,14 @@ describe('flash statistics', () => {
   it('resets after confirming', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<FlashStats />);
-    act(() => app.errorTallies.record('hardStand', 6, 8));
+    act(() => {
+      app.errorTallies.record('hardStand', 6, 8);
+      app.flashRecord.setState({ value: { hands: 1, correct: 0, recent: '0' } });
+    });
     await user.click(screen.getByRole('button', { name: 'Reset Stats' }));
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
     expect(app.errorTallies.cells()).toHaveLength(0);
+    expect(app.flashRecord.getState().value.hands).toBe(0);
     expect(screen.getByText('No errors have been recorded yet.')).toBeInTheDocument();
   });
 });

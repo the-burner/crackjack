@@ -2,6 +2,7 @@
 // The run and the drawing; the screen component renders around it.
 
 import { toast } from '@/components/ui/toast';
+import { addResult } from './record';
 import { confirm } from '@/components/dialogs';
 import { setupCanvas, drawCard, cardWidthFor, loadCardImages } from '@/lib/card-sprites';
 import { doubleTapDetector } from '@/lib/double-tap';
@@ -372,6 +373,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
   /** Moves on, or ends the drill when the round count is reached (Rounds mode only). */
   function advance() {
     pending = false;
+    if (!silent) app.flashRecord.setState(({ value }) => ({ value: addResult(value, !shell.score.currentTestFailed) }));
     if (robin?.endsRound) {
       rounds += 1;
       toast(`Round ${rounds} done`, { position: 'top', tone: 'good' });

@@ -13,6 +13,8 @@ import { persistedStore } from '@/services/persisted-store';
 import type { PersistedStore } from '@/services/persisted-store';
 import { readBankroll, readStats } from '@/game/record';
 import type { GameStats } from '@/game/record';
+import { readRecord } from '@/drills/flash/record';
+import type { FlashRecord } from '@/drills/flash/record';
 import { readGestureConfigs } from '@/settings/gesture-configs';
 import type { GestureConfig } from '@/core/gestures';
 import { followSaved, readBettingStrategies } from '@/settings/betting-strategies';
@@ -32,6 +34,7 @@ export interface Services {
   /** The table's bankroll between visits; null before the first round. */
   bankroll: PersistedStore<number | null>;
   gameStats: PersistedStore<GameStats>;
+  flashRecord: PersistedStore<FlashRecord>;
   /** Gesture configurations the player saved. */
   gestureConfigs: PersistedStore<GestureConfig[]>;
   /** Betting strategies the player saved. */
@@ -69,6 +72,7 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     wakeLock: new ScreenWakeLock(),
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),
+    flashRecord: persistedStore(storage, 'flashRecord', readRecord),
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
     bettingStrategies,
     gameConfigs: persistedStore(storage, 'gameConfigs', GAME_SETS.read),

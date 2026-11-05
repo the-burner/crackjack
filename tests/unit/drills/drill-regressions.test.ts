@@ -120,6 +120,20 @@ describe('flash drill', () => {
     expect(tests(shell)).toBe('Hands: 0');
   });
 
+  it('keeps a record of every hand answered, across runs', () => {
+    const app = appWith({ ...FIXED_16_V_TEN, 'drills.flash.testMode': 'errorsAtEnd' });
+    const drill = launch(createFlashDrill(app, { openTable: () => {} }));
+    for (let hand = 0; hand < 4; hand++) drill.answer(ACTION.stand);
+    drill.answer(ACTION.hit);
+    const { hands, correct, recent } = app.flashRecord.getState().value;
+    expect(hands).toBe(5);
+    expect(correct).toBe(5 - drill.shell.score.errors);
+    expect(recent).toHaveLength(5);
+    // The same play each time, so the same result; the other play, the other.
+    expect(new Set(recent.slice(0, 4)).size).toBe(1);
+    expect(recent[4]).not.toBe(recent[0]);
+  });
+
   it('pause is off once the drill has finished', () => {
     const drill = flash({ ...FIXED_16_V_TEN, 'drills.flash.testMode': 'errorsAtEnd' });
     for (let hand = 0; hand < 10; hand++) drill.answer(ACTION.stand);
