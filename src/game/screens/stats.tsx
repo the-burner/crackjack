@@ -5,6 +5,7 @@
 import { useReducer } from 'react';
 import { useStore } from 'zustand';
 import { money } from '@/core/money';
+import { clockTime } from '@/drills/shared/format';
 import { useApp, useSettings } from '@/react/app-context';
 import { useOnShow } from '@/react/screen';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
@@ -27,7 +28,7 @@ const DISPLAY_OPTIONS = [
   { key: 'display.showSessionClock', label: 'Display Session Clock' },
 ] as const;
 
-type StatSection = { title: string; rows: Stat[] };
+type StatSection = { title: string; rows: Stat[]; columnRows?: number };
 
 const row = (label: string, value: string | number, strong = false): Stat => ({ label, value: String(value), strong });
 
@@ -35,13 +36,13 @@ const REMAINING_LABELS = { dealt: 'Dealt', shown: 'Shown', inTray: 'In Tray' } a
 
 /** The screen's sections for `session`. */
 function statSections(session: GameSession, get: SettingReader): StatSection[] {
-  const { stats } = session;
+  const { stats, pace } = session;
   const counts = session.counts;
   const accuracy = session.accuracy();
   const average = (total: number, n: number) => (n > 0 ? Math.round(total / n) : 0);
   const countRows = [
     row('Running Count', round1(counts.runningCount)),
-    row('Remaining Decks', round2(counts.decksRemaining)),
+    row('Decks Left', round2(counts.decksRemaining)),
     row('True Count', round1(counts.trueCount)),
   ];
   if (get('game.trueCount.aceSideCount')) countRows.push(row('Bet Count', round1(counts.betCount)));
@@ -53,7 +54,7 @@ function statSections(session: GameSession, get: SettingReader): StatSection[] {
       title: 'Exact Count',
       rows: [
         row('Running Count', round2(counts.runningCount)),
-        row('Remaining Decks', advanced.exactDecks.toFixed(2)),
+        row('Decks Left', advanced.exactDecks.toFixed(2)),
         row('True Count', advanced.exactTrueCount.toFixed(2)),
       ],
     },
@@ -65,28 +66,35 @@ function statSections(session: GameSession, get: SettingReader): StatSection[] {
     },
     {
       title: 'Bankroll',
+      // Columns: rounds, bets, bankroll.
       rows: [
         row('Rounds Played', stats.rounds),
-        row('Total Initial Bets', money(stats.totalBet)),
+        row('Time Played', clockTime(pace.seconds())),
+        row('Rounds/Hour', pace.perHour()),
+        row('Time/Round', pace.rounds > 0 ? clockTime(pace.seconds() / pace.rounds) : '-'),
+        row('Total Bets', money(stats.totalBet)),
+        row('Average Bet', money(average(stats.totalBet, stats.rounds))),
         row('Low Bet', money(stats.lowBet)),
         row('Top Bet', money(stats.highBet)),
-        row('Average Bet', money(average(stats.totalBet, stats.rounds))),
         row('Bankroll', money(session.bankroll)),
-        row('Bankroll Low', money(stats.lowBankroll)),
-        row('Bankroll High', money(stats.highBankroll)),
-        row('Bankroll Average', money(average(stats.bankrollSum, stats.rounds))),
+        row('Avg Bankroll', money(average(stats.bankrollSum, stats.rounds))),
+        row('Low Bankroll', money(stats.lowBankroll)),
+        row('High Bankroll', money(stats.highBankroll)),
       ],
+      columnRows: 4,
     },
     {
       title: 'Errors',
+      // Columns: plays, bets, dealer errors.
       rows: [
         row('Play Correct', `${accuracy.play}%`),
-        row('Bet Correct', `${accuracy.bet}%`),
         row('Play Errors', stats.playErrors),
+        row('Bet Correct', `${accuracy.bet}%`),
         row('Bet Errors', stats.betErrors),
-        row('Dealer Error Correct', `${accuracy.foul}%`),
-        row('Dealer Errors Missed', stats.foulErrors),
+        row('Dealer Correct', `${accuracy.foul}%`),
+        row('Dealer Missed', stats.foulErrors),
       ],
+      columnRows: 2,
     },
   ];
 }
@@ -109,9 +117,9 @@ export function GameStats({ params: { session } }: { params: { session?: GameSes
     <ScreenLayout title="Statistics" help="game.stats">
       <Column>
         {session ? (
-          statSections(session, key => settings.get(key)).map(({ title, rows }) => (
+          statSections(session, key => settings.get(key)).map(({ title, rows, columnRows }) => (
             <Section key={title} title={title}>
-              <StatTiles stats={rows} />
+              <StatTiles stats={rows} rows={columnRows} />
             </Section>
           ))
         ) : (

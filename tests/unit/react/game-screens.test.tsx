@@ -30,7 +30,7 @@ describe('statistics screen', () => {
     session.stats.totalBet = 1010;
     session.stats.rounds = 2;
     act(() => session.save());
-    expect(stat('Total Initial Bets')?.textContent).toBe('$1,010');
+    expect(stat('Total Bets')?.textContent).toBe('$1,010');
     expect(stat('Average Bet')?.textContent).toBe('$505');
     act(() => app.settings.set('game.trueCount.aceSideCount', true));
     expect(stat('Bet Count')).not.toBeNull();
@@ -47,7 +47,7 @@ describe('statistics screen', () => {
     expect(stat('In Tray', 'Cards Remaining')?.textContent).toBe(String(left.inTray));
     expect(stat('In Tray', 'Cards Remaining')).toHaveClass('font-semibold');
     expect(stat('Dealt', 'Cards Remaining')).not.toHaveClass('font-semibold');
-    expect(stat('Remaining Decks', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
+    expect(stat('Decks Left', 'Exact Count')?.textContent).toMatch(/^\d+\.\d\d$/);
     expect(stat('Running Count', 'Exact Count')?.textContent).toBe(String(session.counts.runningCount));
     expect(stat('True Count', 'Exact Count')?.textContent).toMatch(/^-?\d+\.\d\d$/);
   });

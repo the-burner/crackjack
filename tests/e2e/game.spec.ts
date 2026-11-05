@@ -185,8 +185,8 @@ test.describe('the table', () => {
     await barButton(page, 'Stats').click();
     const rows = statsRows(page);
     await expect(rows.filter({ hasText: 'Rounds Played' })).toContainText('1');
-    await expect(rows.filter({ hasText: 'Total Initial Bets' })).toContainText('$5');
-    await expect(rows.filter({ hasText: 'Bankroll High' })).toBeVisible();
+    await expect(rows.filter({ hasText: 'Total Bets' })).toContainText('$5');
+    await expect(rows.filter({ hasText: 'High Bankroll' })).toBeVisible();
     await expect(rows.filter({ hasText: 'Play Correct' })).toContainText('%');
 
     await page.getByRole('button', { name: 'Reset Stats' }).click();
@@ -195,6 +195,24 @@ test.describe('the table', () => {
 
     await page.locator('[data-screen="game.stats"]').getByRole('button', { name: 'Back' }).click();
     await expect(overlay(page)).toBeVisible();
+  });
+
+  test('shows every stat in a tile of the same size, nothing cut off @layout', async ({ page }) => {
+    await openTable(page, {
+      settings: {
+        'game.trueCount.aceSideCount': true,
+        'game.trueCount.tenSideCount': true,
+        'table.startingBankroll': 1_000_000,
+      },
+    });
+    await barButton(page, 'Stats').click();
+    const tiles = page.locator('[data-screen="game.stats"] [data-slot=stat]');
+    await expect(tiles.first()).toBeVisible();
+    const report = await tiles.evaluateAll(all => ({
+      sizes: new Set(all.map(t => `${t.clientWidth}x${t.clientHeight}`)).size,
+      cut: all.flatMap(t => [...t.children].filter(e => e.scrollWidth > e.clientWidth).map(e => e.textContent)),
+    }));
+    expect(report).toEqual({ sizes: 1, cut: [] });
   });
 
   test('turns the in-table readouts on from the statistics screen', async ({ page }) => {

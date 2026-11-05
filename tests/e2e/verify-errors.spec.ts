@@ -421,15 +421,7 @@ test.describe('saved statistics', () => {
     await callFoul(page);
     await foul(page).click();
     await openStats(page);
-    const labels = [
-      'Rounds Played',
-      'Total Initial Bets',
-      'Top Bet',
-      'Low Bet',
-      'Bankroll',
-      'Dealer Error Correct',
-      'Dealer Errors Missed',
-    ];
+    const labels = ['Rounds Played', 'Total Bets', 'Top Bet', 'Low Bet', 'Bankroll', 'Dealer Correct', 'Dealer Missed'];
     const before = await Promise.all(labels.map(label => stat(page, label).textContent()));
     expect(before).toEqual(['1', '$10', '$10', '$10', '$1,010', '50%', '1']);
 
