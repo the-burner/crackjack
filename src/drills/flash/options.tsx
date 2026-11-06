@@ -218,7 +218,7 @@ export function FlashOptions() {
 
 /** What the Drill Errors hand list holds. */
 function drillErrorsSummary(app: App): string {
-  const entries = errorCellsAsHands(app.errorTallies.cells());
+  const entries = errorCellsAsHands(app.errorTallies.flash.cells());
   return entries.length
     ? `${entries.length} hand${entries.length === 1 ? '' : 's'} with recorded errors; most often ${describeEntry(entries[0])}.`
     : 'No errors have been recorded yet.';
@@ -246,7 +246,7 @@ async function launch(app: App, open: () => void) {
     situations,
     strategy,
     customMask: s.get('drills.flash.customHands'),
-    tallies: app.errorTallies.load(),
+    tallies: app.errorTallies.flash.load(),
   });
   if (error) {
     await alert(error);

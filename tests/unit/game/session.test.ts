@@ -455,7 +455,7 @@ describe('the error tallies', () => {
     session.startRound({ betPerHand: 25 });
     session.act('double');
     expect(session.lastError).toMatchObject({ action: 'double' });
-    return app.errorTallies.cells();
+    return app.errorTallies.game.cells();
   };
 
   it('record a wrong play in its cell', () => {

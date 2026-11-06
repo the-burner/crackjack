@@ -222,7 +222,7 @@ describe('navigation screens', () => {
     app.settings.set('table.decks', 2);
     app.bankroll.setState({ value: 50 });
     app.gestureConfigs.setState({ value: [{ id: 'x', name: 'Mine', portrait: STANDARD, landscape: STANDARD }] });
-    app.errorTallies.record('hardStand', 0, 0);
+    app.errorTallies.game.record('hardStand', 0, 0);
     renderScreen(<SettingsHub />, { app });
     await user.click(screen.getByRole('button', { name: 'Reset Defaults' }));
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('Erase everything saved');

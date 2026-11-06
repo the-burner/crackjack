@@ -28,7 +28,8 @@ export interface Services {
   settings: AppSettings;
   strategies: StrategyLibrary;
   sound: Sound;
-  errorTallies: ErrorTallies;
+  /** Each module's own strategy errors. */
+  errorTallies: { game: ErrorTallies; flash: ErrorTallies };
   /** Keeps the screen on during drills and play. */
   wakeLock: ScreenWakeLock;
   /** The table's bankroll between visits; null before the first round. */
@@ -68,7 +69,10 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     settings,
     strategies: new StrategyLibrary(),
     sound: new Sound(settings),
-    errorTallies: new ErrorTallies(storage),
+    errorTallies: {
+      game: new ErrorTallies(storage, 'errorTallies'),
+      flash: new ErrorTallies(storage, 'flashErrorTallies'),
+    },
     wakeLock: new ScreenWakeLock(),
     bankroll: persistedStore(storage, 'bankroll', readBankroll),
     gameStats: persistedStore(storage, 'gameStats', readStats),

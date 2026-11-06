@@ -389,7 +389,7 @@ export class GameSession {
     this.stats.playErrors += 1;
     // As in the original, an extended strategy's errors are not tallied: its columns are not the upcard's.
     if (check.table && check.row >= 0 && !this.strategy.extended)
-      this.app.errorTallies.record(check.table, check.row, check.column);
+      this.app.errorTallies.game.record(check.table, check.row, check.column);
     this.lastError = { ...check, hand: hand.key, cards: [...hand.cards], upcard: this.game.dealer.cards[0], action };
     this.warn(check.message);
   }

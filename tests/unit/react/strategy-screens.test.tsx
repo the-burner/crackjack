@@ -135,7 +135,7 @@ describe('Deck Estimation’s Betting Strategy', () => {
     expect(app.settings.get('game.betting.strategy')).toBe('multi-hand');
   });
 
-  it('follows a saved strategy edited in the game, unless it has its own edit', async () => {
+  it('follows a saved strategy edited in the game, over its own unsaved edit', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
     const spread = bettingPresets('game').make(
@@ -151,12 +151,12 @@ describe('Deck Estimation’s Betting Strategy', () => {
     await user.click(screen.getByRole('button', { name: 'Save “Spread”' }));
     expect(app.settings.get('drills.depth.betting.wongOut')).toBe(-3);
 
-    // Moved off it, Deck Estimation keeps its own.
+    // Deck Estimation's unsaved edit gives way to the saved strategy.
     act(() => app.settings.set('drills.depth.betting.wongOut', 0));
     await user.click(screen.getByRole('button', { name: 'Wong out: -3' }));
     await answer(user, '-5');
     await user.click(screen.getByRole('button', { name: 'Save “Spread”' }));
-    expect(app.settings.get('drills.depth.betting.wongOut')).toBe(0);
+    expect(app.settings.get('drills.depth.betting.wongOut')).toBe(-5);
   });
 
   it('picks its own rows', async () => {
@@ -371,13 +371,27 @@ describe('strategy tables', () => {
   it('shades error counts and hides the legend', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
-    app.errorTallies.record('hardStand', 1, 8);
+    app.errorTallies.game.record('hardStand', 1, 8);
     renderScreen(<StrategyTables params={{}} />, { app });
     expect(screen.getByText('Hit < Value')).toBeVisible();
     await user.click(screen.getByRole('switch', { name: 'Shade error counts' }));
     expect(cell(1, 8)).toHaveTextContent(/^1$/);
     expect(cell(1, 7)).toHaveTextContent(/^$/);
     expect(screen.getByText('Hit < Value')).not.toBeVisible();
+  });
+
+  it("shades only the module's own errors, and has none to shade in a drill that records none", async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    app.errorTallies.game.record('hardStand', 1, 8);
+    app.errorTallies.flash.record('hardStand', 1, 7);
+    const { unmount } = renderScreen(<StrategyTables params={{ scope: 'flash' }} />, { app });
+    await user.click(screen.getByRole('switch', { name: 'Shade error counts' }));
+    expect(cell(1, 7)).toHaveTextContent(/^1$/);
+    expect(cell(1, 8)).toHaveTextContent(/^$/);
+    unmount();
+    renderScreen(<StrategyTables params={{ scope: 'depth' }} />, { app });
+    expect(screen.queryByRole('switch', { name: 'Shade error counts' })).not.toBeInTheDocument();
   });
 
   it('switches to the counts view', async () => {

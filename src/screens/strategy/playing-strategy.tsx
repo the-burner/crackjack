@@ -36,16 +36,25 @@ const INDEX_SET_OPTIONS = SETTINGS_SCHEMA['game.strategy.indexSet'].values.map(v
   label: INDEX_SET_LABELS[value],
 }));
 
+/** The modules whose hands may double on more than two cards: the game by its table rule, Flash Cards by its own. */
+const DOUBLE_ANY: Partial<Record<ScopeName, SettingCheck['key']>> = {
+  game: 'rules.doubleAnyNumberOfCards',
+  flash: 'drills.flash.rules.doubleAnyNumberOfCards',
+};
+
 /**
  * The rules this module's tables are built for. The game's are the table's own rules, shown on its
  * rules screens too, so they go through the same constraints; a drill keeps its own.
  */
-const ruleChecks = (scope: ScopeName): SettingCheck[] => [
-  { label: 'Double after split', key: tableRuleKey(scope, 'rules.doubleAfterSplit') },
-  { label: 'Hit soft 17', key: tableRuleKey(scope, 'rules.dealerHitsSoft17') },
-  { label: 'No hole card', key: tableRuleKey(scope, 'rules.noHoleCard') },
-  ...(scope === 'game' ? [{ label: 'Double any number of cards', key: 'rules.doubleAnyNumberOfCards' as const }] : []),
-];
+function ruleChecks(scope: ScopeName): SettingCheck[] {
+  const doubleAny = DOUBLE_ANY[scope];
+  return [
+    { label: 'Double after split', key: tableRuleKey(scope, 'rules.doubleAfterSplit') },
+    { label: 'Hit soft 17', key: tableRuleKey(scope, 'rules.dealerHitsSoft17') },
+    { label: 'No hole card', key: tableRuleKey(scope, 'rules.noHoleCard') },
+    ...(doubleAny ? [{ label: 'Double any number of cards', key: doubleAny }] : []),
+  ];
+}
 
 export function PlayingStrategy({ scope }: { scope: ScopeName }) {
   const app = useApp();

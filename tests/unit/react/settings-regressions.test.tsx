@@ -35,6 +35,14 @@ describe('Playing Strategy', () => {
     expect(app.settings.get('rules.doubleOnThreeCards')).toBe(true);
   });
 
+  it("Flash Cards' Double any number of cards is its own", async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<PlayingStrategy scope="flash" />);
+    await user.click(screen.getByRole('switch', { name: 'Double any number of cards' }));
+    expect(app.settings.get('drills.flash.rules.doubleAnyNumberOfCards')).toBe(true);
+    expect(app.settings.get('rules.doubleAnyNumberOfCards')).toBe(false);
+  });
+
   it('the Index Range cannot be turned the wrong way round', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<PlayingStrategy scope="game" />);

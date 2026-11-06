@@ -143,11 +143,12 @@ export function StrategyTables({ params }: { params: TablesParams }) {
   );
   const view = charts ? viewByKey(settings.get('charts.table')) : openedView;
   const setView = (next: TableView) => (charts ? settings.set('charts.table', next.key) : setOpenedView(next));
-  // A module's error history; the Charts only read strategies, so have none.
+  // The module's own error history; the Charts only read strategies, and only the game and Flash Cards record errors.
+  const ownTallies = !charts && (scope === 'game' || scope === 'flash') ? app.errorTallies[scope] : null;
   const [showErrors, setShowErrors] = useState(false);
   // Read afresh each time shading is turned on.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const tallies = useMemo<Tallies | null>(() => (showErrors ? app.errorTallies.load() : null), [showErrors]);
+  const tallies = useMemo<Tallies | null>(() => (showErrors ? (ownTallies?.load() ?? null) : null), [showErrors]);
   const extended = strategy.extended;
   const mask = editingMask && maskKey ? settings.get(maskKey) : null;
 
@@ -296,7 +297,7 @@ export function StrategyTables({ params }: { params: TablesParams }) {
           </Section>
         )}
         {content}
-        {!charts && (
+        {ownTallies && (
           <Section title="Errors">
             <CheckList items={[{ label: 'Shade error counts', checked: showErrors, onChange: setShowErrors }]} />
           </Section>

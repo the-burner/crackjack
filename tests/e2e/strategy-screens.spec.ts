@@ -101,7 +101,7 @@ test.describe('Strategy tables', () => {
   test('shades cells by error count', async ({ page }) => {
     await openHub(page);
     await page.evaluate(() => {
-      window.app.errorTallies.record('hardStand', 1, 8);
+      window.app.errorTallies.game.record('hardStand', 1, 8);
     });
     const strategy = await openFromHub(page, 'Playing Strategy', 'game.strategy');
     await strategy.getByRole('button', { name: 'Display Tables' }).click();

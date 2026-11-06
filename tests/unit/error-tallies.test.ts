@@ -3,7 +3,7 @@ import { ErrorTallies, emptyTallies } from '@/services/error-tallies';
 import { Storage, MemoryBackend } from '@/services/storage';
 import { TABLE_NAMES } from '@/core/strategy/strategy-file';
 
-const tallies = () => new ErrorTallies(new Storage(new MemoryBackend()));
+const tallies = () => new ErrorTallies(new Storage(new MemoryBackend()), 'errorTallies');
 
 describe('empty tallies', () => {
   it('has a ten by ten grid of zeroes per strategy table', () => {
@@ -34,8 +34,8 @@ describe('recording strategy errors', () => {
 
   it('survives a reload, since it goes through storage', () => {
     const storage = new Storage(new MemoryBackend());
-    new ErrorTallies(storage).record('softDouble', 1, 1);
-    expect(new ErrorTallies(storage).load().softDouble[1][1]).toBe(1);
+    new ErrorTallies(storage, 'errorTallies').record('softDouble', 1, 1);
+    expect(new ErrorTallies(storage, 'errorTallies').load().softDouble[1][1]).toBe(1);
   });
 
   it('ignores a cell outside the ten by ten grid', () => {
@@ -53,7 +53,7 @@ describe('recording strategy errors', () => {
   it('rebuilds a saved grid that is not a ten by ten of counts', () => {
     const storage = new Storage(new MemoryBackend());
     storage.set('errorTallies', { split: null, hardStand: [[1]], softDouble: 'nonsense' });
-    const errors = new ErrorTallies(storage);
+    const errors = new ErrorTallies(storage, 'errorTallies');
     expect(errors.load().split).toEqual(emptyTallies().split);
     expect(errors.load().hardStand).toEqual(emptyTallies().hardStand);
     errors.record('split', 1, 2);
@@ -63,7 +63,7 @@ describe('recording strategy errors', () => {
   it('fills in tables a saved tally never mentioned', () => {
     const storage = new Storage(new MemoryBackend());
     storage.set('errorTallies', { split: emptyTallies().split });
-    expect(Object.keys(new ErrorTallies(storage).load())).toEqual(TABLE_NAMES);
+    expect(Object.keys(new ErrorTallies(storage, 'errorTallies').load())).toEqual(TABLE_NAMES);
   });
 });
 

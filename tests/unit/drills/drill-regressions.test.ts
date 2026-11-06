@@ -174,7 +174,7 @@ describe('flash drill', () => {
     for (const tap of EVERY_CELL) drill.gridTap(tap);
     expect(tests(drill.shell)).toBe('Hands: 19');
     expect(view(drill.shell).stats.accuracy).toBe('No Tests');
-    expect(app.errorTallies.load()).toEqual(emptyTallies());
+    expect(app.errorTallies.flash.load()).toEqual(emptyTallies());
   });
 
   it('an unanswered hand is not scored when the clock halts', () => {

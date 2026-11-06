@@ -107,7 +107,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     progressive: s.get('drills.flash.progressiveSpeed'),
     autoPause: s.get('drills.flash.autoPause'),
     autoPauseSeconds: s.get('drills.flash.autoPauseSeconds'),
-    doubleAnyCards: s.get('rules.doubleAnyNumberOfCards'),
+    doubleAnyCards: s.get('drills.flash.rules.doubleAnyNumberOfCards'),
   };
   const { strategy } = drillStrategy(app, 'flash', options.decks);
   const indexTest = options.countMode === 'indexTest';
@@ -195,7 +195,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
       situations: options.situations,
       strategy,
       customMask: s.get('drills.flash.customHands'),
-      tallies: app.errorTallies.load(),
+      tallies: app.errorTallies.flash.load(),
     });
     list = built.entries;
     // Round Robin deals every hand once, in a random order, before any repeats.
@@ -366,7 +366,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     const cell = indexTest
       ? { table: hand.kind, row: rowOf(hand.entry), column: columnOf(hand.upcard) }
       : errorCell(play, action, hand);
-    if (cell && cell.row >= 0) app.errorTallies.record(cell.table, cell.row, cell.column);
+    if (cell && cell.row >= 0) app.errorTallies.flash.record(cell.table, cell.row, cell.column);
     shell.updateStats(shell.clock);
   }
 

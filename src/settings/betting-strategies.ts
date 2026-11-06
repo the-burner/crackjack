@@ -3,7 +3,6 @@
 
 import type { SettingKey, SettingReader, SettingValues, SettingsPatch } from './schema';
 import { isRamp } from './bet-ramp';
-import { sameValues } from './named-configs';
 import type { Named, PresetKind, PresetSelectionKey } from './named-configs';
 import { BETTING_SCOPES, keeps, scopedKey } from './scopes';
 import type { BettingScope, ScopedKey } from './scopes';
@@ -110,10 +109,7 @@ export function bettingPresets(scope: BettingScope): PresetKind<BettingStrategy,
 
 export const BETTING_PRESETS = bettingPresets('game');
 
-/**
- * When a saved strategy changes, what each module on it takes from it: a module that had not moved off
- * it follows it, one that had keeps its own edit.
- */
+/** When a saved strategy changes, every module on it takes it, unsaved edits and all, so none differs from it. */
 export function followSaved(
   get: SettingReader,
   before: readonly BettingStrategy[],
@@ -125,7 +121,7 @@ export function followSaved(
     const id = get(kind.selectedKey);
     const was = before.find(strategy => strategy.id === id);
     const now = after.find(strategy => strategy.id === id);
-    if (!was || !now || was === now || !sameValues(kind.valuesOf(was), kind.current(get))) continue;
+    if (!was || !now || was === now) continue;
     Object.assign(changes, kind.patch(kind.valuesOf(now)));
   }
   return changes;

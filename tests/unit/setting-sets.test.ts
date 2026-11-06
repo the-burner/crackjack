@@ -174,6 +174,7 @@ describe('what each drill keeps of its own', () => {
     expect(kept('flash')).toEqual([
       'rules.dealerHitsSoft17',
       'rules.doubleAfterSplit',
+      'rules.doubleAnyNumberOfCards',
       'rules.noHoleCard',
       'strategy.adjustInitialCount',
       'strategy.customIndexMask',

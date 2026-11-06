@@ -27,13 +27,13 @@ const StatRow = ({ label, count, share }: { label: string; count: number; share:
 export function FlashStats() {
   const app = useApp();
   // Read live: the drills record errors while this screen exists.
-  useStore(app.errorTallies.store, state => state.value);
-  const { total, hands, situations } = errorSummary(app.errorTallies.cells());
+  useStore(app.errorTallies.flash.store, state => state.value);
+  const { total, hands, situations } = errorSummary(app.errorTallies.flash.cells());
   const record = useStore(app.flashRecord, state => state.value);
 
   async function resetStats() {
     if (!(await confirm('Reset the statistics? This also empties the Drill Errors hand list.'))) return;
-    app.errorTallies.clear();
+    app.errorTallies.flash.clear();
     app.flashRecord.setState({ value: emptyRecord() });
   }
 

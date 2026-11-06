@@ -1,5 +1,5 @@
-// Per-cell counts of strategy errors, shared by the game and the Flash drill
-// ("Drill Errors" hands). Each table is a 10 x 10 grid indexed like the
+// Per-cell counts of strategy errors; the game and the Flash drill ("Drill Errors"
+// hands) each keep their own. Each table is a 10 x 10 grid indexed like the
 // strategy tables: [row][dealer column].
 
 import { TABLE_NAMES } from '@/core/strategy/strategy-file';
@@ -7,8 +7,6 @@ import type { TableName } from '@/core/strategy/strategy-file';
 import type { Storage } from './storage';
 import { persistedStore } from './persisted-store';
 import type { PersistedStore } from './persisted-store';
-
-const STORAGE_KEY = 'errorTallies';
 
 /** Error counts per strategy table, each a 10 x 10 grid. */
 export type Tallies = Record<TableName, number[][]>;
@@ -41,8 +39,8 @@ function readTallies(saved: unknown): Tallies {
 export class ErrorTallies {
   readonly store: PersistedStore<Tallies>;
 
-  constructor(storage: Storage) {
-    this.store = persistedStore(storage, STORAGE_KEY, readTallies);
+  constructor(storage: Storage, key: string) {
+    this.store = persistedStore(storage, key, readTallies);
   }
 
   load(): Tallies {
