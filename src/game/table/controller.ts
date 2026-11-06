@@ -734,6 +734,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       return;
     }
     nav.lastError({
+      scope: 'game',
       title: 'Last Error',
       view: error.table,
       highlight: { row: error.row, column: error.column },

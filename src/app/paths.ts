@@ -50,21 +50,10 @@ export const PATHS = {
 export type ScreenName = keyof typeof PATHS;
 
 /** The strategy table viewer's options, as search params. */
-export function tablesSearch({
-  mode,
-  scope,
-  pick,
-  maskKey,
-  decks,
-  system,
-  title,
-  view,
-  highlight,
-}: TablesParams): string {
+export function tablesSearch({ mode, scope, maskKey, decks, system, title, view, highlight }: TablesParams): string {
   const search = new URLSearchParams();
   if (mode) search.set('mode', mode);
-  if (scope) search.set('scope', scope);
-  if (pick) search.set('pick', '1');
+  search.set('scope', scope);
   if (maskKey) search.set('mask', maskKey);
   if (decks !== undefined) search.set('decks', String(decks));
   if (system !== undefined) search.set('system', String(system));
@@ -91,8 +80,8 @@ export function tablesParams(search: URLSearchParams): TablesParams {
   const column = number('column');
   return {
     mode: mode === 'editMask' || mode === 'view' ? mode : undefined,
-    scope: scope !== null && scope in SCOPES ? (scope as ScopeName) : undefined,
-    pick: search.get('pick') === '1',
+    // An address naming no module (typed by hand) shows the Charts, which are no module's.
+    scope: scope !== null && scope in SCOPES ? (scope as ScopeName) : 'charts',
     maskKey: isMaskKey(mask) ? mask : null,
     decks: number('decks'),
     system: number('system'),

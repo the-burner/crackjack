@@ -65,7 +65,7 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
     own.update(applyIndexRangeChange(k => own.get(k), key, value));
   const systemOptions = app.strategies.list().map(({ id, name }) => ({ value: id, label: name }));
   /** The tables as this module plays them: its strategy, built for its decks. */
-  const tables = (over: Parameters<typeof tablesSearch>[0] = {}) =>
+  const tables = (over: Omit<Parameters<typeof tablesSearch>[0], 'scope'> = {}) =>
     PATHS['strategy.tables'] +
     tablesSearch({ scope, system: own.get('strategy.system'), decks: decksOf(settings, scope), ...over });
 

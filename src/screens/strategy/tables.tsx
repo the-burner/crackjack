@@ -66,10 +66,11 @@ export type MaskKey = Extract<SettingKey, `${string}.strategy.customIndexMask` |
 
 export type TablesParams = {
   mode?: 'view' | 'editMask';
-  /** Whose strategy and mask: the module the screen was opened from. */
-  scope?: ScopeName;
-  /** Lets the strategy, its decks and rules be picked here (Playing Strategy Charts, which keeps them). */
-  pick?: boolean;
+  /**
+   * Whose strategy, mask and errors: the module the screen was opened from. 'charts' is the Playing
+   * Strategy Charts, where the strategy, its decks and rules are picked here and kept.
+   */
+  scope: ScopeName;
   maskKey?: MaskKey | null;
   /** Deck count the tables are built for. */
   decks?: number;
@@ -98,10 +99,10 @@ const CHART_INDEX_SETS = SETTINGS_SCHEMA['charts.strategy.indexSet'].values.map(
 export function StrategyTables({ params }: { params: TablesParams }) {
   const app = useApp();
   const settings = useSettings();
-  const { mode = 'view', scope = 'game', maskKey = null, title = 'Tables', highlight = null } = params;
+  const { mode = 'view', scope, maskKey = null, title = 'Tables', highlight = null } = params;
   const editingMask = mode === 'editMask' && Boolean(maskKey);
   // The Charts keep what is picked on them; opened from a module, the tables are that module's own.
-  const charts = Boolean(params.pick);
+  const charts = scope === 'charts';
   const [opened] = useState(() => ({
     system: params.system ?? Number(ownOrDefault(settings, scope, 'strategy.system')),
     decks: params.decks ?? decksOf(settings, scope),
@@ -117,7 +118,7 @@ export function StrategyTables({ params }: { params: TablesParams }) {
     // Picking custom indices needs every index visible, so the index limits are
     // ignored while the custom-index mask is edited.
     const pickingIndices = editingMask && maskKey?.endsWith('strategy.customIndexMask');
-    const options = strategyOptions(settings, charts ? 'charts' : scope, picked.decks);
+    const options = strategyOptions(settings, scope, picked.decks);
     return app.strategies.build(
       picked.system,
       pickingIndices ? { ...options, indexSet: 'all', customMask: null } : options,

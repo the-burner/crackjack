@@ -24,7 +24,7 @@ const MODULES = [
   ['Compound Running Count', PATHS['drills.full.options']],
   [
     'Playing Strategy Charts',
-    PATHS['strategy.tables'] + tablesSearch({ mode: 'view', pick: true, title: 'Playing Strategy Charts' }),
+    PATHS['strategy.tables'] + tablesSearch({ mode: 'view', scope: 'charts', title: 'Playing Strategy Charts' }),
   ],
 ] as const;
 

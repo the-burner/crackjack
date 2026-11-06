@@ -62,7 +62,10 @@ describe('strategy tables', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.set('game.strategy.system', 92);
-    renderScreen(<StrategyTables params={{ mode: 'editMask', maskKey: 'game.strategy.customIndexMask' }} />, { app });
+    renderScreen(
+      <StrategyTables params={{ scope: 'game', mode: 'editMask', maskKey: 'game.strategy.customIndexMask' }} />,
+      { app },
+    );
     const grid = screen.getByRole('table', { name: 'Hard Hit/Stand' });
     /** A grid cell; the first cell of each body row is its label. */
     const cell = (row: number, column: number) =>

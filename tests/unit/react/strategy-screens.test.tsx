@@ -190,7 +190,7 @@ describe('bet picker', () => {
 });
 
 describe('Playing Strategy Charts', () => {
-  const charts = () => <StrategyTables params={{ pick: true, title: 'Playing Strategy Charts' }} />;
+  const charts = () => <StrategyTables params={{ scope: 'charts', title: 'Playing Strategy Charts' }} />;
   /** Each cell's action (its colour) and index. */
   const tableText = () =>
     bodyRows()
@@ -321,7 +321,7 @@ describe('Playing Strategy Charts', () => {
   });
 
   it('offers no rule switches when showing a module’s own tables', () => {
-    renderScreen(<StrategyTables params={{}} />);
+    renderScreen(<StrategyTables params={{ scope: 'game' }} />);
     expect(screen.queryByRole('switch', { name: 'Double after split' })).not.toBeInTheDocument();
   });
 });
@@ -330,7 +330,7 @@ describe('strategy tables', () => {
   it('toggles mask cells and counts them', async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(
-      <StrategyTables params={{ mode: 'editMask', maskKey: 'game.strategy.customIndexMask' }} />,
+      <StrategyTables params={{ scope: 'game', mode: 'editMask', maskKey: 'game.strategy.customIndexMask' }} />,
     );
     expect(screen.getByText('0 of 80 cells selected')).toBeInTheDocument();
     await user.click(cell(1, 8));
@@ -342,7 +342,7 @@ describe('strategy tables', () => {
 
   it('ignores taps outside mask editing', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<StrategyTables params={{}} />);
+    const { app } = renderScreen(<StrategyTables params={{ scope: 'game' }} />);
     const before = app.settings.get('game.strategy.customIndexMask');
     await user.click(cell(1, 8));
     expect(app.settings.get('game.strategy.customIndexMask')).toEqual(before);
@@ -351,7 +351,9 @@ describe('strategy tables', () => {
 
   it('opens a named view with a marked cell', () => {
     const { container } = renderScreen(
-      <StrategyTables params={{ view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }} />,
+      <StrategyTables
+        params={{ scope: 'game', view: 'split', highlight: { row: 2, column: 3 }, title: 'Last Error' }}
+      />,
     );
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Last Error');
     expect(screen.getByRole('combobox', { name: 'Table' })).toHaveTextContent('Split');
@@ -372,7 +374,7 @@ describe('strategy tables', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.errorTallies.game.record('hardStand', 1, 8);
-    renderScreen(<StrategyTables params={{}} />, { app });
+    renderScreen(<StrategyTables params={{ scope: 'game' }} />, { app });
     expect(screen.getByText('Hit < Value')).toBeVisible();
     await user.click(screen.getByRole('switch', { name: 'Shade error counts' }));
     expect(cell(1, 8)).toHaveTextContent(/^1$/);
@@ -396,7 +398,7 @@ describe('strategy tables', () => {
 
   it('switches to the counts view', async () => {
     const user = userEvent.setup();
-    renderScreen(<StrategyTables params={{}} />);
+    renderScreen(<StrategyTables params={{ scope: 'game' }} />);
     expect(screen.getByRole('table', { name: 'Hard Hit/Stand' })).toBeInTheDocument();
     await choose(user, 'Table', 'Insurance/Counts');
     expect(screen.getByRole('table', { name: 'Card Point Values' })).toBeInTheDocument();
