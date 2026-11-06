@@ -140,6 +140,7 @@ export function FlashOptions() {
                     PATHS['strategy.tables'] +
                       tablesSearch({
                         mode: 'editMask',
+                        scope: 'flash',
                         maskKey: 'drills.flash.customHands',
                         decks: settings.get('drills.flash.decks'),
                         title: 'Custom Hands',

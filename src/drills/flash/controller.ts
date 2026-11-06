@@ -421,6 +421,7 @@ export function createFlashDrill(app: App, { openTable }: { openTable: (params: 
     shell.clock?.resume();
     if (!show) return;
     openTable({
+      scope: 'flash',
       decks: options.decks,
       title: cell ? SITUATION_LABELS[cell.table] : 'Tables',
       view: cell?.table,

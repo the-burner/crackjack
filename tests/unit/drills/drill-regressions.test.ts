@@ -17,6 +17,10 @@ import { createFlashDrill } from '@/drills/flash/controller';
 import { createDepthDrill } from '@/drills/depth/controller';
 import { createCountDrill } from '@/drills/count/controller';
 import { createFullDrill } from '@/drills/full/controller';
+import { confirm } from '@/components/dialogs';
+
+// The wrong-answer dialog answers OK unless a test says otherwise.
+vi.mock('@/components/dialogs', () => ({ confirm: vi.fn(() => Promise.resolve(false)) }));
 
 const BOX = { left: 0, top: 0, width: 600, height: 300 };
 const gridCanvas = { getBoundingClientRect: () => BOX } as Element;
@@ -118,6 +122,18 @@ describe('flash drill', () => {
     });
     expect(view(shell).message).toContain('no tests configured');
     expect(tests(shell)).toBe('Hands: 0');
+  });
+
+  it("a wrong answer's table is the drill's own, with its own indices", async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    const openTable = vi.fn();
+    const drill = launch(
+      createFlashDrill(appWith({ ...FIXED_16_V_TEN, 'drills.flash.testMode': 'warn' }), { openTable }),
+    );
+    drill.answer(ACTION.hit);
+    drill.answer(ACTION.stand);
+    await vi.waitFor(() => expect(openTable).toHaveBeenCalled());
+    expect(openTable.mock.calls[0][0]).toMatchObject({ scope: 'flash' });
   });
 
   it('keeps a record of every hand answered, across runs', () => {
