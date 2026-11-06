@@ -120,6 +120,8 @@ export function createCountDrill(app: App) {
 
   const shell = new DrillShell(app, {
     countLabel: 'Tests',
+    // Loads the photos during the opening countdown, so the first test's tray is ready.
+    onShow: () => preloadTrayImages(options.decks, options.trayStyle),
     // The next interval starts as Continue is tapped, so Time shows it during the countdown.
     onContinue: () => {
       if (!nextInterval) return;
@@ -173,7 +175,6 @@ export function createCountDrill(app: App) {
   }
 
   function newShoe() {
-    preloadTrayImages(options.decks, options.trayStyle);
     return new DrillShoe({
       decks: options.decks,
       strategy: options.strategy,

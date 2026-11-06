@@ -69,6 +69,8 @@ export function createDepthDrill(app: App) {
   const shell = new DrillShell(app, {
     countLabel: 'Tests',
     pausable: true,
+    // Loads the photos during the opening countdown, so the first test's tray is ready.
+    onShow: () => preloadTrayImages(options.decks, options.trayStyle),
     onStart: start,
     onStop: stop,
     onPause: pause,
@@ -83,7 +85,6 @@ export function createDepthDrill(app: App) {
 
   function start() {
     run += 1;
-    preloadTrayImages(options.decks, options.trayStyle);
     previousAnswer = null;
     const { drill } = options;
     // The TC Bet drills shuffle their grid for each test.
