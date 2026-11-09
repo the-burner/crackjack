@@ -41,7 +41,7 @@ const options = (extra: Partial<TableOptions> = {}): TableOptions => ({
 const highLow = buildStrategy(STRATEGY_FILES[30], options());
 const basic = buildStrategy(STRATEGY_FILES[5], options());
 /** The system a fresh install drills with, and an unbalanced one that counts to a pivot. */
-const crackHighLow = buildStrategy(STRATEGY_FILES[30], options({ indexSet: 'crack33' }));
+const crackHighLow = buildStrategy(STRATEGY_FILES[30], options({ indexSet: 'crack35' }));
 const knockOut = buildStrategy(STRATEGY_FILES[74], options());
 
 // Situations left out of a literal read as switched off.

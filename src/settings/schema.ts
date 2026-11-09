@@ -66,7 +66,7 @@ const systemDefs = () => ({
 
 /** Which of its indices a module plays: only a module judged against the tables has them. */
 const indexDefs = () => ({
-  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack33', 'none', 'custom'], 'crack33'),
+  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack35', 'none', 'custom'], 'crack35'),
   'strategy.customIndexMask': json(tableGrids(false)),
   'strategy.indexRangeMin': int(-99, -99, 99),
   'strategy.indexRangeMax': int(99, -99, 99),
@@ -136,7 +136,7 @@ const chartSideDefs = () => ({
   ...tableRuleDefs(),
   decks: oneOf(DECKS, 6),
   /** Which indices it shows; a custom set is a module's own. */
-  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack33', 'none'], 'crack33'),
+  'strategy.indexSet': oneOf(['all', 'illustrious18', 'sweet16', 'catch20', 'crack35', 'none'], 'crack35'),
 });
 
 /** `defs` under `prefix`, as the schema keeps one module's copy of them. */

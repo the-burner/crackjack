@@ -10,7 +10,7 @@ const names = { strategy: (id: number) => (id === 30 ? 'High-Low' : 'Basic Strat
 const HIGH_LOW: SideSettings = {
   system: 30,
   decks: 6,
-  indexSet: 'crack33',
+  indexSet: 'crack35',
   rules: { 'rules.doubleAfterSplit': true, 'rules.dealerHitsSoft17': true, 'rules.noHoleCard': false },
 };
 
@@ -38,7 +38,7 @@ describe("the Charts' two sides", () => {
     ]);
     const basic = { ...HIGH_LOW, system: 5, decks: 1, indexSet: 'none' as const };
     expect(sideLabels(HIGH_LOW, basic, names)).toEqual([
-      'High-Low · 6 decks · crack33',
+      'High-Low · 6 decks · crack35',
       'Basic Strategy · 1 deck · none',
     ]);
   });

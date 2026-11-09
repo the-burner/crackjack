@@ -208,16 +208,16 @@ test('opens a named table with one cell marked', async ({ page }) => {
   await expect(gridCell(grid, 2, 3)).toHaveAttribute('data-marked');
 });
 
-test('Crack 33, picked on Playing Strategy, is what the game plays', async ({ page }) => {
+test('Crack 35, picked on Playing Strategy, is what the game plays', async ({ page }) => {
   await openHub(page);
   await page.evaluate(() => window.app.settings.set('game.strategy.system', 31));
   const el = await openFromHub(page, 'Playing Strategy', 'game.strategy');
-  await choose(el, 'Indices', 'Crack 33');
-  expect(await setting(page, 'game.strategy.indexSet')).toBe('crack33');
-  // 16 v X keeps its index; 12 v 5 is played by basic strategy.
+  await choose(el, 'Indices', 'Crack 35');
+  expect(await setting(page, 'game.strategy.indexSet')).toBe('crack35');
+  // 16 v X and 12 v 5 keep their indices; 13 v 4 is played by basic strategy.
   const cells = await page.evaluate(() => {
     const t = window.app.strategies.current(window.app.settings, 'game', 6).tables.hardStand;
-    return [t[1][8], t[5][3]];
+    return [t[1][8], t[5][3], t[4][2]];
   });
-  expect(cells).toEqual([0, -32000]);
+  expect(cells).toEqual([0, -2, -32000]);
 });

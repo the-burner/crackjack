@@ -415,7 +415,7 @@ test.describe('flash drill', () => {
     await open(page, {
       'drills.flash.hands': 'withIndices',
       'drills.flash.shuffle': 'roundRobin',
-      // High-Low's Crack 33 splits tens against 4, 5 and 6: three hands a round.
+      // High-Low's Crack 35 splits tens against 4, 5 and 6: three hands a round.
       'drills.flash.situations': {
         hardStand: false,
         softStand: false,

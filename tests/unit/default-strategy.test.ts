@@ -7,7 +7,7 @@ import { buildStrategy } from '@/core/strategy/strategy-tables';
 describe('the default strategy', () => {
   const id = SETTINGS_SCHEMA['game.strategy.system'].default;
 
-  it('is High-Low, listed first, played with the Crack 33', () => {
+  it('is High-Low, listed first, played with the Crack 35', () => {
     expect(id).toBe(30);
     expect(BUILTIN_STRATEGIES[0]).toEqual({ id: 30, name: 'High-Low' });
     for (const key of [
@@ -15,7 +15,7 @@ describe('the default strategy', () => {
       'drills.flash.strategy.indexSet',
       'charts.strategy.indexSet',
     ] as const) {
-      expect(SETTINGS_SCHEMA[key].default, key).toBe('crack33');
+      expect(SETTINGS_SCHEMA[key].default, key).toBe('crack35');
     }
   });
 

@@ -26,7 +26,7 @@ export const INDEX_SET_LABELS: Record<IndexSet, string> = {
   illustrious18: 'Illustrious 18',
   sweet16: 'Sweet 16',
   catch20: 'Catch 20',
-  crack33: 'Crack 33',
+  crack35: 'Crack 35',
   none: 'No Indices',
   custom: 'Custom',
 };

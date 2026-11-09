@@ -245,12 +245,12 @@ describe('Playing Strategy Charts', () => {
       within(indices)
         .getAllByRole('option')
         .map(o => o.textContent),
-    ).toEqual(['All Indices', 'Illustrious 18', 'Sweet 16', 'Catch 20', 'Crack 33', 'No Indices']);
+    ).toEqual(['All Indices', 'Illustrious 18', 'Sweet 16', 'Catch 20', 'Crack 35', 'No Indices']);
     // 16 vs ten stands from a count of 0.
     expect(cell(1, 8)).toHaveTextContent('0');
     await choose(user, 'Indices', 'No Indices');
     expect(app.settings.get('charts.strategy.indexSet')).toBe('none');
-    expect(app.settings.get('game.strategy.indexSet')).toBe('crack33');
+    expect(app.settings.get('game.strategy.indexSet')).toBe('crack35');
     expect(cell(1, 8)).toHaveTextContent(/^$/);
   });
 
@@ -302,7 +302,7 @@ describe('Playing Strategy Charts', () => {
     expect(cell(1, 8)).toHaveTextContent(/^0$/);
     const key = within(screen.getByRole('list', { name: 'Compared strategies' }));
     expect(key.getAllByRole('listitem').map(item => item.textContent)).toEqual([
-      'High-Low · Crack 33',
+      'High-Low · Crack 35',
       'Basic Strategy · No Indices',
     ]);
     // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- a split is drawn, not named

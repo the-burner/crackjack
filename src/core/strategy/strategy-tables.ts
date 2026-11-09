@@ -22,7 +22,7 @@ import type { FileTables, Grid, OneBased, StrategyFile, TableName } from './stra
 import { BASIC_STRATEGY_FILE } from '@/data/strategy-files';
 
 /** The original's index sets in its own order (the recorded fixtures number them so), then Crackjack's. */
-export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom', 'crack33'] as const;
+export const INDEX_SETS = ['all', 'illustrious18', 'sweet16', 'catch20', 'none', 'custom', 'crack35'] as const;
 export type IndexSet = (typeof INDEX_SETS)[number];
 
 /** Special cell codes. Some are resolved while building tables, the rest by the advisor. */
@@ -174,9 +174,9 @@ const FAB_4_SURRENDERS: Cell[] = [
   [3, 8],
 ];
 
-/** The Crack 33: Crackjack's own 32 index plays, with the insurance index every set keeps. */
-const CRACK_33: Readonly<Record<TableName, Cell[]>> = {
-  // 16 v 9, 16 v X, 15 v X, 13 v 2, 13 v 3, 12 v 2, 12 v 3, 12 v 4.
+/** The Crack 35: Crackjack's own 34 index plays, with the insurance index every set keeps. */
+const CRACK_35: Readonly<Record<TableName, Cell[]>> = {
+  // 16 v 9, 16 v X, 15 v X, 13 v 2, 13 v 3, 12 v 2 to 12 v 6.
   hardStand: [
     [1, 7],
     [1, 8],
@@ -186,6 +186,8 @@ const CRACK_33: Readonly<Record<TableName, Cell[]>> = {
     [5, 0],
     [5, 1],
     [5, 2],
+    [5, 3],
+    [5, 4],
   ],
   softStand: [],
   // 11 v A, 10 v X, 10 v A, 9 v 2, 9 v 7, 8 v 4, 8 v 5, 8 v 6.
@@ -502,12 +504,12 @@ export function buildStrategy(file: string | StrategyFile, options: TableOptions
       if (!(fab4 && contains(FAB_4_SURRENDERS, k, l))) useBasic('surrender', k, l);
     });
   }
-  if (indexSet === 'crack33') {
+  if (indexSet === 'crack35') {
     eachCell(BASE_COLUMNS, (k, l) => {
       for (const name of TABLE_NAMES) {
-        // An early-surrender strategy's later rows are other hands than the pairs the Crack 33 keeps.
+        // An early-surrender strategy's later rows are other hands than the pairs the Crack 35 keeps.
         const pairOf = name === 'surrender' && k >= SURRENDER_PAIR_ROWS && f.earlySurrender;
-        if (pairOf || !contains(CRACK_33[name], k, l)) useBasic(name, k, l);
+        if (pairOf || !contains(CRACK_35[name], k, l)) useBasic(name, k, l);
       }
     });
   }
