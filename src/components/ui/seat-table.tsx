@@ -1,5 +1,5 @@
 // The seats at the table, drawn as the game draws them: bet circles along the arc below the dealer, on
-// the theme's felt (the drills'), seat 1 at the right. A filled circle is the player's, an outlined one a computer player's;
+// a felt of the theme's green, seat 1 at the right. A filled circle is the player's, an outlined one a computer player's;
 // a seat the table cannot show (held upright) is faded and struck through. Seats move along the arc as
 // their number changes (lib/seat-arc.ts).
 

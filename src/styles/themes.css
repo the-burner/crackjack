@@ -41,6 +41,8 @@
   /* Latte's felt is a light page, so the accent over it has to be a dark one. */
   --felt-accent: var(--mauve);
   --text-shadow: var(--ctp-text);
+  --seat-felt: color-mix(in srgb, var(--green) 30%, var(--base));
+  --seat-ring: color-mix(in srgb, var(--green) 45%, var(--ctp-text));
 }
 
 [data-theme='mocha'] {
@@ -80,6 +82,8 @@
   --table-accent: var(--yellow);
   --felt-accent: var(--yellow);
   --text-shadow: var(--crust);
+  --seat-felt: color-mix(in srgb, var(--green) 30%, var(--crust));
+  --seat-ring: var(--yellow);
 }
 
 /* Shared role mapping: both flavours use the palette the same way. */
@@ -116,9 +120,7 @@
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
-  /* Table Rules and Conditions' drawing of the seats, on the drills' felt: the player's seats filled with its accent. */
-  --seat-felt: var(--felt);
-  --seat-ring: var(--felt-accent);
+  /* Table Rules and Conditions' drawing of the seats: a felt of the theme's green, the player's seats filled with the ring's colour. */
   --seat-text: var(--felt-text);
   --seat-mine-text: var(--on-accent);
   --panel-bg: var(--surface0);
