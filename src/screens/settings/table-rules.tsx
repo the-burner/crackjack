@@ -269,7 +269,8 @@ function SeatPicker({ upright }: { upright: boolean }) {
   return (
     <SeatTable
       label="Seats at the table"
-      seats={computer.slice(0, seatCount).map((isComputer, i) => ({ yours: !isComputer, hidden: !shown.has(i + 1) }))}
+      seats={computer.map((isComputer, i) => ({ yours: !isComputer, hidden: i < seatCount && !shown.has(i + 1) }))}
+      seatCount={seatCount}
       onToggle={seat => {
         const next = computer.slice();
         next[seat - 1] = !next[seat - 1];

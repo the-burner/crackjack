@@ -265,7 +265,7 @@ test('the seats drawing keeps every seat on the felt, apart, for each seat count
     const seats = table.getByRole('button');
     await expect(seats).toHaveCount(count);
     // Let the seats finish sliding to their places.
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(1000);
     const felt = (await table.boundingBox())!;
     const boxes = await Promise.all((await seats.all()).map(async seat => (await seat.boundingBox())!));
     for (const box of boxes) {

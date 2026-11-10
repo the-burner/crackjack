@@ -63,10 +63,11 @@ describe('Table Rules and Conditions', () => {
     await user.click(table.getByRole('button', { name: 'Seat 3, yours' }));
     expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, true, false, false]);
     expect(table.getByRole('button', { name: 'Seat 3, computer' })).toHaveAttribute('aria-pressed', 'false');
+    // The new seats flow in, and the removed ones out, along the arc.
     await choose(user, 'Seats', 'Six Seats');
-    expect(seats()).toHaveLength(6);
+    await waitFor(() => expect(seats()).toHaveLength(6));
     await choose(user, 'Seats', 'Two Seats');
-    expect(seats()).toEqual(['Seat 1, computer', 'Seat 2, yours']);
+    await waitFor(() => expect(seats()).toEqual(['Seat 1, computer', 'Seat 2, yours']));
   });
 
   it("refuses to give away the player's last seat, and gives them seat 1 when a smaller table leaves them none", async () => {
