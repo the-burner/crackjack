@@ -38,6 +38,8 @@ const SHUFFLE_MODES: readonly Option<SettingValues['table.shuffleMode']>[] = [
 const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
 const DEALING: readonly SettingCheck[] = [
+  { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
+  { label: 'Hide shoe', key: 'display.hideShoe' },
   { label: 'Dealer shows burn cards', key: 'table.showBurnCards' },
   { label: 'Cards dealt face down', key: 'table.cardsFaceDown' },
   { label: 'DD card dealt face up', key: 'table.doubleDownCardFaceUp' },

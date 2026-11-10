@@ -43,8 +43,10 @@ const CASES: {
       await check(el, 'Triple Down').check();
       await check(el, 'Blackjack pays 6:5').check();
       await check(el, 'Dealer wins ties').check();
+      await check(el, 'Hide shoe').check();
     },
     async verify(el) {
+      await expect(check(el, 'Hide shoe')).toBeChecked();
       await expect(chosen(el, 'Decks')).toHaveText('Double Deck');
       await expect(check(el, 'Cards dealt face down')).toBeChecked();
       await expect(chosen(el, 'Surrender')).toHaveText('Late Surrender (common)');
@@ -67,10 +69,10 @@ const CASES: {
     button: 'Display and Speed',
     screen: 'game.display',
     async change(el) {
-      await check(el, 'Hide shoe').check();
+      await check(el, 'Hide Buttons').uncheck();
     },
     async verify(el) {
-      await expect(check(el, 'Hide shoe')).toBeChecked();
+      await expect(check(el, 'Hide Buttons')).not.toBeChecked();
     },
   },
   {
