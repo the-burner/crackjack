@@ -2,14 +2,22 @@ import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import type { SettingKey, SettingValues } from '@/settings/schema';
 
-/** The hub an option screen is opened from: Game Options for the game's own screens, Settings otherwise. */
-export const hubOf = (screen: string) => (screen.startsWith('game.') ? 'game.options' : 'settings');
+type Hub = 'settings' | 'game.options' | 'game.tableRules';
+
+/** The screen an option screen is opened from: Table Rules and Conditions for Unusual Games, Game Options for the game's others, Settings otherwise. */
+export const hubOf = (screen: string): Hub =>
+  screen === 'game.unusualGames' ? 'game.tableRules' : screen.startsWith('game.') ? 'game.options' : 'settings';
 
 /** Opens a hub from the home screen, which must be showing. */
-export async function openHubFromHome(page: Page, hub: 'settings' | 'game.options'): Promise<Locator> {
+export async function openHubFromHome(page: Page, hub: Hub): Promise<Locator> {
   const home = page.locator('[data-screen="home"]');
   if (hub === 'settings') await home.getByRole('button', { name: 'Settings', exact: true }).click();
   else await home.locator('[data-action="play"]').click();
+  if (hub === 'game.tableRules')
+    await page
+      .locator('[data-screen="game.options"]')
+      .getByRole('button', { name: 'Table Rules and Conditions', exact: true })
+      .click();
   const el = page.locator(`[data-screen="${hub}"]`);
   await expect(el).toBeVisible();
   return el;

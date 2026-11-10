@@ -1,21 +1,21 @@
 // Playing Strategy: which counting system one module plays, and of what follows from it only what
 // the module reads (settings/scopes.ts): the indices and the rules its tables are built for where
-// it is judged against them, the initial count where it counts a shoe. The game's rules are the
-// table's own, so it edits those.
+// it is judged against them, the initial count where it counts a shoe. The game's follow the table's
+// rules unless Use the table's rules is turned off.
 
 import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { ListRow, Section, SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { SettingChecks } from '@/components/settings-controls';
 import type { SettingCheck } from '@/components/settings-controls';
 import { applyIndexRangeChange } from '@/settings/rules-logic';
 import type { IndexRangeKey } from '@/settings/rules-logic';
-import { decksOf, indexMaskKey, keeps, scopedSettings, tableRuleKey } from '@/settings/scopes';
-import type { ScopeName } from '@/settings/scopes';
+import { decksOf, indexMaskKey, keeps, scopedSettings, tableRuleKey, TABLE_RULES } from '@/settings/scopes';
+import type { ScopeName, TableRuleKey } from '@/settings/scopes';
 import type { IndexSet } from '@/core/strategy/strategy-tables';
 import { SETTINGS_SCHEMA } from '@/settings/schema';
 import { useNavigate } from 'react-router';
@@ -36,16 +36,12 @@ const INDEX_SET_OPTIONS = SETTINGS_SCHEMA['game.strategy.indexSet'].values.map(v
   label: INDEX_SET_LABELS[value],
 }));
 
-/** The modules whose hands may double on more than two cards: the game by its table rule, Flash Cards by its own. */
+/** The modules whose hands may double on more than two cards by a rule of their own (the game's is the table's). */
 const DOUBLE_ANY: Partial<Record<ScopeName, SettingCheck['key']>> = {
-  game: 'rules.doubleAnyNumberOfCards',
   flash: 'drills.flash.rules.doubleAnyNumberOfCards',
 };
 
-/**
- * The rules this module's tables are built for. The game's are the table's own rules, shown on its
- * rules screens too, so they go through the same constraints; a drill keeps its own.
- */
+/** The module's own copies of the rules its tables are built for. */
 function ruleChecks(scope: ScopeName): SettingCheck[] {
   const doubleAny = DOUBLE_ANY[scope];
   return [
@@ -129,7 +125,12 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
         {keeps(scope, 'strategy.indexSet') && (
           <Section title="Rules">
             <SettingsGroup>
-              <SettingChecks items={ruleChecks(scope)} />
+              {scope === 'game' && <TableRulesSwitch />}
+              {scope === 'game' && settings.get('game.strategy.useTableRules') ? (
+                <SettingsNote>{`Built for the table's rules: ${tableRulesSummary(k => settings.get(k))}.`}</SettingsNote>
+              ) : (
+                <SettingChecks items={ruleChecks(scope)} />
+              )}
             </SettingsGroup>
           </Section>
         )}
@@ -161,4 +162,36 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
       </Column>
     </ScreenLayout>
   );
+}
+
+/** The game's strategy follows the table's rules, or (turned off) its own, starting from the table's. */
+function TableRulesSwitch() {
+  const settings = useSettings();
+  const on = settings.get('game.strategy.useTableRules');
+  return (
+    <CheckList
+      items={[
+        {
+          label: "Use the table's rules",
+          checked: on,
+          onChange: value =>
+            settings.update({
+              'game.strategy.useTableRules': value,
+              ...(value
+                ? {}
+                : Object.fromEntries(TABLE_RULES.map(key => [tableRuleKey('game', key), settings.get(key)]))),
+            }),
+        },
+      ]}
+    />
+  );
+}
+
+/** "H17, DAS, hole card": the table rules the strategy is built for. */
+export function tableRulesSummary(get: (key: TableRuleKey) => boolean): string {
+  return [
+    get('rules.dealerHitsSoft17') ? 'H17' : 'S17',
+    get('rules.doubleAfterSplit') ? 'DAS' : 'no DAS',
+    get('rules.noHoleCard') ? 'no hole card' : 'hole card',
+  ].join(', ');
 }

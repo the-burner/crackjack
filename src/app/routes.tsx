@@ -135,19 +135,14 @@ export const routes: RouteObject[] = [
       ...counting('count', 'drills/count', 'drills.count'),
       ...counting('full', 'drills/full', 'drills.full'),
       { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
-      game('setup', 'setup', () => import('@/screens/settings/setup').then(m => m.Setup)),
-      game('common-rules', 'commonRules', () => import('@/screens/settings/common-rules').then(m => m.CommonRules)),
-      game('rule-variations', 'ruleVariations', () =>
-        import('@/screens/settings/rule-variations').then(m => m.RuleVariations),
+      game('table-rules', 'tableRules', () => import('@/screens/settings/table-rules').then(m => m.TableRules)),
+      game('table-rules/unusual-games', 'unusualGames', () =>
+        import('@/screens/settings/unusual-games').then(m => m.UnusualGames),
       ),
-      game('bonuses', 'bonuses', () => import('@/screens/settings/bonuses').then(m => m.Bonuses)),
-      game('play-variations', 'playVariations', () =>
-        import('@/screens/settings/play-variations').then(m => m.PlayVariations),
-      ),
-      game('unusual-games', 'unusualGames', () => import('@/screens/settings/unusual-games').then(m => m.UnusualGames)),
+      game('bankroll', 'bankroll', () => import('@/screens/settings/bankroll').then(m => m.Bankroll)),
       game('dealer-errors', 'dealerErrors', () => import('@/screens/settings/dealer-errors').then(m => m.DealerErrors)),
       game('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),
-      game('mechanics', 'mechanics', () => import('@/screens/settings/mechanics').then(m => m.Mechanics)),
+      game('display', 'display', () => import('@/screens/settings/display-speed').then(m => m.DisplaySpeed)),
       { path: 'strategy/tables', ...page('strategy.tables', tables) },
       {
         path: 'drills/flash',

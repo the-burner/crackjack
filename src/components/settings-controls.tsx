@@ -7,10 +7,10 @@ import { CheckList } from '@/components/ui/check-list';
 import type { CheckListLayout } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
 import type { Option } from '@/components/ui/select';
-import { SettingsCols, SettingsRow } from '@/components/ui/settings-group';
+import { SettingsRow } from '@/components/ui/settings-group';
 import { Slider } from '@/components/ui/slider';
 import { ValueButton } from '@/components/ui/value-button';
-import { ScreenLayout } from '@/components/screen-layout';
+import { Column, ScreenLayout } from '@/components/screen-layout';
 import { useSettings } from '@/react/app-context';
 import { applyRuleChange } from '@/settings/rules-logic';
 import type { SettingKey, SettingValues } from '@/settings/schema';
@@ -24,11 +24,11 @@ export function useWriteSetting() {
     settings.update(applyRuleChange(k => settings.get(k), key, value));
 }
 
-/** A settings screen: title bar, then groups in one or two columns. */
+/** A settings screen: title bar, then its groups in one column. */
 export function SettingsScreen({ title, help, children }: { title: string; help: string; children: ReactNode }) {
   return (
     <ScreenLayout title={title} help={help}>
-      <SettingsCols>{children}</SettingsCols>
+      <Column className="gap-6 pt-1">{children}</Column>
     </ScreenLayout>
   );
 }

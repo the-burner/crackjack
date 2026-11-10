@@ -39,8 +39,11 @@ test.describe('Playing Strategy', () => {
     await choose(el, 'Indices', 'Illustrious 18');
     expect(await setting(page, 'game.strategy.indexSet')).toBe('illustrious18');
 
+    // Off the table's rules, its own start from the table's and leave the table's alone.
+    await el.getByRole('switch', { name: "Use the table's rules" }).uncheck();
     await el.getByRole('switch', { name: 'No hole card' }).check();
-    expect(await setting(page, 'rules.noHoleCard')).toBe(true);
+    expect(await setting(page, 'game.rules.noHoleCard')).toBe(true);
+    expect(await setting(page, 'rules.noHoleCard')).toBe(false);
 
     await el.getByRole('button', { name: 'Index range minimum: -99' }).click();
     await answerDialog(page, '-4');

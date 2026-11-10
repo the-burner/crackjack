@@ -34,65 +34,43 @@ const CASES: {
   verify(el: Locator): Promise<void>;
 }[] = [
   {
-    button: 'Basic Setup',
-    screen: 'game.setup',
+    button: 'Table Rules and Conditions',
+    screen: 'game.tableRules',
     async change(el) {
       await choose(el, 'Decks', 'Double Deck');
+      await check(el, 'Cards dealt face down').check();
+      await choose(el, 'Surrender', 'Late Surrender (common)');
+      await check(el, 'Triple Down').check();
+      await check(el, 'Blackjack pays 6:5').check();
+      await check(el, 'Dealer wins ties').check();
     },
     async verify(el) {
       await expect(chosen(el, 'Decks')).toHaveText('Double Deck');
-    },
-  },
-  {
-    button: 'Common Rules',
-    screen: 'game.commonRules',
-    async change(el) {
-      await check(el, 'Cards dealt face down').check();
-      await choose(el, 'Surrender', 'Late Surrender (common)');
-    },
-    async verify(el) {
       await expect(check(el, 'Cards dealt face down')).toBeChecked();
       await expect(chosen(el, 'Surrender')).toHaveText('Late Surrender (common)');
+      await expect(check(el, 'Triple Down')).toBeChecked();
+      await expect(check(el, 'Blackjack pays 6:5')).toBeChecked();
+      await expect(check(el, 'Dealer wins ties')).toBeChecked();
     },
   },
   {
-    button: 'Rule Variations',
-    screen: 'game.ruleVariations',
+    button: 'Bankroll',
+    screen: 'game.bankroll',
     async change(el) {
-      await check(el, 'Triple Down').check();
+      await check(el, 'Refresh bankroll at startup').check();
     },
     async verify(el) {
-      await expect(check(el, 'Triple Down')).toBeChecked();
+      await expect(check(el, 'Refresh bankroll at startup')).toBeChecked();
     },
   },
   {
-    button: 'Speed/Mechanics',
-    screen: 'game.mechanics',
+    button: 'Display and Speed',
+    screen: 'game.display',
     async change(el) {
       await check(el, 'Hide shoe').check();
     },
     async verify(el) {
       await expect(check(el, 'Hide shoe')).toBeChecked();
-    },
-  },
-  {
-    button: 'Bonuses',
-    screen: 'game.bonuses',
-    async change(el) {
-      await check(el, 'Blackjack pays 6:5').check();
-    },
-    async verify(el) {
-      await expect(check(el, 'Blackjack pays 6:5')).toBeChecked();
-    },
-  },
-  {
-    button: 'Play Variations',
-    screen: 'game.playVariations',
-    async change(el) {
-      await check(el, 'Dealer wins ties').check();
-    },
-    async verify(el) {
-      await expect(check(el, 'Dealer wins ties')).toBeChecked();
     },
   },
   {
@@ -106,7 +84,7 @@ const CASES: {
     },
   },
   {
-    button: 'Dealer Errs/Biases',
+    button: 'Dealer Errors and Biases',
     screen: 'game.dealerErrors',
     async change(el) {
       await choose(el, 'Dealing bias', 'Repeat errors');
@@ -192,16 +170,16 @@ for (const testCase of CASES) {
 }
 
 test('turning off the ace peek turns off the ten peek', async ({ page }) => {
-  await openHub(page, 'game.playVariations', { fresh: true });
-  const el = await openFromHub(page, 'Play Variations', 'game.playVariations');
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
   await expect(check(el, 'Dealer peeks on ten')).toBeChecked();
   await check(el, 'Dealer peeks on ace').uncheck();
   await expect(check(el, 'Dealer peeks on ten')).not.toBeChecked();
 });
 
 test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
-  await openHub(page, 'game.bonuses', { fresh: true });
-  const el = await openFromHub(page, 'Bonuses', 'game.bonuses');
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
   await check(el, 'Blackjack pays 2:1').check();
   await check(el, 'No Blackjack bonus').check();
   await expect(check(el, 'Blackjack pays 2:1')).not.toBeChecked();
@@ -214,12 +192,10 @@ test('Double Exposure applies its rule bundle', async ({ page }) => {
   await choose(games, 'Game', 'Double Exposure');
   await games.locator('[data-action="back"]').click();
 
-  const rules = await openFromHub(page, 'Common Rules', 'game.commonRules');
+  const rules = page.locator('[data-screen="game.tableRules"]');
+  await expect(rules).toBeVisible();
   await expect(chosen(rules, 'Insurance')).toHaveText('No Insurance');
-  await rules.locator('[data-action="back"]').click();
-
-  const play = await openFromHub(page, 'Play Variations', 'game.playVariations');
-  await expect(check(play, 'Dealer wins ties')).toBeChecked();
+  await expect(check(rules, 'Dealer wins ties')).toBeChecked();
 });
 
 test('Play keeps the saved seat count and opens the table', async ({ page }) => {
@@ -235,8 +211,8 @@ test('Play keeps the saved seat count and opens the table', async ({ page }) => 
 });
 
 test('Escape closes an open dialog and leaves the screen working', async ({ page }) => {
-  await openHub(page, 'game.setup', { fresh: true });
-  const el = await openFromHub(page, 'Basic Setup', 'game.setup');
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
   const burnCards = el.getByRole('button', { name: /^Burn Cards: / });
   await burnCards.click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
@@ -249,8 +225,8 @@ test('Escape closes an open dialog and leaves the screen working', async ({ page
 });
 
 test('a slider value can be typed into its number box @layout', async ({ page }) => {
-  await openHub(page, 'game.mechanics', { fresh: true });
-  const el = await openFromHub(page, 'Speed/Mechanics', 'game.mechanics');
+  await openHub(page, 'game.display', { fresh: true });
+  const el = await openFromHub(page, 'Display and Speed', 'game.display');
   const box = el.getByRole('spinbutton', { name: 'Dealer Speed' });
   const range = el.getByRole('slider', { name: 'Dealer Speed' });
   const saved = () =>

@@ -61,7 +61,7 @@ test('going back with a dialog open closes the dialog with its screen', async ({
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.locator('[data-screen="home"] [data-action="play"]').click();
-  await page.getByRole('button', { name: 'Basic Setup' }).click();
+  await page.getByRole('button', { name: 'Table Rules and Conditions' }).click();
   await page.getByRole('button', { name: /^Burn Cards: / }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
 

@@ -210,6 +210,9 @@ export const SETTINGS_SCHEMA = {
 
   // What the game counts and bets with (the rules its tables are built for are its own, above).
   ...under('game', { ...systemDefs(), ...indexDefs(), ...initialCountDefs(), ...trueCountDefs() }),
+  // The strategy follows the table's rules unless turned off; then it keeps rules of its own.
+  'game.strategy.useTableRules': bool(true),
+  ...under('game', tableRuleDefs()),
   ...under('game', { ...bettingDefs(), ...gameDefs() }),
 
   // Unusual games, side bets and bonuses (game).

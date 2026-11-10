@@ -1,4 +1,4 @@
-// Dealer Errs/Biases: deliberate dealer mistakes and a
+// Dealer Errors and Biases: deliberate dealer mistakes and a
 // non-random dealing bias.
 
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
@@ -28,7 +28,7 @@ const ERRORS: readonly SettingCheck[] = [
 
 export function DealerErrors() {
   return (
-    <SettingsScreen title="Errs/Biases" help="game.dealerErrors">
+    <SettingsScreen title="Dealer Errors and Biases" help="game.dealerErrors">
       <Section title="Bias">
         <SettingsGroup>
           <SettingSelect label="Dealing bias" setting="dealerErrors.dealingBias" options={BIASES} />

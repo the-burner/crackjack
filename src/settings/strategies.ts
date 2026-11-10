@@ -6,7 +6,7 @@ import { buildStrategy } from '@/core/strategy/strategy-tables';
 import type { Strategy, TableOptions } from '@/core/strategy/strategy-tables';
 import { BUILTIN_STRATEGIES } from './strategy-list';
 import type { StrategyEntry } from './strategy-list';
-import { ownOrDefault, tableRuleKey } from './scopes';
+import { ownOrDefault, strategyRuleKey } from './scopes';
 import type { ScopeName } from './scopes';
 import { SETTINGS_SCHEMA } from './schema';
 import type { AppSettings } from './schema';
@@ -57,8 +57,8 @@ export class StrategyLibrary {
 export function strategyOptions(settings: SettingsSource, scope: ScopeName, decks: number): TableOptions {
   const own = <T>(key: Parameters<typeof ownOrDefault>[2]) => ownOrDefault(settings, scope, key) as T;
   // A drill not judged against the tables keeps no rules for them: they are built for the defaults.
-  const rule = (key: Parameters<typeof tableRuleKey>[1]) => {
-    const where = tableRuleKey(scope, key);
+  const rule = (key: Parameters<typeof strategyRuleKey>[2]) => {
+    const where = strategyRuleKey(settings, scope, key);
     return Boolean(where in SETTINGS_SCHEMA ? settings.get(where) : SETTINGS_SCHEMA[key].default);
   };
   const indexSet = own<TableOptions['indexSet']>('strategy.indexSet');

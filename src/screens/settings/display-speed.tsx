@@ -1,20 +1,18 @@
-// Speed/Mechanics: the three speed sliders and the operational switches.
+// Display and Speed: how fast the table plays, and what it shows.
 
 import { SettingChecks, SettingSlider, SettingsScreen } from '@/components/settings-controls';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import type { SettingCheck } from '@/components/settings-controls';
 
-const CHECKS: readonly SettingCheck[] = [
-  { label: 'Refresh bankroll at startup', key: 'table.refreshBankrollOnStart' },
+const DISPLAY: readonly SettingCheck[] = [
   { label: 'Hide Buttons', key: 'display.hideActionButtons' },
   { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
   { label: 'Hide shoe', key: 'display.hideShoe' },
-  { label: 'Players come and go', key: 'table.playersComeAndGo' },
 ];
 
-export function Mechanics() {
+export function DisplaySpeed() {
   return (
-    <SettingsScreen title="Speed/Ops" help="game.mechanics">
+    <SettingsScreen title="Display and Speed" help="game.display">
       <Section title="Speed">
         <SettingsGroup>
           <SettingSlider label="Dealer Speed" setting="mechanics.dealerSpeed" />
@@ -22,9 +20,9 @@ export function Mechanics() {
           <SettingSlider label="Payoff Speed" setting="mechanics.payoffSpeed" />
         </SettingsGroup>
       </Section>
-      <Section title="Table">
+      <Section title="Display">
         <SettingsGroup>
-          <SettingChecks items={CHECKS} />
+          <SettingChecks items={DISPLAY} />
         </SettingsGroup>
       </Section>
     </SettingsScreen>

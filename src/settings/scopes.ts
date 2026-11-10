@@ -53,13 +53,17 @@ export const ownOrDefault = (settings: Pick<AppSettings, 'get'>, scope: ScopeNam
 export const scopedKey = <K extends ScopedKey>(scope: ScopeName, key: K): SettingKey =>
   `${SCOPES[scope]}.${key}` as SettingKey;
 
-/** The rules a module's strategy tables are built for; the game uses its own table rules. */
+/** The rules a module's strategy tables are built for. */
 export const TABLE_RULES = ['rules.doubleAfterSplit', 'rules.dealerHitsSoft17', 'rules.noHoleCard'] as const;
 export type TableRuleKey = (typeof TABLE_RULES)[number];
 
-/** Where module `scope` keeps the rule its tables are built for. */
+/** Where module `scope` keeps its own copy of a rule its tables are built for. */
 export const tableRuleKey = (scope: ScopeName, key: TableRuleKey): SettingKey =>
-  (scope === 'game' ? key : `${SCOPES[scope]}.${key}`) as SettingKey;
+  `${SCOPES[scope]}.${key}` as SettingKey;
+
+/** The rule module `scope`'s strategy is built for: the game's follows the table's own while Use the table's rules is on. */
+export const strategyRuleKey = (settings: Pick<AppSettings, 'get'>, scope: ScopeName, key: TableRuleKey): SettingKey =>
+  scope === 'game' && settings.get('game.strategy.useTableRules') ? key : tableRuleKey(scope, key);
 
 /** Where module `scope` keeps the decks it plays with. */
 export const decksKey = (scope: ScopeName): SettingKey => (scope === 'game' ? 'table.decks' : `${SCOPES[scope]}.decks`);

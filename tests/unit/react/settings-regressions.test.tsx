@@ -7,6 +7,7 @@ import { createServices } from '@/app/app';
 import { MemoryBackend } from '@/services/storage';
 import { Betting } from '@/screens/strategy/betting';
 import { PlayingStrategy } from '@/screens/strategy/playing-strategy';
+import { TableRules } from '@/screens/settings/table-rules';
 import { StrategyTables } from '@/screens/strategy/tables';
 import { TrueCount } from '@/screens/strategy/true-count';
 import { createTestApp, renderScreen } from '../../support/render';
@@ -25,9 +26,9 @@ const groups = (container: HTMLElement) =>
   [...container.querySelectorAll<HTMLElement>('[data-slot="settings-group"]')];
 
 describe('Playing Strategy', () => {
-  it('a rule ticked here applies the rules it implies', async () => {
+  it('a table rule ticked applies the rules it implies', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<PlayingStrategy scope="game" />);
+    const { app } = renderScreen(<TableRules />);
     await user.click(screen.getByRole('switch', { name: 'No hole card' }));
     expect(app.settings.get('rules.dealerPeeksTen')).toBe(false);
     expect(app.settings.get('rules.dealerPeeksAce')).toBe(false);

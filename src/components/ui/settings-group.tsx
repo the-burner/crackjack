@@ -9,19 +9,6 @@ import { Button } from './button';
 import type { ButtonProps } from './button';
 import { Label } from './text';
 
-/** One centred column of groups, two side by side when there is room. */
-export function SettingsCols({ className, ...props }: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn(
-        'grid grid-cols-[minmax(0,365px)] content-start items-start justify-center gap-3 min-[750px]:grid-cols-[repeat(2,minmax(0,365px))]',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 export function SettingsGroup({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div

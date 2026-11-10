@@ -430,14 +430,27 @@ describe('TC Calcs', () => {
 });
 
 describe('Playing Strategy', () => {
-  it('writes rules through their constraints and shows changes made elsewhere', async () => {
+  it("follows the table's rules, or (turned off) rules of its own that start from the table's", async () => {
     const user = userEvent.setup();
     const app = createTestApp();
-    app.settings.set('rules.dealerPeeksAce', true);
+    const built = () => app.strategies.current(app.settings, 'game', 6).tables;
     const { location } = renderScreen(<PlayingStrategy scope="game" />, { app });
-    await user.click(screen.getByRole('switch', { name: 'No hole card' }));
-    expect(app.settings.get('rules.noHoleCard')).toBe(true);
-    expect(app.settings.get('rules.dealerPeeksAce')).toBe(false);
+    expect(screen.getByRole('switch', { name: "Use the table's rules" })).toBeChecked();
+    expect(screen.queryByRole('switch', { name: 'Hit soft 17' })).not.toBeInTheDocument();
+    expect(screen.getByText("Built for the table's rules: H17, DAS, hole card.")).toBeInTheDocument();
+    const h17 = built();
+    act(() => app.settings.set('rules.dealerHitsSoft17', false));
+    expect(screen.getByText("Built for the table's rules: S17, DAS, hole card.")).toBeInTheDocument();
+    expect(built()).not.toEqual(h17);
+
+    await user.click(screen.getByRole('switch', { name: "Use the table's rules" }));
+    expect(screen.getByRole('switch', { name: 'Hit soft 17' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Double after split' })).toBeChecked();
+    await user.click(screen.getByRole('switch', { name: 'Hit soft 17' }));
+    // An H17 strategy at an S17 table.
+    expect(app.settings.get('game.rules.dealerHitsSoft17')).toBe(true);
+    expect(app.settings.get('rules.dealerHitsSoft17')).toBe(false);
+    expect(built()).toEqual(h17);
     act(() => app.settings.set('game.strategy.indexRangeMin', -4));
     expect(screen.getByRole('button', { name: 'Index range minimum: -4' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Display Tables' }));

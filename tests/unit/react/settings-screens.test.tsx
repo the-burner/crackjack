@@ -2,10 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { UserEvent } from '@testing-library/user-event';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Setup } from '@/screens/settings/setup';
-import { CommonRules } from '@/screens/settings/common-rules';
-import { PlayVariations } from '@/screens/settings/play-variations';
-import { Bonuses } from '@/screens/settings/bonuses';
+import { TableRules } from '@/screens/settings/table-rules';
+import { Bankroll } from '@/screens/settings/bankroll';
 import { UnusualGames } from '@/screens/settings/unusual-games';
 import { SettingsHub } from '@/screens/settings/hub';
 import { Gestures } from '@/screens/settings/gestures';
@@ -32,12 +30,12 @@ async function choose(user: UserEvent, name: string, option: string) {
   await user.selectOptions(select(name), option);
 }
 
-describe('Basic Setup', () => {
+describe('Table Rules and Conditions', () => {
   it('fewer decks pull the cut card back inside the shoe', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.set('table.cardsBehindCutCard', 300);
-    renderScreen(<Setup />, { app });
+    renderScreen(<TableRules />, { app });
     expect(select('Decks')).toHaveDisplayValue('Six Decks');
     await choose(user, 'Decks', 'Double Deck');
     expect(app.settings.get('table.decks')).toBe(2);
@@ -47,7 +45,7 @@ describe('Basic Setup', () => {
 
   it('shows the cut card row or the rounds row by shuffle mode', async () => {
     const user = userEvent.setup();
-    renderScreen(<Setup />);
+    renderScreen(<TableRules />);
     expect(screen.getByText('Shuffle Point/Cards')).toBeVisible();
     expect(screen.getByText('Rounds')).not.toBeVisible();
     expect(select('Shuffle')).toHaveDisplayValue('Shuffle after a Cut Card');
@@ -58,7 +56,7 @@ describe('Basic Setup', () => {
 
   it('seats run 6..1 and toggle computer players', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Setup />);
+    const { app } = renderScreen(<TableRules />);
     const picker = within(screen.getByRole('group', { name: 'Computer players' }));
     expect(picker.getAllByText(/^#\d$/).map(seat => seat.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
     await user.click(picker.getByRole('checkbox', { name: '#3' }));
@@ -72,7 +70,7 @@ describe('Basic Setup', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.set('table.startingBankroll', 500);
-    renderScreen(<Setup />, { app });
+    renderScreen(<Bankroll />, { app });
     await user.click(screen.getByRole('button', { name: 'Refresh Bankroll' }));
     expect(app.bankroll.getState().value).toBe(500);
     expect(toast).toHaveBeenCalledWith('Bankroll refreshed');
@@ -82,7 +80,7 @@ describe('Basic Setup', () => {
 describe('rule interactions', () => {
   it('unchecking peek on ace unchecks peek on ten', async () => {
     const user = userEvent.setup();
-    renderScreen(<PlayVariations />);
+    renderScreen(<TableRules />);
     expect(toggle('Dealer peeks on ten')).toBeChecked();
     await user.click(toggle('Dealer peeks on ace'));
     expect(toggle('Dealer peeks on ten')).not.toBeChecked();
@@ -90,7 +88,7 @@ describe('rule interactions', () => {
 
   it('the blackjack payout rows are one setting', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<Bonuses />);
+    const { app } = renderScreen(<TableRules />);
     await user.click(toggle('Blackjack pays 2:1'));
     await user.click(toggle('No Blackjack bonus'));
     expect(app.settings.get('rules.blackjackPayout')).toBe('1:1');
@@ -107,7 +105,7 @@ describe('rule interactions', () => {
     await choose(user, 'Game', 'Double Exposure');
     expect(app.settings.get('rules.insurance')).toBe('none');
     view.unmount();
-    renderScreen(<CommonRules />, { app });
+    renderScreen(<TableRules />, { app });
     expect(select('Insurance')).toHaveDisplayValue('No Insurance');
     await choose(user, 'Insurance', 'Insurance');
     expect(app.settings.get('rules.insurance')).toBe('none');
@@ -188,14 +186,15 @@ describe('navigation screens', () => {
     const { location } = renderScreen(<GameOptions />, { path: '/game' });
     expect(screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)).toEqual([
       'Preset',
-      'Strategy',
-      'Table and Rules',
-      'Peeking and Warnings',
       'Table',
+      'Player',
+      'Practice Aids',
+      'Display',
     ]);
     expect(screen.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Common Rules' }));
-    expect(location().pathname).toBe('/game/common-rules');
+    expect(screen.getByRole('switch', { name: 'Dealer makes obvious plays' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Table Rules and Conditions' }));
+    expect(location().pathname).toBe('/game/table-rules');
   });
 
   it('Game Options starts the game, freeing a seat for the player', async () => {
