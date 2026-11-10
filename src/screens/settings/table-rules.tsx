@@ -1,7 +1,10 @@
 // Table Rules and Conditions: everything about the table the player does not control (settings/table-settings.ts).
 
 import { useSettings } from '@/react/app-context';
-import { CheckList } from '@/components/ui/check-list';
+import { SeatTable } from '@/components/ui/seat-table';
+import { toast } from '@/components/ui/toast';
+import { useUpright } from '@/react/upright';
+import { MAX_PORTRAIT_SEATS, visibleSeats } from '@/game/table/layout';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { Select } from '@/components/ui/select';
 import { SettingChecks, SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
@@ -141,22 +144,32 @@ const BONUS_HANDS: readonly SettingCheck[] = [
 /** Each unusual game sets the table's rules to its own, and puts them back when it is left. */
 const GAMES = BUILTIN_SIDE_BET_GAMES.map(({ id, name }) => ({ value: id, label: name }));
 
-const MAX_SEATS = 6;
-
 /** The cut card cannot sit beyond the shoe. */
 const maxCardsBehindCutCard = (decks: number) => 52 * decks - 1;
 
 export function TableRules() {
   const settings = useSettings();
+  const upright = useUpright();
+  const seatCount = settings.get('table.seatCount');
   const decks = settings.get('table.decks');
   // The shuffle point and the number of rounds share one row: which one is shown depends on the shuffle mode.
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
     <SettingsScreen title="Table Rules and Conditions" help="game.tableRules">
-      <Section title="Seats" footer="Highlighted seats are computer players; tap a seat to change it.">
+      <Section title="Seats" footer={seatsNote(seatCount, upright)}>
         <SettingsGroup>
-          <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
-          <SeatPicker />
+          <SettingSelect
+            label="Seats"
+            setting="table.seatCount"
+            options={SEAT_COUNTS}
+            onChange={count =>
+              settings.update({
+                'table.seatCount': count,
+                'table.computerSeats': withPlayerSeat(settings.get('table.computerSeats'), count),
+              })
+            }
+          />
+          <SeatPicker upright={upright} />
           <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
           <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
         </SettingsGroup>
@@ -247,24 +260,43 @@ export function TableRules() {
   );
 }
 
-/** Segmented control showing seats 6..1; a highlighted seat is a computer player. */
-function SeatPicker() {
+/** The seats at the table, the player's highlighted; the player keeps at least one. */
+function SeatPicker({ upright }: { upright: boolean }) {
   const settings = useSettings();
-  const seats = settings.get('table.computerSeats');
-  const order = Array.from({ length: MAX_SEATS }, (_, i) => MAX_SEATS - i);
+  const seatCount = settings.get('table.seatCount');
+  const computer = settings.get('table.computerSeats');
+  const shown = new Set(visibleSeats({ seatCount, humanSeats: humanSeats(computer, seatCount), portrait: upright }));
   return (
-    <CheckList
-      layout="horizontal"
-      aria-label="Computer players"
-      items={order.map(seat => ({
-        label: `#${seat}`,
-        checked: seats[seat - 1],
-        onChange: computer => {
-          const next = settings.get('table.computerSeats').slice();
-          next[seat - 1] = computer;
-          settings.set('table.computerSeats', next);
-        },
-      }))}
+    <SeatTable
+      label="Seats at the table"
+      seats={computer.slice(0, seatCount).map((isComputer, i) => ({ yours: !isComputer, hidden: !shown.has(i + 1) }))}
+      onToggle={seat => {
+        const next = computer.slice();
+        next[seat - 1] = !next[seat - 1];
+        if (humanSeats(next, seatCount).length === 0) {
+          toast('You need at least one seat of your own.', { tone: 'error' });
+          return;
+        }
+        settings.set('table.computerSeats', next);
+      }}
     />
   );
+}
+
+/** The player's seats among the first `seatCount`, numbered from 1. */
+const humanSeats = (computer: readonly boolean[], seatCount: number) =>
+  computer.flatMap((isComputer, i) => (i < seatCount && !isComputer ? [i + 1] : []));
+
+/** `computer` with seat 1 the player's if a table of `seatCount` would leave them none. */
+export const withPlayerSeat = (computer: readonly boolean[], seatCount: number): boolean[] =>
+  humanSeats(computer, seatCount).length
+    ? [...computer]
+    : computer.map((isComputer, i) => (i === 0 ? false : isComputer));
+
+/** What the seats drawing shows, and (held upright with more seats than fit) which ones the table leaves out. */
+export function seatsNote(seatCount: number, upright: boolean): string {
+  const note = 'Highlighted seats are yours; the others are computer players. Tap a seat to change it.';
+  return upright && seatCount > MAX_PORTRAIT_SEATS
+    ? `${note} Held upright, the table shows ${MAX_PORTRAIT_SEATS} of the ${seatCount} seats: yours first, then the nearest from seat 1.`
+    : note;
 }

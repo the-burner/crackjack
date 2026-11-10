@@ -53,16 +53,54 @@ describe('Table Rules and Conditions', () => {
     expect(screen.getByText('Rounds')).toBeVisible();
   });
 
-  it('seats run 6..1 and toggle computer players', async () => {
+  it("draws the table's seats, the player's highlighted, and redraws them for another seat count", async () => {
     const user = userEvent.setup();
     const { app } = renderScreen(<TableRules />);
-    const picker = within(screen.getByRole('group', { name: 'Computer players' }));
-    expect(picker.getAllByText(/^#\d$/).map(seat => seat.textContent)).toEqual(['#6', '#5', '#4', '#3', '#2', '#1']);
-    await user.click(picker.getByRole('checkbox', { name: '#3' }));
+    const table = within(screen.getByRole('group', { name: 'Seats at the table' }));
+    const seats = () => table.getAllByRole('button').map(seat => seat.getAttribute('aria-label'));
+    // Four seats; seat 1 a computer player's, the others the player's.
+    expect(seats()).toEqual(['Seat 1, computer', 'Seat 2, yours', 'Seat 3, yours', 'Seat 4, computer']);
+    await user.click(table.getByRole('button', { name: 'Seat 3, yours' }));
     expect(app.settings.get('table.computerSeats')).toEqual([true, false, true, true, false, false]);
-    expect(picker.getByRole('checkbox', { name: '#3' })).toBeChecked();
-    expect(picker.getByRole('checkbox', { name: '#1' })).toBeChecked();
-    expect(picker.getByRole('checkbox', { name: '#2' })).not.toBeChecked();
+    expect(table.getByRole('button', { name: 'Seat 3, computer' })).toHaveAttribute('aria-pressed', 'false');
+    await choose(user, 'Seats', 'Six Seats');
+    expect(seats()).toHaveLength(6);
+    await choose(user, 'Seats', 'Two Seats');
+    expect(seats()).toEqual(['Seat 1, computer', 'Seat 2, yours']);
+  });
+
+  it("refuses to give away the player's last seat, and gives them seat 1 when a smaller table leaves them none", async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    app.settings.update({ 'table.seatCount': 6, 'table.computerSeats': [true, true, true, true, false, true] });
+    renderScreen(<TableRules />, { app });
+    await user.click(screen.getByRole('button', { name: 'Seat 5, yours' }));
+    expect(toast).toHaveBeenCalledWith('You need at least one seat of your own.', { tone: 'error' });
+    expect(app.settings.get('table.computerSeats')[4]).toBe(false);
+    await choose(user, 'Seats', 'Four Seats');
+    expect(app.settings.get('table.computerSeats')).toEqual([false, true, true, true, false, true]);
+    expect(screen.getByRole('button', { name: 'Seat 1, yours' })).toBeInTheDocument();
+  });
+
+  it('held upright with six seats, strikes through the two the table leaves out and says so', async () => {
+    const user = userEvent.setup();
+    const matchMedia = vi.fn(() => ({ matches: true, addEventListener: () => {}, removeEventListener: () => {} }));
+    vi.stubGlobal('matchMedia', matchMedia);
+    try {
+      const app = createTestApp();
+      app.settings.update({ 'table.computerSeats': [true, true, true, true, false, false] });
+      renderScreen(<TableRules />, { app });
+      expect(screen.queryByText(/Held upright/)).not.toBeInTheDocument();
+      await choose(user, 'Seats', 'Six Seats');
+      // The player's seats 5 and 6 are kept, then the nearest from seat 1.
+      const hidden = screen
+        .getAllByRole('button', { name: /not shown upright/ })
+        .map(seat => seat.getAttribute('aria-label'));
+      expect(hidden).toEqual(['Seat 3, computer, not shown upright', 'Seat 4, computer, not shown upright']);
+      expect(screen.getByText(/Held upright, the table shows 4 of the 6 seats/)).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('Refresh Bankroll stores the starting bankroll', async () => {

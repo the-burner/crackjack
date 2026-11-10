@@ -251,6 +251,39 @@ test('a slider value can be typed into its number box @layout', async ({ page })
   expect(metrics.paddingTop).toBe(metrics.paddingBottom);
 });
 
+test('the seats drawing keeps every seat on the felt, apart, for each seat count @layout', async ({ page }) => {
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const table = el.getByRole('group', { name: 'Seats at the table' });
+  for (const [count, label] of [
+    [1, 'One Seat'],
+    [2, 'Two Seats'],
+    [4, 'Four Seats'],
+    [6, 'Six Seats'],
+  ] as const) {
+    await choose(el, 'Seats', label);
+    const seats = table.getByRole('button');
+    await expect(seats).toHaveCount(count);
+    // Let the seats finish sliding to their places.
+    await page.waitForTimeout(400);
+    const felt = (await table.boundingBox())!;
+    const boxes = await Promise.all((await seats.all()).map(async seat => (await seat.boundingBox())!));
+    for (const box of boxes) {
+      expect(box.x).toBeGreaterThanOrEqual(felt.x);
+      expect(box.y).toBeGreaterThanOrEqual(felt.y);
+      expect(box.x + box.width).toBeLessThanOrEqual(felt.x + felt.width + 0.5);
+      expect(box.y + box.height).toBeLessThanOrEqual(felt.y + felt.height + 0.5);
+    }
+    boxes.forEach((a, i) =>
+      boxes.slice(i + 1).forEach(b => {
+        // Round seats: their centres at least a seat's width apart.
+        const gap = Math.hypot(a.x + a.width / 2 - (b.x + b.width / 2), a.y + a.height / 2 - (b.y + b.height / 2));
+        expect(gap, `${count} seats`).toBeGreaterThanOrEqual(a.width);
+      }),
+    );
+  }
+});
+
 test('the Peeking rows fill their group and keep their labels inside it @layout', async ({ page }) => {
   await openHub(page, 'game.peeking', { fresh: true });
   const el = await openFromHub(page, 'Peeking', 'game.peeking');

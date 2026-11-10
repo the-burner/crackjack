@@ -221,6 +221,15 @@ describe('text over the felt', () => {
     expect([...below(AA, onFelt), ...below(LARGE, onAlt)]).toEqual([]);
   });
 
+  it("numbers the seats legibly on Table Rules and Conditions' drawing of the table", () => {
+    // 600 15px: a player's seat is filled with the bet circles' gold, a computer's only ringed with it on the felt.
+    const pairs = THEMES.flatMap((theme): Pair[] => [
+      [`${theme} --felt-fallback on --bet-circle`, value('--felt-fallback', theme), value('--bet-circle', theme)],
+      [`${theme} --bet-circle on --felt-fallback`, value('--bet-circle', theme), value('--felt-fallback', theme)],
+    ]);
+    expect(below(AA, pairs)).toEqual([]);
+  });
+
   it('keeps the two Full Table felts plainly different colours', () => {
     // The second table's colour is the only cue for which table is being counted.
     const same = THEMES.map(theme => [theme, difference(value('--felt', theme), value('--felt-alt', theme))] as const)
