@@ -108,10 +108,7 @@ export function ListRow({ chevron = true, className, ...props }: ButtonProps & {
 export function SettingsNote({ className, ...props }: ComponentProps<'p'>) {
   return (
     <p
-      className={cn(
-        'mx-1 mt-0 mb-3.5 text-left text-caption leading-[1.4] text-(--text-secondary) in-data-[slot=settings-group]:m-0 in-data-[slot=settings-group]:px-3.5 in-data-[slot=settings-group]:py-2.5',
-        className,
-      )}
+      className={cn('mx-1 mt-0 mb-3.5 text-left text-caption leading-[1.4] text-(--text-secondary)', className)}
       {...props}
     />
   );

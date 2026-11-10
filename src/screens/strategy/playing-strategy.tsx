@@ -7,7 +7,7 @@ import { useApp, useSettings } from '@/react/app-context';
 import { Button } from '@/components/ui/button';
 import { CheckList } from '@/components/ui/check-list';
 import { Select } from '@/components/ui/select';
-import { ListRow, Section, SettingsGroup, SettingsNote, SettingsRow } from '@/components/ui/settings-group';
+import { ListRow, Section, SettingsGroup, SettingsRow } from '@/components/ui/settings-group';
 import { ValueButton } from '@/components/ui/value-button';
 import { Column, ScreenLayout } from '@/components/screen-layout';
 import { SettingChecks } from '@/components/settings-controls';
@@ -57,6 +57,7 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
   const navigate = useNavigate();
   const settings = useSettings();
   const own = scopedSettings(settings, scope);
+  const followsTable = scope === 'game' && settings.get('game.strategy.useTableRules');
   const writeRange = (key: IndexRangeKey, value: number) =>
     own.update(applyIndexRangeChange(k => own.get(k), key, value));
   const systemOptions = app.strategies.list().map(({ id, name }) => ({ value: id, label: name }));
@@ -123,14 +124,15 @@ export function PlayingStrategy({ scope }: { scope: ScopeName }) {
           </Section>
         )}
         {keeps(scope, 'strategy.indexSet') && (
-          <Section title="Rules">
+          <Section
+            title="Rules"
+            footer={
+              followsTable ? `Built for the table's rules: ${tableRulesSummary(k => settings.get(k))}.` : undefined
+            }
+          >
             <SettingsGroup>
               {scope === 'game' && <TableRulesSwitch />}
-              {scope === 'game' && settings.get('game.strategy.useTableRules') ? (
-                <SettingsNote>{`Built for the table's rules: ${tableRulesSummary(k => settings.get(k))}.`}</SettingsNote>
-              ) : (
-                <SettingChecks items={ruleChecks(scope)} />
-              )}
+              {!followsTable && <SettingChecks items={ruleChecks(scope)} />}
             </SettingsGroup>
           </Section>
         )}

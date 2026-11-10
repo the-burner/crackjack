@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/react/app-context';
 import { CheckList } from '@/components/ui/check-list';
-import { Section, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
+import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { Select } from '@/components/ui/select';
 import { SettingChecks, SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
@@ -153,10 +153,9 @@ export function TableRules() {
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
     <SettingsScreen title="Table Rules and Conditions" help="game.tableRules">
-      <Section title="Seats">
+      <Section title="Seats" footer="Highlighted seats are computer players; tap a seat to change it.">
         <SettingsGroup>
           <SettingSelect label="Seats" setting="table.seatCount" options={SEAT_COUNTS} />
-          <SettingsNote>Below, highlighted seats are computer players. Click to change.</SettingsNote>
           <SeatPicker />
           <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
           <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
