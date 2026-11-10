@@ -24,6 +24,17 @@ describe('screens', () => {
     expect(raw).toEqual([]);
   });
 
+  it('keep notes out of settings groups: under a group (a Section footer) or over it, on the background', () => {
+    const inGroups = SCREENS.flatMap(file =>
+      [...readFileSync(file, 'utf8').matchAll(/<SettingsGroup\b[\s\S]*?<\/SettingsGroup>/g)]
+        .filter(([group]) => /<(Note|SettingsNote|p)\b/.test(group))
+        .map(([group]) => `${file}: ${group.slice(0, 80)}`),
+    )
+      // A table's specialty plays are its rows, not a note about them.
+      .filter(found => !found.startsWith('src/screens/strategy/tables.tsx'));
+    expect(inGroups).toEqual([]);
+  });
+
   it('give row labels no trailing colon', () => {
     const colons = SCREENS.flatMap(file =>
       [...readFileSync(file, 'utf8').matchAll(/\blabel="([^"]*:)"/g)].map(m => `${file}: ${m[1]}`),
