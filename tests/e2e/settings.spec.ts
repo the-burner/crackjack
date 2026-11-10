@@ -44,9 +44,11 @@ const CASES: {
       await check(el, 'Blackjack pays 6:5').check();
       await check(el, 'Dealer wins ties').check();
       await check(el, 'Hide shoe').check();
+      await choose(el, 'Game', 'Lucky Ladies');
     },
     async verify(el) {
       await expect(check(el, 'Hide shoe')).toBeChecked();
+      await expect(chosen(el, 'Game')).toHaveText('Lucky Ladies');
       await expect(chosen(el, 'Decks')).toHaveText('Double Deck');
       await expect(check(el, 'Cards dealt face down')).toBeChecked();
       await expect(chosen(el, 'Surrender')).toHaveText('Late Surrender (common)');
@@ -73,16 +75,6 @@ const CASES: {
     },
     async verify(el) {
       await expect(check(el, 'Hide Buttons')).not.toBeChecked();
-    },
-  },
-  {
-    button: 'Unusual Games',
-    screen: 'game.unusualGames',
-    async change(el) {
-      await choose(el, 'Game', 'Lucky Ladies');
-    },
-    async verify(el) {
-      await expect(chosen(el, 'Game')).toHaveText('Lucky Ladies');
     },
   },
   {
@@ -189,13 +181,9 @@ test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
 });
 
 test('Double Exposure applies its rule bundle', async ({ page }) => {
-  await openHub(page, 'game.unusualGames', { fresh: true });
-  const games = await openFromHub(page, 'Unusual Games', 'game.unusualGames');
-  await choose(games, 'Game', 'Double Exposure');
-  await games.locator('[data-action="back"]').click();
-
-  const rules = page.locator('[data-screen="game.tableRules"]');
-  await expect(rules).toBeVisible();
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const rules = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  await choose(rules, 'Game', 'Double Exposure');
   await expect(chosen(rules, 'Insurance')).toHaveText('No Insurance');
   await expect(check(rules, 'Dealer wins ties')).toBeChecked();
 });

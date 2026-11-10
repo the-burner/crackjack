@@ -4,7 +4,6 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TableRules } from '@/screens/settings/table-rules';
 import { Bankroll } from '@/screens/settings/bankroll';
-import { UnusualGames } from '@/screens/settings/unusual-games';
 import { SettingsHub } from '@/screens/settings/hub';
 import { Gestures } from '@/screens/settings/gestures';
 import { STANDARD, rotated } from '@/core/gestures';
@@ -100,12 +99,10 @@ describe('rule interactions', () => {
   it('a game applies its rules, and a select keeps a value the game forbids', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
-    const view = renderScreen(<UnusualGames />, { app });
+    renderScreen(<TableRules />, { app });
     expect(select('Game')).toHaveDisplayValue('Standard Blackjack');
     await choose(user, 'Game', 'Double Exposure');
     expect(app.settings.get('rules.insurance')).toBe('none');
-    view.unmount();
-    renderScreen(<TableRules />, { app });
     expect(select('Insurance')).toHaveDisplayValue('No Insurance');
     await choose(user, 'Insurance', 'Insurance');
     expect(app.settings.get('rules.insurance')).toBe('none');

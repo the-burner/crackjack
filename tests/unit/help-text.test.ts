@@ -50,7 +50,7 @@ describe('each screen gets its own help', () => {
 });
 
 describe('the unusual games help', () => {
-  const html = HELP['game.unusualGames'];
+  const html = HELP['game.tableRules'].split('<h3>Unusual Games</h3>')[1];
   const named = [...html.matchAll(/<li>\s*<strong>\s*([^<]+?)\s*<\/strong>/g)].map(m =>
     m[1].replace(/\s+/g, ' ').trim(),
   );

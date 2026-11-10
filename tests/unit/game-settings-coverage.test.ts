@@ -25,8 +25,8 @@ describe("Blackjack's settings", () => {
     expect(missing).toEqual([]);
   });
 
-  it('of the table are all on Table Rules and Conditions (its unusual game on the screen it opens), and nothing else is', () => {
-    const screen = read('screens/settings/table-rules.tsx') + read('screens/settings/unusual-games.tsx');
+  it('of the table are all on Table Rules and Conditions, and nothing else is', () => {
+    const screen = read('screens/settings/table-rules.tsx');
     expect(TABLE_SETTINGS.filter(key => !NO_CONTROL.includes(key) && !shows(screen, key))).toEqual([]);
     const shown = [
       ...screen.matchAll(/'((?:table|rules|bonuses|dealerErrors|peeking|mechanics|display|game)\.[\w.]+)'/g),

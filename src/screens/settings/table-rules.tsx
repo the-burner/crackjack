@@ -1,14 +1,15 @@
 // Table Rules and Conditions: everything about the table the player does not control (settings/table-settings.ts).
 
-import { useNavigate } from 'react-router';
 import { useSettings } from '@/react/app-context';
 import { CheckList } from '@/components/ui/check-list';
-import { ListRow, Section, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
+import { Section, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
+import { Select } from '@/components/ui/select';
 import { SettingChecks, SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
 import { DECKS, TABLE_LIMITS } from '@/settings/schema';
 import type { SettingValues } from '@/settings/schema';
-import { PATHS } from '@/app/paths';
+import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
+import { applyGameChange } from '@/settings/rules-logic';
 
 const SEAT_COUNTS: readonly Option<SettingValues['table.seatCount']>[] = [
   { value: 1, label: 'One Seat' },
@@ -137,13 +138,15 @@ const BONUS_HANDS: readonly SettingCheck[] = [
   { label: 'Split tens then draw ace is BJ', key: 'bonuses.splitTenAceIsBlackjack' },
 ];
 
+/** Each unusual game sets the table's rules to its own, and puts them back when it is left. */
+const GAMES = BUILTIN_SIDE_BET_GAMES.map(({ id, name }) => ({ value: id, label: name }));
+
 const MAX_SEATS = 6;
 
 /** The cut card cannot sit beyond the shoe. */
 const maxCardsBehindCutCard = (decks: number) => 52 * decks - 1;
 
 export function TableRules() {
-  const navigate = useNavigate();
   const settings = useSettings();
   const decks = settings.get('table.decks');
   // The shuffle point and the number of rounds share one row: which one is shown depends on the shuffle mode.
@@ -232,9 +235,13 @@ export function TableRules() {
       </Section>
       <Section title="Unusual Games">
         <SettingsGroup>
-          <ListRow block onClick={() => navigate(PATHS['game.unusualGames'])}>
-            Unusual Games
-          </ListRow>
+          <Select
+            name="bonuses.game"
+            aria-label="Game"
+            options={GAMES}
+            value={settings.get('bonuses.game')}
+            onChange={gameId => settings.update(applyGameChange(key => settings.get(key), gameId))}
+          />
         </SettingsGroup>
       </Section>
     </SettingsScreen>
