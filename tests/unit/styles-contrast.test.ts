@@ -222,12 +222,17 @@ describe('text over the felt', () => {
   });
 
   it("numbers the seats legibly on Table Rules and Conditions' drawing of the table", () => {
-    // 600 15px: a player's seat is filled with the bet circles' gold, a computer's only ringed with it on the felt.
-    const pairs = THEMES.flatMap((theme): Pair[] => [
-      [`${theme} --felt-fallback on --bet-circle`, value('--felt-fallback', theme), value('--bet-circle', theme)],
-      [`${theme} --bet-circle on --felt-fallback`, value('--bet-circle', theme), value('--felt-fallback', theme)],
+    // 600 15px: a player's seat is filled with the ring's colour, a computer's only ringed with it; the rings themselves need the 3:1 of a control's edge.
+    const text = THEMES.flatMap((theme): Pair[] => [
+      [`${theme} --seat-mine-text on --seat-ring`, value('--seat-mine-text', theme), value('--seat-ring', theme)],
+      [`${theme} --seat-text on --seat-felt`, value('--seat-text', theme), value('--seat-felt', theme)],
     ]);
-    expect(below(AA, pairs)).toEqual([]);
+    const rings = THEMES.map((theme): Pair => [
+      `${theme} --seat-ring on --seat-felt`,
+      value('--seat-ring', theme),
+      value('--seat-felt', theme),
+    ]);
+    expect([...below(AA, text), ...below(LARGE, rings)]).toEqual([]);
   });
 
   it('keeps the two Full Table felts plainly different colours', () => {

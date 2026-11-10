@@ -116,6 +116,11 @@
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
+  /* Table Rules and Conditions' drawing of the seats, on the drills' felt: the player's seats filled with its accent. */
+  --seat-felt: var(--felt);
+  --seat-ring: var(--felt-accent);
+  --seat-text: var(--felt-text);
+  --seat-mine-text: var(--on-accent);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
   --panel-text: var(--ctp-text);
