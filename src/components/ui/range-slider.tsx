@@ -1,5 +1,5 @@
-// A two-handled slider for a low and a high value that may meet but never cross, each also typed in its
-// own box. The handles stop at `steps`; a typed value may be any whole number from the first step to the
+// A two-handled slider for a low and a high value that may meet but never cross (pushed into each other,
+// the handles move together), each also typed in its own box. The handles stop at `steps`; a typed value may be any whole number from the first step to the
 // last, and one that would cross the other value, or fall outside them, is refused and the box put back.
 // Values are committed when a drag ends or a box is left.
 
@@ -17,9 +17,9 @@ const nearest = (steps: readonly number[], value: number) =>
   steps.reduce((best, step, i) => (Math.abs(step - value) < Math.abs(steps[best] - value) ? i : best), 0);
 
 const THUMB =
-  'pointer-events-none absolute inset-0 m-0 h-full w-full appearance-none bg-transparent outline-none ' +
-  '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-6 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-(--group-bg) [&::-webkit-slider-thumb]:bg-(--accent) ' +
-  '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-6 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-(--group-bg) [&::-moz-range-thumb]:bg-(--accent) ' +
+  'pointer-events-none absolute inset-y-0 m-0 h-full w-[calc(100%-var(--thumb))] appearance-none bg-transparent outline-none ' +
+  '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-(--thumb) [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-(--group-bg) [&::-webkit-slider-thumb]:bg-(--accent) ' +
+  '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-(--thumb) [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-(--group-bg) [&::-moz-range-thumb]:bg-(--accent) ' +
   'focus-visible:[&::-webkit-slider-thumb]:outline-2 focus-visible:[&::-webkit-slider-thumb]:outline-(--focus)';
 
 const BOX = cn(
@@ -60,11 +60,13 @@ export function RangeSlider({
   }
   const first = steps[0];
   const last = steps[steps.length - 1];
-  const percent = (index: number) => (index / (steps.length - 1)) * 100;
+  /** Where a value's mark sits on the track: a handle's width in, then along the rest less another. */
+  const mark = (index: number) => `calc(var(--thumb) + ${index / (steps.length - 1)} * (100% - 2 * var(--thumb)))`;
 
-  /** Commits the dragged handle; the other keeps its value even if it lies between steps. */
-  const commitDrag = (end: keyof Range) => {
-    const next = { ...value, [end]: steps[drag[end]] };
+  /** Commits where the handles were let go; one that did not move keeps its value even if it lies between steps. */
+  const commitDrag = () => {
+    const at = (end: keyof Range) => (drag[end] === nearest(steps, value[end]) ? value[end] : steps[drag[end]]);
+    const next = { low: at('low'), high: at('high') };
     if (next.low !== value.low || next.high !== value.high) onChange(next);
   };
 
@@ -100,19 +102,20 @@ export function RangeSlider({
       value={drag[end]}
       onChange={event => {
         const at = Number(event.currentTarget.value);
-        // The handles may meet but not cross; the box follows its handle as it moves.
+        // A handle pushed into the other pushes it along; the boxes follow the handles as they move.
         const next =
-          end === 'low' ? { ...drag, low: Math.min(at, drag.high) } : { ...drag, high: Math.max(at, drag.low) };
+          end === 'low' ? { low: at, high: Math.max(at, drag.high) } : { low: Math.min(at, drag.low), high: at };
         setDrag(next);
-        setTyped({ ...typed, [end]: String(steps[next[end]]) });
+        setTyped({
+          low: next.low === drag.low ? typed.low : String(steps[next.low]),
+          high: next.high === drag.high ? typed.high : String(steps[next.high]),
+        });
       }}
-      onPointerUp={() => commitDrag(end)}
-      onKeyUp={() => commitDrag(end)}
-      className={cn(
-        THUMB,
-        // Met at the top end, the low handle must be the one on top, or it could never be moved back down.
-        end === 'low' && drag.low === drag.high && drag.low > (steps.length - 1) / 2 && 'z-10',
-      )}
+      onPointerUp={commitDrag}
+      onKeyUp={commitDrag}
+      // Each handle has its own lane, a handle's width apart: the low one's right edge and the high one's
+      // left edge mark their values, so at the same value they touch side by side and never overlap.
+      className={cn(THUMB, end === 'low' ? 'left-0' : 'left-(--thumb)')}
     />
   );
 
@@ -145,13 +148,12 @@ export function RangeSlider({
   return (
     <div data-slot="slider" role="group" aria-label={label} className="flex flex-col gap-2.5">
       <div className="text-body font-medium">{label}</div>
-      <div className="relative h-7">
-        <div className="absolute inset-x-3 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-(--toggle-off)">
-          <div
-            className="absolute inset-y-0 rounded-full bg-(--accent)"
-            style={{ left: `${percent(drag.low)}%`, right: `${100 - percent(drag.high)}%` }}
-          />
-        </div>
+      <div className="relative h-7 [--thumb:24px]">
+        <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-(--toggle-off)" />
+        <div
+          className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-(--accent)"
+          style={{ left: mark(drag.low), right: `calc(100% - ${mark(drag.high)})` }}
+        />
         {handle('low', lowLabel)}
         {handle('high', highLabel)}
       </div>

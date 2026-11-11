@@ -251,7 +251,9 @@ test('a slider value can be typed into its number box @layout', async ({ page })
   expect(metrics.paddingTop).toBe(metrics.paddingBottom);
 });
 
-test('the table limits step by keyboard, meet but never cross, and fit their group @layout', async ({ page }) => {
+test('the table limits step by keyboard, push each other when they meet, and fit their group @layout', async ({
+  page,
+}) => {
   await openHub(page, 'game.tableRules', { fresh: true });
   const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   const saved = (key: string) => page.evaluate(k => window.app.settings.get(k as never) as unknown, key);
@@ -261,11 +263,13 @@ test('the table limits step by keyboard, meet but never cross, and fit their gro
   await page.keyboard.press('ArrowRight');
   await expect(low).toHaveAttribute('aria-valuetext', '$50');
   expect(await saved('table.minBet')).toBe(50);
-  // Down to the minimum and no further: a flat-bet table.
+  // Down onto the minimum, then pushing it down too: a flat-bet table.
   await high.focus();
   for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
-  expect(await saved('table.maxBet')).toBe(50);
-  await expect(el.getByRole('spinbutton', { name: 'Table maximum' })).toHaveValue('50');
+  expect(await saved('table.maxBet')).toBe(25);
+  expect(await saved('table.minBet')).toBe(25);
+  await expect(el.getByRole('spinbutton', { name: 'Table maximum' })).toHaveValue('25');
+  await expect(el.getByRole('spinbutton', { name: 'Table minimum' })).toHaveValue('25');
 
   const group = (await el
     .getByRole('group', { name: 'Table Limits' })

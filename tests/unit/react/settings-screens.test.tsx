@@ -143,15 +143,22 @@ describe('table limits', () => {
     expect(app.settings.get('table.maxBet')).toBe(3000);
   });
 
-  it('let the handles meet, for a flat-bet table, but not cross', () => {
+  it('let the handles meet, for a flat-bet table, and push each other along rather than cross', () => {
     const app = createTestApp();
     app.settings.update({ 'table.minBet': 100, 'table.maxBet': 200 });
     renderScreen(<TableRules />, { app });
-    // Dragged past the minimum ($100, step 6), the maximum stops on it.
-    dragTo('Table maximum', 2);
-    expect(app.settings.get('table.maxBet')).toBe(100);
+    // Dragged down past the minimum ($100), the maximum takes the minimum down with it, both boxes following.
+    fireEvent.change(slider('Table maximum'), { target: { value: '2' } });
+    expect(box('Table minimum')).toHaveValue(10);
+    expect(box('Table maximum')).toHaveValue(10);
+    fireEvent.pointerUp(slider('Table maximum'));
+    expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([10, 10]);
+    // And the minimum pushes the maximum up.
     dragTo('Table minimum', 20);
-    expect(app.settings.get('table.minBet')).toBe(100);
+    expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([6000, 6000]);
+    // Moved apart again, the other stays where it was pushed.
+    dragTo('Table minimum', 4);
+    expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([25, 6000]);
   });
 
   it('take any typed whole dollar in range, and refuse one that would cross the other or leave the range', async () => {
