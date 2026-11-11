@@ -265,7 +265,7 @@ test('the table limits step by keyboard, push each other when they meet, and fit
   expect(await saved('table.minBet')).toBe(50);
   // Down onto the minimum, then pushing it down too: a flat-bet table.
   await high.focus();
-  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
+  for (let i = 0; i < 15; i++) await page.keyboard.press('ArrowLeft');
   expect(await saved('table.maxBet')).toBe(25);
   expect(await saved('table.minBet')).toBe(25);
   await expect(el.getByRole('spinbutton', { name: 'Table maximum' })).toHaveValue('25');

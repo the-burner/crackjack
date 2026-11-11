@@ -29,6 +29,18 @@ describe('a CBJN game', () => {
     expect(Object.keys(values).sort()).toEqual([...TABLE_SETTINGS].sort());
   });
 
+  it('deals one and two decks face down, even from a shoe, and more face up', () => {
+    const faceDown = (decks: number, rules = '') =>
+      cbjnTable({ decks, cut: 0.5, min: 5, max: 500, rules }).values['table.cardsFaceDown'];
+    expect([faceDown(1), faceDown(2), faceDown(2, 'shoe'), faceDown(4), faceDown(6)]).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+  });
+
   it('refuses a rules code it does not know, and keeps apart the ones the table does not play', () => {
     expect(() => cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,zz' })).toThrow('zz');
     expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,nms,pv,toke' }).notPlayed).toEqual([
@@ -40,7 +52,7 @@ describe('a CBJN game', () => {
 });
 
 describe("Emerald Queen's three games (Tacoma, WA)", () => {
-  it('double deck: H17 DAS LS, $25–$500, pitched face down, 0.8 decks behind the cut card', () => {
+  it('double deck: H17 DAS LS, $25–$500, face down, 0.8 decks behind the cut card', () => {
     const { values, notPlayed } = table('emerald-queen-2d');
     expect(values).toMatchObject({
       'table.decks': 2,

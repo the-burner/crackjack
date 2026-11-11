@@ -94,8 +94,8 @@ export function cbjnTable(game: CbjnGame): { values: SettingsPatch; notPlayed: s
     'table.cardsBehindCutCard': Math.round(game.cut * CARDS_PER_DECK),
     'table.minBet': game.min,
     'table.maxBet': game.max,
-    // One and two decks are pitched (held) and dealt face down unless dealt from a shoe.
-    'table.cardsFaceDown': game.decks <= 2 && !codes.includes('shoe'),
+    // One and two decks are dealt face down, more face up.
+    'table.cardsFaceDown': game.decks <= 2,
   };
   if (codes.includes('spanish')) {
     const get = ((key: SettingKey) => values[key]) as SettingReader;

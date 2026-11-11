@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { TableRules } from '@/screens/settings/table-rules';
 import { Bankroll } from '@/screens/settings/bankroll';
 import { Seats } from '@/screens/settings/seats';
+import { LIMIT_STEPS } from '@/settings/table-limits';
 import { SettingsHub } from '@/screens/settings/hub';
 import { Gestures } from '@/screens/settings/gestures';
 import { STANDARD, rotated } from '@/core/gestures';
@@ -118,9 +119,11 @@ describe('Table Rules', () => {
 
 describe('table limits', () => {
   const slider = (name: string) => screen.getByRole('slider', { name });
-  /** Drags a handle to step `index` and lets go (jsdom has no native range dragging). */
-  const dragTo = (name: string, index: number) => {
-    fireEvent.change(slider(name), { target: { value: String(index) } });
+  /** The handle position of an amount. */
+  const at = (amount: number) => String(LIMIT_STEPS.indexOf(amount));
+  /** Drags a handle to `amount` and lets go (jsdom has no native range dragging). */
+  const dragTo = (name: string, amount: number) => {
+    fireEvent.change(slider(name), { target: { value: at(amount) } });
     fireEvent.pointerUp(slider(name));
   };
   const box = (name: string) => screen.getByRole('spinbutton', { name });
@@ -134,12 +137,12 @@ describe('table limits', () => {
     expect(slider('Table minimum')).toHaveAttribute('aria-valuetext', '$25');
     expect(slider('Table maximum')).toHaveAttribute('aria-valuetext', '$2,000');
     // The box follows the handle while it is dragged; the setting changes once it is let go.
-    fireEvent.change(slider('Table minimum'), { target: { value: '5' } });
+    fireEvent.change(slider('Table minimum'), { target: { value: at(50) } });
     expect(box('Table minimum')).toHaveValue(50);
     expect(app.settings.get('table.minBet')).toBe(25);
     fireEvent.pointerUp(slider('Table minimum'));
     expect(app.settings.get('table.minBet')).toBe(50);
-    dragTo('Table maximum', 17);
+    dragTo('Table maximum', 3000);
     expect(app.settings.get('table.maxBet')).toBe(3000);
   });
 
@@ -148,16 +151,16 @@ describe('table limits', () => {
     app.settings.update({ 'table.minBet': 100, 'table.maxBet': 200 });
     renderScreen(<TableRules />, { app });
     // Dragged down past the minimum ($100), the maximum takes the minimum down with it, both boxes following.
-    fireEvent.change(slider('Table maximum'), { target: { value: '2' } });
+    fireEvent.change(slider('Table maximum'), { target: { value: at(10) } });
     expect(box('Table minimum')).toHaveValue(10);
     expect(box('Table maximum')).toHaveValue(10);
     fireEvent.pointerUp(slider('Table maximum'));
     expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([10, 10]);
     // And the minimum pushes the maximum up.
-    dragTo('Table minimum', 20);
+    dragTo('Table minimum', 6000);
     expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([6000, 6000]);
     // Moved apart again, the other stays where it was pushed.
-    dragTo('Table minimum', 4);
+    dragTo('Table minimum', 25);
     expect([app.settings.get('table.minBet'), app.settings.get('table.maxBet')]).toEqual([25, 6000]);
   });
 
