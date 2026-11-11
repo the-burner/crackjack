@@ -67,6 +67,23 @@ describe('the table picker', () => {
     expect(app.settings.get('rules.resplitAces')).toBe(true);
   });
 
+  it('highlights the option under the pointer, and nothing once the pointer leaves the list', async () => {
+    const user = userEvent.setup();
+    renderScreen(<TableRules />);
+    await search(user, 'emerald');
+    const list = screen.getByRole('listbox', { name: 'Table' });
+    const highlighted = () =>
+      within(list)
+        .getAllByRole('option')
+        .filter(o => o.className.includes('btn-bg-active'));
+    const second = within(list).getAllByRole('option')[1];
+    await user.hover(second);
+    expect(highlighted()).toEqual([second]);
+    await user.unhover(list);
+    expect(highlighted()).toEqual([]);
+    expect(picker()).not.toHaveAttribute('aria-activedescendant');
+  });
+
   it('marks a built-in table edited once a rule changes, and saves the change as a table of your own', async () => {
     const user = userEvent.setup();
     const app = createTestApp();

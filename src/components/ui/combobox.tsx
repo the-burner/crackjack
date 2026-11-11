@@ -57,10 +57,20 @@ export function Combobox<T>({
       event.preventDefault();
       if (!open) setOpen(true);
       const step = event.key === 'ArrowDown' ? 1 : -1;
-      setActive(i => (matches.length ? (i + step + matches.length) % matches.length : 0));
-    } else if (event.key === 'Enter' && open && matches[active]) {
+      // From no highlight, down starts at the top and up at the bottom.
+      setActive(i =>
+        !matches.length
+          ? 0
+          : i < 0
+            ? step > 0
+              ? 0
+              : matches.length - 1
+            : (i + step + matches.length) % matches.length,
+      );
+    } else if (event.key === 'Enter' && open && matches.length) {
+      // With nothing highlighted, Enter takes the best match.
       event.preventDefault();
-      choose(matches[active]);
+      choose(matches[active] ?? matches[0]);
     } else if (event.key === 'Escape' && open) {
       event.preventDefault();
       close();
@@ -112,6 +122,8 @@ export function Combobox<T>({
             id={`${id}-list`}
             role="listbox"
             aria-label={label}
+            // The pointer leaving the list takes its highlight with it.
+            onPointerLeave={() => setActive(-1)}
             className="max-h-[calc(5.5*var(--control-h))] overflow-y-auto"
           >
             {matches.map((option, i) => (
