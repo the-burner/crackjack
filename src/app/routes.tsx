@@ -136,6 +136,7 @@ export const routes: RouteObject[] = [
       ...counting('full', 'drills/full', 'drills.full'),
       { path: 'game', ...page('game.options', () => import('@/game/screens/options').then(m => m.GameOptions)) },
       game('table-rules', 'tableRules', () => import('@/screens/settings/table-rules').then(m => m.TableRules)),
+      game('seats', 'seats', () => import('@/screens/settings/seats').then(m => m.Seats)),
       game('bankroll', 'bankroll', () => import('@/screens/settings/bankroll').then(m => m.Bankroll)),
       game('dealer-errors', 'dealerErrors', () => import('@/screens/settings/dealer-errors').then(m => m.DealerErrors)),
       game('peeking', 'peeking', () => import('@/screens/settings/peeking').then(m => m.Peeking)),

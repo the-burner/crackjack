@@ -1,4 +1,4 @@
-// Every one of Blackjack's settings has a control on some screen, and Table Rules and Conditions holds the table's.
+// Every one of Blackjack's settings has a control on some screen, and Table Rules holds the table's.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -25,7 +25,7 @@ describe("Blackjack's settings", () => {
     expect(missing).toEqual([]);
   });
 
-  it('of the table are all on Table Rules and Conditions, and nothing else is', () => {
+  it('of the table are all on Table Rules, and nothing else is', () => {
     const screen = read('screens/settings/table-rules.tsx');
     expect(TABLE_SETTINGS.filter(key => !NO_CONTROL.includes(key) && !shows(screen, key))).toEqual([]);
     const shown = [

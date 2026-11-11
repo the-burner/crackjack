@@ -221,7 +221,7 @@ describe('text over the felt', () => {
     expect([...below(AA, onFelt), ...below(LARGE, onAlt)]).toEqual([]);
   });
 
-  it("numbers the seats legibly on Table Rules and Conditions' drawing of the table", () => {
+  it("numbers the seats legibly on Table Rules' drawing of the table", () => {
     // 600 15px: a player's seat is filled with the ring's colour, a computer's only ringed with it; the rings themselves need the 3:1 of a control's edge.
     const text = THEMES.flatMap((theme): Pair[] => [
       [`${theme} --seat-mine-text on --seat-ring`, value('--seat-mine-text', theme), value('--seat-ring', theme)],

@@ -4,6 +4,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { TableRules } from '@/screens/settings/table-rules';
 import { Bankroll } from '@/screens/settings/bankroll';
+import { Seats } from '@/screens/settings/seats';
 import { SettingsHub } from '@/screens/settings/hub';
 import { Gestures } from '@/screens/settings/gestures';
 import { STANDARD, rotated } from '@/core/gestures';
@@ -29,7 +30,7 @@ async function choose(user: UserEvent, name: string, option: string) {
   await user.selectOptions(select(name), option);
 }
 
-describe('Table Rules and Conditions', () => {
+describe('Table Rules', () => {
   it('fewer decks pull the cut card back inside the shoe', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
@@ -55,7 +56,7 @@ describe('Table Rules and Conditions', () => {
 
   it("draws the table's seats, the player's highlighted, and redraws them for another seat count", async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<TableRules />);
+    const { app } = renderScreen(<Seats />);
     const table = within(screen.getByRole('group', { name: 'Seats at the table' }));
     const seats = () => table.getAllByRole('button').map(seat => seat.getAttribute('aria-label'));
     // Four seats; seat 1 a computer player's, the others the player's.
@@ -74,7 +75,7 @@ describe('Table Rules and Conditions', () => {
     const user = userEvent.setup();
     const app = createTestApp();
     app.settings.update({ 'table.seatCount': 6, 'table.computerSeats': [true, true, true, true, false, true] });
-    renderScreen(<TableRules />, { app });
+    renderScreen(<Seats />, { app });
     await user.click(screen.getByRole('button', { name: 'Seat 5, yours' }));
     expect(toast).toHaveBeenCalledWith('You need at least one seat of your own.', { tone: 'error' });
     expect(app.settings.get('table.computerSeats')[4]).toBe(false);
@@ -90,7 +91,7 @@ describe('Table Rules and Conditions', () => {
     try {
       const app = createTestApp();
       app.settings.update({ 'table.computerSeats': [true, true, true, true, false, false] });
-      renderScreen(<TableRules />, { app });
+      renderScreen(<Seats />, { app });
       expect(screen.queryByText(/Held upright/)).not.toBeInTheDocument();
       await choose(user, 'Seats', 'Six Seats');
       // The player's seats 5 and 6 are kept, then the nearest from seat 1.
@@ -284,7 +285,7 @@ describe('navigation screens', () => {
     ]);
     expect(screen.getByRole('switch', { name: 'Warning on Strategy Error' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Dealer makes obvious plays' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Table Rules and Conditions' }));
+    await user.click(screen.getByRole('button', { name: 'Table Rules' }));
     expect(location().pathname).toBe('/game/table-rules');
   });
 

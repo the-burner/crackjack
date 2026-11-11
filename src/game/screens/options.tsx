@@ -21,10 +21,11 @@ type OptionsSection = readonly [
   checks?: readonly SettingCheck[],
 ];
 const SECTIONS: readonly OptionsSection[] = [
-  ['Table', [['Table Rules and Conditions', 'game.tableRules']]],
+  ['Table', [['Table Rules', 'game.tableRules']]],
   [
     'Player',
     [
+      ['Seats', 'game.seats'],
       ['Playing Strategy', 'game.strategy'],
       ['Betting Strategy', 'game.betting'],
       ['True Count Conversion', 'game.trueCount'],

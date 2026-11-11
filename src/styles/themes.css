@@ -120,7 +120,7 @@
   --felt: var(--page-bg);
   --felt-alt: var(--surface0);
   --felt-text: var(--ctp-text);
-  /* Table Rules and Conditions' drawing of the seats: a felt of the theme's green, the player's seats filled with the ring's colour. */
+  /* Table Rules' drawing of the seats: a felt of the theme's green, the player's seats filled with the ring's colour. */
   --seat-text: var(--felt-text);
   --seat-mine-text: var(--on-accent);
   --panel-bg: var(--surface0);

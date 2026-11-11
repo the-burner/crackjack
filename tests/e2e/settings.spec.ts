@@ -34,7 +34,7 @@ const CASES: {
   verify(el: Locator): Promise<void>;
 }[] = [
   {
-    button: 'Table Rules and Conditions',
+    button: 'Table Rules',
     screen: 'game.tableRules',
     async change(el) {
       await choose(el, 'Decks', 'Double Deck');
@@ -165,7 +165,7 @@ for (const testCase of CASES) {
 
 test('turning off the ace peek turns off the ten peek', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   await expect(check(el, 'Dealer peeks on ten')).toBeChecked();
   await check(el, 'Dealer peeks on ace').uncheck();
   await expect(check(el, 'Dealer peeks on ten')).not.toBeChecked();
@@ -173,7 +173,7 @@ test('turning off the ace peek turns off the ten peek', async ({ page }) => {
 
 test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   await check(el, 'Blackjack pays 2:1').check();
   await check(el, 'No Blackjack bonus').check();
   await expect(check(el, 'Blackjack pays 2:1')).not.toBeChecked();
@@ -182,7 +182,7 @@ test('the blackjack payout rows are mutually exclusive', async ({ page }) => {
 
 test('Double Exposure applies its rule bundle', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
-  const rules = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const rules = await openFromHub(page, 'Table Rules', 'game.tableRules');
   await choose(rules, 'Game', 'Double Exposure');
   await expect(chosen(rules, 'Insurance')).toHaveText('No Insurance');
   await expect(check(rules, 'Dealer wins ties')).toBeChecked();
@@ -202,7 +202,7 @@ test('Play keeps the saved seat count and opens the table', async ({ page }) => 
 
 test('Escape closes an open dialog and leaves the screen working', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   const burnCards = el.getByRole('button', { name: /^Burn Cards: / });
   await burnCards.click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
@@ -253,7 +253,7 @@ test('a slider value can be typed into its number box @layout', async ({ page })
 
 test('the table limits step by keyboard, meet but never cross, and fit their group @layout', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   const saved = (key: string) => page.evaluate(k => window.app.settings.get(k as never) as unknown, key);
   const low = el.getByRole('slider', { name: 'Table minimum' });
   const high = el.getByRole('slider', { name: 'Table maximum' });
@@ -284,8 +284,8 @@ test('the table limits step by keyboard, meet but never cross, and fit their gro
 });
 
 test('the seats drawing keeps every seat on the felt, apart, for each seat count @layout', async ({ page }) => {
-  await openHub(page, 'game.tableRules', { fresh: true });
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  await openHub(page, 'game.seats', { fresh: true });
+  const el = await openFromHub(page, 'Seats', 'game.seats');
   const table = el.getByRole('group', { name: 'Seats at the table' });
   for (const [count, label] of [
     [1, 'One Seat'],

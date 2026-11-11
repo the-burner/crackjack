@@ -5,12 +5,12 @@ import type { Page } from '@playwright/test';
 
 test.use({ serviceWorkers: 'block' });
 
-/** Opens Game Options, then Table Rules and Conditions, so three screens are stacked. */
+/** Opens Game Options, then Table Rules, so three screens are stacked. */
 async function stackThree(page: Page) {
   await page.addInitScript(() => localStorage.clear());
   await page.goto('/index.html');
   await page.locator('[data-screen="home"] [data-action="play"]').click();
-  await page.getByRole('button', { name: 'Table Rules and Conditions' }).click();
+  await page.getByRole('button', { name: 'Table Rules' }).click();
   await expect(page.locator('[data-screen="game.tableRules"]')).toBeVisible();
 }
 
@@ -42,7 +42,7 @@ test('going forward reopens the screen that was closed', async ({ page }) => {
   await page.goBack();
   await expect(page.locator('[data-screen="game.options"]')).toBeVisible();
 
-  // The entry says Table Rules and Conditions was open, so going forward brings it back rather
+  // The entry says Table Rules was open, so going forward brings it back rather
   // than walking the user off to the home screen.
   await page.goForward();
   await expect(page.locator('[data-screen="game.tableRules"]')).toBeVisible();

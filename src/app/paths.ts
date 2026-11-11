@@ -14,6 +14,7 @@ export const PATHS = {
   home: '/',
   settings: '/settings',
   'game.tableRules': '/game/table-rules',
+  'game.seats': '/game/seats',
   'game.bankroll': '/game/bankroll',
   'game.display': '/game/display',
   'game.dealerErrors': '/game/dealer-errors',

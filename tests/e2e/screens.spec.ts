@@ -61,7 +61,8 @@ const urlOf = (name: string) =>
 const SCREENS = [
   { name: 'settings', title: 'Settings', control: 'role=button[name="Appearance & Sound"]' },
   { name: 'game.options', title: 'Blackjack', control: '[data-action="play"]' },
-  { name: 'game.tableRules', title: 'Table Rules and Conditions', control: 'role=combobox[name="Surrender"]' },
+  { name: 'game.tableRules', title: 'Table Rules', control: 'role=combobox[name="Surrender"]' },
+  { name: 'game.seats', title: 'Seats', control: 'role=group[name="Seats at the table"]' },
   { name: 'game.bankroll', title: 'Bankroll', control: 'role=button[name="Refresh Bankroll"]' },
   { name: 'game.display', title: 'Display and Speed', control: 'role=slider' },
   { name: 'game.dealerErrors', title: 'Dealer Errors and Biases', control: 'role=combobox[name="Dealing bias"]' },
@@ -233,7 +234,7 @@ test('choosing an unusual game applies its rules and leaving it puts them back',
   const errors = watchErrors(page);
   await openApp(page);
   const setting = (key: SettingKey) => page.evaluate(k => window.app.settings.get(k), key);
-  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   const game = el.getByRole('combobox', { name: 'Game' });
   const choose = (label: string) => game.selectOption({ label });
   expect(await setting('rules.playerBlackjackAlwaysWins')).toBe(false);
