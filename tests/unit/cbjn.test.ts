@@ -150,3 +150,16 @@ describe('the Seattle and Tacoma games', () => {
     expect(summary(table('snoqualmie-8d').values)).toBe('8D H17 DAS RSA · $10–$500');
   });
 });
+
+describe('the Chicago-area games', () => {
+  it('are every one CBJN lists there', () => {
+    expect(CASINO_TABLES.filter(t => t.place.includes('Chicago area'))).toHaveLength(15);
+  });
+
+  it('read as CBJN lists them', () => {
+    expect(summary(table('american-place-2d').values)).toBe('2D H17 DAS RSA NM PV · $50–$10,000');
+    expect(summary(table('harrahs-joliet-6d-s17').values)).toBe('6D S17 DAS RSA NM · $25–$2,000');
+    expect(summary(table('rivers-des-plaines-6d-s17').values)).toBe('6D S17 DAS NM PV · $25–$25,000');
+    expect(table('wind-creek-spanish-21').values).toMatchObject({ 'bonuses.game': 17, 'table.decks': 8 });
+  });
+});
