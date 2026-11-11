@@ -43,6 +43,8 @@
   --text-shadow: var(--ctp-text);
   --seat-felt: color-mix(in srgb, var(--green) 30%, var(--base));
   --seat-ring: color-mix(in srgb, var(--green) 45%, var(--ctp-text));
+  /* The table's padded rail: Latte's darkest. */
+  --seat-rail: var(--ctp-text);
 }
 
 [data-theme='mocha'] {
@@ -84,6 +86,8 @@
   --text-shadow: var(--crust);
   --seat-felt: color-mix(in srgb, var(--green) 30%, var(--crust));
   --seat-ring: var(--yellow);
+  /* The table's padded rail: Mocha's darkest. */
+  --seat-rail: var(--crust);
 }
 
 /* Shared role mapping: both flavours use the palette the same way. */
@@ -122,6 +126,8 @@
   --felt-text: var(--ctp-text);
   /* Table Rules' drawing of the seats: a felt of the theme's green, the player's seats filled with the ring's colour. */
   --seat-text: var(--felt-text);
+  /* The felt's edge, inside the rail. */
+  --seat-edge: color-mix(in srgb, var(--seat-ring) 45%, var(--seat-felt));
   --seat-mine-text: var(--on-accent);
   --panel-bg: var(--surface0);
   --panel-head-bg: var(--surface1);
