@@ -133,7 +133,11 @@ describe('table limits', () => {
     const { app } = renderScreen(<TableRules />);
     expect(slider('Table minimum')).toHaveAttribute('aria-valuetext', '$25');
     expect(slider('Table maximum')).toHaveAttribute('aria-valuetext', '$2,000');
-    dragTo('Table minimum', 5);
+    // The box follows the handle while it is dragged; the setting changes once it is let go.
+    fireEvent.change(slider('Table minimum'), { target: { value: '5' } });
+    expect(box('Table minimum')).toHaveValue(50);
+    expect(app.settings.get('table.minBet')).toBe(25);
+    fireEvent.pointerUp(slider('Table minimum'));
     expect(app.settings.get('table.minBet')).toBe(50);
     dragTo('Table maximum', 17);
     expect(app.settings.get('table.maxBet')).toBe(3000);

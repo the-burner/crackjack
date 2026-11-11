@@ -100,8 +100,11 @@ export function RangeSlider({
       value={drag[end]}
       onChange={event => {
         const at = Number(event.currentTarget.value);
-        // The handles may meet but not cross.
-        setDrag(end === 'low' ? { ...drag, low: Math.min(at, drag.high) } : { ...drag, high: Math.max(at, drag.low) });
+        // The handles may meet but not cross; the box follows its handle as it moves.
+        const next =
+          end === 'low' ? { ...drag, low: Math.min(at, drag.high) } : { ...drag, high: Math.max(at, drag.low) };
+        setDrag(next);
+        setTyped({ ...typed, [end]: String(steps[next[end]]) });
       }}
       onPointerUp={() => commitDrag(end)}
       onKeyUp={() => commitDrag(end)}
