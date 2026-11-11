@@ -6,6 +6,7 @@ import type { UserEvent } from '@testing-library/user-event';
 import { GameOptions } from '@/game/screens/options';
 import { DepthOptions } from '@/drills/depth/options';
 import { createTestApp, renderScreen } from '../../support/render';
+import { pickPreset } from '../../support/presets';
 
 const picker = () => screen.getByRole('combobox', { name: 'Configuration' });
 
@@ -31,12 +32,12 @@ describe('a game configuration', () => {
     const [saved] = app.gameConfigs.getState().value;
     expect(saved.values).toMatchObject({ 'table.decks': 2, 'rules.surrender': 'early' });
     expect(saved.values['game.betting.chipValue']).toBe(10);
-    await user.selectOptions(picker(), TABLE_6D);
+    await pickPreset(user, 'Configuration', TABLE_6D);
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(6));
     expect(app.settings.get('rules.surrender')).toBe('late');
     // Its betting came back with it.
     expect(app.settings.get('game.betting.chipValue')).toBe(25);
-    await user.selectOptions(picker(), "Crackjack's Heads-Up 2D,H17,LS,DAS");
+    await pickPreset(user, 'Configuration', "Crackjack's Heads-Up 2D,H17,LS,DAS");
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(2));
     expect(app.settings.get('table.seatCount')).toBe(1);
     expect(app.settings.get('game.betting.strategy')).toBe('single-hand');
@@ -44,10 +45,10 @@ describe('a game configuration', () => {
     expect(app.settings.get('table.preset')).toBe('emerald-queen-2d');
     expect(app.settings.get('table.minBet')).toBe(25);
     expect(app.settings.get('table.cardsFaceDown')).toBe(true);
-    await user.selectOptions(picker(), "Crackjack's 2D,H17,LS,DAS");
+    await pickPreset(user, 'Configuration', "Crackjack's 2D,H17,LS,DAS");
     await waitFor(() => expect(app.settings.get('table.seatCount')).toBe(4));
     expect(app.settings.get('table.cardsFaceDown')).toBe(true);
-    await user.selectOptions(picker(), 'Two decks');
+    await pickPreset(user, 'Configuration', 'Two decks');
     await waitFor(() => expect(app.settings.get('rules.surrender')).toBe('early'));
   });
 });

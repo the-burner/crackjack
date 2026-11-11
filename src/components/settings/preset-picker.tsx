@@ -3,7 +3,6 @@
 
 import { useStore } from 'zustand';
 import { confirm, prompt } from '@/components/dialogs';
-import { Select } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
 import { toast } from '@/components/ui/toast';
@@ -25,12 +24,9 @@ import { SETTINGS_SCHEMA } from '@/settings/schema';
 export function PresetPicker<T extends Named, V>({
   kind,
   store,
-  search = false,
 }: {
   kind: PresetKind<T, V>;
   store: PersistedStore<T[]>;
-  /** Picks by typing part of a name or its detail, for a long list. */
-  search?: boolean;
 }) {
   const settings = useSettings();
   // A saved preset with a built-in's id or name is left out, so the built-in always wins.
@@ -117,20 +113,15 @@ export function PresetPicker<T extends Named, V>({
 
   return (
     <Section title="Preset">
-      {/* Searching, the field and its results are islands of their own above the preset's rows. */}
-      {search && (
-        <Combobox
-          label={kind.label}
-          options={options}
-          value={selected?.id ?? ''}
-          onChange={id => void choose(id)}
-          className="mb-2.5"
-        />
-      )}
+      {/* Picked by searching, however many there are: the field and its results are islands above the preset's rows. */}
+      <Combobox
+        label={kind.label}
+        options={options}
+        value={selected?.id ?? ''}
+        onChange={id => void choose(id)}
+        className="mb-2.5"
+      />
       <SettingsGroup>
-        {!search && (
-          <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
-        )}
         {own && edited && (
           <ListRow block chevron={false} onClick={save}>
             {`Save “${own.name}”`}

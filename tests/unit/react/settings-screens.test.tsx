@@ -14,6 +14,7 @@ import { Home } from '@/screens/home';
 import { HelpSheet } from '@/screens/help';
 import { helpState } from '@/app/help';
 import { createTestApp, renderScreen } from '../../support/render';
+import { pickPreset } from '../../support/presets';
 
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }));
 vi.mock('@/components/ui/toast', () => ({ toast, Toaster: () => null }));
@@ -250,7 +251,7 @@ describe('Gestures', () => {
     await choose(user, 'Portrait Swipe up', 'Hit');
     expect(app.settings.get('gestures.portrait')).toMatchObject({ up: 'hit', down: 'double' });
     expect(select('Configuration')).toHaveDisplayValue('Standard (edited)');
-    await choose(user, 'Configuration', 'Landscape left');
+    await pickPreset(user, 'Configuration', 'Landscape left');
     // The edit is unsaved, so it is only dropped once agreed to.
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
     await waitFor(() => expect(app.settings.get('gestures.portrait')).toEqual(STANDARD));

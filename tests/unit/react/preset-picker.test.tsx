@@ -6,6 +6,7 @@ import type { UserEvent } from '@testing-library/user-event';
 import { Betting } from '@/screens/strategy/betting';
 import { BETTING_PRESETS, BUILT_IN_BETTING } from '@/settings/betting-strategies';
 import { createTestApp, renderScreen } from '../../support/render';
+import { pickPreset } from '../../support/presets';
 
 const SINGLE = BUILT_IN_BETTING[0].name;
 const MULTI = BUILT_IN_BETTING[1].name;
@@ -57,11 +58,11 @@ describe('the preset picker', () => {
     const user = userEvent.setup();
     const app = withSpread();
     act(() => app.settings.set('game.betting.chipValue', 10));
-    await user.selectOptions(picker(), SINGLE);
+    await pickPreset(user, 'Betting strategy', SINGLE);
     await no(user);
     expect(app.settings.get('game.betting.chipValue')).toBe(10);
     expect(picker()).toHaveDisplayValue('Spread (edited)');
-    await user.selectOptions(picker(), SINGLE);
+    await pickPreset(user, 'Betting strategy', SINGLE);
     await yes(user);
     await waitFor(() => expect(picker()).toHaveDisplayValue(SINGLE));
     expect(app.settings.get('game.betting.chipValue')).toBe(25);

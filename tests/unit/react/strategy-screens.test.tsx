@@ -8,6 +8,7 @@ import { StrategyTables } from '@/screens/strategy/tables';
 import { TrueCount } from '@/screens/strategy/true-count';
 import { PlayingStrategy } from '@/screens/strategy/playing-strategy';
 import { createTestApp, renderScreen } from '../../support/render';
+import { pickPreset } from '../../support/presets';
 
 /** Opens a select and picks one of its options. */
 async function choose(user: UserEvent, name: string, option: string) {
@@ -70,12 +71,12 @@ describe('Allowed Bets', () => {
     await user.type(await screen.findByRole('textbox'), 'Spread');
     await user.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(picker()).toHaveDisplayValue('Spread'));
-    await choose(user, 'Betting strategy', multi);
+    await pickPreset(user, 'Betting strategy', multi);
     expect(app.settings.get('game.betting.chipValue')).toBe(25);
     expect(app.settings.get('game.betting.ramp').rows[2]).toEqual({ chips: 2, hands: 2 });
-    await choose(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
+    await pickPreset(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
     expect(app.settings.get('game.betting.ramp').rows[2]).toEqual({ chips: 4, hands: 1 });
-    await choose(user, 'Betting strategy', 'Spread');
+    await pickPreset(user, 'Betting strategy', 'Spread');
     expect(app.settings.get('game.betting.chipValue')).toBe(5);
     expect(app.settings.get('game.betting.wonging')).toBe(false);
   });
@@ -129,7 +130,7 @@ describe('Deck Estimation’s Betting Strategy', () => {
     await answer(user, '5');
     expect(app.settings.get('drills.depth.betting.wongOut')).toBe(5);
     expect(app.settings.get('game.betting.wongOut')).toBe(-2);
-    await choose(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
+    await pickPreset(user, 'Betting strategy', "Crackjack's Single-Hand Strategy");
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
     await waitFor(() => expect(app.settings.get('drills.depth.betting.wonging')).toBe(false));
     expect(app.settings.get('game.betting.strategy')).toBe('multi-hand');

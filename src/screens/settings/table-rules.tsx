@@ -160,7 +160,7 @@ export function TableRules() {
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
     <SettingsScreen title="Table Rules" help="game.tableRules">
-      <PresetPicker kind={TABLE_SETS.kind} store={app.tables} search />
+      <PresetPicker kind={TABLE_SETS.kind} store={app.tables} />
       <Section title="Table">
         <SettingsGroup>
           <RangeSlider
