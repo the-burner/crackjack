@@ -1,7 +1,7 @@
 // Table rules: the questions the engine asks about what is allowed and what a
 // hand pays, derived from the user's settings.
 
-import { valueOf, rankOf } from '@/core/cards';
+import { valueOf } from '@/core/cards';
 import type { CardId } from '@/core/cards';
 import type { AppSettings } from '@/settings/schema';
 import { gameVariant } from '@/settings/rules-logic';
@@ -252,6 +252,3 @@ export function sevensKind(cards: readonly CardId[]): 'none' | 'unsuited' | 'sui
   const suits = new Set(three.map(c => Math.floor((c - 1) / 13)));
   return suits.size === 1 ? 'suited' : 'unsuited';
 }
-
-/** True when a card is a ten-valued card but not a ten (a face card). */
-export const isFaceCard = (card: CardId): boolean => rankOf(card) > 10;

@@ -4,6 +4,7 @@ import { GameSession } from '@/game/session';
 import { createServices } from '@/app/app';
 import { MemoryBackend } from '@/services/storage';
 import type { SettingsPatch } from '@/settings/schema';
+import { seededRandom } from '@/core/random';
 
 function session(settings: SettingsPatch) {
   const app = createServices({ backend: new MemoryBackend() });
@@ -69,8 +70,30 @@ describe('new players', () => {
       'table.seatCount': 6,
       'table.computerSeats': [false, true, true, true, true, true],
     });
+    // Seeded, so the same players come and go on every run.
+    s.game.random = seededRandom(1);
     const seated = s.game.computerSeatsThisRound();
     s.game.shoe.roundsDealt = 1;
-    for (let i = 0; i < 50; i++) for (const seat of s.game.computerSeatsThisRound()) expect(seated).toContain(seat);
+    let changes = 0;
+    for (let i = 0; i < 300; i++) {
+      const now = s.game.computerSeatsThisRound();
+      for (const seat of now) expect(seated).toContain(seat);
+      if (now.length < seated.length) changes += 1;
+    }
+    // Players did leave, so the table was redrawn mid-shoe, and still no one new sat down.
+    expect(changes).toBeGreaterThan(0);
+  });
+
+  it('sit down mid-shoe where they need not wait', () => {
+    const s = session({
+      'table.playersComeAndGo': true,
+      'table.seatCount': 6,
+      'table.computerSeats': [false, true, true, true, true, true],
+    });
+    s.game.random = seededRandom(1);
+    const seated = s.game.computerSeatsThisRound();
+    s.game.shoe.roundsDealt = 1;
+    const later = Array.from({ length: 300 }, () => s.game.computerSeatsThisRound()).flat();
+    expect(later.some(seat => !seated.includes(seat))).toBe(true);
   });
 });
