@@ -40,8 +40,10 @@ describe('a game configuration', () => {
     await waitFor(() => expect(app.settings.get('table.decks')).toBe(2));
     expect(app.settings.get('table.seatCount')).toBe(1);
     expect(app.settings.get('game.betting.strategy')).toBe('single-hand');
-    // Heads up, the double deck is dealt face up; at a full table, face down.
-    expect(app.settings.get('table.cardsFaceDown')).toBe(false);
+    // The double decks are Emerald Queen's, the six decks Bally's Chicago's.
+    expect(app.settings.get('table.preset')).toBe('emerald-queen-2d');
+    expect(app.settings.get('table.minBet')).toBe(25);
+    expect(app.settings.get('table.cardsFaceDown')).toBe(true);
     await user.selectOptions(picker(), "Crackjack's 2D,H17,LS,DAS");
     await waitFor(() => expect(app.settings.get('table.seatCount')).toBe(4));
     expect(app.settings.get('table.cardsFaceDown')).toBe(true);

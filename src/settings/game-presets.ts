@@ -3,6 +3,7 @@
 // schema's defaults are its settings (settings/schema.ts).
 
 import type { SettingsPatch } from './schema';
+import { TABLE_PRESETS } from './table-presets';
 
 export interface PresetSpec {
   id: string;
@@ -13,13 +14,10 @@ export interface PresetSpec {
   changes: SettingsPatch;
 }
 
-/** Two decks: 42 cards behind the cut card (0.8 of a deck), dealt face down as a pitch game is. */
+/** Two decks: Emerald Queen's Double Deck (the six-deck games are on Bally's Chicago table, the defaults). */
 const DOUBLE_DECK: SettingsPatch = {
-  'table.decks': 2,
-  'table.cardsBehindCutCard': 42,
-  'table.cardsFaceDown': true,
-  // A table of their own, not one of the built-in ones.
-  'table.preset': '',
+  ...TABLE_PRESETS.find(table => table.id === 'emerald-queen-2d')!.changes,
+  'table.preset': 'emerald-queen-2d',
 };
 
 /** Alone with the dealer, and Crackjack's Single-Hand betting strategy, with no wonging. */
@@ -33,11 +31,10 @@ const HEADS_UP: SettingsPatch = {
 
 export const GAME_PRESETS: readonly PresetSpec[] = [
   { id: 'heads-up-6d', name: "Crackjack's Heads-Up 6D,H17,LS,DAS", changes: HEADS_UP },
-  // Heads up, the double deck is dealt face up.
   {
     id: 'heads-up-2d',
     name: "Crackjack's Heads-Up 2D,H17,LS,DAS",
-    changes: { ...HEADS_UP, ...DOUBLE_DECK, 'table.cardsFaceDown': false },
+    changes: { ...HEADS_UP, ...DOUBLE_DECK },
   },
   { id: 'table-2d', name: "Crackjack's 2D,H17,LS,DAS", changes: DOUBLE_DECK },
   { id: 'table-6d', name: "Crackjack's 6D,H17,LS,DAS", changes: {} },
