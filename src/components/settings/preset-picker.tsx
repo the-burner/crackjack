@@ -117,10 +117,18 @@ export function PresetPicker<T extends Named, V>({
 
   return (
     <Section title="Preset">
+      {/* Searching, the field and its results are islands of their own above the preset's rows. */}
+      {search && (
+        <Combobox
+          label={kind.label}
+          options={options}
+          value={selected?.id ?? ''}
+          onChange={id => void choose(id)}
+          className="mb-2.5"
+        />
+      )}
       <SettingsGroup>
-        {search ? (
-          <Combobox label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
-        ) : (
+        {!search && (
           <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
         )}
         {own && edited && (

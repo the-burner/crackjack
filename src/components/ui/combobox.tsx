@@ -1,13 +1,14 @@
 // A searchable choice: a field showing the choice, which lists the options that fuzzy-match what is typed,
 // best first, refreshed with every character. An option may have a line of detail under its name, searched
-// with it. The list opens under the field as rows of the same group (a group clips anything floating over
-// it). Tap or Enter takes one; Escape or leaving the field keeps the choice as it was.
+// with it. The field and the list are islands of their own, the list just under the field while it is open.
+// Tap or Enter takes one; Escape or leaving the field keeps the choice as it was.
 
 import { useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { fuzzyFilter } from '@/lib/fuzzy';
 import { Icon } from './icon';
+import { SettingsGroup } from './settings-group';
 
 export interface ComboOption<T> {
   value: T;
@@ -21,6 +22,7 @@ export function Combobox<T>({
   onChange,
   label,
   placeholder = 'Search',
+  className,
 }: {
   options: readonly ComboOption<T>[];
   value: T;
@@ -29,6 +31,7 @@ export function Combobox<T>({
   label: string;
   /** Shown in the empty field while searching. */
   placeholder?: string;
+  className?: string;
 }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -65,8 +68,8 @@ export function Combobox<T>({
   }
 
   return (
-    <div data-slot="combobox" className="flex w-full flex-col text-(--btn-text)">
-      <div className="relative">
+    <div data-slot="combobox" className={cn('flex w-full flex-col gap-2.5 text-(--btn-text)', className)}>
+      <SettingsGroup className="relative">
         <Icon
           name="search"
           className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 opacity-50"
@@ -102,43 +105,45 @@ export function Combobox<T>({
             'outline-none focus:bg-(--btn-bg-active) in-data-[slot=settings-group]:focus:bg-(--btn-bg-active)',
           )}
         />
-      </div>
+      </SettingsGroup>
       {open && (
-        <ul
-          id={`${id}-list`}
-          role="listbox"
-          aria-label={label}
-          className="max-h-[calc(5.5*var(--control-h))] overflow-y-auto border-t border-(--separator)"
-        >
-          {matches.map((option, i) => (
-            <li
-              key={i}
-              id={`${id}-${i}`}
-              role="option"
-              aria-selected={option.value === value}
-              // Taken on the press, before the field loses focus and closes the list.
-              onPointerDown={event => {
-                event.preventDefault();
-                choose(option);
-              }}
-              onPointerEnter={() => setActive(i)}
-              className={cn(
-                'flex min-h-(--control-h) cursor-pointer flex-col justify-center border-t border-(--separator) px-3.5 py-2 first:border-t-0',
-                i === active && 'bg-(--btn-bg-active)',
-              )}
-            >
-              <span className={cn('text-body text-(--text)', option.value === value && 'font-semibold')}>
-                {option.label}
-              </span>
-              {option.detail && <span className="text-caption text-(--text-secondary)">{option.detail}</span>}
-            </li>
-          ))}
-          {matches.length === 0 && (
-            <li role="presentation" className="px-3.5 py-2.5 text-body text-(--text-secondary)">
-              No matches
-            </li>
-          )}
-        </ul>
+        <SettingsGroup>
+          <ul
+            id={`${id}-list`}
+            role="listbox"
+            aria-label={label}
+            className="max-h-[calc(5.5*var(--control-h))] overflow-y-auto"
+          >
+            {matches.map((option, i) => (
+              <li
+                key={i}
+                id={`${id}-${i}`}
+                role="option"
+                aria-selected={option.value === value}
+                // Taken on the press, before the field loses focus and closes the list.
+                onPointerDown={event => {
+                  event.preventDefault();
+                  choose(option);
+                }}
+                onPointerEnter={() => setActive(i)}
+                className={cn(
+                  'flex min-h-(--control-h) cursor-pointer flex-col justify-center border-t border-(--separator) px-3.5 py-2 first:border-t-0',
+                  i === active && 'bg-(--btn-bg-active)',
+                )}
+              >
+                <span className={cn('text-body text-(--text)', option.value === value && 'font-semibold')}>
+                  {option.label}
+                </span>
+                {option.detail && <span className="text-caption text-(--text-secondary)">{option.detail}</span>}
+              </li>
+            ))}
+            {matches.length === 0 && (
+              <li role="presentation" className="px-3.5 py-2.5 text-body text-(--text-secondary)">
+                No matches
+              </li>
+            )}
+          </ul>
+        </SettingsGroup>
       )}
     </div>
   );
