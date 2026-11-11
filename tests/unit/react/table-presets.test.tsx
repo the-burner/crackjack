@@ -67,7 +67,7 @@ describe('the table picker', () => {
     expect(app.settings.get('rules.resplitAces')).toBe(true);
   });
 
-  it('highlights the option under the pointer, and nothing once the pointer leaves the list', async () => {
+  it('highlights nothing until the pointer is on an option, and nothing once it leaves the list', async () => {
     const user = userEvent.setup();
     renderScreen(<TableRules />);
     await search(user, 'emerald');
@@ -76,6 +76,8 @@ describe('the table picker', () => {
       within(list)
         .getAllByRole('option')
         .filter(o => o.className.includes('btn-bg-active'));
+    // Nothing is highlighted until the pointer or the arrow keys pick something; Enter would take the best match.
+    expect(highlighted()).toEqual([]);
     const second = within(list).getAllByRole('option')[1];
     await user.hover(second);
     expect(highlighted()).toEqual([second]);

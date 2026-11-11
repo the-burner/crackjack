@@ -37,7 +37,7 @@ export function Combobox<T>({
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(-1);
   const current = options.find(o => o.value === value);
   const matches = open ? fuzzyFilter(options, query, o => `${o.label} ${o.detail ?? ''}`) : [];
 
@@ -99,12 +99,12 @@ export function Combobox<T>({
           placeholder={open ? (current?.label ?? placeholder) : placeholder}
           onFocus={() => {
             setOpen(true);
-            setActive(0);
+            setActive(-1);
           }}
           onBlur={close}
           onChange={event => {
             setQuery(event.currentTarget.value);
-            setActive(0);
+            setActive(-1);
             setOpen(true);
           }}
           onKeyDown={onKeyDown}
