@@ -59,7 +59,7 @@ export function SeatTable({
       role="group"
       aria-label={label}
       data-slot="seat-table"
-      className="relative mx-auto my-2.5 aspect-[2/1] w-[calc(100%-1.75rem)] max-w-[340px] overflow-hidden rounded-b-full border-x-2 border-b-2 border-(--seat-ring)/40 bg-(--seat-felt)"
+      className="relative mx-auto aspect-[2/1] w-full max-w-[380px] overflow-hidden rounded-b-full border-x-2 border-b-2 border-(--seat-ring)/40 bg-(--seat-felt)"
     >
       <span className="absolute top-[6%] left-1/2 -translate-x-1/2 text-caption font-semibold tracking-[0.04em] text-(--seat-text) uppercase">
         Dealer

@@ -5,7 +5,7 @@ import { useSettings } from '@/react/app-context';
 import { useUpright } from '@/react/upright';
 import { SeatTable } from '@/components/ui/seat-table';
 import { toast } from '@/components/ui/toast';
-import { Section, SettingsGroup } from '@/components/ui/settings-group';
+import { Section, SettingsGroup, SettingsNote } from '@/components/ui/settings-group';
 import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
@@ -24,7 +24,7 @@ export function Seats() {
   const seatCount = settings.get('table.seatCount');
   return (
     <SettingsScreen title="Seats" help="game.seats">
-      <Section title="Seats" footer={seatsNote(seatCount, upright)}>
+      <Section title="Seats">
         <SettingsGroup>
           <SettingSelect
             label="Seats"
@@ -37,10 +37,16 @@ export function Seats() {
               })
             }
           />
-          <SeatPicker upright={upright} />
-          <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
         </SettingsGroup>
       </Section>
+      {/* The table is drawn on the page itself, under what it shows. */}
+      <div>
+        <SettingsNote>{seatsNote(seatCount, upright)}</SettingsNote>
+        <SeatPicker upright={upright} />
+      </div>
+      <SettingsGroup>
+        <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
+      </SettingsGroup>
     </SettingsScreen>
   );
 }
