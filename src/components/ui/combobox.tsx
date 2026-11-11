@@ -132,11 +132,10 @@ export function Combobox<T>({
                 id={`${id}-${i}`}
                 role="option"
                 aria-selected={option.value === value}
-                // Taken on the press, before the field loses focus and closes the list.
-                onPointerDown={event => {
-                  event.preventDefault();
-                  choose(option);
-                }}
+                // Taken when the tap ends, as a button is, so the tap cannot land on what the closed list uncovers.
+                // Pressing it keeps the focus in the field, so the list stays open until then.
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => choose(option)}
                 onPointerEnter={() => setActive(i)}
                 className={cn(
                   'flex min-h-(--control-h) cursor-pointer flex-col justify-center border-t border-(--separator) px-3.5 py-2 first:border-t-0',

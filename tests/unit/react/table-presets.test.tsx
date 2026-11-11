@@ -87,6 +87,20 @@ describe('the table picker', () => {
     expect(picker()).not.toHaveAttribute('aria-activedescendant');
   });
 
+  it('picks a result when the tap ends, not when it starts', async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    renderScreen(<TableRules />, { app });
+    await search(user, 'snoqualmie 8');
+    const option = within(screen.getByRole('listbox', { name: 'Table' })).getAllByRole('option')[0];
+    await user.pointer({ keys: '[MouseLeft>]', target: option });
+    // Held down: nothing is picked, and the list is still open.
+    expect(app.settings.get('table.preset')).not.toBe('snoqualmie-8d');
+    expect(screen.getByRole('listbox', { name: 'Table' })).toBeInTheDocument();
+    await user.pointer({ keys: '[/MouseLeft]', target: option });
+    await waitFor(() => expect(app.settings.get('table.preset')).toBe('snoqualmie-8d'));
+  });
+
   it('marks a built-in table edited once a rule changes, and saves the change as a table of your own', async () => {
     const user = userEvent.setup();
     const app = createTestApp();
