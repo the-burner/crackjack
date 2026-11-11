@@ -43,16 +43,17 @@ describe('a CBJN game', () => {
 
   it('refuses a rules code it does not know, and keeps apart the ones the table does not play', () => {
     expect(() => cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,zz' })).toThrow('zz');
-    expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,nms,pv,toke' }).notPlayed).toEqual([
-      'nms',
-      'pv',
-      'toke',
-    ]);
+    const { values, notPlayed } = cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,nms,pv,toke' });
+    expect(notPlayed).toEqual(['pv', 'toke']);
+    // No mid-entry, whichever way it is written.
+    expect(values['table.noMidShoeEntry']).toBe(true);
+    expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'nm' }).values['table.noMidShoeEntry']).toBe(true);
+    expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17' }).values['table.noMidShoeEntry']).toBe(false);
   });
 });
 
 describe("Emerald Queen's three games (Tacoma, WA)", () => {
-  it('double deck: H17 DAS LS, $25–$500, face down, 0.8 decks behind the cut card', () => {
+  it('double deck: H17 DAS LS, no mid-shoe entry, $25–$500, face down, 0.8 decks behind the cut card', () => {
     const { values, notPlayed } = table('emerald-queen-2d');
     expect(values).toMatchObject({
       'table.decks': 2,
@@ -64,9 +65,10 @@ describe("Emerald Queen's three games (Tacoma, WA)", () => {
       'rules.doubleAfterSplit': true,
       'rules.surrender': 'late',
       'rules.resplitAces': false,
+      'table.noMidShoeEntry': true,
     });
-    expect(notPlayed).toEqual(['nms', 'sc', 'pv']);
-    expect(summary(values)).toBe('2D H17 DAS LS · $25–$500');
+    expect(notPlayed).toEqual(['sc', 'pv']);
+    expect(summary(values)).toBe('2D H17 DAS LS NM · $25–$500');
   });
 
   it('eight-deck shoe: H17 DAS LS RSA, $15–$500, face up, 1.1 decks behind the cut card', () => {

@@ -614,6 +614,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       bankroll: session.bankroll,
       sideBets: sideBetPicker.pending,
       spots: session.sideBetSpots(),
+      outUntilShuffle: session.outUntilShuffle,
     });
     if (error) {
       setOverlayMessage(error);

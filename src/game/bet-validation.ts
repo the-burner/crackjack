@@ -16,10 +16,21 @@ export interface BetCheck {
   /** Side-bet amounts for the round, by spot id. */
   sideBets: Record<string, number>;
   spots: readonly Pick<SideBetSpot, 'id' | 'maxMultipleOfBet'>[];
+  /** Sat out this shoe at a table with no mid-shoe entry: no bet until the shuffle. */
+  outUntilShuffle?: boolean;
 }
 
 /** Why the bet cannot be placed, or null when it can. */
-export function betError({ amount, hands, limits: [low, high], bankroll, sideBets, spots }: BetCheck): string | null {
+export function betError({
+  amount,
+  hands,
+  limits: [low, high],
+  bankroll,
+  sideBets,
+  spots,
+  outUntilShuffle = false,
+}: BetCheck): string | null {
+  if (outUntilShuffle) return 'No mid-shoe entry: after sitting out, you can only Wong until the shuffle.';
   if (amount < low) return `Bet below the table minimum of ${money(low)}.`;
   if (amount > high) return `Bet above the table maximum of ${money(high)}.`;
   if (!checkAffordable({ bankroll, betPerHand: amount, hands, sideBets }))

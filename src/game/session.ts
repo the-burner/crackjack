@@ -70,6 +70,8 @@ export class GameSession {
   counter: Counter;
   /** Whether the wong counts have the player in this shoe; null until its first bet. */
   wongPlaying: boolean | null = null;
+  /** Sat out a round of this shoe at a table with no mid-shoe entry, so no bet until the shuffle. */
+  outUntilShuffle = false;
   /** The round in play is one the player sat out. */
   satOut = false;
   stats: GameStats;
@@ -118,8 +120,9 @@ export class GameSession {
       onShuffle: () => {
         // Spanish decks hold 48 cards, which the true count divides by.
         this.counter.reset(this.table.decks, { cardsPerDeck: cardsPerDeckFor(Boolean(this.table.spanish)) });
-        // A new shoe begins wonged in or out afresh.
+        // A new shoe begins wonged in or out afresh, and open to a bet.
         this.wongPlaying = null;
+        this.outUntilShuffle = false;
       },
     });
   }
@@ -262,8 +265,10 @@ export class GameSession {
   /** Sits out a round: the computer seats play it while the player counts. */
   wong(): GameEvent[] {
     this.warnings = [];
-    const verdict = this.wongVerdict(true);
+    // Once shut out of the shoe, sitting out is not the player's choice, so it is not judged.
+    const verdict = this.outUntilShuffle ? null : this.wongVerdict(true);
     if (this.settings.get('game.betting.warnOnError') && verdict !== null) this.recordBetDecision(verdict);
+    if (this.settings.get('table.noMidShoeEntry')) this.outUntilShuffle = true;
     // Graded as a bet, but not a round played.
     this.satOut = true;
     // Still dealt, so it counts toward the pace.

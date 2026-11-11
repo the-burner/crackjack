@@ -54,24 +54,14 @@ const RULES: Readonly<Record<string, SettingsPatch>> = {
   nsa: { 'rules.noAceSplits': true },
   nsjq: { 'rules.splitTensSameRankOnly': true },
   nhsa: { 'rules.hitSplitAces': false },
+  // No mid-entry, also with no sitting out (nms) or no spreading to more hands (nmm), of which the table plays the first.
+  nm: { 'table.noMidShoeEntry': true },
+  nms: { 'table.noMidShoeEntry': true },
+  nmm: { 'table.noMidShoeEntry': true },
 };
 
 /** Codes for what the table does not play (mid-entry, penetration that varies, tipping, how the cards are held). */
-const NOT_PLAYED = new Set([
-  'pv',
-  'notch',
-  'toke',
-  'nm',
-  'nmm',
-  'nmo',
-  'nms',
-  'nso',
-  'nto',
-  'min',
-  '1spot',
-  'sc',
-  'shoe',
-]);
+const NOT_PLAYED = new Set(['pv', 'notch', 'toke', 'nmo', 'nso', 'nto', 'min', '1spot', 'sc', 'shoe']);
 
 /** The game's own Spanish 21 (an unusual game), whose rules it sets. */
 const SPANISH_21 = 17;

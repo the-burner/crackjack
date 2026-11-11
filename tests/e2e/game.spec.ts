@@ -614,6 +614,25 @@ test.describe('wonging', () => {
     await expect(grid(page).locator('[data-on]')).toHaveCount(0);
   });
 
+  test('at a table with no mid-shoe entry, shuts the player out of betting until the shuffle', async ({ page }) => {
+    await openTable(page, { settings: { 'game.betting.wonging': true, 'table.noMidShoeEntry': true } });
+    await wongButton(page).click();
+    await expect(overlay(page)).toBeHidden();
+    await expect(overlay(page)).toBeVisible({ timeout: 20000 });
+    const before = await bankroll(page).textContent();
+    await grid(page).click({ position: { x: 25, y: 25 } });
+    await expect(betTitle(page)).toContainText(
+      'No mid-shoe entry: after sitting out, you can only Wong until the shuffle.',
+    );
+    await expect(overlay(page)).toBeVisible();
+    await expect(bankroll(page)).toHaveText(before ?? '');
+    // A shuffle opens the table to bets again.
+    await overlayButton(page, 'Shuffle').click();
+    await expect(overlay(page)).toBeVisible({ timeout: 20000 });
+    await grid(page).click({ position: { x: 25, y: 25 } });
+    await expect(overlay(page)).toBeHidden();
+  });
+
   test('is refused with an error at a table with no one else', async ({ page }) => {
     await openTable(page, {
       settings: {

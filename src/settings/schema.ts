@@ -193,6 +193,8 @@ export const SETTINGS_SCHEMA = {
   'table.preset': text('crackjack-6d'),
   'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
+  /** Once the player sits out a round, no bet is taken until the shuffle. */
+  'table.noMidShoeEntry': bool(false),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
   'table.showBurnCards': bool(true),

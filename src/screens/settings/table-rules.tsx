@@ -159,6 +159,7 @@ export function TableRules() {
             format={money}
             onChange={({ low, high }) => settings.update({ 'table.minBet': low, 'table.maxBet': high })}
           />
+          <SettingChecks items={[{ label: 'No mid-shoe entry', key: 'table.noMidShoeEntry' }]} />
         </SettingsGroup>
       </Section>
       <Section title="Shoe">

@@ -59,4 +59,11 @@ describe('the side-bet multiple', () => {
     expect(sideBetOverTheMultiple(10, { A: 50, B: 20 }, spots)).toBe(0);
     expect(sideBetOverTheMultiple(10, {}, spots)).toBe(0);
   });
+
+  it('refuses any bet after sitting out at a table with no mid-shoe entry, before anything else', () => {
+    expect(check({ outUntilShuffle: true })).toBe(
+      'No mid-shoe entry: after sitting out, you can only Wong until the shuffle.',
+    );
+    expect(check({ outUntilShuffle: false })).toBeNull();
+  });
 });

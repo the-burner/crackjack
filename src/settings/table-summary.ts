@@ -39,6 +39,7 @@ export function tableSummary(get: Read): string {
     { 2: 'NRS', 3: 'RS3', 4: null }[get('rules.maxSplitHands')],
     get('rules.insurance') === 'none' && 'No insurance',
     get('rules.blackjackPayout') !== '3:2' && `BJ ${get('rules.blackjackPayout')}`,
+    get('table.noMidShoeEntry') && 'NM',
   ].filter(Boolean);
   const limits = `${money(get('table.minBet'))}–${money(get('table.maxBet'))}`;
   const name = game ? BUILTIN_SIDE_BET_GAMES.find(g => g.id === game)?.name : undefined;
