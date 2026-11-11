@@ -9,10 +9,15 @@ import { DEPTH_PRESETS } from './depth-presets';
 import { FLASH_PRESETS } from './flash-presets';
 import { GAME_PRESETS } from './game-presets';
 import type { PresetSpec } from './game-presets';
+import { TABLE_PRESETS } from './table-presets';
+import { TABLE_SETTINGS } from './table-settings';
+import { tableSummary } from './table-summary';
 
 export interface SettingSet extends Named {
   values: SettingsPatch;
   builtIn?: boolean;
+  /** Where a built-in casino table is played. */
+  place?: string;
 }
 
 export type DrillName = 'flash' | 'depth' | 'count' | 'full';
@@ -51,14 +56,22 @@ export function settingSets(
     label,
     selectedKey,
     presets = [{ id: 'default', name: 'Default', changes: {} }],
-  }: { label: string; selectedKey: PresetSelectionKey; presets?: readonly PresetSpec[] },
+    detail,
+  }: {
+    label: string;
+    selectedKey: PresetSelectionKey;
+    presets?: readonly PresetSpec[];
+    /** A summary of a set's values, shown and searched under its name. */
+    detail?: (values: SettingsPatch) => string;
+  },
 ) {
   const defaults = valuesOf(keys, (key => SETTINGS_SCHEMA[key].default) as SettingReader);
-  const builtIns: readonly SettingSet[] = presets.map(({ id, name, changes }) => ({
+  const builtIns: readonly SettingSet[] = presets.map(({ id, name, place, changes }) => ({
     id,
     name,
     values: { ...defaults, ...changes },
     builtIn: true,
+    ...(place ? { place } : {}),
   }));
   /** Only the kind's keys; one added since a set was saved takes its default. */
   const tidy = (values: Record<string, unknown>): SettingsPatch => ({
@@ -83,6 +96,7 @@ export function settingSets(
     valuesOf: set => set.values,
     patch: values => ({ ...values }),
     make: (id, name, values) => ({ id, name, values }),
+    ...(detail ? { detailOf: (set: SettingSet) => [set.place, detail(set.values)].filter(Boolean).join(' · ') } : {}),
   };
   return { kind, read };
 }
@@ -91,6 +105,14 @@ export const GAME_SETS = settingSets(GAME_KEYS, {
   label: 'Configuration',
   selectedKey: 'game.config',
   presets: GAME_PRESETS,
+});
+
+/** The table's rules and conditions (settings/table-settings.ts), shared by every module that plays a table. */
+export const TABLE_SETS = settingSets(TABLE_SETTINGS, {
+  label: 'Table',
+  selectedKey: 'table.preset',
+  presets: TABLE_PRESETS,
+  detail: values => tableSummary(key => values[key] as never),
 });
 
 const drillSets = (drill: DrillName) =>

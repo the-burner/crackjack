@@ -4,6 +4,7 @@
 import { useStore } from 'zustand';
 import { confirm, prompt } from '@/components/dialogs';
 import { Select } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { ListRow, Section, SettingsGroup } from '@/components/ui/settings-group';
 import { toast } from '@/components/ui/toast';
 import { useSettings } from '@/react/app-context';
@@ -23,12 +24,19 @@ import type { Named, PresetKind } from '@/settings/named-configs';
 export function PresetPicker<T extends Named, V>({
   kind,
   store,
+  search = false,
 }: {
   kind: PresetKind<T, V>;
   store: PersistedStore<T[]>;
+  /** Picks by typing part of a name or its detail, for a long list. */
+  search?: boolean;
 }) {
   const settings = useSettings();
-  const saved = useStore(store, state => state.value);
+  // A saved preset with a built-in's id or name is left out, so the built-in always wins.
+  const saved = withoutBuiltIns(
+    useStore(store, state => state.value),
+    kind.builtIns,
+  );
   const presets = [...kind.builtIns, ...saved];
   const values = kind.current(key => settings.get(key));
   const { selected, edited } = presetState(settings.get(kind.selectedKey), values, presets, kind.valuesOf, sameValues);
@@ -37,6 +45,7 @@ export function PresetPicker<T extends Named, V>({
     ...presets.map(preset => ({
       value: preset.id,
       label: preset === selected && edited ? `${preset.name} (edited)` : preset.name,
+      detail: kind.detailOf?.(preset),
     })),
     ...(selected ? [] : [{ value: '', label: 'Custom' }]),
   ];
@@ -99,7 +108,11 @@ export function PresetPicker<T extends Named, V>({
   return (
     <Section title="Preset">
       <SettingsGroup>
-        <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
+        {search ? (
+          <Combobox label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
+        ) : (
+          <Select label={kind.label} options={options} value={selected?.id ?? ''} onChange={id => void choose(id)} />
+        )}
         {own && edited && (
           <ListRow block chevron={false} onClick={save}>
             {`Save “${own.name}”`}
@@ -127,3 +140,7 @@ export function PresetPicker<T extends Named, V>({
     </Section>
   );
 }
+
+/** `saved` without any preset whose id or name (in any case) is a built-in's. */
+export const withoutBuiltIns = <T extends Named>(saved: readonly T[], builtIns: readonly Named[]): T[] =>
+  saved.filter(preset => !builtIns.some(b => b.id === preset.id || named([b], preset.name)));

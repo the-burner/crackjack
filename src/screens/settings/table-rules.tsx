@@ -1,6 +1,8 @@
 // Table Rules: everything about the table the player does not control (settings/table-settings.ts).
 
-import { useSettings } from '@/react/app-context';
+import { useApp, useSettings } from '@/react/app-context';
+import { PresetPicker } from '@/components/settings/preset-picker';
+import { TABLE_SETS } from '@/settings/setting-sets';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { Select } from '@/components/ui/select';
 import { SettingChecks, SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
@@ -138,12 +140,14 @@ const GAMES = BUILTIN_SIDE_BET_GAMES.map(({ id, name }) => ({ value: id, label: 
 const maxCardsBehindCutCard = (decks: number) => 52 * decks - 1;
 
 export function TableRules() {
+  const app = useApp();
   const settings = useSettings();
   const decks = settings.get('table.decks');
   // The shuffle point and the number of rounds share one row: which one is shown depends on the shuffle mode.
   const byCutCard = settings.get('table.shuffleMode') === 'cutCard';
   return (
     <SettingsScreen title="Table Rules" help="game.tableRules">
+      <PresetPicker kind={TABLE_SETS.kind} store={app.tables} search />
       <Section title="Table">
         <SettingsGroup>
           <RangeSlider

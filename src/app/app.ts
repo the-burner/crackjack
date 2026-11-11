@@ -19,7 +19,7 @@ import { readGestureConfigs } from '@/settings/gesture-configs';
 import type { GestureConfig } from '@/core/gestures';
 import { followSaved, readBettingStrategies } from '@/settings/betting-strategies';
 import type { BettingStrategy } from '@/settings/betting-strategies';
-import { DRILL_SETS, GAME_SETS } from '@/settings/setting-sets';
+import { DRILL_SETS, GAME_SETS, TABLE_SETS } from '@/settings/setting-sets';
 import type { DrillName, SettingSet } from '@/settings/setting-sets';
 
 /** The services that do not need a DOM. */
@@ -42,6 +42,8 @@ export interface Services {
   bettingStrategies: PersistedStore<BettingStrategy[]>;
   /** Game configurations the player saved. */
   gameConfigs: PersistedStore<SettingSet[]>;
+  /** Tables (their rules and conditions) the player saved, shared by every module that plays one. */
+  tables: PersistedStore<SettingSet[]>;
   /** Each drill's configurations the player saved. */
   drillConfigs: Record<DrillName, PersistedStore<SettingSet[]>>;
   /** Starts the app over from its home screen, reading everything saved afresh. */
@@ -80,6 +82,7 @@ export function createServices({ backend }: { backend?: StorageBackend } = {}): 
     gestureConfigs: persistedStore(storage, 'gestureConfigs', readGestureConfigs),
     bettingStrategies,
     gameConfigs: persistedStore(storage, 'gameConfigs', GAME_SETS.read),
+    tables: persistedStore(storage, 'tables', TABLE_SETS.read),
     drillConfigs: {
       flash: persistedStore(storage, 'flashConfigs', DRILL_SETS.flash.read),
       depth: persistedStore(storage, 'depthConfigs', DRILL_SETS.depth.read),

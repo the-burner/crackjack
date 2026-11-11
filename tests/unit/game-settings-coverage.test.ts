@@ -10,8 +10,8 @@ const SCREENS = readdirSync('src', { recursive: true, encoding: 'utf8' })
   .filter(file => file.endsWith('.tsx'))
   .map(read)
   .join('\n');
-/** Kept with the table but set by no control: the rules an unusual game overwrote. */
-const NO_CONTROL = ['bonuses.savedRules'];
+/** Set by no control of their own: the rules an unusual game overwrote, and the table picked (the picker's choice). */
+const NO_CONTROL = ['bonuses.savedRules', 'table.preset'];
 const shows = (source: string, key: string) => source.includes(`'${key}'`) || source.includes(`"${key}"`);
 
 describe("Blackjack's settings", () => {

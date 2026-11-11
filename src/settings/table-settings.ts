@@ -10,6 +10,8 @@ const PLAYERS: readonly SettingKey[] = [
   'table.seatCount',
   'table.computerSeats',
   'table.playersComeAndGo',
+  // Which table is chosen, not part of one.
+  'table.preset',
 ];
 
 /** Kept under `display.`, but the casino's choice: whether the discards and the shoe can be seen. */

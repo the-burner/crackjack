@@ -51,6 +51,7 @@ export type PresetSelectionKey =
   | 'game.betting.strategy'
   | 'drills.depth.betting.strategy'
   | 'gestures.config'
+  | 'table.preset'
   | 'game.config'
   | 'drills.flash.config'
   | 'drills.depth.config'
@@ -68,6 +69,8 @@ export interface PresetKind<T extends Named, V> {
   patch: (values: V) => SettingsPatch;
   /** `base`, when given, is the preset the values are saved over. */
   make: (id: string, name: string, values: V, base?: T) => T;
+  /** A line under each preset's name in a searchable picker, searched with it. */
+  detailOf?: (preset: T) => string;
 }
 
 /** The same settings, whatever order their keys were written in. */

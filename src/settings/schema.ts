@@ -189,6 +189,8 @@ export const SETTINGS_SCHEMA = {
   /** Seats 1..6: true = computer player. */
   'table.computerSeats': json([true, false, false, true, false, false]),
   /** The smallest and largest bet the table takes on a hand; the maximum is never below the minimum. */
+  /** The saved or built-in table the table's settings came from (settings/table-presets.ts). */
+  'table.preset': text('crackjack-6d'),
   'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.cardsFaceDown': bool(false),

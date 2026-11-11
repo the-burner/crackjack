@@ -287,6 +287,27 @@ test('the table limits step by keyboard, push each other when they meet, and fit
   }
 });
 
+test('a table is found by typing and loaded, its list inside its group @layout', async ({ page }) => {
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
+  const picker = el.getByRole('combobox', { name: 'Table' });
+  await picker.click();
+  await picker.pressSequentially('tacoma 8d');
+  const list = el.getByRole('listbox', { name: 'Table' });
+  const first = list.getByRole('option').first();
+  await expect(first).toContainText('Emerald Queen 8-Deck Shoe');
+  await expect(first).toContainText('Tacoma, WA · 8D H17 DAS LS RSA · $15–$500');
+  const group = (await list.locator('xpath=ancestor::*[@data-slot="settings-group"][1]').boundingBox())!;
+  const row = (await first.boundingBox())!;
+  expect(row.x).toBeGreaterThanOrEqual(group.x);
+  expect(row.x + row.width).toBeLessThanOrEqual(group.x + group.width + 0.5);
+  await first.click();
+  await expect(picker).toHaveValue('Emerald Queen 8-Deck Shoe');
+  await expect(el.getByRole('combobox', { name: 'Decks', exact: true })).toHaveValue(/./);
+  expect(await page.evaluate(() => window.app.settings.get('table.decks'))).toBe(8);
+  await expect(el.getByRole('switch', { name: 'Resplit aces' })).toBeChecked();
+});
+
 test('the seats drawing keeps every seat on the felt, apart, for each seat count @layout', async ({ page }) => {
   await openHub(page, 'game.seats', { fresh: true });
   const el = await openFromHub(page, 'Seats', 'game.seats');
