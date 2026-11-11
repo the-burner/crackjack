@@ -146,7 +146,6 @@ export function TableRules() {
     <SettingsScreen title="Table Rules" help="game.tableRules">
       <Section title="Table">
         <SettingsGroup>
-          <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
           <RangeSlider
             label="Table Limits"
             lowLabel="Table minimum"

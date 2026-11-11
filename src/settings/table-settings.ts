@@ -3,12 +3,13 @@
 import { SETTINGS_SCHEMA } from './schema';
 import type { SettingKey } from './schema';
 
-/** The player's own, though kept under `table.`: their bankroll, and the seats they take (Seats). */
+/** Kept under `table.` but on other screens: the player's bankroll, and the seats and players at the table (Seats). */
 const PLAYERS: readonly SettingKey[] = [
   'table.startingBankroll',
   'table.refreshBankrollOnStart',
   'table.seatCount',
   'table.computerSeats',
+  'table.playersComeAndGo',
 ];
 
 /** Kept under `display.`, but the casino's choice: whether the discards and the shoe can be seen. */

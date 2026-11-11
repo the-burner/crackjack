@@ -1,11 +1,12 @@
-// Seats: how many seats the table has and which are the player's; the others are computer players'.
+// Seats: how many seats the table has, which are the player's (the others are computer players'), and whether
+// other players come and go.
 
 import { useSettings } from '@/react/app-context';
 import { useUpright } from '@/react/upright';
 import { SeatTable } from '@/components/ui/seat-table';
 import { toast } from '@/components/ui/toast';
 import { Section, SettingsGroup } from '@/components/ui/settings-group';
-import { SettingSelect, SettingsScreen } from '@/components/settings-controls';
+import { SettingChecks, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option } from '@/components/settings-controls';
 import type { SettingValues } from '@/settings/schema';
 import { MAX_PORTRAIT_SEATS, visibleSeats } from '@/game/table/layout';
@@ -37,6 +38,7 @@ export function Seats() {
             }
           />
           <SeatPicker upright={upright} />
+          <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
         </SettingsGroup>
       </Section>
     </SettingsScreen>
