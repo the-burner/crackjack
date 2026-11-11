@@ -211,7 +211,7 @@ export const SETTINGS_SCHEMA = {
   'table.showCardsOnlyWhenNeeded': bool(false),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
-  'table.showBurnCards': bool(true),
+  'table.showBurnCards': bool(false),
   'table.playersComeAndGo': bool(false),
   'table.refreshBankrollOnStart': bool(false),
 

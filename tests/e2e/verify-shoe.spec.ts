@@ -311,7 +311,8 @@ const endOfDeal = (log: Frame[]) =>
 
 test.describe('peeking right and left', () => {
   test("deals the neighbour's cards face up and counts them; other seats stay face down", async ({ page }) => {
-    await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true } });
+    // The burn card is shown, so it is counted too.
+    await openTable(page, { settings: { ...FACE_DOWN, 'peeking.adjacentHands': true, 'table.showBurnCards': true } });
     const burn = (await frames(page)).find(f => f.burns.length === 1)!.burns[0].card;
     for (let round = 0; round < 3; round++) {
       let atTurn = null as { frame: Frame; rc: string | undefined } | null;
