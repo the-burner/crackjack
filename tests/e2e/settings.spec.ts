@@ -255,6 +255,8 @@ test('the table limits step by keyboard, push each other when they meet, and fit
   page,
 }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
+  // A $25–$2,000 table.
+  await page.evaluate(() => window.app.settings.update({ 'table.minBet': 25, 'table.maxBet': 2000 }));
   const el = await openFromHub(page, 'Table Rules', 'game.tableRules');
   const saved = (key: string) => page.evaluate(k => window.app.settings.get(k as never) as unknown, key);
   const low = el.getByRole('slider', { name: 'Table minimum' });

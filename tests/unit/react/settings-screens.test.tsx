@@ -132,8 +132,15 @@ describe('table limits', () => {
     await user.type(box(name), `${text}{Enter}`);
   }
 
-  it('start at $25 to $2,000, and each handle steps through the amounts tables use', () => {
-    const { app } = renderScreen(<TableRules />);
+  /** The screen at a $25–$2,000 table. */
+  const at25to2000 = () => {
+    const app = createTestApp();
+    app.settings.update({ 'table.minBet': 25, 'table.maxBet': 2000 });
+    return renderScreen(<TableRules />, { app });
+  };
+
+  it('show the limits, and each handle steps through the amounts tables use', () => {
+    const { app } = at25to2000();
     expect(slider('Table minimum')).toHaveAttribute('aria-valuetext', '$25');
     expect(slider('Table maximum')).toHaveAttribute('aria-valuetext', '$2,000');
     // The box follows the handle while it is dragged; the setting changes once it is let go.
@@ -166,7 +173,7 @@ describe('table limits', () => {
 
   it('take any typed whole dollar in range, and refuse one that would cross the other or leave the range', async () => {
     const user = userEvent.setup();
-    const { app } = renderScreen(<TableRules />);
+    const { app } = at25to2000();
     await type(user, 'Table minimum', '30');
     expect(app.settings.get('table.minBet')).toBe(30);
     await type(user, 'Table minimum', '2001');

@@ -14,7 +14,13 @@ export interface PresetSpec {
 }
 
 /** Two decks: 42 cards behind the cut card (0.8 of a deck), dealt face down as a pitch game is. */
-const DOUBLE_DECK: SettingsPatch = { 'table.decks': 2, 'table.cardsBehindCutCard': 42, 'table.cardsFaceDown': true };
+const DOUBLE_DECK: SettingsPatch = {
+  'table.decks': 2,
+  'table.cardsBehindCutCard': 42,
+  'table.cardsFaceDown': true,
+  // A table of their own, not one of the built-in ones.
+  'table.preset': '',
+};
 
 /** Alone with the dealer, and Crackjack's Single-Hand betting strategy, with no wonging. */
 const HEADS_UP: SettingsPatch = {

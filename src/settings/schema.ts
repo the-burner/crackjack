@@ -184,7 +184,8 @@ export const SETTINGS_SCHEMA = {
   // Table setup (game).
   'table.decks': oneOf(DECKS, 6),
   'table.shuffleMode': oneOf(['cutCard', 'rounds'], 'cutCard'),
-  'table.cardsBehindCutCard': int(65, 1, 415),
+  // A fresh install's table is Bally's Chicago 6-Deck Shoe (settings/table-presets.ts), so these defaults are its.
+  'table.cardsBehindCutCard': int(52, 1, 415),
   /** Cards either side of that the cut card may land, drawn at each shuffle (penetration that varies by dealer). */
   'table.cutCardVaries': int(0, 0, 104),
   'table.roundsPerShoe': int(6, 1, 80),
@@ -195,10 +196,10 @@ export const SETTINGS_SCHEMA = {
   /** Seats 1..6: true = computer player. */
   'table.computerSeats': json([true, false, false, true, false, false]),
   /** The smallest and largest bet the table takes on a hand; the maximum is never below the minimum. */
-  /** The saved or built-in table the table's settings came from (settings/table-presets.ts); none on a fresh install. */
-  'table.preset': text(''),
-  'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
-  'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
+  /** The saved or built-in table the table's settings came from (settings/table-presets.ts). */
+  'table.preset': text('ballys-chicago-6d'),
+  'table.minBet': int(15, LOWEST_LIMIT, HIGHEST_LIMIT),
+  'table.maxBet': int(5000, LOWEST_LIMIT, HIGHEST_LIMIT),
   /** Once the player sits out a round, no bet is taken until the shuffle, and no one new sits down mid-shoe. */
   'table.noMidShoeEntry': bool(false),
   /** No one new sits down mid-shoe (no mid-entry on request): the computer players come and go at the shuffle. */

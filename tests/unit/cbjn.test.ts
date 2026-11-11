@@ -3,6 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { cbjnTable } from '@/settings/cbjn';
 import { CASINO_TABLES } from '@/data/casino-tables';
 import { TABLE_SETTINGS } from '@/settings/table-settings';
+import { TABLE_SETS } from '@/settings/setting-sets';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
 import { tableSummary } from '@/settings/table-summary';
 import type { SettingKey, SettingsPatch } from '@/settings/schema';
 
@@ -164,5 +166,14 @@ describe('the Chicago-area games', () => {
     expect(summary(table('harrahs-joliet-6d-s17').values)).toBe('6D S17 DAS RSA NM · $25–$2,000');
     expect(summary(table('rivers-des-plaines-6d-s17').values)).toBe('6D S17 DAS NM PV · $25–$25,000');
     expect(table('wind-creek-spanish-21').values).toMatchObject({ 'bonuses.game': 17, 'table.decks': 8 });
+  });
+});
+
+describe("a fresh install's table", () => {
+  it("is Bally's Chicago 6-Deck Shoe, the settings' defaults being its own", () => {
+    const ballys = TABLE_SETS.kind.builtIns.find(t => t.id === SETTINGS_SCHEMA['table.preset'].default)!;
+    expect(ballys.name).toBe("Bally's Chicago 6-Deck Shoe");
+    const defaults = Object.fromEntries(TABLE_SETTINGS.map(key => [key, SETTINGS_SCHEMA[key].default]));
+    expect(ballys.values).toEqual(defaults);
   });
 });
