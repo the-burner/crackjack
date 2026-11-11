@@ -15,7 +15,6 @@ import { PLAYER } from '@/game/engine/hand';
 import type { HandKey } from '@/game/engine/hand';
 import type { GameEvent } from '@/game/engine/events';
 import type { Result } from '@/game/engine/settlement';
-import { TABLE_LIMITS } from '@/settings/schema';
 import type { Ramp } from '@/settings/bet-ramp';
 import { money } from '@/core/money';
 import { tableLayout, seatSlot } from './layout';
@@ -611,7 +610,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
     const error = betError({
       amount,
       hands: seats.length,
-      limits: TABLE_LIMITS[settings.get('table.limits')],
+      limits: [settings.get('table.minBet'), settings.get('table.maxBet')],
       bankroll: session.bankroll,
       sideBets: sideBetPicker.pending,
       spots: session.sideBetSpots(),

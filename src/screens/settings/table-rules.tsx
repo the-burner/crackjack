@@ -9,7 +9,10 @@ import { Section, SettingsGroup } from '@/components/ui/settings-group';
 import { Select } from '@/components/ui/select';
 import { SettingChecks, SettingNumber, SettingSelect, SettingsScreen } from '@/components/settings-controls';
 import type { Option, SettingCheck } from '@/components/settings-controls';
-import { DECKS, TABLE_LIMITS } from '@/settings/schema';
+import { DECKS } from '@/settings/schema';
+import { LIMIT_STEPS } from '@/settings/table-limits';
+import { RangeSlider } from '@/components/ui/range-slider';
+import { money } from '@/core/money';
 import type { SettingValues } from '@/settings/schema';
 import { BUILTIN_SIDE_BET_GAMES } from '@/data/side-bet-games';
 import { applyGameChange } from '@/settings/rules-logic';
@@ -38,8 +41,6 @@ const SHUFFLE_MODES: readonly Option<SettingValues['table.shuffleMode']>[] = [
   { value: 'cutCard', label: 'Shuffle after a Cut Card' },
   { value: 'rounds', label: 'Shuffle after Fixed Rounds' },
 ];
-
-const LIMITS = TABLE_LIMITS.map(([min, max], value) => ({ value, label: `Limits: $${min} to $${max}` }));
 
 const DEALING: readonly SettingCheck[] = [
   { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
@@ -171,7 +172,15 @@ export function TableRules() {
           />
           <SeatPicker upright={upright} />
           <SettingChecks items={[{ label: 'Players come and go', key: 'table.playersComeAndGo' }]} />
-          <SettingSelect label="Table limits" setting="table.limits" options={LIMITS} />
+          <RangeSlider
+            label="Table Limits"
+            lowLabel="Table minimum"
+            highLabel="Table maximum"
+            value={{ low: settings.get('table.minBet'), high: settings.get('table.maxBet') }}
+            steps={LIMIT_STEPS}
+            format={money}
+            onChange={({ low, high }) => settings.update({ 'table.minBet': low, 'table.maxBet': high })}
+          />
         </SettingsGroup>
       </Section>
       <Section title="Shoe">

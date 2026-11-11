@@ -109,7 +109,6 @@ export interface TableConfig {
   dealerMakesObviousPlays?: boolean;
   playersComeAndGo?: boolean;
   peeking?: PeekingOptions;
-  limits?: SettingValues['table.limits'];
   maxCardsPerHand?: number;
   /** Which cards the true count treats as gone. Default every card dealt. */
   remainingCards?: SettingValues['game.trueCount.remainingCards'];

@@ -46,6 +46,7 @@ async function openTable(page: Page, { settings = {}, seed = 7 }: { settings?: S
           'table.seatCount': 1,
           'table.computerSeats': [false, false, false, false, false, false],
           'game.betting.chipValue': 5,
+          'table.minBet': 1,
           'game.betting.warnOnError': false,
           'game.strategy.warnOnError': false,
           'game.betting.ramp': { minCount: 0, rows: [1, 2, 5, 10, 15].map(chips => ({ chips, hands: 1 })) },

@@ -65,6 +65,8 @@ function tableFor(overrides: SettingsPatch = {}) {
 const NOT_THE_ENGINES: Partial<Record<SettingKey, string>> = {
   'table.startingBankroll': 'sets the opening bankroll, not a table rule',
   'table.refreshBankrollOnStart': 'decides whether the saved bankroll is reused',
+  'table.minBet': 'checked as a bet is placed (game/bet-validation.ts), before the engine sees it',
+  'table.maxBet': 'checked as a bet is placed (game/bet-validation.ts), before the engine sees it',
   'table.seatCount': 'carried through, but as the seat list the screen draws',
   'table.computerSeats': 'turned into the computerSeats list, checked on its own below',
   'peeking.strategyHigh': 'picks a hole-card strategy, which is not implemented',

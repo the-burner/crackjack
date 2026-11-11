@@ -251,6 +251,38 @@ test('a slider value can be typed into its number box @layout', async ({ page })
   expect(metrics.paddingTop).toBe(metrics.paddingBottom);
 });
 
+test('the table limits step by keyboard, meet but never cross, and fit their group @layout', async ({ page }) => {
+  await openHub(page, 'game.tableRules', { fresh: true });
+  const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');
+  const saved = (key: string) => page.evaluate(k => window.app.settings.get(k as never) as unknown, key);
+  const low = el.getByRole('slider', { name: 'Table minimum' });
+  const high = el.getByRole('slider', { name: 'Table maximum' });
+  await low.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(low).toHaveAttribute('aria-valuetext', '$50');
+  expect(await saved('table.minBet')).toBe(50);
+  // Down to the minimum and no further: a flat-bet table.
+  await high.focus();
+  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowLeft');
+  expect(await saved('table.maxBet')).toBe(50);
+  await expect(el.getByRole('spinbutton', { name: 'Table maximum' })).toHaveValue('50');
+
+  const group = (await el
+    .getByRole('group', { name: 'Table Limits' })
+    .locator('xpath=ancestor::*[@data-slot="settings-group"][1]')
+    .boundingBox())!;
+  for (const part of [
+    low,
+    high,
+    el.getByRole('spinbutton', { name: 'Table minimum' }),
+    el.getByRole('spinbutton', { name: 'Table maximum' }),
+  ]) {
+    const box = (await part.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(group.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(group.x + group.width + 0.5);
+  }
+});
+
 test('the seats drawing keeps every seat on the felt, apart, for each seat count @layout', async ({ page }) => {
   await openHub(page, 'game.tableRules', { fresh: true });
   const el = await openFromHub(page, 'Table Rules and Conditions', 'game.tableRules');

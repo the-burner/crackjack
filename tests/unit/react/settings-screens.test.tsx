@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { UserEvent } from '@testing-library/user-event';
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TableRules } from '@/screens/settings/table-rules';
 import { Bankroll } from '@/screens/settings/bankroll';
@@ -112,6 +112,61 @@ describe('Table Rules and Conditions', () => {
     await user.click(screen.getByRole('button', { name: 'Refresh Bankroll' }));
     expect(app.bankroll.getState().value).toBe(500);
     expect(toast).toHaveBeenCalledWith('Bankroll refreshed');
+  });
+});
+
+describe('table limits', () => {
+  const slider = (name: string) => screen.getByRole('slider', { name });
+  /** Drags a handle to step `index` and lets go (jsdom has no native range dragging). */
+  const dragTo = (name: string, index: number) => {
+    fireEvent.change(slider(name), { target: { value: String(index) } });
+    fireEvent.pointerUp(slider(name));
+  };
+  const box = (name: string) => screen.getByRole('spinbutton', { name });
+  async function type(user: UserEvent, name: string, text: string) {
+    await user.clear(box(name));
+    await user.type(box(name), `${text}{Enter}`);
+  }
+
+  it('start at $25 to $2,000, and each handle steps through the amounts tables use', () => {
+    const { app } = renderScreen(<TableRules />);
+    expect(slider('Table minimum')).toHaveAttribute('aria-valuetext', '$25');
+    expect(slider('Table maximum')).toHaveAttribute('aria-valuetext', '$2,000');
+    dragTo('Table minimum', 5);
+    expect(app.settings.get('table.minBet')).toBe(50);
+    dragTo('Table maximum', 17);
+    expect(app.settings.get('table.maxBet')).toBe(3000);
+  });
+
+  it('let the handles meet, for a flat-bet table, but not cross', () => {
+    const app = createTestApp();
+    app.settings.update({ 'table.minBet': 100, 'table.maxBet': 200 });
+    renderScreen(<TableRules />, { app });
+    // Dragged past the minimum ($100, step 6), the maximum stops on it.
+    dragTo('Table maximum', 2);
+    expect(app.settings.get('table.maxBet')).toBe(100);
+    dragTo('Table minimum', 20);
+    expect(app.settings.get('table.minBet')).toBe(100);
+  });
+
+  it('take any typed whole dollar in range, and refuse one that would cross the other or leave the range', async () => {
+    const user = userEvent.setup();
+    const { app } = renderScreen(<TableRules />);
+    await type(user, 'Table minimum', '30');
+    expect(app.settings.get('table.minBet')).toBe(30);
+    await type(user, 'Table minimum', '2001');
+    expect(toast).toHaveBeenCalledWith("The table minimum can't be above the table maximum ($2,000).", {
+      tone: 'error',
+    });
+    expect(box('Table minimum')).toHaveValue(30);
+    expect(app.settings.get('table.minBet')).toBe(30);
+    await type(user, 'Table maximum', '29');
+    expect(toast).toHaveBeenCalledWith("The table maximum can't be below the table minimum ($30).", { tone: 'error' });
+    expect(app.settings.get('table.maxBet')).toBe(2000);
+    await type(user, 'Table maximum', '100001');
+    expect(toast).toHaveBeenCalledWith('Enter a whole amount from $1 to $100,000.', { tone: 'error' });
+    await type(user, 'Table maximum', '30');
+    expect(app.settings.get('table.maxBet')).toBe(30);
   });
 });
 

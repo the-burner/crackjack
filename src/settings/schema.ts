@@ -8,6 +8,7 @@ import { isRamp } from './bet-ramp';
 import { STANDARD, STANDARD_KEYS, isGestureMap, isKeyMap } from '@/core/gestures';
 import type { Ramp } from './bet-ramp';
 import type { BoolDef, EnumDef, JsonDef, NumberDef, SettingDef, Settings, SettingsValues, StringDef } from './store';
+import { HIGHEST_LIMIT, LOWEST_LIMIT } from './table-limits';
 
 const bool = (value: boolean): BoolDef => ({ type: 'bool', default: value });
 const text = (value: string): StringDef => ({ type: 'string', default: value });
@@ -37,17 +38,6 @@ const tableGrids = <T>(value: T) => ({
 export const DECKS = [1, 2, 3, 4, 5, 6, 7, 8];
 export const ACCURACY = [0, 1, 2];
 export const TRAY_STYLES = ['eightDeckFront', 'sixDeckFront', 'doubleDeckFront', 'sixDeckRear', 'doubleDeckRear'];
-export const TABLE_LIMITS = [
-  [1, 50],
-  [5, 250],
-  [5, 1000],
-  [10, 2000],
-  [25, 2500],
-  [100, 5000],
-  [500, 25000],
-  [1, 100000],
-];
-
 /** Every strategy a setting may name: the built-in ones and the hole-carding one. */
 const STRATEGY_IDS = [HOLE_CARD_STRATEGY.id, ...BUILTIN_STRATEGIES.map(strategy => strategy.id)];
 
@@ -198,10 +188,9 @@ export const SETTINGS_SCHEMA = {
   'table.seatCount': oneOf([1, 2, 4, 6], 4),
   /** Seats 1..6: true = computer player. */
   'table.computerSeats': json([true, false, false, true, false, false]),
-  'table.limits': oneOf(
-    TABLE_LIMITS.map((_, i) => i),
-    7,
-  ),
+  /** The smallest and largest bet the table takes on a hand; the maximum is never below the minimum. */
+  'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
+  'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
   'table.showBurnCards': bool(true),

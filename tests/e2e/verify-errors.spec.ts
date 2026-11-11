@@ -41,6 +41,7 @@ const BASE_SETTINGS = {
   'table.computerSeats': ALL_HUMAN,
   'table.burnCards': 0,
   'game.betting.chipValue': 10,
+  'table.minBet': 1,
   'game.betting.warnOnError': false,
   'game.strategy.warnOnError': false,
   // A count of 10 is never reached, so the first row is always the right bet.

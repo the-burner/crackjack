@@ -44,6 +44,7 @@ const BASE = {
   'table.burnCards': 0,
   'table.decks': 6,
   'game.betting.chipValue': 5,
+  'table.minBet': 1,
   'game.betting.warnOnError': false,
   // The first tile is five chips: $25.
   'game.betting.ramp': { minCount: 0, rows: [{ chips: 5, hands: 1 }] },
@@ -365,6 +366,7 @@ test.describe('insurance', () => {
 test.describe('8. redouble and hit after double', () => {
   const tenDollars = {
     'game.betting.chipValue': 10,
+    'table.minBet': 1,
     'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
   };
 
@@ -396,6 +398,7 @@ test.describe('9. player blackjack always wins', () => {
       settings: {
         'rules.playerBlackjackAlwaysWins': true,
         'game.betting.chipValue': 10,
+        'table.minBet': 1,
         'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
       },
       stack: deal(['As', 'Ks'], ['Kh', 'Ah']),
@@ -411,6 +414,7 @@ test.describe('10. suited 6-7-8 pays 2:1 if it wins', () => {
   const settings = {
     'bonuses.suited678IfWins': true,
     'game.betting.chipValue': 10,
+    'table.minBet': 1,
     'game.betting.ramp': { minCount: 0, rows: [{ chips: 1, hands: 1 }] },
   };
 

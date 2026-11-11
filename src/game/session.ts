@@ -165,7 +165,6 @@ export class GameSession {
         randomizeCard: get('peeking.randomizeCard'),
         randomizeHand: get('peeking.randomizeHand'),
       },
-      limits: get('table.limits'),
       maxCardsPerHand: MAX_CARDS_PER_HAND,
       remainingCards: get('game.trueCount.remainingCards'),
     };
