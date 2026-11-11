@@ -20,6 +20,7 @@ import {
   sameValues,
 } from '@/settings/named-configs';
 import type { Named, PresetKind } from '@/settings/named-configs';
+import { SETTINGS_SCHEMA } from '@/settings/schema';
 
 export function PresetPicker<T extends Named, V>({
   kind,
@@ -53,9 +54,18 @@ export function PresetPicker<T extends Named, V>({
   const load = (preset: T) => settings.update({ ...kind.patch(kind.valuesOf(preset)), [kind.selectedKey]: preset.id });
   const keep = (presetsToSave: T[]) => store.setState({ value: presetsToSave });
 
+  // A fresh install's settings, on no preset, are nothing to lose.
+  const untouched =
+    !selected &&
+    sameValues(
+      values,
+      kind.current(key => SETTINGS_SCHEMA[key].default as never),
+    );
   /** Unsaved settings are only dropped once the player agrees. */
   const mayDiscard = async () =>
-    !edited || confirm(selected ? `Discard your changes to “${selected.name}”?` : 'Discard these unsaved settings?');
+    !edited ||
+    untouched ||
+    confirm(selected ? `Discard your changes to “${selected.name}”?` : 'Discard these unsaved settings?');
 
   async function choose(id: string) {
     const preset = presets.find(p => p.id === id);

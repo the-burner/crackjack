@@ -21,12 +21,13 @@ async function search(user: UserEvent, text: string) {
 }
 
 describe('the table picker', () => {
-  it("starts on Crackjack's table, and lists every table with where it is and its rules", async () => {
+  it('starts on no table (Custom), and lists every casino table with where it is and its rules', async () => {
     const user = userEvent.setup();
     renderScreen(<TableRules />);
-    expect(picker()).toHaveDisplayValue("Crackjack's 6D,H17,LS,DAS");
+    expect(picker()).toHaveDisplayValue('Custom');
     await search(user, '');
-    expect(options()).toHaveLength(TABLE_SETS.kind.builtIns.length);
+    // Every casino table, and Custom.
+    expect(options()).toHaveLength(TABLE_SETS.kind.builtIns.length + 1);
     expect(screen.getByRole('option', { name: /Emerald Queen 8-Deck Shoe/ })).toHaveTextContent(
       'Tacoma, WA · 8D H17 DAS LS RSA PV · $15–$500',
     );
@@ -51,6 +52,19 @@ describe('the table picker', () => {
     await user.keyboard('{Escape}');
     expect(picker()).toHaveDisplayValue('Emerald Queen 8-Deck Shoe');
     expect(app.settings.get('bonuses.game')).toBe(0);
+  });
+
+  it('loads a table straight away on a fresh install, but asks once a setting of its own was changed', async () => {
+    const user = userEvent.setup();
+    const app = createTestApp();
+    renderScreen(<TableRules />, { app });
+    await user.click(screen.getByRole('switch', { name: 'Resplit aces' }));
+    await search(user, 'snoqualmie 8');
+    await user.keyboard('{Enter}');
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Discard these unsaved settings?');
+    await user.click(screen.getByRole('button', { name: 'No' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(app.settings.get('rules.resplitAces')).toBe(true);
   });
 
   it('marks a built-in table edited once a rule changes, and saves the change as a table of your own', async () => {
@@ -90,7 +104,7 @@ describe('the table picker', () => {
   it('is remembered by a Blackjack configuration', async () => {
     const app = createTestApp();
     renderScreen(<GameOptions />, { app, path: '/game' });
-    expect(app.settings.get('table.preset')).toBe('crackjack-6d');
+    expect(app.settings.get('table.preset')).toBe('');
     expect(screen.getByRole('combobox', { name: 'Configuration' })).toHaveDisplayValue("Crackjack's 6D,H17,LS,DAS");
   });
 });

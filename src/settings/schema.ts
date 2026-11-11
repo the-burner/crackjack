@@ -195,8 +195,8 @@ export const SETTINGS_SCHEMA = {
   /** Seats 1..6: true = computer player. */
   'table.computerSeats': json([true, false, false, true, false, false]),
   /** The smallest and largest bet the table takes on a hand; the maximum is never below the minimum. */
-  /** The saved or built-in table the table's settings came from (settings/table-presets.ts). */
-  'table.preset': text('crackjack-6d'),
+  /** The saved or built-in table the table's settings came from (settings/table-presets.ts); none on a fresh install. */
+  'table.preset': text(''),
   'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
   /** Once the player sits out a round, no bet is taken until the shuffle, and no one new sits down mid-shoe. */
