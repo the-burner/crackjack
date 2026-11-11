@@ -13,6 +13,8 @@ export const SURRENDER = {
   early: 'early',
   earlyVsTen: 'earlyVsTen',
   macao: 'macao',
+  earlyExceptAce: 'earlyExceptAce',
+  lateExceptAce: 'lateExceptAce',
 } as const;
 export const INSURANCE = { none: 'none', normal: 'normal', blackjackOnly: 'blackjackOnly' } as const;
 
@@ -42,10 +44,12 @@ export function rulesFrom(settings: Pick<AppSettings, 'get'>) {
     maxSplitHands: get('rules.maxSplitHands'),
     doubleAfterSplitAces: get('rules.doubleAfterSplitAces'),
     resplitAces: get('rules.resplitAces'),
+    resplitAcesOnce: get('rules.resplitAcesOnce'),
     hitSplitAces: get('rules.hitSplitAces'),
     splitTensSameRankOnly: get('rules.splitTensSameRankOnly'),
     noAceSplits: get('rules.noAceSplits'),
     noSplit4s5s10s: get('rules.noSplit4s5s10s'),
+    noTenSplits: get('rules.noTenSplits'),
     insurance: get('rules.insurance'),
     surrender: get('rules.surrender'),
     surrenderAfterInsurance: get('rules.surrenderAfterInsurance'),
@@ -134,7 +138,9 @@ export function splitAllowed(rules: Rules, hand: Hand, handsInSeat: number): boo
   const value = valueOf(hand.cards[0]);
   if (value === 1 && rules.noAceSplits) return false;
   if (rules.noSplit4s5s10s && [4, 5, 10].includes(value)) return false;
+  if (rules.noTenSplits && value === 10) return false;
   if (hand.isAcePair() && hand.isSplit && !rules.resplitAces) return false;
+  if (hand.isAcePair() && hand.isSplit && rules.resplitAcesOnce && handsInSeat >= 3) return false;
   return true;
 }
 
@@ -152,8 +158,15 @@ export const splitAcesMayHit = (rules: Rules, hand: Hand): boolean => !isSplitAc
 const isSplitAce = (rules: Rules, hand: Hand): boolean => hand.isSplit && valueOf(hand.cards[0]) === 1;
 
 /** Whether a hand may surrender now. */
-export function surrenderAllowed(rules: Rules, hand: Hand, { hasInsurance = false }: { hasInsurance?: boolean } = {}) {
+export function surrenderAllowed(
+  rules: Rules,
+  hand: Hand,
+  { hasInsurance = false, upcard }: { hasInsurance?: boolean; upcard?: CardId } = {},
+) {
   if (hasInsurance && !rules.surrenderAfterInsurance) return false;
+  const againstAce = upcard !== undefined && valueOf(upcard) === 1;
+  if (againstAce && (rules.surrender === SURRENDER.earlyExceptAce || rules.surrender === SURRENDER.lateExceptAce))
+    return Boolean(hand.doubled && rules.doubleDownRescue && !hand.busted());
   if (hand.isSplit) return false;
   // Double-down rescue is its own rule: it does not need the table to offer surrender.
   if (hand.doubled) return Boolean(rules.doubleDownRescue) && !hand.busted();
@@ -166,6 +179,7 @@ export function surrenderAllowed(rules: Rules, hand: Hand, { hasInsurance = fals
 /** Whether early surrender is allowed against this upcard (before the dealer checks). */
 export function earlySurrenderAllowed(rules: Rules, upcard: CardId): boolean {
   if (rules.surrender === SURRENDER.early || rules.surrender === SURRENDER.macao) return true;
+  if (rules.surrender === SURRENDER.earlyExceptAce) return valueOf(upcard) !== 1;
   return rules.surrender === SURRENDER.earlyVsTen && valueOf(upcard) === 10;
 }
 

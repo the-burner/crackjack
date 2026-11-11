@@ -615,6 +615,7 @@ function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOp
       sideBets: sideBetPicker.pending,
       spots: session.sideBetSpots(),
       outUntilShuffle: session.outUntilShuffle,
+      mostHands: { hands: session.mostHands(), oneSpot: settings.get('table.oneSpot') },
     });
     if (error) {
       setOverlayMessage(error);

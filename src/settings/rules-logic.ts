@@ -51,7 +51,7 @@ const VARIANT_RULES: Record<Variant, SettingsPatch> = {
   },
   spanish21: {
     'rules.dealerHitsSoft17': true,
-    'rules.hardDoubles': '8-11',
+    'rules.hardDoubles': 'any',
     'rules.softDoubles': 'any',
     'rules.surrender': 'late',
     'rules.doubleDownRescue': true,
@@ -121,9 +121,19 @@ function implicationsOf(key: SettingKey, read: SettingReader, set: PatchWriter) 
       break;
     case 'rules.resplitAces':
       if (read(key) && read('rules.maxSplitHands') === 2) set('rules.maxSplitHands', 4);
+      if (!read(key)) set('rules.resplitAcesOnce', false);
+      break;
+    case 'rules.resplitAcesOnce':
+      if (read(key)) {
+        set('rules.resplitAces', true);
+        if (read('rules.maxSplitHands') === 2) set('rules.maxSplitHands', 4);
+      }
       break;
     case 'rules.maxSplitHands':
-      if (read(key) === 2) set('rules.resplitAces', false);
+      if (read(key) === 2) {
+        set('rules.resplitAces', false);
+        set('rules.resplitAcesOnce', false);
+      }
       break;
     case 'rules.doubleAfterSplitAces':
       if (read(key)) set('rules.doubleAfterSplit', true);

@@ -72,6 +72,8 @@ export class GameSession {
   wongPlaying: boolean | null = null;
   /** Sat out a round of this shoe at a table with no mid-shoe entry, so no bet until the shuffle. */
   outUntilShuffle = false;
+  /** The fewest hands played this shoe, the most it allows at a table with no spreading mid-shoe; null before the first. */
+  fewestHandsThisShoe: number | null = null;
   /** The round in play is one the player sat out. */
   satOut = false;
   stats: GameStats;
@@ -123,6 +125,7 @@ export class GameSession {
         // A new shoe begins wonged in or out afresh, and open to a bet.
         this.wongPlaying = null;
         this.outUntilShuffle = false;
+        this.fewestHandsThisShoe = null;
       },
     });
   }
@@ -157,6 +160,7 @@ export class GameSession {
       spanish: gameVariant(get('bonuses.game')) === 'spanish21',
       shuffleMode: get('table.shuffleMode'),
       cardsBehindCutCard: get('table.cardsBehindCutCard'),
+      cutCardVaries: get('table.cutCardVaries'),
       roundsPerShoe: get('table.roundsPerShoe'),
       burnCards: get('table.burnCards'),
       showBurnCards: get('table.showBurnCards'),
@@ -166,6 +170,8 @@ export class GameSession {
       doubleDownCardFaceUp: get('table.doubleDownCardFaceUp'),
       dealerMakesObviousPlays: get('mechanics.dealerMakesObviousPlays'),
       playersComeAndGo: get('table.playersComeAndGo'),
+      newPlayersWaitForShuffle: get('table.noMidShoeEntry') || get('table.newPlayersWaitForShuffle'),
+      showCardsOnlyWhenNeeded: get('table.showCardsOnlyWhenNeeded'),
       peeking: {
         mode: get('peeking.mode'),
         percent: get('peeking.percent'),
@@ -241,6 +247,7 @@ export class GameSession {
   }): GameEvent[] {
     this.warnings = [];
     const humanSeats = this.humanSeats().slice(0, hands);
+    this.fewestHandsThisShoe = Math.min(this.fewestHandsThisShoe ?? humanSeats.length, humanSeats.length);
     const verdict = this.wongVerdict(false);
     if (this.settings.get('game.betting.warnOnError')) {
       if (verdict === null) this.checkBetting(betPerHand, humanSeats.length);
@@ -260,6 +267,16 @@ export class GameSession {
     const events = this.game.startRound(humanSeats.map(seat => ({ seat, bet: betPerHand, sideBets })));
     this.afterEngineStep();
     return events;
+  }
+
+  /** The most hands the table lets the player bet now: one at a one-spot table, no more than before without spreading mid-shoe. */
+  mostHands(): number {
+    const seats = this.humanSeats().length;
+    const spread =
+      this.settings.get('table.noSpreadingMidShoe') && this.fewestHandsThisShoe !== null
+        ? this.fewestHandsThisShoe
+        : seats;
+    return Math.min(seats, spread, this.settings.get('table.oneSpot') ? 1 : seats);
   }
 
   /** Sits out a round: the computer seats play it while the player counts. */

@@ -296,7 +296,7 @@ test('a table is found by typing and loaded, its list inside its group @layout',
   const list = el.getByRole('listbox', { name: 'Table' });
   const first = list.getByRole('option').first();
   await expect(first).toContainText('Emerald Queen 8-Deck Shoe');
-  await expect(first).toContainText('Tacoma, WA · 8D H17 DAS LS RSA · $15–$500');
+  await expect(first).toContainText('Tacoma, WA · 8D H17 DAS LS RSA PV · $15–$500');
   const group = (await list.locator('xpath=ancestor::*[@data-slot="settings-group"][1]').boundingBox())!;
   const row = (await first.boundingBox())!;
   expect(row.x).toBeGreaterThanOrEqual(group.x);
@@ -305,7 +305,7 @@ test('a table is found by typing and loaded, its list inside its group @layout',
   await expect(picker).toHaveValue('Emerald Queen 8-Deck Shoe');
   await expect(el.getByRole('combobox', { name: 'Decks', exact: true })).toHaveValue(/./);
   expect(await page.evaluate(() => window.app.settings.get('table.decks'))).toBe(8);
-  await expect(el.getByRole('switch', { name: 'Resplit aces' })).toBeChecked();
+  await expect(el.getByRole('switch', { name: 'Resplit aces', exact: true })).toBeChecked();
 });
 
 test('the seats drawing keeps every seat on the felt, apart, for each seat count @layout', async ({ page }) => {

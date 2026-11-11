@@ -33,11 +33,19 @@ const SHUFFLE_MODES: readonly Option<SettingValues['table.shuffleMode']>[] = [
   { value: 'rounds', label: 'Shuffle after Fixed Rounds' },
 ];
 
+const TABLE_CHECKS: readonly SettingCheck[] = [
+  { label: 'No mid-shoe entry', key: 'table.noMidShoeEntry' },
+  { label: 'New players wait for the shuffle', key: 'table.newPlayersWaitForShuffle' },
+  { label: 'No spreading to more hands mid-shoe', key: 'table.noSpreadingMidShoe' },
+  { label: 'One spot per player', key: 'table.oneSpot' },
+];
+
 const DEALING: readonly SettingCheck[] = [
   { label: 'Hide discard tray', key: 'display.hideDiscardTray' },
   { label: 'Hide shoe', key: 'display.hideShoe' },
   { label: 'Dealer shows burn cards', key: 'table.showBurnCards' },
   { label: 'Cards dealt face down', key: 'table.cardsFaceDown' },
+  { label: 'Show face-down cards only when needed', key: 'table.showCardsOnlyWhenNeeded' },
   { label: 'DD card dealt face up', key: 'table.doubleDownCardFaceUp' },
 ];
 
@@ -73,16 +81,19 @@ const DOUBLING: readonly SettingCheck[] = [
   { label: 'Double Down Rescue', key: 'rules.doubleDownRescue' },
 ];
 
-// The two resplit limits are one setting; clearing both allows no resplits.
+// The three resplit limits are one setting; clearing them all allows no resplits.
 const SPLITTING: readonly SettingCheck[] = [
   { label: 'Resplit to 3 hands', key: 'rules.maxSplitHands', value: 3, off: 2 },
   { label: 'Resplit to 4 hands', key: 'rules.maxSplitHands', value: 4, off: 2 },
+  { label: 'Unlimited resplits (to 8 hands)', key: 'rules.maxSplitHands', value: 8, off: 2 },
   { label: 'Double after ace split', key: 'rules.doubleAfterSplitAces' },
   { label: 'Resplit aces', key: 'rules.resplitAces' },
+  { label: 'Resplit aces once only (3 hands)', key: 'rules.resplitAcesOnce' },
   { label: 'Multiple draw after ace split', key: 'rules.hitSplitAces' },
   { label: 'Split tens must same value', key: 'rules.splitTensSameRankOnly' },
   { label: 'No ace splits', key: 'rules.noAceSplits' },
   { label: 'No 4, 5, or ten splits', key: 'rules.noSplit4s5s10s' },
+  { label: 'No ten splits', key: 'rules.noTenSplits' },
 ];
 
 const INSURANCE: readonly Option<SettingValues['rules.insurance']>[] = [
@@ -96,6 +107,8 @@ const SURRENDER: readonly Option<SettingValues['rules.surrender']>[] = [
   { value: 'late', label: 'Late Surrender (common)' },
   { value: 'early', label: 'Early Surrender (rare)' },
   { value: 'earlyVsTen', label: 'Early Surrender vs. 10' },
+  { value: 'earlyExceptAce', label: 'Early Surrender except vs. Ace' },
+  { value: 'lateExceptAce', label: 'Late Surrender except vs. Ace' },
   { value: 'macao', label: 'Macao Surrender' },
 ];
 
@@ -159,7 +172,7 @@ export function TableRules() {
             format={money}
             onChange={({ low, high }) => settings.update({ 'table.minBet': low, 'table.maxBet': high })}
           />
-          <SettingChecks items={[{ label: 'No mid-shoe entry', key: 'table.noMidShoeEntry' }]} />
+          <SettingChecks items={TABLE_CHECKS} />
         </SettingsGroup>
       </Section>
       <Section title="Shoe">
@@ -187,6 +200,12 @@ export function TableRules() {
             setting="table.cardsBehindCutCard"
             prompt="Cards after the cut card"
             clamp={value => Math.min(value, maxCardsBehindCutCard(decks))}
+            hidden={!byCutCard}
+          />
+          <SettingNumber
+            label="Cut card varies by"
+            setting="table.cutCardVaries"
+            prompt="Cards either side the cut card may land"
             hidden={!byCutCard}
           />
           <SettingNumber label="Rounds" setting="table.roundsPerShoe" prompt="Rounds" hidden={byCutCard} />

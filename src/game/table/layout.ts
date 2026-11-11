@@ -14,6 +14,8 @@ import { MAX_CARDS_PER_HAND } from '@/game/engine/rules';
 export const MAX_PORTRAIT_SEATS = 4;
 /** Hand columns per seat: the base hand plus three split hands. */
 export const HANDS_PER_SEAT = 4;
+/** Hands a seat may hold with unlimited resplits; the four past the first four sit in the gaps between them. */
+export const MOST_HANDS_PER_SEAT = 8;
 /** Card slots laid out per hand (hands are capped at 7 cards in play). */
 export const CARDS_PER_HAND = 10;
 /** Dealer hands up to this long sit side by side; longer ones overlap. */
@@ -364,7 +366,9 @@ function buildSeat({
       x: Math.round(Math.min(left + stepRight * card, width - cardWidth - 2)),
       y: Math.round(y - stepUp * card),
     }));
-  const hands = Array.from({ length: HANDS_PER_SEAT }, (_, hand) => fan(x - splitStep * hand));
+  const hands = Array.from({ length: MOST_HANDS_PER_SEAT }, (_, hand) =>
+    fan(hand < HANDS_PER_SEAT ? x - splitStep * hand : x - splitStep * (hand - HANDS_PER_SEAT + 0.5)),
+  );
   // At least as far apart as the seat's ends, and kept on the felt at its left.
   const spread = Math.max(splitStep * (HANDS_PER_SEAT - 1), pairSpread);
   const shift = Math.max(0, 2 - (x - spread));
@@ -614,9 +618,9 @@ export function handSlot(
   return cardSlot(layout, key, cardIndex, undefined, { place, handsInSeat: order!.length });
 }
 
-/** Which column a hand sits in, when the seat has one hand or three or four (a pair sits apart: see SeatLayout.pair). */
+/** Which column a hand sits in, when the seat has one hand or three or more (a pair sits apart: see SeatLayout.pair). */
 export function splitColumn(index: number): number {
-  return Math.min(index, HANDS_PER_SEAT - 1);
+  return Math.min(index, MOST_HANDS_PER_SEAT - 1);
 }
 
 /** The seat's layout, or null when that seat is not shown. */

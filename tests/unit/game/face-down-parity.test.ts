@@ -65,6 +65,41 @@ describe('a face-down game', () => {
     expect(second.faceUp).toEqual([true, true]);
   });
 
+  it("settles the other players' hands unseen on a dealer bust where cards are shown only when needed", () => {
+    // Seat 1 is the player's, seat 2 a computer player's: 10 7 against 9 8; the dealer's 6 10 draws a 10 and busts.
+    const deal = [card(10), card(9), card(6), card(7), card(8), card(10), card(10)];
+    const play = (table: Partial<TableConfig>) => {
+      const game = new BlackjackGame({
+        rules: makeRules(),
+        table: { decks: 6, burnCards: 0, seatCount: 2, computerSeats: [2], doubleDownCardFaceUp: true, ...table },
+        bankroll: 1000,
+        random: seededRandom(1),
+        computerPlay: () => ACTION.stand,
+      });
+      const queue = [...deal];
+      const realDraw = game.shoe.draw.bind(game.shoe);
+      game.shoe.draw = () => {
+        if (queue.length === 0) return realDraw();
+        const next = queue.shift()!;
+        game.shoe.remainingByCard[next] -= 1;
+        game.shoe.remaining -= 1;
+        game.shoe.dealt += 1;
+        return next;
+      };
+      game.startRound([{ seat: 1, bet: 10 }]);
+      game.act(ACTION.stand);
+      return game;
+    };
+    const unseen = play({ ...faceDown, showCardsOnlyWhenNeeded: true });
+    expect(unseen.dealer.busted()).toBe(true);
+    const computer = unseen.hands.find(h => h.owner === PLAYER.computer)!;
+    expect(computer.faceUp.some(Boolean)).toBe(false);
+    // The player's own hand is turned up all the same.
+    expect(unseen.hands.find(h => h.owner === PLAYER.human)!.faceUp).toEqual([true, true]);
+    const shown = play(faceDown);
+    expect(shown.hands.find(h => h.owner === PLAYER.computer)!.faceUp).toEqual([true, true]);
+  });
+
   it('turns every hand up at the showdown', () => {
     const game = riggedGame([card(10), card(9), card(7), card(5)], { table: faceDown });
     game.startRound([{ seat: 1, bet: 10 }]);

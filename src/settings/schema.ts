@@ -148,7 +148,7 @@ export const SETTINGS_SCHEMA = {
   'rules.hardDoubles': oneOf(['none', '10-11', '9-11', '8-11', 'any'], 'any'),
   'rules.softDoubles': oneOf(['none', 'a8a9', 'any'], 'any'),
   'rules.insurance': oneOf(['none', 'normal', 'blackjackOnly'], 'normal'),
-  'rules.surrender': oneOf(['none', 'late', 'early', 'earlyVsTen', 'macao'], 'late'),
+  'rules.surrender': oneOf(['none', 'late', 'early', 'earlyVsTen', 'macao', 'earlyExceptAce', 'lateExceptAce'], 'late'),
   // Rule variations.
   'rules.doubleOnThreeCards': bool(false),
   'rules.doubleAnyNumberOfCards': bool(false),
@@ -156,13 +156,17 @@ export const SETTINGS_SCHEMA = {
   'rules.tripleDown': bool(false),
   'rules.hitAfterDouble': bool(false),
   'rules.doubleDownRescue': bool(false),
-  'rules.maxSplitHands': oneOf([2, 3, 4], 4),
+  /** Hands a pair may be split into; 8 is unlimited resplits, as many as a seat holds. */
+  'rules.maxSplitHands': oneOf([2, 3, 4, 8], 4),
   'rules.doubleAfterSplitAces': bool(false),
   'rules.resplitAces': bool(false),
+  /** Aces resplit once only, to three hands, whatever other pairs may. */
+  'rules.resplitAcesOnce': bool(false),
   'rules.hitSplitAces': bool(false),
   'rules.splitTensSameRankOnly': bool(false),
   'rules.noAceSplits': bool(false),
   'rules.noSplit4s5s10s': bool(false),
+  'rules.noTenSplits': bool(false),
   // Play variations.
   'rules.surrenderAfterInsurance': bool(true),
   'rules.dealerWinsTies': bool(false),
@@ -181,6 +185,8 @@ export const SETTINGS_SCHEMA = {
   'table.decks': oneOf(DECKS, 6),
   'table.shuffleMode': oneOf(['cutCard', 'rounds'], 'cutCard'),
   'table.cardsBehindCutCard': int(65, 1, 415),
+  /** Cards either side of that the cut card may land, drawn at each shuffle (penetration that varies by dealer). */
+  'table.cutCardVaries': int(0, 0, 104),
   'table.roundsPerShoe': int(6, 1, 80),
   'table.burnCards': int(1, 0, 5),
   'table.startingBankroll': int(30000, 100, 1000000),
@@ -193,8 +199,16 @@ export const SETTINGS_SCHEMA = {
   'table.preset': text('crackjack-6d'),
   'table.minBet': int(25, LOWEST_LIMIT, HIGHEST_LIMIT),
   'table.maxBet': int(2000, LOWEST_LIMIT, HIGHEST_LIMIT),
-  /** Once the player sits out a round, no bet is taken until the shuffle. */
+  /** Once the player sits out a round, no bet is taken until the shuffle, and no one new sits down mid-shoe. */
   'table.noMidShoeEntry': bool(false),
+  /** No one new sits down mid-shoe (no mid-entry on request): the computer players come and go at the shuffle. */
+  'table.newPlayersWaitForShuffle': bool(false),
+  /** No spreading to more hands mid-shoe: once the player plays fewer hands, they may not go back up until the shuffle. */
+  'table.noSpreadingMidShoe': bool(false),
+  /** Players may bet one spot only. */
+  'table.oneSpot': bool(false),
+  /** In a face-down game, the dealer turns players' cards up only when needed to settle them. */
+  'table.showCardsOnlyWhenNeeded': bool(false),
   'table.cardsFaceDown': bool(false),
   'table.doubleDownCardFaceUp': bool(true),
   'table.showBurnCards': bool(true),

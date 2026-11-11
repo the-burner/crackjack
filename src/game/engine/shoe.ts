@@ -14,6 +14,8 @@ export interface ShoeOptions {
   /** Shuffle when the cut card appears, or after a fixed number of rounds. */
   shuffleMode?: ShuffleMode;
   cardsBehindCutCard?: number;
+  /** How far the cut card may land either side of `cardsBehindCutCard`, drawn afresh at each shuffle. */
+  cutCardVaries?: number;
   roundsPerShoe?: number;
   /** Spanish decks: 48 cards each, the four tens taken out (Spanish 21). */
   spanish?: boolean;
@@ -30,6 +32,9 @@ export class Shoe {
   decks: number;
   shuffleMode: ShuffleMode;
   cardsBehindCutCard: number;
+  cutCardVaries: number;
+  /** Where the cut card sits in this shoe. */
+  cutCardAt: number;
   roundsPerShoe: number;
   spanish: boolean;
   random: Random;
@@ -45,6 +50,7 @@ export class Shoe {
     decks,
     shuffleMode = SHUFFLE_MODE.cutCard,
     cardsBehindCutCard = 78,
+    cutCardVaries = 0,
     roundsPerShoe = 6,
     spanish = false,
     random = defaultRandom,
@@ -52,6 +58,8 @@ export class Shoe {
     this.decks = decks;
     this.shuffleMode = shuffleMode;
     this.cardsBehindCutCard = cardsBehindCutCard;
+    this.cutCardVaries = cutCardVaries;
+    this.cutCardAt = cardsBehindCutCard;
     this.roundsPerShoe = roundsPerShoe;
     this.spanish = spanish;
     this.random = random;
@@ -68,13 +76,18 @@ export class Shoe {
 
   /** Cards that may be dealt before the cut card shows. */
   get penetration(): number {
-    return this.shuffleMode === SHUFFLE_MODE.rounds ? Infinity : this.totalCards - this.cardsBehindCutCard;
+    return this.shuffleMode === SHUFFLE_MODE.rounds ? Infinity : this.totalCards - this.cutCardAt;
   }
 
   shuffle(): void {
     this.remainingByCard = new Array(CARDS_PER_DECK + 1).fill(this.decks);
     this.remainingByCard[0] = 0;
     if (this.spanish) for (const ten of TENS) this.remainingByCard[ten] = 0;
+    // Drawn only when it varies, so a fixed cut card takes nothing from the random sequence.
+    const shift = this.cutCardVaries ? Math.round((this.random() * 2 - 1) * this.cutCardVaries) : 0;
+    this.cutCardAt = shift
+      ? Math.min(Math.max(this.cardsBehindCutCard + shift, 1), this.totalCards - 1)
+      : this.cardsBehindCutCard;
     this.remaining = this.totalCards;
     this.dealt = 0;
     this.roundsDealt = 0;

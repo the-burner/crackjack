@@ -36,3 +36,41 @@ describe('no mid-shoe entry', () => {
     expect(s.outUntilShuffle).toBe(false);
   });
 });
+
+describe('spreading to more hands', () => {
+  it('is refused mid-shoe once the player plays fewer hands, until the shuffle', () => {
+    const s = session({
+      'table.noSpreadingMidShoe': true,
+      'table.seatCount': 4,
+      'table.computerSeats': [false, false, true, true, false, false],
+    });
+    expect(s.mostHands()).toBe(2);
+    s.startRound({ betPerHand: 25, hands: 1 });
+    expect(s.mostHands()).toBe(1);
+    s.game.shuffleAndBurn();
+    expect(s.mostHands()).toBe(2);
+  });
+
+  it('is never more than one spot at a one-spot table', () => {
+    const s = session({
+      'table.oneSpot': true,
+      'table.seatCount': 4,
+      'table.computerSeats': [false, false, true, true, false, false],
+    });
+    expect(s.mostHands()).toBe(1);
+  });
+});
+
+describe('new players', () => {
+  it('sit down only at the shuffle where they wait for it, though players may leave mid-shoe', () => {
+    const s = session({
+      'table.newPlayersWaitForShuffle': true,
+      'table.playersComeAndGo': true,
+      'table.seatCount': 6,
+      'table.computerSeats': [false, true, true, true, true, true],
+    });
+    const seated = s.game.computerSeatsThisRound();
+    s.game.shoe.roundsDealt = 1;
+    for (let i = 0; i < 50; i++) for (const seat of s.game.computerSeatsThisRound()) expect(seated).toContain(seat);
+  });
+});

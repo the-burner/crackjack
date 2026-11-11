@@ -44,11 +44,38 @@ describe('a CBJN game', () => {
   it('refuses a rules code it does not know, and keeps apart the ones the table does not play', () => {
     expect(() => cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,zz' })).toThrow('zz');
     const { values, notPlayed } = cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,nms,pv,toke' });
-    expect(notPlayed).toEqual(['pv', 'toke']);
+    expect(notPlayed).toEqual(['toke']);
+    // Penetration that varies, a quarter deck either way.
+    expect(values['table.cutCardVaries']).toBe(13);
     // No mid-entry, whichever way it is written.
     expect(values['table.noMidShoeEntry']).toBe(true);
     expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'nm' }).values['table.noMidShoeEntry']).toBe(true);
     expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17' }).values['table.noMidShoeEntry']).toBe(false);
+  });
+});
+
+describe('every rules code', () => {
+  const rules = (code: string) => cbjnTable({ decks: 6, cut: 1.5, min: 10, max: 500, rules: code }).values;
+
+  it('plays each variation the guide lists', () => {
+    expect(rules('esxa')['rules.surrender']).toBe('earlyExceptAce');
+    expect(rules('lsxa')['rules.surrender']).toBe('lateExceptAce');
+    expect(rules('rsa3')).toMatchObject({ 'rules.resplitAces': true, 'rules.resplitAcesOnce': true });
+    expect(rules('ur')['rules.maxSplitHands']).toBe(8);
+    expect(rules('uria')).toMatchObject({ 'rules.maxSplitHands': 8, 'rules.resplitAces': true });
+    expect(rules('nmm')).toMatchObject({ 'table.noMidShoeEntry': true, 'table.noSpreadingMidShoe': true });
+    expect(rules('nmo')).toMatchObject({ 'table.newPlayersWaitForShuffle': true, 'table.noMidShoeEntry': false });
+    expect(rules('nso')['table.noSpreadingMidShoe']).toBe(true);
+    expect(rules('nto')['table.noSpreadingMidShoe']).toBe(true);
+    expect(rules('1spot')['table.oneSpot']).toBe(true);
+    expect(rules('ns10')['rules.noTenSplits']).toBe(true);
+    expect(rules('hide')).toMatchObject({ 'table.cardsFaceDown': true, 'table.showCardsOnlyWhenNeeded': true });
+  });
+
+  it('turns every code in the guide into settings or keeps it apart, and refuses none', () => {
+    const all =
+      'ds,h17,pv,rsa,s17,nm,ls,shoe,notch,spanish,sc,rs3,d9,d10,esxa,nms,ddd,rsa3,nmm,nrs,uria,hide,d8,ur,nmo,ni,dsa,nto,enhc,nsjq,nso,1spot,ns10,nhsa';
+    for (const code of all.split(',')) expect(() => rules(code), code).not.toThrow();
   });
 });
 
@@ -67,8 +94,8 @@ describe("Emerald Queen's three games (Tacoma, WA)", () => {
       'rules.resplitAces': false,
       'table.noMidShoeEntry': true,
     });
-    expect(notPlayed).toEqual(['sc', 'pv']);
-    expect(summary(values)).toBe('2D H17 DAS LS NM · $25–$500');
+    expect(notPlayed).toEqual(['sc']);
+    expect(summary(values)).toBe('2D H17 DAS LS NM PV · $25–$500');
   });
 
   it('eight-deck shoe: H17 DAS LS RSA, $15–$500, face up, 1.1 decks behind the cut card', () => {
@@ -81,7 +108,7 @@ describe("Emerald Queen's three games (Tacoma, WA)", () => {
       'table.maxBet': 500,
       'rules.resplitAces': true,
     });
-    expect(summary(values)).toBe('8D H17 DAS LS RSA · $15–$500');
+    expect(summary(values)).toBe('8D H17 DAS LS RSA PV · $15–$500');
   });
 
   it("Spanish 21: the game's own Spanish 21, six decks, $15–$500", () => {

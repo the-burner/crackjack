@@ -28,7 +28,7 @@ describe('the table picker', () => {
     await search(user, '');
     expect(options()).toHaveLength(TABLE_SETS.kind.builtIns.length);
     expect(screen.getByRole('option', { name: /Emerald Queen 8-Deck Shoe/ })).toHaveTextContent(
-      'Tacoma, WA · 8D H17 DAS LS RSA · $15–$500',
+      'Tacoma, WA · 8D H17 DAS LS RSA PV · $15–$500',
     );
   });
 

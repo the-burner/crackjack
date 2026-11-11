@@ -100,6 +100,7 @@ export interface TableConfig {
   spanish?: boolean;
   shuffleMode?: ShuffleMode;
   cardsBehindCutCard?: number;
+  cutCardVaries?: number;
   roundsPerShoe?: number;
   burnCards?: number;
   showBurnCards?: boolean;
@@ -110,6 +111,10 @@ export interface TableConfig {
   doubleDownCardFaceUp?: boolean;
   dealerMakesObviousPlays?: boolean;
   playersComeAndGo?: boolean;
+  /** Computer players may leave mid-shoe but sit down only at the shuffle. */
+  newPlayersWaitForShuffle?: boolean;
+  /** Face-down hands are turned up only when needed to settle them. */
+  showCardsOnlyWhenNeeded?: boolean;
   peeking?: PeekingOptions;
   maxCardsPerHand?: number;
   /** Which cards the true count treats as gone. Default every card dealt. */
@@ -248,7 +253,10 @@ export class BlackjackGame {
     while (taken.length < wanted && free.length > 0) {
       taken.push(...free.splice(Math.floor(this.random() * free.length), 1));
     }
-    this.seatedComputers = taken.sort((a, b) => a - b);
+    // Mid-shoe, a player may leave but no one new sits down.
+    const seated = this.seatedComputers;
+    const midShoe = this.table.newPlayersWaitForShuffle && seated && this.shoe.roundsDealt > 0;
+    this.seatedComputers = (midShoe ? taken.filter(seat => seated.includes(seat)) : taken).sort((a, b) => a - b);
     return this.seatedComputers;
   }
 
@@ -517,12 +525,14 @@ export class BlackjackGame {
   earlySurrenderOffered(): boolean {
     const hand = this.humanHands()[0];
     if (!hand || hand.surrendered) return false;
-    if (!surrenderAllowed(this.rules, hand, { hasInsurance: hand.insuranceBet > 0 })) return false;
+    if (!surrenderAllowed(this.rules, hand, { hasInsurance: hand.insuranceBet > 0, upcard: this.dealer.cards[0] }))
+      return false;
     return earlySurrenderAllowed(this.rules, this.dealer.cards[0]);
   }
 
   surrenderAvailable(hand: Hand): boolean {
-    if (!surrenderAllowed(this.rules, hand, { hasInsurance: hand.insuranceBet > 0 })) return false;
+    if (!surrenderAllowed(this.rules, hand, { hasInsurance: hand.insuranceBet > 0, upcard: this.dealer.cards[0] }))
+      return false;
     if (hand.doubled) return this.rules.doubleDownRescue;
     // Early surrender is decided before the dealer checks the hole card.
     if (!this.insuranceDecided) return earlySurrenderAllowed(this.rules, this.dealer.cards[0]);
@@ -786,8 +796,11 @@ export class BlackjackGame {
   /** Settles every hand and returns the chips to the bankroll. */
   finishRound(): void {
     // Every card still face down is turned up at the showdown, before it is paid:
-    // a face-down game's hands, and a double card dealt face down in any game.
-    for (const hand of this.hands) this.revealHand(hand);
+    // a face-down game's hands, and a double card dealt face down in any game. Where cards are shown only
+    // when needed, a dealer bust or blackjack settles the others' hands unseen.
+    const settledUnseen =
+      this.table.cardsFaceDown && this.table.showCardsOnlyWhenNeeded && (this.dealer.busted() || this.dealerBlackjack);
+    for (const hand of this.hands) if (!settledUnseen || hand.owner === PLAYER.human) this.revealHand(hand);
     for (const hand of this.hands) {
       const { payout, result, net } = settleHand({
         rules: this.rules,

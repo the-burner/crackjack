@@ -55,7 +55,7 @@ export function settleHand({
   if (hand.mistakenBust) return finish(0, RESULT.bust);
 
   if (hand.surrendered) {
-    const lateAgainstBlackjack = dealerBlackjack && rules.surrender === 'late';
+    const lateAgainstBlackjack = dealerBlackjack && (rules.surrender === 'late' || rules.surrender === 'lateExceptAce');
     // Half of everything wagered comes back, so a rescued double returns half of both bets.
     return finish(lateAgainstBlackjack ? 0 : (hand.bet + hand.doubleBet) / 2, RESULT.surrender);
   }

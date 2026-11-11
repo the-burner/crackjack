@@ -116,7 +116,7 @@ export function correctPlay({ strategy, rules, hand, upcard, dealer, counts, sho
         double: doubleAllowed(rules, hand),
         softDouble: doubleAllowed(rules, hand),
         split: splitAllowed(rules, hand, handsInSeat),
-        surrender: surrenderAllowed(rules, hand),
+        surrender: surrenderAllowed(rules, hand, { upcard }),
       },
     },
   );

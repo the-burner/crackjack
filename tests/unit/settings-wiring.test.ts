@@ -65,6 +65,8 @@ function tableFor(overrides: SettingsPatch = {}) {
 const NOT_THE_ENGINES: Partial<Record<SettingKey, string>> = {
   'table.startingBankroll': 'sets the opening bankroll, not a table rule',
   'table.refreshBankrollOnStart': 'decides whether the saved bankroll is reused',
+  'table.noSpreadingMidShoe': 'kept by the session, which refuses more hands than the fewest played this shoe',
+  'table.oneSpot': 'checked as a bet is placed (game/bet-validation.ts), before the engine sees it',
   'table.noMidShoeEntry': 'kept by the session, which refuses a bet after sitting out until the shuffle',
   'table.minBet': 'checked as a bet is placed (game/bet-validation.ts), before the engine sees it',
   'table.maxBet': 'checked as a bet is placed (game/bet-validation.ts), before the engine sees it',

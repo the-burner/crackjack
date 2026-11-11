@@ -18,6 +18,8 @@ export interface BetCheck {
   spots: readonly Pick<SideBetSpot, 'id' | 'maxMultipleOfBet'>[];
   /** Sat out this shoe at a table with no mid-shoe entry: no bet until the shuffle. */
   outUntilShuffle?: boolean;
+  /** The most hands the table takes now (one spot, or no spreading mid-shoe), and why. */
+  mostHands?: { hands: number; oneSpot: boolean };
 }
 
 /** Why the bet cannot be placed, or null when it can. */
@@ -29,8 +31,13 @@ export function betError({
   sideBets,
   spots,
   outUntilShuffle = false,
+  mostHands,
 }: BetCheck): string | null {
   if (outUntilShuffle) return 'No mid-shoe entry: after sitting out, you can only Wong until the shuffle.';
+  if (mostHands && hands > mostHands.hands)
+    return mostHands.oneSpot
+      ? 'This table allows one spot per player.'
+      : `No spreading mid-shoe: you can play at most ${mostHands.hands} ${mostHands.hands === 1 ? 'hand' : 'hands'} until the shuffle.`;
   if (amount < low) return `Bet below the table minimum of ${money(low)}.`;
   if (amount > high) return `Bet above the table maximum of ${money(high)}.`;
   if (!checkAffordable({ bankroll, betPerHand: amount, hands, sideBets }))

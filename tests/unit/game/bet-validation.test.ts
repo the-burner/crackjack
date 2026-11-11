@@ -66,4 +66,14 @@ describe('the side-bet multiple', () => {
     );
     expect(check({ outUntilShuffle: false })).toBeNull();
   });
+
+  it('refuses more hands than the table takes now, saying why', () => {
+    expect(check({ hands: 2, bankroll: 10000, mostHands: { hands: 1, oneSpot: true } })).toBe(
+      'This table allows one spot per player.',
+    );
+    expect(check({ hands: 2, bankroll: 10000, mostHands: { hands: 1, oneSpot: false } })).toBe(
+      'No spreading mid-shoe: you can play at most 1 hand until the shuffle.',
+    );
+    expect(check({ hands: 2, bankroll: 10000, mostHands: { hands: 2, oneSpot: false } })).toBeNull();
+  });
 });

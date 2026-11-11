@@ -47,21 +47,36 @@ const RULES: Readonly<Record<string, SettingsPatch>> = {
   enhc: { 'rules.noHoleCard': true, 'rules.dealerBlackjackWinsAll': true },
   ls: { 'rules.surrender': 'late' },
   es10: { 'rules.surrender': 'earlyVsTen' },
+  esxa: { 'rules.surrender': 'earlyExceptAce' },
+  lsxa: { 'rules.surrender': 'lateExceptAce' },
   ni: { 'rules.insurance': 'none' },
   nrs: { 'rules.maxSplitHands': 2 },
   rs3: { 'rules.maxSplitHands': 3 },
   rsa: { 'rules.resplitAces': true },
+  rsa3: { 'rules.resplitAces': true, 'rules.resplitAcesOnce': true },
+  ur: { 'rules.maxSplitHands': 8 },
+  uria: { 'rules.maxSplitHands': 8, 'rules.resplitAces': true },
   nsa: { 'rules.noAceSplits': true },
   nsjq: { 'rules.splitTensSameRankOnly': true },
   nhsa: { 'rules.hitSplitAces': false },
+  // Penetration that varies by dealer or shift: a quarter deck either way.
+  pv: { 'table.cutCardVaries': 13 },
   // No mid-entry, also with no sitting out (nms) or no spreading to more hands (nmm), of which the table plays the first.
   nm: { 'table.noMidShoeEntry': true },
   nms: { 'table.noMidShoeEntry': true },
-  nmm: { 'table.noMidShoeEntry': true },
+  nmm: { 'table.noMidShoeEntry': true, 'table.noSpreadingMidShoe': true },
+  // No mid-entry on request: a seated player may ask that no one new sits down.
+  nmo: { 'table.newPlayersWaitForShuffle': true },
+  // No spreading to more hands mid-shoe; nto is its second half (no going back up after dropping a hand).
+  nso: { 'table.noSpreadingMidShoe': true },
+  nto: { 'table.noSpreadingMidShoe': true },
+  '1spot': { 'table.oneSpot': true },
+  ns10: { 'rules.noTenSplits': true },
+  hide: { 'table.cardsFaceDown': true, 'table.showCardsOnlyWhenNeeded': true },
 };
 
-/** Codes for what the table does not play (mid-entry, penetration that varies, tipping, how the cards are held). */
-const NOT_PLAYED = new Set(['pv', 'notch', 'toke', 'nmo', 'nso', 'nto', 'min', '1spot', 'sc', 'shoe']);
+/** Codes for what the table does not play or that changes nothing: fixed penetration, tipping, mid-entry at the minimum, how the cards are held. */
+const NOT_PLAYED = new Set(['notch', 'toke', 'min', 'sc', 'shoe']);
 
 /** The game's own Spanish 21 (an unusual game), whose rules it sets. */
 const SPANISH_21 = 17;
