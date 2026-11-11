@@ -59,8 +59,6 @@ const RULES: Readonly<Record<string, SettingsPatch>> = {
   nsa: { 'rules.noAceSplits': true },
   nsjq: { 'rules.splitTensSameRankOnly': true },
   nhsa: { 'rules.hitSplitAces': false },
-  // Penetration that varies by dealer or shift: a quarter deck either way.
-  pv: { 'table.cutCardVaries': 13 },
   // No mid-entry, also with no sitting out (nms) or no spreading to more hands (nmm), of which the table plays the first.
   nm: { 'table.noMidShoeEntry': true },
   nms: { 'table.noMidShoeEntry': true },
@@ -89,7 +87,9 @@ export function cbjnTable(game: CbjnGame): { values: SettingsPatch; notPlayed: s
     .split(',')
     .map(code => code.trim().toLowerCase())
     .filter(Boolean);
-  const unknown = codes.filter(code => !(code in RULES) && !NOT_PLAYED.has(code) && code !== 'spanish');
+  const unknown = codes.filter(
+    code => !(code in RULES) && !NOT_PLAYED.has(code) && code !== 'spanish' && code !== 'pv',
+  );
   if (unknown.length) throw new Error(`Unknown CBJN rules code: ${unknown.join(', ')}`);
   const defaults = Object.fromEntries(TABLE_SETTINGS.map(key => [key, structuredClone(SETTINGS_SCHEMA[key].default)]));
   let values: SettingsPatch = {
@@ -107,5 +107,7 @@ export function cbjnTable(game: CbjnGame): { values: SettingsPatch; notPlayed: s
     values = { ...values, ...applyGameChange(get, SPANISH_21) };
   }
   for (const code of codes) values = { ...values, ...RULES[code] };
+  // Penetration that varies by dealer or shift: 8 cards either way in a one- or two-deck game, a quarter deck in a shoe.
+  if (codes.includes('pv')) values['table.cutCardVaries'] = game.decks <= 2 ? 8 : 13;
   return { values, notPlayed: codes.filter(code => NOT_PLAYED.has(code)) };
 }

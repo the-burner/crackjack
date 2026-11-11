@@ -45,8 +45,11 @@ describe('a CBJN game', () => {
     expect(() => cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,zz' })).toThrow('zz');
     const { values, notPlayed } = cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'h17,nms,pv,toke' });
     expect(notPlayed).toEqual(['toke']);
-    // Penetration that varies, a quarter deck either way.
+    // Penetration that varies: a quarter deck either way in a shoe, 8 cards in a one- or two-deck game.
     expect(values['table.cutCardVaries']).toBe(13);
+    const varies = (decks: number) =>
+      cbjnTable({ decks, cut: 0.8, min: 5, max: 500, rules: 'pv' }).values['table.cutCardVaries'];
+    expect([varies(1), varies(2), varies(4), varies(8)]).toEqual([8, 8, 13, 13]);
     // No mid-entry, whichever way it is written.
     expect(values['table.noMidShoeEntry']).toBe(true);
     expect(cbjnTable({ decks: 6, cut: 1, min: 5, max: 500, rules: 'nm' }).values['table.noMidShoeEntry']).toBe(true);
