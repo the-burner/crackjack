@@ -160,7 +160,7 @@ describe('the insurance chips', () => {
   });
 
   it('come off the seat on the table as well as the bankroll', () => {
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.setBankroll(1000);
     state.setBets([{ seat: 1, amount: 10 }]);
     state.apply({ type: 'card', hand: '1-0', card: 5, faceUp: true, cardIndex: 0 });

@@ -15,14 +15,23 @@ export interface ShoeOptions {
   shuffleMode?: ShuffleMode;
   cardsBehindCutCard?: number;
   roundsPerShoe?: number;
+  /** Spanish decks: 48 cards each, the four tens taken out (Spanish 21). */
+  spanish?: boolean;
   random?: Random;
 }
+
+/** The tens' card ids (1..52 is suit * 13 + rank). */
+const TENS = [0, 1, 2, 3].map(suit => suit * 13 + 10);
+
+/** Cards in one deck: 52, or 48 in a Spanish deck. */
+export const cardsPerDeckFor = (spanish: boolean): number => (spanish ? CARDS_PER_DECK - TENS.length : CARDS_PER_DECK);
 
 export class Shoe {
   decks: number;
   shuffleMode: ShuffleMode;
   cardsBehindCutCard: number;
   roundsPerShoe: number;
+  spanish: boolean;
   random: Random;
   /** How many of each card id (1..52) remain. */
   remainingByCard: number[] = [];
@@ -37,18 +46,24 @@ export class Shoe {
     shuffleMode = SHUFFLE_MODE.cutCard,
     cardsBehindCutCard = 78,
     roundsPerShoe = 6,
+    spanish = false,
     random = defaultRandom,
   }: ShoeOptions) {
     this.decks = decks;
     this.shuffleMode = shuffleMode;
     this.cardsBehindCutCard = cardsBehindCutCard;
     this.roundsPerShoe = roundsPerShoe;
+    this.spanish = spanish;
     this.random = random;
     this.shuffle();
   }
 
+  get cardsPerDeck(): number {
+    return cardsPerDeckFor(this.spanish);
+  }
+
   get totalCards(): number {
-    return this.decks * CARDS_PER_DECK;
+    return this.decks * this.cardsPerDeck;
   }
 
   /** Cards that may be dealt before the cut card shows. */
@@ -59,6 +74,7 @@ export class Shoe {
   shuffle(): void {
     this.remainingByCard = new Array(CARDS_PER_DECK + 1).fill(this.decks);
     this.remainingByCard[0] = 0;
+    if (this.spanish) for (const ten of TENS) this.remainingByCard[ten] = 0;
     this.remaining = this.totalCards;
     this.dealt = 0;
     this.roundsDealt = 0;
@@ -103,6 +119,6 @@ export class Shoe {
 
   /** Decks sitting in the discard tray. */
   get decksInTray(): number {
-    return this.dealt / CARDS_PER_DECK;
+    return this.dealt / this.cardsPerDeck;
   }
 }

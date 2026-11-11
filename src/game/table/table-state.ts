@@ -57,8 +57,8 @@ export interface Chip {
 
 export type TableState = ReturnType<typeof createTableState>;
 
-/** @param decks  Decks in the shoe, for the shoe photograph. */
-export function createTableState({ decks }: { decks: number }) {
+/** @param cards  Cards in a full shoe, for the shoe photograph. */
+export function createTableState({ cards }: { cards: number }) {
   const emptyHand = (key: HandKey): ShownHand => ({
     key,
     ...parseHandKey(key),
@@ -105,7 +105,7 @@ export function createTableState({ decks }: { decks: number }) {
 
     /** Cards left in the shoe. */
     get shoeCards(): number {
-      return Math.max(0, decks * 52 - state.dealt);
+      return Math.max(0, cards - state.dealt);
     },
 
     get cardsOnTable(): number {

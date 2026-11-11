@@ -17,6 +17,8 @@ import type { AppSettings } from '@/settings/schema';
 import type { SideBetGame } from '@/settings/side-bet-games';
 import { checkPlay, correctPlay, checkInsurance, checkBet, expectedBet } from './play-check';
 import { shoeStartsIn, wongedIn } from './wonging';
+import { gameVariant } from '@/settings/rules-logic';
+import { cardsPerDeckFor } from './engine/shoe';
 import type { ExpectedBet, PlayCheck, PlayCounts, PlayQuestion } from './play-check';
 import { TC_DIVISION, TC_LAST_DECK, TC_ROUNDING } from '@/core/counting';
 import { decodeSideBetGame } from '@/settings/side-bet-games';
@@ -114,7 +116,8 @@ export class GameSession {
       beforeDealerDraw: dealer => this.beforeDealerDraw?.(dealer) ?? true,
       onGoodHandBusted: hand => this.onGoodHandBusted?.(hand) ?? false,
       onShuffle: () => {
-        this.counter.reset(this.table.decks);
+        // Spanish decks hold 48 cards, which the true count divides by.
+        this.counter.reset(this.table.decks, { cardsPerDeck: cardsPerDeckFor(Boolean(this.table.spanish)) });
         // A new shoe begins wonged in or out afresh.
         this.wongPlaying = null;
       },
@@ -147,6 +150,8 @@ export class GameSession {
       .filter((seat): seat is number => seat !== null && seat <= seatCount);
     return {
       decks: get('table.decks'),
+      // Spanish 21 is dealt from Spanish decks.
+      spanish: gameVariant(get('bonuses.game')) === 'spanish21',
       shuffleMode: get('table.shuffleMode'),
       cardsBehindCutCard: get('table.cardsBehindCutCard'),
       roundsPerShoe: get('table.roundsPerShoe'),
@@ -396,13 +401,14 @@ export class GameSession {
   /** The cards left in the shoe under each Remaining Cards choice, and the exact decks and true count for the one in use. */
   advancedCounts() {
     const inUse = this.settings.get('game.trueCount.remainingCards');
-    const total = this.game.shoe.decks * 52;
+    const { cardsPerDeck } = this.game.shoe;
+    const total = this.game.shoe.totalCards;
     const cardsLeft = {
       dealt: total - this.game.cardsGone('dealt'),
       shown: total - this.game.cardsGone('shown'),
       inTray: total - this.game.cardsGone('inTray'),
     };
-    const exactDecks = cardsLeft[inUse] / 52;
+    const exactDecks = cardsLeft[inUse] / cardsPerDeck;
     return { cardsLeft, inUse, exactDecks, exactTrueCount: this.counter.exactTrueCountOver(exactDecks) };
   }
 
@@ -413,7 +419,7 @@ export class GameSession {
     const gone = this.cardsGone();
     const { decks } = this.game.shoe;
     return [gone - error, gone + error].map(shifted => {
-      const at = Math.min(Math.max(shifted, 1), decks * 52 - 1);
+      const at = Math.min(Math.max(shifted, 1), this.game.shoe.totalCards - 1);
       return {
         counts: { ...this.counts, trueCount: this.counter.trueCountAt(at) },
         shoe: { decks, dealt: this.game.shoe.dealt - gone + at },

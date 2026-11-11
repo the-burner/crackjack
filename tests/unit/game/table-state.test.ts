@@ -17,7 +17,7 @@ const card = (hand: HandKey, value: CardId, faceUp = true): TableEvent => ({
 });
 
 const dealt = () => {
-  const state = createTableState({ decks: 6 });
+  const state = createTableState({ cards: 6 * 52 });
   state.setBankroll(1000);
   state.setBets([{ seat: 1, amount: 10 }]);
   state.apply({ type: 'shuffle' });
@@ -52,7 +52,7 @@ describe('what the player can see', () => {
   });
 
   it('keeps hands in seat order whatever order the cards arrive in', () => {
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.apply(card('3-0', 1));
     state.apply(card('1-1', 2));
     state.apply(card('1-0', 3));
@@ -168,7 +168,7 @@ describe('the chips on the table', () => {
 
 describe('burn cards', () => {
   it('shows each one, and keeps it out of the tray until the round starts', () => {
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.apply({ type: 'shuffle' });
     state.apply({ type: 'burn', card: 7, faceUp: true });
     state.apply({ type: 'burn', card: 9, faceUp: false });
@@ -183,7 +183,7 @@ describe('burn cards', () => {
   });
 
   it('clears them when the shoe is shuffled again', () => {
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.apply({ type: 'burn', card: 7, faceUp: true });
     state.apply({ type: 'shuffle' });
     expect(state.burns).toEqual([]);
@@ -283,7 +283,7 @@ describe('the bankroll the player sees', () => {
 
 describe('burn cards going into the tray', () => {
   it('leave the burn row and count in the tray', () => {
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.apply({ type: 'shuffle' });
     state.apply({ type: 'burn', card: 7, faceUp: true });
     expect(state.burns).toHaveLength(1);

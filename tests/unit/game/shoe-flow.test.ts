@@ -82,7 +82,7 @@ function makeApp(settings: SettingsPatch = {}) {
 
 /** The table state and readout count, fed events as the screen replays them. */
 function replay(session: GameSession) {
-  const state = createTableState({ decks: session.table.decks });
+  const state = createTableState({ cards: session.table.decks * 52 });
   const shown = createShownCount({
     strategy: session.strategy,
     settings: session.trueCountSettings(),
@@ -164,7 +164,7 @@ describe('insurance', () => {
     const rules = makeRules({ 'rules.insurance': 'normal', 'rules.dealerPeeksAce': true });
     // Player 10 and 7 against an ace, with a 5 in the hole: no blackjack.
     const game = riggedGame([card(10), card(1), card(7), card(5)], { rules });
-    const state = createTableState({ decks: 6 });
+    const state = createTableState({ cards: 6 * 52 });
     state.setBankroll(995);
     state.setBets([{ seat: 1, amount: 5 }]);
     const events = [...game.startRound([{ seat: 1, bet: 5 }])];

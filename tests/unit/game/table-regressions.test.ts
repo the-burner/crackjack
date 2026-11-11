@@ -35,7 +35,7 @@ function makeSession(settings: SettingsPatch = {}, seed = 7) {
 /** A session whose events are replayed as the table does, with the readout's count. */
 function table(settings: SettingsPatch) {
   const session = makeSession(settings);
-  const state = createTableState({ decks: session.table.decks });
+  const state = createTableState({ cards: session.table.decks * 52 });
   const shown = createShownCount({
     strategy: session.strategy,
     settings: session.trueCountSettings(),

@@ -172,7 +172,7 @@ export function createTableController(app: App, options: TableOptions) {
 function createTableSession(app: App, { notify, dismiss, confirm, nav }: TableOptions) {
   const { settings } = app;
   const session = new GameSession(app);
-  const state = createTableState({ decks: session.table.decks });
+  const state = createTableState({ cards: session.game.shoe.totalCards });
 
   let felt: HTMLElement | null = null;
   let renderer: ReturnType<typeof createTableRenderer> | null = null;

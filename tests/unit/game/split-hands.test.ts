@@ -66,7 +66,7 @@ function playRound(
     game.shoe.dealt += 1;
     return next;
   };
-  const state = createTableState({ decks: 6 });
+  const state = createTableState({ cards: 6 * 52 });
   state.setBets([{ seat: 1, amount: 10 }]);
   const frames: Frame[] = [];
   const swept = new Set<HandKey>();

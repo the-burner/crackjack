@@ -96,6 +96,8 @@ export interface PeekingOptions {
 /** The table: the shoe, the seats and the dealer's habits. */
 export interface TableConfig {
   decks: number;
+  /** Spanish decks, the tens taken out (Spanish 21). */
+  spanish?: boolean;
   shuffleMode?: ShuffleMode;
   cardsBehindCutCard?: number;
   roundsPerShoe?: number;

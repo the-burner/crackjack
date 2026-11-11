@@ -77,7 +77,7 @@ interface Frame {
 
 /** Bets `BET` on each of `seats` and plays the round out with `choose`, declining insurance. */
 function playRound(game: BlackjackGame, seats: number[], choose: (offered: AvailableActions) => GameAction) {
-  const state = createTableState({ decks: 6 });
+  const state = createTableState({ cards: 6 * 52 });
   const swept = new Set<HandKey>();
   const isComputer = (key: HandKey) => game.hands.find(hand => hand.key === key)?.owner === PLAYER.computer;
   const frames: Frame[] = [];
