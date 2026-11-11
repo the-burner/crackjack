@@ -84,6 +84,10 @@ describe('splitting', () => {
       'rules.resplitAces': true,
       'rules.maxSplitHands': 4,
     });
+    // With resplits already allowed, only aces are turned on.
+    const onceAtThree = applyRuleChange(read({ 'rules.maxSplitHands': 3 }), 'rules.resplitAcesOnce', true);
+    expect(onceAtThree).toMatchObject({ 'rules.resplitAces': true });
+    expect(onceAtThree).not.toHaveProperty('rules.maxSplitHands');
     expect(applyRuleChange(read({ 'rules.resplitAcesOnce': true }), 'rules.resplitAces', false)).toMatchObject({
       'rules.resplitAcesOnce': false,
     });
