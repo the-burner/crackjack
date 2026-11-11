@@ -124,3 +124,29 @@ describe("Emerald Queen's three games (Tacoma, WA)", () => {
     expect(summary(values)).toMatch(/^Spanish 21 · 6D H17 /);
   });
 });
+
+describe('the Seattle and Tacoma games', () => {
+  it('are every one CBJN lists there, found by searching for the area', () => {
+    const seattle = CASINO_TABLES.filter(t => t.place.includes('Seattle area'));
+    expect(seattle.map(t => t.name)).toEqual([
+      'Caribbean Kirkland 6-Deck Shoe',
+      'Fortune Renton 6-Deck Shoe',
+      'Imperial Palace Auburn Double Deck',
+      'Imperial Palace Auburn 6-Deck Shoe',
+      'Imperial Palace Tukwila Double Deck',
+      'Muckleshoot Double Deck',
+      'Muckleshoot 8-Deck Shoe',
+      'Muckleshoot Spanish 21',
+      'Snoqualmie 8-Deck Shoe',
+      'Snoqualmie Spanish 21',
+    ]);
+    expect(CASINO_TABLES.filter(t => t.place === 'Tacoma, WA')).toHaveLength(3);
+  });
+
+  it("read as CBJN lists them: Imperial Auburn's double deck doubles on 9 to 11 only, face down", () => {
+    expect(summary(table('imperial-auburn-2d').values)).toBe('2D H17 D9 · $25–$400');
+    expect(table('imperial-auburn-2d').values['table.cardsFaceDown']).toBe(true);
+    expect(summary(table('muckleshoot-2d').values)).toBe('2D H17 DAS NM PV · $25–$2,500');
+    expect(summary(table('snoqualmie-8d').values)).toBe('8D H17 DAS RSA · $10–$500');
+  });
+});

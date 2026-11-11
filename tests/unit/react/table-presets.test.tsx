@@ -83,7 +83,8 @@ describe('the table picker', () => {
     act(() => app.tables.setState({ value: [fake] }));
     renderScreen(<TableRules />, { app });
     await search(user, 'spanish');
-    expect(options()).toEqual([expect.stringMatching(/^Emerald Queen Spanish 21Tacoma/)]);
+    expect(options()).toContainEqual(expect.stringMatching(/^Emerald Queen Spanish 21Tacoma/));
+    expect(options().filter(option => option?.startsWith('emerald queen spanish 21'))).toEqual([]);
   });
 
   it('is remembered by a Blackjack configuration', async () => {
